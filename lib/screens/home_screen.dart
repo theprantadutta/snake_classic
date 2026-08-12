@@ -41,7 +41,6 @@ import 'package:snake_classic/widgets/first_run_legal_notice.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/notification_permission_softask.dart';
 import 'package:snake_classic/widgets/player_progression.dart';
-import 'package:snake_classic/widgets/sync_status_indicator.dart';
 import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/home_versus_cta.dart';
@@ -866,21 +865,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildGameTitle(GameTheme theme, double screenHeight) {
-    // Tighter logo sizes (~30% smaller than before) so the new title
-    // text below has room to breathe without pushing the play button
-    // off the bottom on small screens.
+    // Logo and wordmark side by side, with the words stacked. Reading them as
+    // one horizontal lockup lets the mark be noticeably larger without the
+    // block growing taller than the stacked version it replaces — the logo
+    // now sets the height, and the two short lines of type sit inside it.
     final logoSize = screenHeight < 650
-        ? 70.0
+        ? 92.0
         : screenHeight < 750
-        ? 85.0
-        : 100.0;
+        ? 112.0
+        : 132.0;
 
-    // Title font scales with the logo so they read as a unit.
-    final titleSize = screenHeight < 650
-        ? 28.0
-        : screenHeight < 750
-        ? 32.0
-        : 36.0;
+    // Tied to the logo so the pair always reads as one unit at any size.
+    final titleSize = logoSize * 0.30;
+    final titleLines = _appTitleLines(AppLocalizations.of(context)!);
 
     return Container(
       width: double.infinity,
@@ -889,8 +886,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         horizontal: 16,
       ),
       child: Center(
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               decoration: BoxDecoration(
@@ -926,34 +924,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       )
                       .gameHero(),
             ),
-            // Tight gap so the logo + "Snake Classic" text read as a
-            // single unit. The wider gap between this title block and
-            // the play button below comes from _buildGameTitle's outer
-            // vertical padding + _buildMainPlayArea's top padding,
-            // creating the desired hierarchy: tight logo+text, looser
-            // text→play-button.
-            SizedBox(height: screenHeight < 650 ? 0 : 2),
-            // "Snake Classic" title — gradient-shaded text styled to
-            // match the game's hero look. ShaderMask gives it the same
-            // primary→accent gradient used elsewhere in the app
-            // (game-over screen, About dialog).
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [theme.primaryColor, theme.accentColor],
-              ).createShader(bounds),
-              child: Text(
-                AppLocalizations.of(context)!.appTitle,
-                style: TextStyle(
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white, // base for ShaderMask
-                  letterSpacing: context.letterSpacing(1.5),
-                  shadows: [
-                    Shadow(
-                      color: theme.accentColor.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
+            SizedBox(width: screenHeight < 650 ? 10 : 14),
+            // The wordmark — same primary→accent gradient the game-over
+            // screen and the About dialog use. One ShaderMask over both
+            // lines, so the gradient runs down the whole word rather than
+            // restarting on each.
+            Flexible(
+              child: ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [theme.primaryColor, theme.accentColor],
+                ).createShader(bounds),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final line in titleLines)
+                      Text(
+                        line,
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white, // base for ShaderMask
+                          height: 1.05,
+                          letterSpacing: context.letterSpacing(1.5),
+                          shadows: [
+                            Shadow(
+                              color: theme.accentColor.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -962,6 +967,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
       ),
     );
+  }
+
+  /// "Snake" over "Classic".
+  ///
+  /// Split on whitespace, so a locale that writes the title as a single word
+  /// keeps it on one line rather than being broken at an arbitrary point.
+  List<String> _appTitleLines(AppLocalizations l10n) {
+    final title = l10n.appTitle.trim();
+    final words = title.split(RegExp(r'\s+'));
+    if (words.length < 2) return [title];
+    if (words.length == 2) return words;
+    return [words.first, words.skip(1).join(' ')];
   }
 
   Widget _buildMainPlayArea(
@@ -1006,26 +1023,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               // Power-up loadout chip — only renders when the user has
-              // any inventory. Sits directly above the play button so
-              // it's the last thing they see before tapping PLAY.
+              // any inventory.
               _buildPowerUpLoadoutChip(theme),
 
-              // Hero Play Button - Main focal point, now at the top so
-              // the user's eye lands on the call-to-action first.
+              // Hero Play Button — the focal point, and now sized like one.
+              // Removing the high-score bar handed this row its height back;
+              // the button takes it rather than leaving it as empty screen.
               Flexible(
-                flex: 5,
+                flex: 7,
                 child: Container(
                   constraints: BoxConstraints(
                     maxHeight: availableHeight > 0
-                        ? availableHeight * 0.4
-                        : 200,
-                    maxWidth: availableWidth * 0.8,
+                        ? availableHeight * 0.58
+                        : 260,
+                    maxWidth: availableWidth * 0.88,
                   ),
                   child: _buildHeroPlayButton(
                     context,
                     theme,
                     screenHeight,
                     screenWidth,
+                    highScore,
                   ),
                 ),
               ),
@@ -1042,43 +1060,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 theme: theme,
                 isCompact: isSmallScreen,
                 onOpen: () => _openVersusLobby(context),
-              ),
-
-              SizedBox(height: spacing),
-
-              // Compact stats row (high score + quick actions) — moved
-              // under the play button so it reads as 'your best so far'
-              // commentary on the primary CTA above.
-              Flexible(
-                flex: 3,
-                child: Container(
-                  // The floor was 80, which is taller than the plaque needs —
-                  // the card was padded out to meet it, and that is the
-                  // height that read as wasted. 60 is the button's 44dp hit
-                  // box plus the card's padding; the score sizes itself to
-                  // whatever it gets, so a shorter slot means a smaller
-                  // number rather than an overflow.
-                  //
-                  // maxHeight is clamped to the same floor so a transient
-                  // small availableHeight on Android resume — when
-                  // SafeArea/system-bars haven't resettled — can't produce
-                  // minHeight > maxHeight and trip the BoxConstraints
-                  // assertion.
-                  constraints: BoxConstraints(
-                    minHeight: 60,
-                    maxHeight:
-                        (availableHeight > 0 ? availableHeight * 0.2 : 96.0)
-                            .clamp(60.0, double.infinity),
-                  ),
-                  child: _buildCompactStatsRow(
-                    context: context,
-                    highScore: highScore,
-                    theme: theme,
-                    screenWidth: screenWidth,
-                    isSmallScreen: isSmallScreen,
-                    hasSync: authState.isSignedIn,
-                  ),
-                ),
               ),
 
               // Tighter gap directly above the action buttons so the
@@ -1115,175 +1096,274 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     GameTheme theme,
     double screenHeight,
     double screenWidth,
+    int highScore,
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Use constraints to determine button size - make it much bigger
+        // Room for the medal below the circle, so the two never overlap and
+        // the pair still fits the slot the hero already had.
+        const medalReserve = 42.0;
         final maxSize = constraints.maxHeight > 0
-            ? constraints.maxHeight * 0.95
+            ? (constraints.maxHeight - medalReserve) * 0.98
             : 200.0;
         final buttonSize = screenHeight < 650
-            ? (maxSize > 160 ? 160.0 : maxSize)
+            ? (maxSize > 205 ? 205.0 : maxSize)
             : screenHeight < 750
-            ? (maxSize > 200 ? 200.0 : maxSize)
-            : (maxSize > 240 ? 240.0 : maxSize);
+            ? (maxSize > 255 ? 255.0 : maxSize)
+            : (maxSize > 310 ? 310.0 : maxSize);
 
         final isSmallButton = buttonSize < 120;
 
-        return GestureDetector(
-          onTap: () async {
-            // Tapping Play is the affirmative act that records acceptance of
-            // the legal notice rendered at the bottom of this screen (see
-            // FirstRunLegalNotice). Idempotent and fire-and-forget — a prefs
-            // write must never sit between the tap and the game.
-            unawaited(LegalAcceptance.recordAccepted());
+        // The best score sits under the button.
+        //
+        // It used to be a full-width bar of its own — a card, a border, two
+        // navigation buttons and a good chunk of the screen's height, all to
+        // print one number. The number is the only part a player actually
+        // wants at a glance, so it now hangs on the thing they are already
+        // looking at, in space the layout was leaving empty anyway. The
+        // trophy is the label; no wording, so it needs no translation and
+        // reads the same everywhere. It clears the button rather than
+        // overlapping it — the circle gives up the few pixels the medal
+        // needs, so nothing is ever drawn over the primary action.
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPlayCircle(context, theme, buttonSize, isSmallButton),
+            SizedBox(height: isSmallButton ? 8 : 10),
+            _buildBestMedal(context, theme, highScore, isSmallButton),
+          ],
+        );
+      },
+    );
+  }
 
-            // The one-time game-mode picker is skipped on the very first
-            // play. A player who has never seen the board cannot make a
-            // meaningful choice between Classic, Zen, Survival and Time
-            // Attack, and a non-dismissible sheet at that moment is pure
-            // friction — they get Classic (the default) and the picker on
-            // their second tap, once the choice means something.
-            if (!FirstRunService().isFirstGame) {
-              await _maybeShowGameModePrompt();
-              if (!context.mounted) return;
-            }
-            // Detour through the themed pre-game loader. It self-advances
-            // to /game on completion via pushReplacement so back from the
-            // game lands on Home rather than the loader.
-            context.push(AppRoutes.playLoading);
-          },
-          child: AnimatedBuilder(
-            animation: _playButtonPulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _playButtonPulseAnimation.value,
-                child: child,
-              );
-            },
-            child: Container(
-              key: HomeWalkthrough.playButtonKey,
-              width: buttonSize,
-              height: buttonSize,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    theme.accentColor,
-                    theme.foodColor,
-                    theme.accentColor.withValues(alpha: 0.8),
-                  ],
-                  stops: const [0.0, 0.6, 1.0],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.4),
-                    blurRadius: isSmallButton ? 20 : 30,
-                    spreadRadius: isSmallButton ? 3 : 5,
-                    offset: const Offset(0, 6),
-                  ),
-                  BoxShadow(
-                    color: theme.foodColor.withValues(alpha: 0.3),
-                    blurRadius: isSmallButton ? 30 : 50,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+  /// The medal that sits under the play button.
+  Widget _buildBestMedal(
+    BuildContext context,
+    GameTheme theme,
+    int highScore,
+    bool isCompact,
+  ) {
+    const gold = Color(0xFFFFC53D);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Semantics(
+      label: '${l10n.homeHighScore}: ${context.formatInt(highScore)}',
+      excludeSemantics: true,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 12 : 14,
+          vertical: isCompact ? 5 : 6,
+        ),
+        decoration: BoxDecoration(
+          // The theme's own background with a gold wash over it, not black.
+          // It sits below the button now rather than on its rim, so it does
+          // not need to fight the bright gradient for contrast — it only
+          // needs to belong to the same screen.
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              theme.backgroundColor.withValues(alpha: 0.85),
+              Color.lerp(
+                theme.backgroundColor,
+                gold,
+                0.16,
+              )!.withValues(alpha: 0.85),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: gold.withValues(alpha: 0.45), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: theme.accentColor.withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.emoji_events, color: gold, size: isCompact ? 14 : 16),
+            SizedBox(width: isCompact ? 6 : 7),
+            Text(
+              context.formatInt(highScore),
+              maxLines: 1,
+              style: TextStyle(
+                color: gold,
+                fontSize: isCompact ? 14 : 16,
+                fontWeight: FontWeight.w900,
+                height: 1.0,
+                letterSpacing: context.letterSpacing(0.5),
+                // Tabular figures so a new best does not shuffle the digits.
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Animated pulse ring
-                  Container(
-                    width: buttonSize - (isSmallButton ? 8 : 10),
-                    height: buttonSize - (isSmallButton ? 8 : 10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        width: isSmallButton ? 2 : 3,
-                      ),
-                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayCircle(
+    BuildContext context,
+    GameTheme theme,
+    double buttonSize,
+    bool isSmallButton,
+  ) {
+    return GestureDetector(
+      onTap: () async {
+        // Tapping Play is the affirmative act that records acceptance of
+        // the legal notice rendered at the bottom of this screen (see
+        // FirstRunLegalNotice). Idempotent and fire-and-forget — a prefs
+        // write must never sit between the tap and the game.
+        unawaited(LegalAcceptance.recordAccepted());
+
+        // The one-time game-mode picker is skipped on the very first
+        // play. A player who has never seen the board cannot make a
+        // meaningful choice between Classic, Zen, Survival and Time
+        // Attack, and a non-dismissible sheet at that moment is pure
+        // friction — they get Classic (the default) and the picker on
+        // their second tap, once the choice means something.
+        if (!FirstRunService().isFirstGame) {
+          await _maybeShowGameModePrompt();
+          if (!context.mounted) return;
+        }
+        // Detour through the themed pre-game loader. It self-advances
+        // to /game on completion via pushReplacement so back from the
+        // game lands on Home rather than the loader.
+        context.push(AppRoutes.playLoading);
+      },
+      child: AnimatedBuilder(
+        animation: _playButtonPulseAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _playButtonPulseAnimation.value,
+            child: child,
+          );
+        },
+        child: Container(
+          key: HomeWalkthrough.playButtonKey,
+          width: buttonSize,
+          height: buttonSize,
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                theme.accentColor,
+                theme.foodColor,
+                theme.accentColor.withValues(alpha: 0.8),
+              ],
+              stops: const [0.0, 0.6, 1.0],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: theme.accentColor.withValues(alpha: 0.4),
+                blurRadius: isSmallButton ? 20 : 30,
+                spreadRadius: isSmallButton ? 3 : 5,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: theme.foodColor.withValues(alpha: 0.3),
+                blurRadius: isSmallButton ? 30 : 50,
+                spreadRadius: 0,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Animated pulse ring
+              Container(
+                width: buttonSize - (isSmallButton ? 8 : 10),
+                height: buttonSize - (isSmallButton ? 8 : 10),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    width: isSmallButton ? 2 : 3,
                   ),
-                  // Inner content. mainAxisSize: min + Stack's
-                  // Alignment.center keeps the icon+text block precisely
-                  // in the middle of the circle. Transform.translate on
-                  // the text counteracts the icon glyph's intrinsic
-                  // bottom padding (Material icons leave ~15% empty
-                  // space below the visible symbol). Text height: 1.0
-                  // strips the default 1.2 line-height multiplier so
-                  // the text's own glyph box doesn't add extra padding
-                  // on top.
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.play_arrow_rounded,
-                        size: isSmallButton
-                            ? 60
+                ),
+              ),
+              // Inner content. mainAxisSize: min + Stack's
+              // Alignment.center keeps the icon+text block precisely
+              // in the middle of the circle. Transform.translate on
+              // the text counteracts the icon glyph's intrinsic
+              // bottom padding (Material icons leave ~15% empty
+              // space below the visible symbol). Text height: 1.0
+              // strips the default 1.2 line-height multiplier so
+              // the text's own glyph box doesn't add extra padding
+              // on top.
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.play_arrow_rounded,
+                    size: isSmallButton
+                        ? 60
+                        : buttonSize < 180
+                        ? 80
+                        : buttonSize < 220
+                        ? 100
+                        : 120,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(0, 3),
+                        blurRadius: 12,
+                        color: Colors.black.withValues(alpha: 0.4),
+                      ),
+                    ],
+                  ),
+                  Transform.translate(
+                    // Pull text up just enough to neutralize most of
+                    // the icon's intrinsic bottom padding, leaving a
+                    // small (~4-5px) visible gap instead of either
+                    // a big space OR an overlap.
+                    offset: Offset(
+                      0,
+                      isSmallButton
+                          ? -4.0
+                          : buttonSize < 180
+                          ? -6.0
+                          : buttonSize < 220
+                          ? -8.0
+                          : -10.0,
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context)!.homePlay,
+                      style: TextStyle(
+                        fontSize: isSmallButton
+                            ? 14
                             : buttonSize < 180
-                            ? 80
+                            ? 18
                             : buttonSize < 220
-                            ? 100
-                            : 120,
+                            ? 22
+                            : 26,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
+                        letterSpacing: context.letterSpacing(2),
+                        height: 1.0,
                         shadows: [
                           Shadow(
-                            offset: const Offset(0, 3),
-                            blurRadius: 12,
+                            offset: const Offset(0, 2),
+                            blurRadius: 6,
                             color: Colors.black.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
-                      Transform.translate(
-                        // Pull text up just enough to neutralize most of
-                        // the icon's intrinsic bottom padding, leaving a
-                        // small (~4-5px) visible gap instead of either
-                        // a big space OR an overlap.
-                        offset: Offset(
-                          0,
-                          isSmallButton
-                              ? -4.0
-                              : buttonSize < 180
-                              ? -6.0
-                              : buttonSize < 220
-                              ? -8.0
-                              : -10.0,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.homePlay,
-                          style: TextStyle(
-                            fontSize: isSmallButton
-                                ? 14
-                                : buttonSize < 180
-                                ? 18
-                                : buttonSize < 220
-                                ? 22
-                                : 26,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: context.letterSpacing(2),
-                            height: 1.0,
-                            shadows: [
-                              Shadow(
-                                offset: const Offset(0, 2),
-                                blurRadius: 6,
-                                color: Colors.black.withValues(alpha: 0.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1415,232 +1495,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           iconFor: _loadoutIconFor,
         );
       },
-    );
-  }
-
-  /// The personal-best plaque: the number, and the two places to go from it.
-  ///
-  /// It used to centre a label-over-number stack between two circular buttons
-  /// pinned to the far edges, which left a wide empty gutter on either side of
-  /// the score — the widest element on the screen carrying the least. The
-  /// stack was also wrapped in a scale-down FittedBox to absorb a sub-pixel
-  /// vertical squeeze, so on some screens the headline number silently
-  /// rendered smaller than it was designed to. That is the squeezed look.
-  ///
-  /// Now the label stacks into two short lines — HIGH over SCORE — which
-  /// frees the whole width beside it for the number and lets the number stand
-  /// as tall as both lines together. The two buttons pair up on the right
-  /// where they belong: both are "more about this score", not bookends.
-  ///
-  /// Same height as before. The card is still exactly as tall as its buttons
-  /// plus its padding, and the type is measured against the slot rather than
-  /// assumed to fit it.
-  Widget _buildCompactStatsRow({
-    required BuildContext context,
-    required int highScore,
-    required GameTheme theme,
-    required double screenWidth,
-    required bool isSmallScreen,
-    required bool hasSync,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    const gold = Color(0xFFFFC53D);
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 14 : 18,
-        vertical: isSmallScreen ? 8 : 9,
-      ),
-      decoration: BoxDecoration(
-        // One soft wash out of the gold corner instead of the old three-stop
-        // amber gradient across the whole strip, which fought the themed
-        // background it sits on.
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            gold.withValues(alpha: 0.14),
-            theme.backgroundColor.withValues(alpha: 0.25),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 22),
-        border: Border.all(color: gold.withValues(alpha: 0.28), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              button: true,
-              label: '${l10n.homeHighScore}: ${context.formatInt(highScore)}',
-              onTap: () => context.push(AppRoutes.statistics),
-              excludeSemantics: true,
-              child: GestureDetector(
-                onTap: () => context.push(AppRoutes.statistics),
-                behavior: HitTestBehavior.opaque,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final scaler = MediaQuery.textScalerOf(context);
-                    final available = constraints.maxHeight.isFinite
-                        ? constraints.maxHeight
-                        : (isSmallScreen ? 50.0 : 58.0);
-
-                    // Both sizes come from the slot rather than a guess. The
-                    // card's height is fixed by its parent, so hard-coded
-                    // type is a bet that the font, the player's text-scale
-                    // setting and the padding add up to less than it — and
-                    // that bet loses by a few pixels sooner or later.
-                    double labelFont = isSmallScreen ? 12.5 : 14;
-                    double numberFont = available;
-                    double labelStack() => scaler.scale(labelFont) * 1.15 * 2;
-                    double numberLine() => scaler.scale(numberFont);
-                    while (numberFont > 18 && numberLine() > available) {
-                      numberFont -= 1;
-                    }
-                    while (labelFont > 7.5 && labelStack() > available) {
-                      labelFont -= 0.5;
-                    }
-
-                    final labelStyle = TextStyle(
-                      fontSize: labelFont,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withValues(alpha: 0.55),
-                      letterSpacing: context.letterSpacing(1.5),
-                      height: 1.15,
-                    );
-
-                    return Row(
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (final line in _highScoreLabelLines(l10n))
-                              Text(line, maxLines: 1, style: labelStyle),
-                          ],
-                        ),
-                        SizedBox(width: isSmallScreen ? 10 : 12),
-                        // Shrinks rather than clips when a six-figure score
-                        // meets a narrow phone.
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              context.formatInt(highScore),
-                              maxLines: 1,
-                              style: TextStyle(
-                                fontSize: numberFont,
-                                fontWeight: FontWeight.w900,
-                                color: gold,
-                                height: 1.0,
-                                // Tabular figures so a score ticking over
-                                // from 999 to 1,000 does not shuffle the
-                                // digits sideways.
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                                shadows: [
-                                  Shadow(
-                                    color: gold.withValues(alpha: 0.35),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (hasSync) ...[
-                          const SizedBox(width: 8),
-                          SyncStatusIndicator(size: isSmallScreen ? 12 : 14),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-
-          SizedBox(width: isSmallScreen ? 10 : 14),
-
-          // The pair. Statistics is where the number came from, replays are
-          // the run that set it — both are "more about this score", so they
-          // read as a set instead of framing it.
-          _buildCircularNavButton(
-            icon: Icons.analytics,
-            color: theme.accentColor,
-            isSmallScreen: isSmallScreen,
-            onTap: () => context.push(AppRoutes.statistics),
-          ),
-          SizedBox(width: isSmallScreen ? 8 : 10),
-          // Replays replaced the leaderboard entry point — online boards are
-          // off in the offline-first build, and local replay history is the
-          // closest analog.
-          _buildCircularNavButton(
-            icon: Icons.video_library,
-            color: gold,
-            isSmallScreen: isSmallScreen,
-            onTap: () => context.push(AppRoutes.replays),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// "HIGH SCORE" over two lines.
-  ///
-  /// Split on whitespace, so the locales that write it as two words stack and
-  /// the ones that write it as one — Hindi, Arabic — stay on a single line
-  /// rather than being broken at an arbitrary point.
-  List<String> _highScoreLabelLines(AppLocalizations l10n) {
-    final label = l10n.homeHighScore.trim();
-    final words = label.split(RegExp(r'\s+'));
-    if (words.length < 2) return [label];
-    if (words.length == 2) return words;
-    return [words.first, words.skip(1).join(' ')];
-  }
-
-  Widget _buildCircularNavButton({
-    required IconData icon,
-    required Color color,
-    required bool isSmallScreen,
-    required VoidCallback onTap,
-  }) {
-    // Painted small, pressed large. These two set the plaque's height, and
-    // the plaque was taller than the score inside it needed — but a 38dp
-    // circle is a 38dp target, so the drawn size and the pressable size part
-    // company here: the circle shrank, the hit box did not.
-    final painted = isSmallScreen ? 38.0 : 44.0;
-    final target = isSmallScreen ? 44.0 : 48.0;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: target, minHeight: target),
-        child: Center(
-          child: Container(
-            width: painted,
-            height: painted,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: color.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: isSmallScreen ? 18 : 21),
-          ),
-        ),
-      ),
     );
   }
 
