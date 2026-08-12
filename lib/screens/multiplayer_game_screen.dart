@@ -1377,56 +1377,89 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
+  /// The steering indicator: idle, accepted, or refused.
+  ///
+  /// Three states, deliberately, because two were not enough. An accepted
+  /// turn lights the chip in the theme's accent and points it the way you
+  /// went; a refused one — a reversal into your own neck, or a repeat of the
+  /// direction already sent — turns it red and shows a block, so it can never
+  /// be mistaken for the accepted cue. An input from a player who cannot
+  /// steer leaves the chip exactly as it was.
+  ///
+  /// Both cues are local and immediate. Neither waits for the server: the
+  /// refusal never left the device, and the acceptance is the client's own
+  /// echo until the next snapshot overrides it.
   Widget _swipeIndicator(GameTheme theme) {
-    return AnimatedBuilder(
-      animation: _gestureIndicatorController,
-      builder: (context, child) {
-        final isActive =
-            _lastSwipeDirection != null &&
-            _gestureIndicatorController.isAnimating;
+    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
+      buildWhen: (prev, curr) =>
+          prev.lastRejectedInputAt != curr.lastRejectedInputAt ||
+          prev.lastRejectedDirection != curr.lastRejectedDirection,
+      builder: (context, state) {
+        final rejectedDirection = state.lastRejectedInputAt == null
+            ? null
+            : state.lastRejectedDirection;
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: isActive ? 0.7 : 0.25),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedRotation(
-                turns: _getDirectionRotation(_lastSwipeDirection),
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  Icons.arrow_upward_rounded,
-                  color: theme.accentColor.withValues(
-                    alpha: isActive ? 1.0 : 0.6,
-                  ),
-                  size: 18,
+        return AnimatedBuilder(
+          animation: _gestureIndicatorController,
+          builder: (context, child) {
+            final isRejected = rejectedDirection != null;
+            final isActive =
+                !isRejected &&
+                _lastSwipeDirection != null &&
+                _gestureIndicatorController.isAnimating;
+
+            final cueColor = isRejected ? _rejectedCueColor : theme.accentColor;
+            final emphasis = isRejected || isActive;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.backgroundColor.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: cueColor.withValues(alpha: emphasis ? 0.7 : 0.25),
+                  width: 1.5,
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                AppLocalizations.of(context)!.mpSwipe,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(
-                    alpha: isActive ? 0.9 : 0.6,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isRejected)
+                    Icon(Icons.block_rounded, color: cueColor, size: 18)
+                  else
+                    AnimatedRotation(
+                      turns: _getDirectionRotation(_lastSwipeDirection),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        Icons.arrow_upward_rounded,
+                        color: cueColor.withValues(alpha: isActive ? 1.0 : 0.6),
+                        size: 18,
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isRejected
+                        ? AppLocalizations.of(context)!.mpTurnBlocked
+                        : AppLocalizations.of(context)!.mpSwipe,
+                    style: TextStyle(
+                      color: cueColor.withValues(alpha: emphasis ? 0.9 : 0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
+
+  /// Red regardless of theme. A refusal has to be unmistakable, and several
+  /// themes use an accent that would read as an ordinary highlight.
+  static const Color _rejectedCueColor = Color(0xFFFF5252);
 
   Widget _miniLeaderboard(
     GameTheme theme,

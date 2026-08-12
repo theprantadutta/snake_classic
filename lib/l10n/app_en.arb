@@ -2275,5 +2275,6 @@
   "gameSteerUp": "Steer up",
   "gameSteerDown": "Steer down",
   "gameSteerLeft": "Steer left",
-  "gameSteerRight": "Steer right"
+  "gameSteerRight": "Steer right",
+  "mpTurnBlocked": "Blocked"
 }

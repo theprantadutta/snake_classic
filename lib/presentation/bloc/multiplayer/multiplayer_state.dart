@@ -68,6 +68,20 @@ class MultiplayerState extends Equatable {
   /// on the swipe indicator until a snapshot confirms (or overrides) it.
   final Direction? intentDirection;
 
+  /// When the last locally refused input happened, and which way it went.
+  ///
+  /// Refusal is local and immediate — a reversal into your own neck, or a
+  /// repeat of the direction already sent — so the cue does not wait for the
+  /// server, exactly as the accepted echo does not. Cleared after a moment by
+  /// the cubit so the indicator is a flash, not a state the player sits in.
+  ///
+  /// Silence was the old behaviour here and it was the wrong answer: a
+  /// refused turn that produces nothing is indistinguishable from a turn the
+  /// game never received, which is what "the controls are unresponsive"
+  /// usually means.
+  final DateTime? lastRejectedInputAt;
+  final Direction? lastRejectedDirection;
+
   /// Countdown length announced by the server's GameStarting payload —
   /// drives the lobby countdown overlay so client and server can't drift.
   final int countdownSeconds;
@@ -116,6 +130,8 @@ class MultiplayerState extends Equatable {
     this.matchEnd,
     this.boardSize = 20,
     this.intentDirection,
+    this.lastRejectedInputAt,
+    this.lastRejectedDirection,
     this.countdownSeconds = 3,
     this.readyDeadlineSeconds,
     this.isMatchmadeLobby = false,
@@ -149,6 +165,9 @@ class MultiplayerState extends Equatable {
     MultiplayerSettlement? settlement,
     Direction? intentDirection,
     bool clearIntentDirection = false,
+    DateTime? lastRejectedInputAt,
+    Direction? lastRejectedDirection,
+    bool clearRejectedInput = false,
     int? countdownSeconds,
     int? readyDeadlineSeconds,
     bool clearReadyDeadline = false,
@@ -177,6 +196,12 @@ class MultiplayerState extends Equatable {
       intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
+      lastRejectedInputAt: (clearMatch || clearGame || clearRejectedInput)
+          ? null
+          : (lastRejectedInputAt ?? this.lastRejectedInputAt),
+      lastRejectedDirection: (clearMatch || clearGame || clearRejectedInput)
+          ? null
+          : (lastRejectedDirection ?? this.lastRejectedDirection),
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       readyDeadlineSeconds: (clearReadyDeadline || clearGame)
           ? null
@@ -260,6 +285,8 @@ class MultiplayerState extends Equatable {
     settlement,
     boardSize,
     intentDirection,
+    lastRejectedInputAt,
+    lastRejectedDirection,
     countdownSeconds,
     readyDeadlineSeconds,
     isMatchmadeLobby,

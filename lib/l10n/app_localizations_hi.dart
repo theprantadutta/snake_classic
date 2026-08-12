@@ -5982,4 +5982,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'दाएं मोड़ें';
+
+  @override
+  String get mpTurnBlocked => 'अवरुद्ध';
 }

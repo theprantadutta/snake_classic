@@ -1785,5 +1785,6 @@
   "gameSteerUp": "الاتجاه لأعلى",
   "gameSteerDown": "الاتجاه لأسفل",
   "gameSteerLeft": "الاتجاه يسارًا",
-  "gameSteerRight": "الاتجاه يمينًا"
+  "gameSteerRight": "الاتجاه يمينًا",
+  "mpTurnBlocked": "محظور"
 }

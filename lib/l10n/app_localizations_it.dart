@@ -6052,4 +6052,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'Vai a destra';
+
+  @override
+  String get mpTurnBlocked => 'Bloccato';
 }

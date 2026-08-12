@@ -1785,5 +1785,6 @@
   "gameSteerUp": "ऊपर मोड़ें",
   "gameSteerDown": "नीचे मोड़ें",
   "gameSteerLeft": "बाएं मोड़ें",
-  "gameSteerRight": "दाएं मोड़ें"
+  "gameSteerRight": "दाएं मोड़ें",
+  "mpTurnBlocked": "अवरुद्ध"
 }

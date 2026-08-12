@@ -5985,4 +5985,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'الاتجاه يمينًا';
+
+  @override
+  String get mpTurnBlocked => 'محظور';
 }

@@ -1785,5 +1785,6 @@
   "gameSteerUp": "Aller vers le haut",
   "gameSteerDown": "Aller vers le bas",
   "gameSteerLeft": "Aller à gauche",
-  "gameSteerRight": "Aller à droite"
+  "gameSteerRight": "Aller à droite",
+  "mpTurnBlocked": "Bloqué"
 }

@@ -6031,4 +6031,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'Повернуть вправо';
+
+  @override
+  String get mpTurnBlocked => 'Заблокировано';
 }

@@ -1785,5 +1785,6 @@
   "gameSteerUp": "Повернуть вверх",
   "gameSteerDown": "Повернуть вниз",
   "gameSteerLeft": "Повернуть влево",
-  "gameSteerRight": "Повернуть вправо"
+  "gameSteerRight": "Повернуть вправо",
+  "mpTurnBlocked": "Заблокировано"
 }

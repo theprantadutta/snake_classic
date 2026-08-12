@@ -1785,5 +1785,6 @@
   "gameSteerUp": "Skręć w górę",
   "gameSteerDown": "Skręć w dół",
   "gameSteerLeft": "Skręć w lewo",
-  "gameSteerRight": "Skręć w prawo"
+  "gameSteerRight": "Skręć w prawo",
+  "mpTurnBlocked": "Zablokowane"
 }

@@ -16,6 +16,8 @@ import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
+import 'multiplayer_input_feedback.dart';
+import 'multiplayer_recovery.dart';
 import 'multiplayer_steering.dart';
 import 'multiplayer_state.dart';
 
@@ -56,6 +58,17 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   // Matchmaking timer
   Timer? _matchmakingTimer;
+
+  /// How long the refused-input flash lives before it clears itself.
+  static const Duration rejectedInputCueDuration = Duration(milliseconds: 250);
+
+  /// Clears the refused-input cue. Restarted by each refusal.
+  Timer? _rejectedInputClearTimer;
+
+  /// The only place a steering input produces a haptic.
+  late final MultiplayerInputFeedback _feedback = MultiplayerInputFeedback(
+    _hapticService,
+  );
 
   /// Reads each poll answer. Recreated per search so a previous search's
   /// failures cannot leak into this one.
@@ -482,12 +495,45 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       intent: state.intentDirection,
       committed: me?.direction ?? Direction.right,
     );
-    if (!result.isAccepted) return result;
+    switch (result) {
+      case InputResult.ignored:
+        // Nothing to say. The match was never in a position to receive it.
+        return result;
+      case InputResult.rejected:
+        _feedback.play(result);
+        _flashRejectedInput(direction);
+        return result;
+      case InputResult.accepted:
+        _feedback.play(result);
+        unawaited(_multiplayerService.sendInput(direction));
+        emit(
+          state.copyWith(intentDirection: direction, clearRejectedInput: true),
+        );
+        return result;
+    }
+  }
 
-    _hapticService.lightImpact();
-    unawaited(_multiplayerService.sendInput(direction));
-    emit(state.copyWith(intentDirection: direction));
-    return result;
+  /// Stamp the refusal so the indicator can flash it.
+  ///
+  /// The haptic half lives in [MultiplayerInputFeedback]; this is the visual
+  /// half. Both are local and immediate — there is no round trip to wait for,
+  /// because the input was refused by the client's own rules and never sent.
+  void _flashRejectedInput(Direction direction) {
+    final stamp = DateTime.now();
+    emit(
+      state.copyWith(
+        lastRejectedInputAt: stamp,
+        lastRejectedDirection: direction,
+      ),
+    );
+    _rejectedInputClearTimer?.cancel();
+    _rejectedInputClearTimer = Timer(rejectedInputCueDuration, () {
+      if (isClosed) return;
+      // Only clear the stamp we set; a newer refusal owns the cue now.
+      if (state.lastRejectedInputAt == stamp) {
+        emit(state.copyWith(clearRejectedInput: true));
+      }
+    });
   }
 
   /// Quick match using matchmaking system
@@ -910,6 +956,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _cancelReconnectTimeout();
     MultiplayerStatus newStatus = state.status;
     bool shouldClearLoading = false;
+    bool clearStaleError = false;
 
     if (game.status == MultiplayerGameStatus.starting) {
       // Game is starting (countdown) - clear loading state
@@ -920,6 +967,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } else if (game.status == MultiplayerGameStatus.playing) {
       newStatus = MultiplayerStatus.playing;
       shouldClearLoading = true;
+      // Same reasoning as a fresh snapshot: the server says this match is
+      // live, which settles any error from before it was.
+      clearStaleError = MultiplayerRecovery.provesMatchLive(game.status);
       _startGameTimeoutTimer?.cancel();
       _stopReadyDeadline();
       _stopCountdownWatchdog();
@@ -937,6 +987,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         status: newStatus,
         currentGame: game,
         isLoading: shouldClearLoading ? false : null,
+        clearError: clearStaleError,
       ),
     );
 
@@ -1081,12 +1132,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // forever.
     _cancelReconnectTimeout();
     emit(
-      state.copyWith(
-        status: MultiplayerStatus.playing,
+      MultiplayerRecovery.afterSnapshot(
+        state,
         snapshot: snapshot,
         boardSize: _multiplayerService.boardSize,
-        isLoading: false,
-        clearIntentDirection: true,
       ),
     );
   }
@@ -1222,6 +1271,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _stopReadyDeadline();
     _stopCountdownWatchdog();
     _reconnectTimeoutTimer?.cancel();
+    _rejectedInputClearTimer?.cancel();
     _errorSubscription?.cancel();
     _snapshotSubscription?.cancel();
     _matchEndSubscription?.cancel();

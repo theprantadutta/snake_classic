@@ -5991,4 +5991,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'Steer right';
+
+  @override
+  String get mpTurnBlocked => 'Blocked';
 }

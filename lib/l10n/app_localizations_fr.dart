@@ -6071,4 +6071,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'Aller à droite';
+
+  @override
+  String get mpTurnBlocked => 'Bloqué';
 }

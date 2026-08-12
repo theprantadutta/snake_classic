@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
@@ -217,6 +218,31 @@ void main() {
       expect(steered, isNull);
       expect(_opacityOf(tester), 0.45);
       expect(_ignoringIn(tester), isTrue);
+    });
+
+    testWidgets('pressing it produces no haptic of its own', (tester) async {
+      // The domain layer owns input haptics. The d-pad firing one too is
+      // exactly how an accepted turn came to buzz twice.
+      final haptics = HapticRecorder()..install();
+      HapticService().setEnabled(true);
+      Direction? steered;
+      await tester.pumpWidget(
+        harness(
+          SteerableDPad(
+            onDirection: (d) => steered = d,
+            theme: GameTheme.classic,
+            size: 140,
+            canSteer: true,
+          ),
+        ),
+      );
+
+      final centre = tester.getCenter(find.byType(SteerableDPad));
+      await tester.tapAt(centre + const Offset(50, 0));
+      await tester.pump();
+
+      expect(steered, Direction.right);
+      expect(haptics.calls, isEmpty);
     });
 
     testWidgets('single-player dims it once the run is over', (tester) async {

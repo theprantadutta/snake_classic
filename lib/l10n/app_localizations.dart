@@ -10827,6 +10827,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Steer right'**
   String get gameSteerRight;
+
+  /// No description provided for @mpTurnBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mpTurnBlocked;
 }
 
 class _AppLocalizationsDelegate

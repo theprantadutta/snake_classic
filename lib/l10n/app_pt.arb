@@ -1785,5 +1785,6 @@
   "gameSteerUp": "Virar para cima",
   "gameSteerDown": "Virar para baixo",
   "gameSteerLeft": "Virar à esquerda",
-  "gameSteerRight": "Virar à direita"
+  "gameSteerRight": "Virar à direita",
+  "mpTurnBlocked": "Bloqueado"
 }

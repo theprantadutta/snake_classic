@@ -6048,4 +6048,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get gameSteerRight => 'Virar à direita';
+
+  @override
+  String get mpTurnBlocked => 'Bloqueado';
 }
