@@ -4775,19 +4775,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get insSwipeRightDesc => 'Двигает змейку вправо';
 
   @override
-  String get insArrowKeys => 'Стрелки (ПК)';
+  String get insArrowKeys => 'Стрелки';
 
   @override
   String get insArrowKeysDesc => 'Сменить направление';
 
   @override
-  String get insWasd => 'WASD (ПК)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Сменить направление';
 
   @override
-  String get insSpacebar => 'Пробел (ПК)';
+  String get insSpacebar => 'Пробел';
 
   @override
   String get insSpacebarDesc => 'Пауза/продолжение игры';
@@ -4808,20 +4808,20 @@ class AppLocalizationsRu extends AppLocalizations {
   String get insRules => 'ПРАВИЛА';
 
   @override
-  String get insRule1 => '• Ешьте еду, чтобы расти и набирать очки';
+  String get insRule1 => 'Ешьте еду, чтобы расти и набирать очки';
 
   @override
-  String get insRule2 => '• Змейка ускоряется с каждым уровнем';
+  String get insRule2 => 'Змейка ускоряется с каждым уровнем';
 
   @override
   String get insRule3 =>
-      '• Игра заканчивается при столкновении со стеной или собой';
+      'Игра заканчивается при столкновении со стеной или собой';
 
   @override
-  String get insRule4 => '• Особая еда появляется каждые 10 обычных';
+  String get insRule4 => 'Особая еда появляется каждые 10 обычных';
 
   @override
-  String get insRule5 => '• Бонусная еда исчезает через 15 секунд';
+  String get insRule5 => 'Бонусная еда исчезает через 15 секунд';
 
   @override
   String get insProTips => 'СОВЕТЫ ПРО';
@@ -6087,4 +6087,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Здесь описаны правила, управление и режим Версус. Настройки — рядом.';
+
+  @override
+  String get insOnPhone => 'На телефоне';
+
+  @override
+  String get insOnKeyboard => 'На клавиатуре';
 }

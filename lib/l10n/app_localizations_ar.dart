@@ -4732,19 +4732,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get insSwipeRightDesc => 'يحرّك الثعبان لليمين';
 
   @override
-  String get insArrowKeys => 'مفاتيح الأسهم (كمبيوتر)';
+  String get insArrowKeys => 'مفاتيح الأسهم';
 
   @override
   String get insArrowKeysDesc => 'تغيير الاتجاه';
 
   @override
-  String get insWasd => 'WASD (كمبيوتر)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'تغيير الاتجاه';
 
   @override
-  String get insSpacebar => 'مفتاح المسافة (كمبيوتر)';
+  String get insSpacebar => 'مسطرة المسافة';
 
   @override
   String get insSpacebarDesc => 'إيقاف/استئناف اللعبة';
@@ -4765,19 +4765,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get insRules => 'القواعد';
 
   @override
-  String get insRule1 => '• كُل الطعام لتكبر وتزيد نقاطك';
+  String get insRule1 => 'كُل الطعام لتكبر وتزيد نقاطك';
 
   @override
-  String get insRule2 => '• يتسارع الثعبان كلما ارتفع مستواك';
+  String get insRule2 => 'يتسارع الثعبان كلما ارتفع مستواك';
 
   @override
-  String get insRule3 => '• تنتهي اللعبة إذا اصطدمت بجدار أو بنفسك';
+  String get insRule3 => 'تنتهي اللعبة إذا اصطدمت بجدار أو بنفسك';
 
   @override
-  String get insRule4 => '• يظهر الطعام الخاص كل 10 وجبات عادية';
+  String get insRule4 => 'يظهر الطعام الخاص كل 10 وجبات عادية';
 
   @override
-  String get insRule5 => '• يختفي طعام المكافأة بعد 15 ثانية';
+  String get insRule5 => 'يختفي طعام المكافأة بعد 15 ثانية';
 
   @override
   String get insProTips => 'نصائح احترافية';
@@ -6043,4 +6043,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'القواعد والتحكم والمواجهة كلها موضحة هنا، والإعدادات بجوارها.';
+
+  @override
+  String get insOnPhone => 'على الهاتف';
+
+  @override
+  String get insOnKeyboard => 'على لوحة المفاتيح';
 }

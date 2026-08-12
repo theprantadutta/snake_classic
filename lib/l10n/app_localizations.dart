@@ -8677,7 +8677,7 @@ abstract class AppLocalizations {
   /// No description provided for @insArrowKeys.
   ///
   /// In en, this message translates to:
-  /// **'Arrow Keys (Desktop)'**
+  /// **'Arrow keys'**
   String get insArrowKeys;
 
   /// No description provided for @insArrowKeysDesc.
@@ -8689,7 +8689,7 @@ abstract class AppLocalizations {
   /// No description provided for @insWasd.
   ///
   /// In en, this message translates to:
-  /// **'WASD (Desktop)'**
+  /// **'WASD'**
   String get insWasd;
 
   /// No description provided for @insWasdDesc.
@@ -8701,7 +8701,7 @@ abstract class AppLocalizations {
   /// No description provided for @insSpacebar.
   ///
   /// In en, this message translates to:
-  /// **'Spacebar (Desktop)'**
+  /// **'Spacebar'**
   String get insSpacebar;
 
   /// No description provided for @insSpacebarDesc.
@@ -8743,31 +8743,31 @@ abstract class AppLocalizations {
   /// No description provided for @insRule1.
   ///
   /// In en, this message translates to:
-  /// **'• Eat food to grow and increase score'**
+  /// **'Eat food to grow and increase score'**
   String get insRule1;
 
   /// No description provided for @insRule2.
   ///
   /// In en, this message translates to:
-  /// **'• Snake speeds up as you level up'**
+  /// **'Snake speeds up as you level up'**
   String get insRule2;
 
   /// No description provided for @insRule3.
   ///
   /// In en, this message translates to:
-  /// **'• Game ends if you hit walls or yourself'**
+  /// **'Game ends if you hit walls or yourself'**
   String get insRule3;
 
   /// No description provided for @insRule4.
   ///
   /// In en, this message translates to:
-  /// **'• Special food appears every 10 normal foods'**
+  /// **'Special food appears every 10 normal foods'**
   String get insRule4;
 
   /// No description provided for @insRule5.
   ///
   /// In en, this message translates to:
-  /// **'• Bonus food expires after 15 seconds'**
+  /// **'Bonus food expires after 15 seconds'**
   String get insRule5;
 
   /// No description provided for @insProTips.
@@ -10929,6 +10929,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rules, controls and Versus are all explained here. Settings sits right beside it.'**
   String get hwHelpMsg;
+
+  /// No description provided for @insOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'On your phone'**
+  String get insOnPhone;
+
+  /// No description provided for @insOnKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'On a keyboard'**
+  String get insOnKeyboard;
 }
 
 class _AppLocalizationsDelegate

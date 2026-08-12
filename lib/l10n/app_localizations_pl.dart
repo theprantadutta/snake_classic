@@ -4782,19 +4782,19 @@ class AppLocalizationsPl extends AppLocalizations {
   String get insSwipeRightDesc => 'Przesuwa węża w prawo';
 
   @override
-  String get insArrowKeys => 'Strzałki (Komputer)';
+  String get insArrowKeys => 'Strzałki';
 
   @override
   String get insArrowKeysDesc => 'Zmiana kierunku';
 
   @override
-  String get insWasd => 'WASD (Komputer)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'Zmiana kierunku';
 
   @override
-  String get insSpacebar => 'Spacja (Komputer)';
+  String get insSpacebar => 'Spacja';
 
   @override
   String get insSpacebarDesc => 'Pauza/wznowienie gry';
@@ -4815,19 +4815,19 @@ class AppLocalizationsPl extends AppLocalizations {
   String get insRules => 'ZASADY';
 
   @override
-  String get insRule1 => '• Jedz, aby rosnąć i zdobywać punkty';
+  String get insRule1 => 'Jedz, aby rosnąć i zdobywać punkty';
 
   @override
-  String get insRule2 => '• Wąż przyspiesza z każdym poziomem';
+  String get insRule2 => 'Wąż przyspiesza z każdym poziomem';
 
   @override
-  String get insRule3 => '• Gra kończy się po uderzeniu w ścianę lub w siebie';
+  String get insRule3 => 'Gra kończy się po uderzeniu w ścianę lub w siebie';
 
   @override
-  String get insRule4 => '• Jedzenie specjalne pojawia się co 10 zwykłych';
+  String get insRule4 => 'Jedzenie specjalne pojawia się co 10 zwykłych';
 
   @override
-  String get insRule5 => '• Jedzenie bonusowe znika po 15 sekundach';
+  String get insRule5 => 'Jedzenie bonusowe znika po 15 sekundach';
 
   @override
   String get insProTips => 'PORADY PRO';
@@ -6096,4 +6096,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'Zasady, sterowanie i Versus są opisane tutaj. Ustawienia są obok.';
+
+  @override
+  String get insOnPhone => 'Na telefonie';
+
+  @override
+  String get insOnKeyboard => 'Na klawiaturze';
 }

@@ -4740,19 +4740,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get insSwipeRightDesc => 'साँप को दाएँ ले जाएँ';
 
   @override
-  String get insArrowKeys => 'एरो कुंजियाँ (डेस्कटॉप)';
+  String get insArrowKeys => 'ऐरो कुंजियाँ';
 
   @override
   String get insArrowKeysDesc => 'दिशा बदलें';
 
   @override
-  String get insWasd => 'WASD (डेस्कटॉप)';
+  String get insWasd => 'WASD';
 
   @override
   String get insWasdDesc => 'दिशा बदलें';
 
   @override
-  String get insSpacebar => 'स्पेसबार (डेस्कटॉप)';
+  String get insSpacebar => 'स्पेसबार';
 
   @override
   String get insSpacebarDesc => 'गेम रोकें/जारी रखें';
@@ -4773,19 +4773,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get insRules => 'नियम';
 
   @override
-  String get insRule1 => '• खाना खाकर बढ़ें और स्कोर बढ़ाएँ';
+  String get insRule1 => 'खाना खाकर बढ़ें और स्कोर बढ़ाएँ';
 
   @override
-  String get insRule2 => '• लेवल बढ़ने पर साँप तेज़ होता है';
+  String get insRule2 => 'लेवल बढ़ने पर साँप तेज़ होता है';
 
   @override
-  String get insRule3 => '• दीवार या खुद से टकराने पर गेम ख़त्म';
+  String get insRule3 => 'दीवार या खुद से टकराने पर गेम ख़त्म';
 
   @override
-  String get insRule4 => '• हर 10 सामान्य खाने पर ख़ास खाना आता है';
+  String get insRule4 => 'हर 10 सामान्य खाने पर ख़ास खाना आता है';
 
   @override
-  String get insRule5 => '• बोनस खाना 15 सेकंड में ग़ायब हो जाता है';
+  String get insRule5 => 'बोनस खाना 15 सेकंड में ग़ायब हो जाता है';
 
   @override
   String get insProTips => 'प्रो टिप्स';
@@ -6039,4 +6039,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get hwHelpMsg =>
       'नियम, नियंत्रण और वर्सेस — सब यहाँ समझाया गया है। सेटिंग्स इसके बगल में है।';
+
+  @override
+  String get insOnPhone => 'आपके फ़ोन पर';
+
+  @override
+  String get insOnKeyboard => 'कीबोर्ड पर';
 }
