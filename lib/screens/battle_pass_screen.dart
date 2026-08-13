@@ -656,28 +656,22 @@ class _ComingNextSection extends StatelessWidget {
         onTap: () => onTap(r, tier),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          // The same card as everything else, with the faintest wash of the
+          // reward's colour over it. It was a three-stop gradient at 0.30 with
+          // an eighteen-pixel glow around it, which made the next reward — the
+          // one thing on this screen you cannot do anything about yet — the
+          // brightest object on the page.
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                accent.withValues(alpha: 0.30),
-                theme.primaryColor.withValues(alpha: 0.20),
                 accent.withValues(alpha: 0.10),
+                theme.backgroundColor.withValues(alpha: 0.30),
               ],
             ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: accent.withValues(alpha: 0.55),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withValues(alpha: 0.25),
-                blurRadius: 18,
-                spreadRadius: 1,
-              ),
-            ],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
           ),
           child: Column(
             children: [
