@@ -801,32 +801,32 @@ class _UnlockProInline extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        // Outlined, not a solid gold slab with a glow behind it. It sits
+        // inside a card that is already tinted for this reward, so a filled
+        // pill in the same colour was the brightest thing in the brightest
+        // block — an upsell shouting over the reward it is attached to.
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [kBattlePassGold, kBattlePassGold.withValues(alpha: 0.75)],
-          ),
+          color: kBattlePassGold.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: kBattlePassGold.withValues(alpha: 0.45),
-              blurRadius: 12,
-            ),
-          ],
+          border: Border.all(color: kBattlePassGold.withValues(alpha: 0.5)),
         ),
+        // Gold on dark, not white on gold. White type on a bright gold plate
+        // is about a 2:1 contrast ratio — the reason this was hard to read
+        // even while being the loudest thing on the screen.
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
               Icons.workspace_premium_rounded,
-              color: Colors.white,
+              color: kBattlePassGold,
               size: 16,
             ),
             const SizedBox(width: 6),
             Text(
               AppLocalizations.of(context)!.bpUnlockWithPro,
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
+                color: kBattlePassGold,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w900,
                 letterSpacing: context.letterSpacing(1.0),
               ),
@@ -834,7 +834,7 @@ class _UnlockProInline extends StatelessWidget {
             const SizedBox(width: 4),
             const Icon(
               Icons.arrow_forward_rounded,
-              color: Colors.white,
+              color: kBattlePassGold,
               size: 14,
             ),
           ],
@@ -1127,8 +1127,12 @@ class _PremiumTeaser extends StatelessWidget {
                   Text(
                     l10n.bpSubscribeToClaim,
                     style: TextStyle(
-                      color: kBattlePassGold.withValues(alpha: 0.75),
-                      fontSize: 11,
+                      // White for the explanatory line — gold at 0.75 on a
+                      // gold-washed card is the same hue at two strengths,
+                      // which is the hardest kind of type to read.
+                      color: Colors.white.withValues(alpha: 0.62),
+                      fontSize: 11.5,
+                      height: 1.3,
                     ),
                   ),
                 ],
