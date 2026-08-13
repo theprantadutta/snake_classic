@@ -34,6 +34,62 @@ import 'package:snake_classic/widgets/themed_loading.dart';
 /// "weird" part of the previous screen (hard to ground the scroll
 /// position, free/premium track confusion). Every component on this
 /// screen is vertical so it composes naturally on phones of any height.
+/// Gold means "premium" and "reward" on this screen, the same gold the home
+/// screen's best-score medal and the daily challenges use. It is the only
+/// colour here that is not the active theme's own — the screen used to carry
+/// amber, orange, green, purple and the theme accent all at once, which left
+/// nothing for any of them to mean.
+const Color kBattlePassGold = Color(0xFFFFC53D);
+
+/// The card every section on this screen sits in: flat translucent fill,
+/// hairline border, 16px radius. Identical to Settings, Profile, How to Play
+/// and Daily Challenges, because reading as one product is the point.
+BoxDecoration battlePassCard(GameTheme theme, {Color? borderColor}) {
+  return BoxDecoration(
+    color: theme.backgroundColor.withValues(alpha: 0.3),
+    border: Border.all(
+      color: borderColor ?? theme.accentColor.withValues(alpha: 0.3),
+    ),
+    borderRadius: BorderRadius.circular(16),
+  );
+}
+
+/// An uppercase accent eyebrow over whatever follows it.
+Widget battlePassSectionHeader(
+  BuildContext context,
+  GameTheme theme,
+  String title, {
+  int? count,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(left: 4, bottom: 12),
+    child: Row(
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            color: theme.accentColor,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            letterSpacing: context.letterSpacing(1.5),
+          ),
+        ),
+        if (count != null && count > 0) ...[
+          const SizedBox(width: 8),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: kBattlePassGold,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
 class BattlePassScreen extends StatefulWidget {
   const BattlePassScreen({super.key});
 
@@ -87,9 +143,11 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                      l10n.bpClaimedToast(
-                          localizedBattlePassRewardName(reward.name, l10n)),
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                    l10n.bpClaimedToast(
+                      localizedBattlePassRewardName(reward.name, l10n),
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -98,7 +156,8 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             duration: const Duration(seconds: 2),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -140,18 +199,24 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 
             if (bpState.status == BattlePassStatus.loading && season == null) {
               return Scaffold(
+                extendBodyBehindAppBar: true,
+                appBar: AppBar(
+                  title: Text(
+                    l10n.bpTitle.toUpperCase(),
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: context.letterSpacing(2),
+                    ),
+                  ),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  iconTheme: IconThemeData(color: theme.accentColor),
+                ),
                 body: AppBackground(
                   theme: theme,
                   child: SafeArea(
-                    child: Column(children: [
-                      _TopBar(theme: theme, title: l10n.bpTitle),
-                      Expanded(
-                        child: ThemedLoading(
-                          theme: theme,
-                          label: l10n.bpLoading,
-                        ),
-                      ),
-                    ]),
+                    child: ThemedLoading(theme: theme, label: l10n.bpLoading),
                   ),
                 ),
               );
@@ -163,6 +228,30 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 
             return Scaffold(
               bottomNavigationBar: const SnakeBannerAd(),
+              extendBodyBehindAppBar: true,
+              appBar: AppBar(
+                title: Text(
+                  localizedBattlePassSeasonName(
+                    season.name,
+                    l10n,
+                  ).toUpperCase(),
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: context.letterSpacing(2),
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(0, 2),
+                        blurRadius: 4,
+                        color: Colors.black.withValues(alpha: 0.3),
+                      ),
+                    ],
+                  ),
+                ),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                iconTheme: IconThemeData(color: theme.accentColor),
+              ),
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(
@@ -171,110 +260,112 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                       horizontal: context.sideInset(),
                     ),
                     child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: _TopBar(
-                          theme: theme,
-                          title: localizedBattlePassSeasonName(
-                            season.name,
-                            l10n,
-                          ).toUpperCase(),
-                          subtitle: _daysRemainingText(l10n, season),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _StateStrip(
-                          theme: theme,
-                          state: bpState,
-                          season: season,
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: RewardedActionButton(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _StateStrip(
                             theme: theme,
-                            icon: Icons.bolt,
-                            label: l10n.bpWatchAdXp,
-                            capKey: AdService.capBattlePassXp,
-                            onWatch: () async {
-                              final bp = context.read<BattlePassCubit>();
-                              // Capture the messenger up front — onReward fires
-                              // after the ad is dismissed (an async gap), so we
-                              // can't safely read context then.
-                              final messenger =
-                                  ScaffoldMessenger.of(context);
-                              await getIt<AdService>().showRewardedCapped(
-                                capKey: AdService.capBattlePassXp,
-                                onReward: () {
-                                  bp.bufferXP(50, source: 'ad_boost');
-                                  bp.flushXP();
-                                  messenger.showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          const Icon(Icons.bolt,
-                                              color: Colors.white, size: 20),
-                                          const SizedBox(width: 10),
-                                          Text(l10n.bpXpEarned,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w600)),
-                                        ],
-                                      ),
-                                      backgroundColor: Colors.green.shade700,
-                                      behavior: SnackBarBehavior.floating,
-                                      margin: const EdgeInsets.fromLTRB(
-                                          16, 0, 16, 16),
-                                      duration: const Duration(seconds: 2),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                            state: bpState,
+                            season: season,
                           ),
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _ComingNextSection(
-                          theme: theme,
-                          state: bpState,
-                          season: season,
-                          onTap: (r, t) =>
-                              _openRewardDetail(context, theme, r, t, false),
-                          onUnlockPro: () => context.push(AppRoutes.store),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: RewardedActionButton(
+                              theme: theme,
+                              icon: Icons.bolt,
+                              label: l10n.bpWatchAdXp,
+                              capKey: AdService.capBattlePassXp,
+                              onWatch: () async {
+                                final bp = context.read<BattlePassCubit>();
+                                // Capture the messenger up front — onReward fires
+                                // after the ad is dismissed (an async gap), so we
+                                // can't safely read context then.
+                                final messenger = ScaffoldMessenger.of(context);
+                                await getIt<AdService>().showRewardedCapped(
+                                  capKey: AdService.capBattlePassXp,
+                                  onReward: () {
+                                    bp.bufferXP(50, source: 'ad_boost');
+                                    bp.flushXP();
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.bolt,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              l10n.bpXpEarned,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.white
+                                            .withValues(alpha: 0.5),
+                                        behavior: SnackBarBehavior.floating,
+                                        margin: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          16,
+                                          16,
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _AvailableNowSection(
-                          theme: theme,
-                          state: bpState,
-                          season: season,
-                          claiming: _claiming,
-                          onClaim: _claim,
-                          onUnlockPro: () => context.push(AppRoutes.store),
+                        SliverToBoxAdapter(
+                          child: _ComingNextSection(
+                            theme: theme,
+                            state: bpState,
+                            season: season,
+                            onTap: (r, t) =>
+                                _openRewardDetail(context, theme, r, t, false),
+                            onUnlockPro: () => context.push(AppRoutes.store),
+                          ),
                         ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _AllTiersToggle(
-                          theme: theme,
-                          expanded: _showAllTiers,
-                          onTap: () =>
-                              setState(() => _showAllTiers = !_showAllTiers),
-                          totalTiers: season.levels.length,
+                        SliverToBoxAdapter(
+                          child: _AvailableNowSection(
+                            theme: theme,
+                            state: bpState,
+                            season: season,
+                            claiming: _claiming,
+                            onClaim: _claim,
+                            onUnlockPro: () => context.push(AppRoutes.store),
+                          ),
                         ),
-                      ),
-                      if (_showAllTiers)
-                        SliverPadding(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
+                        SliverToBoxAdapter(
+                          child: _AllTiersToggle(
+                            theme: theme,
+                            expanded: _showAllTiers,
+                            onTap: () =>
+                                setState(() => _showAllTiers = !_showAllTiers),
+                            totalTiers: season.levels.length,
+                          ),
+                        ),
+                        if (_showAllTiers)
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
                                 final level = season.levels[index];
                                 return _TierRow(
                                   theme: theme,
@@ -288,16 +379,12 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                                     level.level <= bpState.currentTier,
                                   ),
                                 );
-                              },
-                              childCount: season.levels.length,
+                              }, childCount: season.levels.length),
                             ),
-                          ),
-                        )
-                      else
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 24),
-                        ),
-                    ],
+                          )
+                        else
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      ],
                     ),
                   ),
                 ),
@@ -318,65 +405,6 @@ String _daysRemainingText(AppLocalizations l10n, BattlePassSeason season) {
     return hours <= 0 ? l10n.storeEndingSoon : l10n.bpHoursLeft(hours);
   }
   return l10n.bpDaysLeft(days);
-}
-
-// ===========================================================================
-// Top bar — minimal back button + season title + subtle days-remaining tag.
-// Replaces the old _CompactHeader which carried more visual weight than it
-// needed; the tier state moved down into _StateStrip so this row stays light.
-// ===========================================================================
-class _TopBar extends StatelessWidget {
-  final GameTheme theme;
-  final String title;
-  final String? subtitle;
-  const _TopBar({required this.theme, required this.title, this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 4),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
-                color: theme.accentColor, size: 20),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: context.letterSpacing(1.5),
-                    height: 1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.65),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: context.letterSpacing(0.8),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ===========================================================================
@@ -403,24 +431,10 @@ class _StateStrip extends StatelessWidget {
     final hasPremium = state.isActive;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.primaryColor.withValues(alpha: 0.22),
-              theme.accentColor.withValues(alpha: 0.10),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.30),
-            width: 1.2,
-          ),
-        ),
+        padding: const EdgeInsets.all(20),
+        decoration: battlePassCard(theme),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -429,7 +443,7 @@ class _StateStrip extends StatelessWidget {
                 Text(
                   l10n.bpTierUpper,
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.65),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: context.letterSpacing(1.5),
@@ -449,41 +463,23 @@ class _StateStrip extends StatelessWidget {
                 Text(
                   l10n.bpTierMax(maxTier),
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.5),
+                    color: Colors.white.withValues(alpha: 0.45),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const Spacer(),
-                _PremiumStatusPill(
-                  hasPremium: hasPremium,
-                  theme: theme,
-                ),
+                _PremiumStatusPill(hasPremium: hasPremium, theme: theme),
               ],
             ),
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 10,
-                color: Colors.white.withValues(alpha: 0.10),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [theme.accentColor, theme.primaryColor],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.accentColor.withValues(alpha: 0.5),
-                          blurRadius: 6,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                backgroundColor: Colors.white.withValues(alpha: 0.10),
+                valueColor: AlwaysStoppedAnimation(theme.accentColor),
+                minHeight: 8,
               ),
             ),
             const SizedBox(height: 6),
@@ -496,14 +492,25 @@ class _StateStrip extends StatelessWidget {
                       state.currentXP,
                     ),
               style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.75),
-                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // The season clock lived up in the title bar, in eleven-point type
+            // under the season name. It belongs with the rest of the state.
+            Text(
+              _daysRemainingText(l10n, season),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45),
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-      ).gameEntrance(),
+      ),
     );
   }
 }
@@ -517,7 +524,7 @@ class _PremiumStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final color = hasPremium ? Colors.amber : theme.accentColor;
+    final color = hasPremium ? kBattlePassGold : theme.accentColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -604,15 +611,9 @@ class _ComingNextSection extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.amber.withValues(alpha: 0.25),
-                Colors.orange.withValues(alpha: 0.18),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+          decoration: battlePassCard(
+            theme,
+            borderColor: kBattlePassGold.withValues(alpha: 0.6),
           ),
           child: Column(
             children: [
@@ -621,7 +622,7 @@ class _ComingNextSection extends StatelessWidget {
               Text(
                 l10n.bpSeasonCompleteUpper,
                 style: TextStyle(
-                  color: Colors.amber.shade300,
+                  color: kBattlePassGold,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: context.letterSpacing(2.0),
@@ -631,8 +632,8 @@ class _ComingNextSection extends StatelessWidget {
               Text(
                 l10n.bpUnlockedEverything,
                 style: TextStyle(
-                  color: Colors.amber.shade100.withValues(alpha: 0.85),
-                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 12.5,
                 ),
               ),
             ],
@@ -647,7 +648,7 @@ class _ComingNextSection extends StatelessWidget {
     final lockedBehindPro = isPremium && !state.isActive;
     final distance = tier - state.currentTier;
 
-    final accent = isPremium ? Colors.amber : theme.accentColor;
+    final accent = isPremium ? kBattlePassGold : theme.accentColor;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -694,7 +695,9 @@ class _ComingNextSection extends StatelessWidget {
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(8),
@@ -733,11 +736,8 @@ class _ComingNextSection extends StatelessWidget {
                   ],
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  r.icon,
-                  style: const TextStyle(fontSize: 44),
-                ),
-              ).gamePop().gameBreathe(intensity: 1.04),
+                child: Text(r.icon, style: const TextStyle(fontSize: 44)),
+              ).gameBreathe(intensity: 1.04),
               const SizedBox(height: 12),
               Text(
                 localizedBattlePassRewardName(r.name, l10n),
@@ -765,7 +765,9 @@ class _ComingNextSection extends StatelessWidget {
               ] else ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
@@ -787,7 +789,7 @@ class _ComingNextSection extends StatelessWidget {
             ],
           ),
         ),
-      ).gameEntrance(),
+      ),
     );
   }
 }
@@ -807,12 +809,12 @@ class _UnlockProInline extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.amber, Colors.orange.shade400],
+            colors: [kBattlePassGold, kBattlePassGold.withValues(alpha: 0.75)],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.45),
+              color: kBattlePassGold.withValues(alpha: 0.45),
               blurRadius: 12,
             ),
           ],
@@ -820,8 +822,11 @@ class _UnlockProInline extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.workspace_premium_rounded,
-                color: Colors.white, size: 16),
+            const Icon(
+              Icons.workspace_premium_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
             const SizedBox(width: 6),
             Text(
               AppLocalizations.of(context)!.bpUnlockWithPro,
@@ -833,8 +838,11 @@ class _UnlockProInline extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_forward_rounded,
-                color: Colors.white, size: 14),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
           ],
         ),
       ),
@@ -857,7 +865,8 @@ class _AvailableNowSection extends StatelessWidget {
     required int tier,
     required bool isPremium,
     required BattlePassReward reward,
-  }) onClaim;
+  })
+  onClaim;
   final VoidCallback onUnlockPro;
 
   const _AvailableNowSection({
@@ -870,7 +879,7 @@ class _AvailableNowSection extends StatelessWidget {
   });
 
   List<({BattlePassReward reward, int tier, bool isPremium})>
-      _gatherAvailable() {
+  _gatherAvailable() {
     // Gate premium chips on isValid (not just isActive) so we never surface a
     // chip the claim path (claimPremiumReward → requires isValid) would reject.
     final hasPremium = state.isValid;
@@ -892,7 +901,8 @@ class _AvailableNowSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final available = _gatherAvailable();
-    final hasLockedPremium = !state.isActive &&
+    final hasLockedPremium =
+        !state.isActive &&
         season.levels.any(
           (l) =>
               l.level <= state.currentTier &&
@@ -909,41 +919,12 @@ class _AvailableNowSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                AppLocalizations.of(context)!.bpAvailableNow,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: context.letterSpacing(1.8),
-                ),
-              ),
-              if (available.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.green.withValues(alpha: 0.5)),
-                  ),
-                  child: Text(
-                    '${available.length}',
-                    style: TextStyle(
-                      color: Colors.green.shade300,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          battlePassSectionHeader(
+            context,
+            theme,
+            AppLocalizations.of(context)!.bpAvailableNow,
+            count: available.length,
           ),
-          const SizedBox(height: 10),
           if (available.isNotEmpty)
             SizedBox(
               // Scaled so grown emoji/label text on tablets can't overflow the
@@ -1004,7 +985,7 @@ class _ClaimChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final accent = isPremium ? Colors.amber : theme.accentColor;
+    final accent = isPremium ? kBattlePassGold : theme.accentColor;
 
     return InkWell(
       onTap: isClaiming ? null : onClaim,
@@ -1022,13 +1003,9 @@ class _ClaimChip extends StatelessWidget {
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border:
-              Border.all(color: accent.withValues(alpha: 0.55), width: 1.2),
+          border: Border.all(color: accent.withValues(alpha: 0.55), width: 1.2),
           boxShadow: [
-            BoxShadow(
-              color: accent.withValues(alpha: 0.20),
-              blurRadius: 10,
-            ),
+            BoxShadow(color: accent.withValues(alpha: 0.20), blurRadius: 10),
           ],
         ),
         child: Column(
@@ -1125,17 +1102,20 @@ class _PremiumTeaser extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.amber.withValues(alpha: 0.20),
-              Colors.orange.withValues(alpha: 0.10),
+              kBattlePassGold.withValues(alpha: 0.16),
+              kBattlePassGold.withValues(alpha: 0.06),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+          border: Border.all(color: kBattlePassGold.withValues(alpha: 0.45)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded,
-                color: Colors.amber, size: 22),
+            const Icon(
+              Icons.workspace_premium_rounded,
+              color: kBattlePassGold,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1144,7 +1124,7 @@ class _PremiumTeaser extends StatelessWidget {
                   Text(
                     l10n.bpPremiumWaiting,
                     style: TextStyle(
-                      color: Colors.amber.shade200,
+                      color: kBattlePassGold,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1153,16 +1133,18 @@ class _PremiumTeaser extends StatelessWidget {
                   Text(
                     l10n.bpSubscribeToClaim,
                     style: TextStyle(
-                      color: Colors.amber.shade100.withValues(alpha: 0.75),
+                      color: kBattlePassGold.withValues(alpha: 0.75),
                       fontSize: 11,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded,
-                color: Colors.amber.shade200.withValues(alpha: 0.85),
-                size: 12),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: kBattlePassGold.withValues(alpha: 0.85),
+              size: 12,
+            ),
           ],
         ),
       ),
@@ -1265,7 +1247,7 @@ class _TierRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCurrent = level.level == state.currentTier;
     final unlocked = level.level <= state.currentTier;
-    final accent = level.isMilestone ? Colors.amber : theme.accentColor;
+    final accent = level.isMilestone ? kBattlePassGold : theme.accentColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1279,8 +1261,8 @@ class _TierRow extends StatelessWidget {
           color: isCurrent
               ? theme.accentColor.withValues(alpha: 0.55)
               : (level.isMilestone
-                  ? Colors.amber.withValues(alpha: 0.35)
-                  : Colors.white.withValues(alpha: 0.06)),
+                    ? kBattlePassGold.withValues(alpha: 0.35)
+                    : Colors.white.withValues(alpha: 0.06)),
           width: isCurrent ? 1.5 : 1,
         ),
       ),
@@ -1291,8 +1273,11 @@ class _TierRow extends StatelessWidget {
             child: Column(
               children: [
                 if (level.isMilestone)
-                  const Icon(Icons.star_rounded,
-                      color: Colors.amber, size: 14),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: kBattlePassGold,
+                    size: 14,
+                  ),
                 Text(
                   '${level.level}',
                   style: TextStyle(
@@ -1392,7 +1377,7 @@ class _TierRewardSlot extends StatelessWidget {
     }
 
     final l10n = AppLocalizations.of(context)!;
-    final accent = isPremium ? Colors.amber : theme.accentColor;
+    final accent = isPremium ? kBattlePassGold : theme.accentColor;
     final isLockedByPremium = isPremium && !hasPremium;
     final locked = !tierUnlocked || isLockedByPremium;
 
@@ -1404,17 +1389,17 @@ class _TierRewardSlot extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: claimed
-              ? Colors.green.withValues(alpha: 0.12)
+              ? Colors.white.withValues(alpha: 0.06)
               : (locked
-                  ? Colors.white.withValues(alpha: 0.04)
-                  : accent.withValues(alpha: 0.14)),
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : accent.withValues(alpha: 0.14)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: claimed
-                ? Colors.green.withValues(alpha: 0.45)
+                ? Colors.white.withValues(alpha: 0.25)
                 : (locked
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : accent.withValues(alpha: 0.45)),
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : accent.withValues(alpha: 0.45)),
           ),
         ),
         child: Row(
@@ -1443,15 +1428,13 @@ class _TierRewardSlot extends StatelessWidget {
               claimed
                   ? Icons.check_circle_rounded
                   : (locked
-                      ? (isLockedByPremium
-                          ? Icons.workspace_premium_rounded
-                          : Icons.lock_rounded)
-                      : Icons.card_giftcard_rounded),
+                        ? (isLockedByPremium
+                              ? Icons.workspace_premium_rounded
+                              : Icons.lock_rounded)
+                        : Icons.card_giftcard_rounded),
               color: claimed
-                  ? Colors.green
-                  : (locked
-                      ? Colors.white.withValues(alpha: 0.45)
-                      : accent),
+                  ? Colors.white.withValues(alpha: 0.55)
+                  : (locked ? Colors.white.withValues(alpha: 0.45) : accent),
               size: 14,
             ),
           ],
@@ -1483,7 +1466,7 @@ class _RewardDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final accent = reward.isPremium ? Colors.amber : theme.accentColor;
+    final accent = reward.isPremium ? kBattlePassGold : theme.accentColor;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
       decoration: BoxDecoration(
@@ -1495,8 +1478,7 @@ class _RewardDetailSheet extends StatelessWidget {
             theme.backgroundColor,
           ],
         ),
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border(
           top: BorderSide(color: accent.withValues(alpha: 0.4)),
           left: BorderSide(color: accent.withValues(alpha: 0.4)),
@@ -1522,12 +1504,11 @@ class _RewardDetailSheet extends StatelessWidget {
               shape: BoxShape.circle,
               color: accent.withValues(alpha: 0.2),
               border: Border.all(
-                  color: accent.withValues(alpha: 0.5), width: 2),
+                color: accent.withValues(alpha: 0.5),
+                width: 2,
+              ),
               boxShadow: [
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                ),
+                BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 20),
               ],
             ),
             alignment: Alignment.center,
@@ -1548,8 +1529,10 @@ class _RewardDetailSheet extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
@@ -1567,8 +1550,10 @@ class _RewardDetailSheet extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
@@ -1602,12 +1587,12 @@ class _RewardDetailSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: unlocked
-                  ? Colors.green.withValues(alpha: 0.18)
+                  ? Colors.white.withValues(alpha: 0.08)
                   : Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: unlocked
-                    ? Colors.green.withValues(alpha: 0.45)
+                    ? Colors.white.withValues(alpha: 0.25)
                     : Colors.white.withValues(alpha: 0.12),
               ),
             ),
@@ -1620,7 +1605,7 @@ class _RewardDetailSheet extends StatelessWidget {
                       : Icons.lock_outline_rounded,
                   size: 14,
                   color: unlocked
-                      ? Colors.green
+                      ? Colors.white.withValues(alpha: 0.55)
                       : Colors.white.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 6),
@@ -1628,7 +1613,7 @@ class _RewardDetailSheet extends StatelessWidget {
                   unlocked ? l10n.bpUnlocked : l10n.bpReachTier(tier),
                   style: TextStyle(
                     color: unlocked
-                        ? Colors.green.shade200
+                        ? Colors.white.withValues(alpha: 0.5)
                         : Colors.white.withValues(alpha: 0.75),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1657,16 +1642,31 @@ class _NoActiveSeasonScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(
+          l10n.bpTitleUpper,
+          style: TextStyle(
+            color: theme.accentColor,
+            fontWeight: FontWeight.bold,
+            letterSpacing: context.letterSpacing(2),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: theme.accentColor),
+      ),
       body: AppBackground(
         theme: theme,
         child: SafeArea(
           child: Column(
             children: [
-              _TopBar(theme: theme, title: l10n.bpTitleUpper),
               Expanded(
                 child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -1690,8 +1690,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.hourglass_empty_rounded,
-                            color:
-                                theme.accentColor.withValues(alpha: 0.85),
+                            color: theme.accentColor.withValues(alpha: 0.85),
                             size: 44,
                           ),
                         ),
@@ -1721,8 +1720,10 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: () =>
                             context.read<BattlePassCubit>().refresh(),
-                        icon: Icon(Icons.refresh_rounded,
-                            color: theme.accentColor),
+                        icon: Icon(
+                          Icons.refresh_rounded,
+                          color: theme.accentColor,
+                        ),
                         label: Text(
                           l10n.bpCheckNewSeason,
                           style: TextStyle(
@@ -1732,7 +1733,9 @@ class _NoActiveSeasonScreen extends StatelessWidget {
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
                           side: BorderSide(
                             color: theme.accentColor.withValues(alpha: 0.5),
                           ),
