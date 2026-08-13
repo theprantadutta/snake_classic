@@ -123,11 +123,7 @@ void main() async {
   _installGlobalErrorHandlers();
 
   if (_initSucceeded) {
-    runApp(
-      const riverpod.ProviderScope(
-        child: SnakeClassicApp(),
-      ),
-    );
+    runApp(const riverpod.ProviderScope(child: SnakeClassicApp()));
   } else {
     // Drop the native splash FIRST — otherwise the recovery screen renders
     // underneath it and the user still just sees a frozen launch image.
@@ -188,8 +184,9 @@ Future<void> _bootstrap() async {
   // Date symbols for every supported locale, so DateFormat/NumberFormat in
   // lib/utils/formatting.dart work regardless of the user's language.
   await Future.wait(
-    SupportedLocales.locales
-        .map((l) => initializeDateFormatting(l.languageCode)),
+    SupportedLocales.locales.map(
+      (l) => initializeDateFormatting(l.languageCode),
+    ),
   );
 
   // Orbitron + Rajdhani are bundled as assets (see assets/fonts/ and
@@ -209,13 +206,15 @@ Future<void> _bootstrap() async {
     // warning — see flutter/flutter#183372. The active game screen still
     // goes full-immersive via immersiveSticky (handled in GameScreen).
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
 
     // Load environment variables
     AppLogger.info('Loading environment variables...');
@@ -239,8 +238,9 @@ Future<void> _bootstrap() async {
     // Crashlytics: collect and upload crash reports in production builds only.
     // Gated on kReleaseMode so debug AND profile builds never send data to the
     // dashboard (keeps local crashes/errors out of production analytics).
-    await FirebaseCrashlytics.instance
-        .setCrashlyticsCollectionEnabled(kReleaseMode);
+    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+      kReleaseMode,
+    );
     AppLogger.success(
       'Crashlytics collection ${kReleaseMode ? 'enabled' : 'disabled (non-release build)'}',
     );
@@ -322,7 +322,9 @@ Future<void> _bootstrap() async {
     await AudioService().initialize().timeout(
       const Duration(seconds: 10),
       onTimeout: () {
-        AppLogger.warning('Audio service init timed out — continuing without audio');
+        AppLogger.warning(
+          'Audio service init timed out — continuing without audio',
+        );
       },
     );
     AppLogger.success('Audio service initialized');
@@ -355,9 +357,12 @@ Future<void> _bootstrap() async {
     // nothing else. Registering handlers and asking for permission are
     // different concerns and are now wired separately.
     unawaited(
-      NotificationService().initialize(requestPermission: false).catchError(
-        (Object e) => AppLogger.error('Notification handler init failed', e),
-      ),
+      NotificationService()
+          .initialize(requestPermission: false)
+          .catchError(
+            (Object e) =>
+                AppLogger.error('Notification handler init failed', e),
+          ),
     );
 
     InAppUpdateService().checkForUpdate().then((_) {
@@ -488,7 +493,6 @@ void _installGlobalErrorHandlers() {
       FlutterError.presentError(details);
     };
   }
-
 }
 
 /// Last-resort UI when [_bootstrap] failed outright.
@@ -521,11 +525,7 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
       // Swap the whole tree for the real app. runApp on an already-running
       // binding replaces the root widget, so this is a live recovery rather
       // than a restart and nothing stored locally is lost.
-      runApp(
-        const riverpod.ProviderScope(
-          child: SnakeClassicApp(),
-        ),
-      );
+      runApp(const riverpod.ProviderScope(child: SnakeClassicApp()));
       return;
     } catch (error, stackTrace) {
       // Non-fatal on purpose: the initial failure was already reported as
@@ -682,13 +682,15 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // the bootstrap setup above — manual mode triggers the deprecated
     // setStatusBarColor path Play Console flags.
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
   }
 
   @override
@@ -772,61 +774,103 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     GameSettingsState settingsState,
   ) {
     return MaterialApp.router(
-              title: 'Snake Classic',
-              debugShowCheckedModeBanner: false,
-              routerConfig: appRouter,
-              // i18n: generated from lib/l10n/*.arb (see l10n.yaml). A null
-              // locale follows the device language; unsupported device
-              // languages resolve to English via the default resolution.
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: SupportedLocales.locales,
-              locale: SupportedLocales.fromCode(settingsState.localeCode),
-              // Root text scaling. The app's typography uses fixed fontSize
-              // values with no scaling of its own, so we adjust the effective
-              // text scale here in one place:
-              //  - Tablets get a modest base bump so text grows with the
-              //    larger UI (phones use 1.0 → unchanged).
-              //  - The OS accessibility factor is respected but clamped so an
-              //    extreme system font setting can't break the fixed layout.
-              builder: (context, child) {
-                final mediaQuery = MediaQuery.of(context);
-                final baseScale = context.responsive<double>(
-                  phone: 1.0,
-                  tablet: 1.12,
-                  largeTablet: 1.18,
-                );
-                final osScale =
-                    mediaQuery.textScaler.scale(1.0).clamp(0.9, 1.2);
-                return MediaQuery(
-                  data: mediaQuery.copyWith(
-                    textScaler: TextScaler.linear(baseScale * osScale),
-                  ),
-                  child: child ?? const SizedBox.shrink(),
-                );
-              },
-              theme: ThemeData(
-                brightness: Brightness.dark,
-                scaffoldBackgroundColor:
-                    themeState.currentTheme.backgroundColor,
-                visualDensity: VisualDensity.adaptivePlatformDensity,
-                useMaterial3: false,
-                textTheme: GameTypography.createTextTheme(
-                  color: themeState.currentTheme.accentColor,
-                  // Devanagari and Arabic can't take the display letter
-                  // spacing the Latin styles use — see letterSpacingFor.
-                  // This builds the theme ABOVE MaterialApp, so there is no
-                  // Localizations to read yet; mirror the same resolution
-                  // MaterialApp is about to do so the theme and the widget
-                  // tree agree on the language.
-                  locale: _resolvedLocale(settingsState.localeCode),
-                ),
-              ),
-              // The first-sign-in cloud-restore overlay is mounted on the
-              // three screens the restore can possibly be active on
-              // (LoadingScreen / FirstTimeAuthScreen / EmailAuthScreen),
-              // not globally — once the user lands on home, restore is
-              // already done and the home tree shouldn't carry the
-              // subscription.
+      title: 'Snake Classic',
+      debugShowCheckedModeBanner: false,
+      routerConfig: appRouter,
+      // i18n: generated from lib/l10n/*.arb (see l10n.yaml). A null
+      // locale follows the device language; unsupported device
+      // languages resolve to English via the default resolution.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: SupportedLocales.locales,
+      locale: SupportedLocales.fromCode(settingsState.localeCode),
+      // Root text scaling. The app's typography uses fixed fontSize
+      // values with no scaling of its own, so we adjust the effective
+      // text scale here in one place:
+      //  - Tablets get a modest base bump so text grows with the
+      //    larger UI (phones use 1.0 → unchanged).
+      //  - The OS accessibility factor is respected but clamped so an
+      //    extreme system font setting can't break the fixed layout.
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        final baseScale = context.responsive<double>(
+          phone: 1.0,
+          tablet: 1.12,
+          largeTablet: 1.18,
+        );
+        final osScale = mediaQuery.textScaler.scale(1.0).clamp(0.9, 1.2);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: TextScaler.linear(baseScale * osScale),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: themeState.currentTheme.backgroundColor,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: false,
+        // No ink ripples anywhere in the game.
+        //
+        // The expanding grey circle is an Android convention for
+        // documents and settings, not for games — nothing in an
+        // arcade splashes when you press it, and on a themed dark
+        // surface it reads as a rendering artefact rather than as
+        // feedback. Set here rather than on individual widgets so a
+        // new button cannot reintroduce it by default.
+        //
+        // Buttons, tabs and icon buttons each resolve their own
+        // overlay independently of splashFactory, so every one of
+        // them has to be told as well.
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: ButtonStyle(
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+          ),
+        ),
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+          ),
+        ),
+        tabBarTheme: TabBarThemeData(
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: WidgetStateProperty.all(Colors.transparent),
+        ),
+        textTheme: GameTypography.createTextTheme(
+          color: themeState.currentTheme.accentColor,
+          // Devanagari and Arabic can't take the display letter
+          // spacing the Latin styles use — see letterSpacingFor.
+          // This builds the theme ABOVE MaterialApp, so there is no
+          // Localizations to read yet; mirror the same resolution
+          // MaterialApp is about to do so the theme and the widget
+          // tree agree on the language.
+          locale: _resolvedLocale(settingsState.localeCode),
+        ),
+      ),
+      // The first-sign-in cloud-restore overlay is mounted on the
+      // three screens the restore can possibly be active on
+      // (LoadingScreen / FirstTimeAuthScreen / EmailAuthScreen),
+      // not globally — once the user lands on home, restore is
+      // already done and the home tree shouldn't carry the
+      // subscription.
     );
   }
 }

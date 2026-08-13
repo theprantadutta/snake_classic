@@ -376,7 +376,11 @@ class _PauseOverlayState extends State<PauseOverlay> {
     return SizedBox(
       width: 260,
       child: Theme(
-        data: ThemeData(dividerColor: Colors.transparent),
+        // copyWith, not a fresh ThemeData: constructing one from scratch here
+        // dropped everything the app had configured for this subtree — the
+        // game's text theme and, once it existed, the no-ripple setting — so
+        // this one expander kept splashing while nothing else did.
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           initiallyExpanded: false,
           backgroundColor: theme.backgroundColor.withValues(alpha: 0.5),
