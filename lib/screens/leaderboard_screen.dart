@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/providers/leaderboard_provider.dart';
@@ -13,6 +12,7 @@ import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -53,7 +53,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   void _calculateUserRank() {
     final authState = context.read<AuthCubit>().state;
     if (!authState.isSignedIn || authState.userId == null) return;
-    ref.read(combinedLeaderboardProvider.notifier).calculateUserRankFor(authState.userId);
+    ref
+        .read(combinedLeaderboardProvider.notifier)
+        .calculateUserRankFor(authState.userId);
   }
 
   Future<void> _loadGlobalLeaderboard() async {
@@ -74,7 +76,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final theme = themeState.currentTheme;
 
     // Update user rank when global leaderboard loads
-    ref.listen<CombinedLeaderboardState>(combinedLeaderboardProvider, (prev, next) {
+    ref.listen<CombinedLeaderboardState>(combinedLeaderboardProvider, (
+      prev,
+      next,
+    ) {
       if (prev?.isLoadingGlobal == true && next.isLoadingGlobal == false) {
         _calculateUserRank();
       }
@@ -82,14 +87,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
+      extendBodyBehindAppBar: true,
+      appBar: appScreenBar(
+        context,
+        theme,
+        AppLocalizations.of(context)!.lbTitle,
+      ),
       body: AppBackground(
         theme: theme,
         child: SafeArea(
           child: Column(
             children: [
-              // Header
-              _buildHeader(theme),
-
               // Tab Bar
               _buildTabBar(theme),
 
@@ -113,7 +121,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
               // User Rank Card
               if (authState.isSignedIn && leaderboardState.userRank != null)
-                _buildUserRankCard(authState, theme, leaderboardState.userRank!),
+                _buildUserRankCard(
+                  authState,
+                  theme,
+                  leaderboardState.userRank!,
+                ),
 
               // Leaderboard Content
               Expanded(
@@ -156,35 +168,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildHeader(GameTheme theme) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.leaderboard, color: theme.accentColor, size: 28),
-          const SizedBox(width: 12),
-          Text(
-            AppLocalizations.of(context)!.lbTitle,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTabBar(GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
@@ -221,7 +204,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       ),
       child: Row(
         children: [
-          Icon(icon, color: theme.accentColor.withValues(alpha: 0.75), size: 14),
+          Icon(
+            icon,
+            color: theme.accentColor.withValues(alpha: 0.75),
+            size: 14,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -242,13 +229,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   /// active board. The Drift cache survives offline launches, so this
   /// is the user's signal for "is what I'm looking at stale?". Tap
   /// triggers a forced refresh.
-  Widget _buildStalenessChip(
-    GameTheme theme,
-    CombinedLeaderboardState state,
-  ) {
+  Widget _buildStalenessChip(GameTheme theme, CombinedLeaderboardState state) {
     final isWeekly = _tabController.index == 1;
-    final ts =
-        isWeekly ? state.weeklyLastRefreshedAt : state.globalLastRefreshedAt;
+    final ts = isWeekly
+        ? state.weeklyLastRefreshedAt
+        : state.globalLastRefreshedAt;
     final hasData = isWeekly
         ? state.weeklyEntries.isNotEmpty
         : state.globalEntries.isNotEmpty;
@@ -271,12 +256,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       child: Align(
         alignment: Alignment.centerLeft,
         child: InkWell(
-          onTap: () =>
-              ref.read(combinedLeaderboardProvider.notifier).refresh(),
+          onTap: () => ref.read(combinedLeaderboardProvider.notifier).refresh(),
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
@@ -318,7 +301,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     return l10n.frDaysAgo(diff.inDays);
   }
 
-  Widget _buildUserRankCard(AuthState authState, GameTheme theme, Map<String, dynamic> userRank) {
+  Widget _buildUserRankCard(
+    AuthState authState,
+    GameTheme theme,
+    Map<String, dynamic> userRank,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: EdgeInsets.symmetric(
@@ -403,7 +390,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildGlobalLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+  Widget _buildGlobalLeaderboard(
+    GameTheme theme,
+    AuthState authState,
+    CombinedLeaderboardState leaderboardState,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     if (leaderboardState.isLoadingGlobal) {
       return _buildLoadingState(theme, l10n.lbLoadingGlobal);
@@ -490,7 +481,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildWeeklyLeaderboard(GameTheme theme, AuthState authState, CombinedLeaderboardState leaderboardState) {
+  Widget _buildWeeklyLeaderboard(
+    GameTheme theme,
+    AuthState authState,
+    CombinedLeaderboardState leaderboardState,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     if (leaderboardState.isLoadingWeekly) {
       return _buildLoadingState(theme, l10n.lbLoadingWeekly);
@@ -596,60 +591,27 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
+      // One card shape for every row; the border says which row is which.
+      //
+      // It used to be three gradients and two glows: the signed-in player's
+      // row in a three-stop accent gradient with a fourteen-pixel glow, the
+      // top three in metallic gradients with glows of their own, everyone
+      // else flat. On a board where the first four rows all glow, none of
+      // them stands out — and the one the player is actually looking for is
+      // their own.
       decoration: BoxDecoration(
-        // Layering priority:
-        //   1. Signed-in player gets the accent-color gradient + glow (wins
-        //      over podium so they always know which row is theirs).
-        //   2. Top 3 (when not the current user) get the metallic gradient.
-        //   3. Everyone else gets the flat theme tint.
-        gradient: isCurrentUser
-            ? LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.32),
-                  theme.accentColor.withValues(alpha: 0.16),
-                  theme.primaryColor.withValues(alpha: 0.18),
-                ],
-              )
-            : (isPodium
-                ? LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      podium.color.withValues(alpha: 0.22),
-                      podium.color.withValues(alpha: 0.10),
-                      theme.primaryColor.withValues(alpha: 0.06),
-                    ],
-                  )
-                : null),
-        color: (isCurrentUser || isPodium)
-            ? null
-            : theme.primaryColor.withValues(alpha: 0.1),
+        color: theme.backgroundColor.withValues(
+          alpha: isCurrentUser ? 0.45 : 0.3,
+        ),
         borderRadius: BorderRadius.circular(12),
-        border: isCurrentUser
-            ? Border.all(color: theme.accentColor, width: 1.5)
-            : (isPodium
-                ? Border.all(color: podium.color.withValues(alpha: 0.45), width: 1.2)
-                : Border.all(color: theme.primaryColor.withValues(alpha: 0.2))),
-        boxShadow: isCurrentUser
-            ? [
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.35),
-                  blurRadius: 14,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : (isPodium
-                ? [
-                    BoxShadow(
-                      color: podium.color.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null),
+        border: Border.all(
+          color: isCurrentUser
+              ? theme.accentColor
+              : isPodium
+              ? podium.color.withValues(alpha: 0.5)
+              : theme.accentColor.withValues(alpha: 0.18),
+          width: isCurrentUser ? 1.5 : 1,
+        ),
       ),
       child: Row(
         children: [
@@ -664,11 +626,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             decoration: isPodium
                 ? BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        podium.color,
-                        podium.color.withValues(alpha: 0.5),
-                      ],
+                    border: Border.all(
+                      color: podium.color.withValues(alpha: 0.75),
+                      width: 2,
                     ),
                   )
                 : null,
@@ -720,13 +680,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.2),
+                          color: kRewardGold.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           l10n.lbGuestBadge,
                           style: const TextStyle(
-                            color: Colors.orange,
+                            color: kRewardGold,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -823,10 +783,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   _PodiumStyle? _podiumStyle(int rank) {
     switch (rank) {
       case 1:
-        return const _PodiumStyle(
-          color: Color(0xFFFFD54F), // gold
-          icon: Icons.emoji_events,
-        );
+        return const _PodiumStyle(color: kRewardGold, icon: Icons.emoji_events);
       case 2:
         return _PodiumStyle(
           color: Colors.grey.shade400, // silver
@@ -845,24 +802,18 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   /// Rank widget — medal disc for top 3, pill chip with "#N" for the rest.
   Widget _buildRankWidget(int rank, _PodiumStyle? podium, GameTheme theme) {
     if (podium != null) {
+      // A medal, drawn flat. Gold, silver and bronze stay — they are what
+      // first, second and third mean everywhere — but they no longer come
+      // with a gradient and a glow each.
       return Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [podium.color, podium.color.withValues(alpha: 0.6)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: podium.color.withValues(alpha: 0.55),
-              blurRadius: 8,
-            ),
-          ],
+          color: podium.color.withValues(alpha: 0.18),
+          border: Border.all(color: podium.color.withValues(alpha: 0.7)),
         ),
-        child: Icon(podium.icon, color: Colors.white, size: 20),
+        child: Icon(podium.icon, color: podium.color, size: 19),
       );
     }
     return Container(
