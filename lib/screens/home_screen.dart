@@ -851,6 +851,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             onTap: () => context.push(AppRoutes.store),
           ),
         ),
+        SizedBox(height: isCompact ? 6 : 8),
+        // Two readouts, then two places to go. Both are about you rather than
+        // about the game, which is why they are on this side and the offers
+        // are on the other.
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.people_alt_outlined,
+          label: l10n.homeTileFriends,
+          onTap: () => context.push(AppRoutes.friends),
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.military_tech_outlined,
+          label: l10n.homeTileAwards,
+          onTap: () => context.push(AppRoutes.achievements),
+        ),
       ],
     );
   }
@@ -868,6 +885,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.timeline_rounded,
+          label: l10n.homeTileBattle,
+          onTap: () => context.push(AppRoutes.battlePass),
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
         HomeRailButton(
           theme: theme,
           icon: Icons.emoji_events_outlined,
