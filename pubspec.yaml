@@ -7,8 +7,8 @@ version: 5.1.0+43
 
 environment:
   # Tracks the Dart SDK this project is developed/built with (Flutter
-  # 3.44.5 stable ships Dart 3.12.2).
-  sdk: ^3.12.2
+  # 3.47.0 stable ships Dart 3.13.0).
+  sdk: ^3.13.0
 
 dependencies:
   flutter:

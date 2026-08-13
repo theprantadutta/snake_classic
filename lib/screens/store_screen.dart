@@ -29,6 +29,14 @@ import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 
+/// The store's filled gold.
+///
+/// [kRewardGold] is tuned for small marks on a dark card — a coin glyph, a
+/// price, a medal. The store fills whole plates and buttons with it, and at
+/// full strength a screen of those glares. This is the same hue with the
+/// brightness taken off, for areas rather than marks.
+const Color _goldFill = Color(0xFFE0A92F);
+
 class StoreScreen extends StatefulWidget {
   final int initialTab;
 
@@ -274,25 +282,23 @@ class _StoreScreenState extends State<StoreScreen>
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
             colors: [
-              kRewardGold.withValues(alpha: 0.14),
+              kRewardGold.withValues(alpha: 0.10),
               theme.backgroundColor.withValues(alpha: 0.30),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kRewardGold.withValues(alpha: 0.30)),
+          border: Border.all(color: kRewardGold.withValues(alpha: 0.21)),
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(context.scaled(8)),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [kRewardGold, kRewardGold],
-                ),
+                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: kRewardGold.withValues(alpha: 0.4),
+                    color: kRewardGold.withValues(alpha: 0.28),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -320,7 +326,7 @@ class _StoreScreenState extends State<StoreScreen>
                   Text(
                     '${coinsState.balance.total}',
                     style: const TextStyle(
-                      color: kRewardGold,
+                      color: _goldFill,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -332,7 +338,9 @@ class _StoreScreenState extends State<StoreScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
+                  gradient: const LinearGradient(
+                    colors: [_goldFill, _goldFill],
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -443,6 +451,23 @@ class _StoreScreenState extends State<StoreScreen>
         children: [
           _buildProHero(theme),
           const SizedBox(height: 20),
+          // What it is, then what it costs.
+          //
+          // The plan cards used to come first, which asks somebody to pick
+          // between £4.99 and £49.99 before the page has said what either one
+          // buys. The feature grid is the argument; the prices are the ask,
+          // and an ask reads better after its argument.
+          Text(
+            l10n.storeWhatYouGet,
+            style: TextStyle(
+              color: theme.accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildProFeatureGrid(theme),
+          const SizedBox(height: 24),
           Text(
             l10n.storeChooseYourPlan,
             style: TextStyle(
@@ -479,17 +504,6 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.storeWhatYouGet,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildProFeatureGrid(theme),
           const SizedBox(height: 20),
           SubscriptionLegalFooter(theme: theme),
         ],
@@ -507,18 +521,18 @@ class _StoreScreenState extends State<StoreScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            kRewardGold.withValues(alpha: 0.18),
-            kRewardGold.withValues(alpha: 0.10),
+            kRewardGold.withValues(alpha: 0.13),
+            kRewardGold.withValues(alpha: 0.07),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: kRewardGold.withValues(alpha: 0.35),
+          color: kRewardGold.withValues(alpha: 0.24),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: kRewardGold.withValues(alpha: 0.18),
+            color: kRewardGold.withValues(alpha: 0.13),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -529,7 +543,7 @@ class _StoreScreenState extends State<StoreScreen>
           Container(
             padding: EdgeInsets.all(context.scaled(14)),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
+              gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -585,7 +599,7 @@ class _StoreScreenState extends State<StoreScreen>
         _pendingProductIds.contains(ProductIds.snakeClassicProMonthly) ||
         _pendingProductIds.contains(ProductIds.snakeClassicProYearly);
     final borderColor = highlight
-        ? kRewardGold.withValues(alpha: 0.6)
+        ? kRewardGold.withValues(alpha: 0.42)
         : theme.accentColor.withValues(alpha: 0.25);
     return GestureDetector(
       onTap: anyProPending
@@ -603,7 +617,7 @@ class _StoreScreenState extends State<StoreScreen>
           boxShadow: highlight
               ? [
                   BoxShadow(
-                    color: kRewardGold.withValues(alpha: 0.25),
+                    color: kRewardGold.withValues(alpha: 0.17),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -632,7 +646,7 @@ class _StoreScreenState extends State<StoreScreen>
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: kRewardGold,
+                      color: _goldFill,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -742,18 +756,18 @@ class _StoreScreenState extends State<StoreScreen>
         : premiumState.subscriptionExpiry;
     final gradientColors = isPromo
         ? [
-            kRewardGold.withValues(alpha: 0.22),
-            kRewardGold.withValues(alpha: 0.12),
+            kRewardGold.withValues(alpha: 0.15),
+            kRewardGold.withValues(alpha: 0.08),
           ]
         : [
             theme.accentColor.withValues(alpha: 0.18),
             Colors.teal.withValues(alpha: 0.10),
           ];
     final borderColor = isPromo
-        ? kRewardGold.withValues(alpha: 0.45)
+        ? kRewardGold.withValues(alpha: 0.32)
         : theme.accentColor.withValues(alpha: 0.35);
     final iconGradient = isPromo
-        ? const LinearGradient(colors: [kRewardGold, kRewardGold])
+        ? const LinearGradient(colors: [_goldFill, _goldFill])
         : LinearGradient(colors: [theme.accentColor, theme.primaryColor]);
     final icon = isPromo ? Icons.card_giftcard : Icons.verified;
     final title = isPromo ? l10n.storeYoureOnFreePro : l10n.storeYourePro;
@@ -856,7 +870,7 @@ class _StoreScreenState extends State<StoreScreen>
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kRewardGold,
+                  backgroundColor: _goldFill,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -876,10 +890,10 @@ class _StoreScreenState extends State<StoreScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [kRewardGold, kRewardGold]),
+        gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          BoxShadow(color: kRewardGold.withValues(alpha: 0.6), blurRadius: 6),
+          BoxShadow(color: kRewardGold.withValues(alpha: 0.42), blurRadius: 6),
         ],
       ),
       child: Text(
@@ -949,7 +963,7 @@ class _StoreScreenState extends State<StoreScreen>
             boxShadow: hl
                 ? [
                     BoxShadow(
-                      color: kRewardGold.withValues(alpha: 0.2),
+                      color: kRewardGold.withValues(alpha: 0.14),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -1176,15 +1190,15 @@ class _StoreScreenState extends State<StoreScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              kRewardGold.withValues(alpha: 0.15),
-              kRewardGold.withValues(alpha: 0.08),
+              kRewardGold.withValues(alpha: 0.10),
+              kRewardGold.withValues(alpha: 0.06),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: option.isPopular
                 ? Colors.red.withValues(alpha: 0.4)
-                : kRewardGold.withValues(alpha: 0.3),
+                : kRewardGold.withValues(alpha: 0.21),
             width: option.isPopular ? 2 : 1.5,
           ),
         ),
@@ -1193,7 +1207,7 @@ class _StoreScreenState extends State<StoreScreen>
             Container(
               padding: EdgeInsets.all(context.scaled(8)),
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
+                color: _goldFill,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1346,12 +1360,12 @@ class _StoreScreenState extends State<StoreScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              kRewardGold.withValues(alpha: 0.22),
-              kRewardGold.withValues(alpha: 0.14),
+              kRewardGold.withValues(alpha: 0.15),
+              kRewardGold.withValues(alpha: 0.10),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: kRewardGold.withValues(alpha: 0.45)),
+          border: Border.all(color: kRewardGold.withValues(alpha: 0.32)),
         ),
         child: Row(
           children: [
@@ -1561,13 +1575,13 @@ class _StoreScreenState extends State<StoreScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              kRewardGold.withValues(alpha: 0.18),
-              kRewardGold.withValues(alpha: 0.10),
+              kRewardGold.withValues(alpha: 0.13),
+              kRewardGold.withValues(alpha: 0.07),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: kRewardGold.withValues(alpha: 0.5),
+            color: kRewardGold.withValues(alpha: 0.35),
             width: 2,
           ),
         ),
@@ -1576,7 +1590,7 @@ class _StoreScreenState extends State<StoreScreen>
             Container(
               padding: EdgeInsets.all(context.scaled(12)),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
+                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -3060,15 +3074,15 @@ class _StoreScreenState extends State<StoreScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            kRewardGold.withValues(alpha: 0.14),
-            kRewardGold.withValues(alpha: 0.08),
+            kRewardGold.withValues(alpha: 0.10),
+            kRewardGold.withValues(alpha: 0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOwned
               ? theme.accentColor.withValues(alpha: 0.4)
-              : kRewardGold.withValues(alpha: 0.3),
+              : kRewardGold.withValues(alpha: 0.21),
           width: isOwned ? 2 : 1,
         ),
       ),
@@ -3081,7 +3095,7 @@ class _StoreScreenState extends State<StoreScreen>
                 padding: EdgeInsets.all(context.scaled(10)),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [kRewardGold, kRewardGold],
+                    colors: [_goldFill, _goldFill],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -3125,7 +3139,7 @@ class _StoreScreenState extends State<StoreScreen>
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: kRewardGold.withValues(alpha: 0.2),
+                      color: kRewardGold.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
