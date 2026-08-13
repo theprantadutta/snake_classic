@@ -921,10 +921,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         widgetKey: HomeWalkthrough.dailyChallengesKey,
         onTap: () => context.push(AppRoutes.dailyChallenges),
       ),
+      // Profile is not homeless: the avatar in the top bar has always opened
+      // it, and it is the more natural place to tap your own face. The slot
+      // goes to the leaderboard, which had no entry point at all once the
+      // eight-tile grid went.
       ArcadeDestination(
-        icon: Icons.person_rounded,
-        label: l10n.homeTileMe,
-        onTap: () => context.push(AppRoutes.profile),
+        icon: Icons.leaderboard_rounded,
+        label: l10n.homeTileBoard,
+        onTap: () => context.push(AppRoutes.leaderboard),
       ),
       ArcadeDestination(
         icon: Icons.store_rounded,
