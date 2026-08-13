@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
 class AchievementsScreen extends StatefulWidget {
@@ -59,17 +58,26 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          l10n.pfAchievements,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          l10n.pfAchievements.toUpperCase(),
+          style: TextStyle(
+            color: theme.accentColor,
+            fontWeight: FontWeight.bold,
+            letterSpacing: context.letterSpacing(2),
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                color: Colors.black.withValues(alpha: 0.3),
+              ),
+            ],
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-          onPressed: () => context.pop(),
-        ),
+        iconTheme: IconThemeData(color: theme.accentColor),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: theme.accentColor,
@@ -128,8 +136,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     final claimed = all.where((a) => a.rewardClaimed).length;
     final pending = all.where((a) => !a.isUnlocked).length;
     final completionPercentage = _achievementService.completionPercentage;
-    final claimedOfUnlocked =
-        unlocked > 0 ? ((claimed / unlocked) * 100).round() : 0;
+    final claimedOfUnlocked = unlocked > 0
+        ? ((claimed / unlocked) * 100).round()
+        : 0;
     final completionPct = (completionPercentage * 100).round();
 
     return Container(
@@ -138,13 +147,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         vertical: 16,
       ),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.primaryColor.withValues(alpha: 0.3),
-        ),
-      ),
+      decoration: screenCardDecoration(theme),
       child: Column(
         children: [
           // 4-tile grid — same labels and counting logic as the dashboard
@@ -164,7 +167,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 child: _StatTile(
                   label: l10n.acUnlockedUpper,
                   value: '$unlocked',
-                  accent: Colors.amber,
+                  accent: kRewardGold,
                   hint: l10n.acPercentComplete(completionPct),
                 ),
               ),
@@ -173,7 +176,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 child: _StatTile(
                   label: l10n.acClaimedUpper,
                   value: '$claimed',
-                  accent: Colors.green,
+                  accent: theme.accentColor,
                   hint: unlocked > 0
                       ? l10n.acPercentOfUnlocked(claimedOfUnlocked)
                       : null,
@@ -191,7 +194,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           ),
           const SizedBox(height: 14),
 
-          // Completion bar — gradient matches the dashboard's emerald→cyan.
+          // Completion bar, in the accent — it was a gradient.
           Container(
             height: context.scaled(8),
             decoration: BoxDecoration(
@@ -203,9 +206,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               widthFactor: completionPercentage,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.accentColor, theme.primaryColor],
-                  ),
+                  color: theme.accentColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -213,7 +214,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           ),
         ],
       ),
-    ).gameEntrance();
+    );
   }
 
   Widget _buildAchievementsList(
@@ -252,8 +253,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       itemBuilder: (context, index) {
         final achievement = achievements[index];
 
-        return _buildAchievementCard(achievement, theme)
-            .gameListItem(index);
+        return _buildAchievementCard(achievement, theme);
       },
     );
   }
@@ -265,16 +265,15 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isUnlocked
-            ? achievement.rarityColor.withValues(alpha: 0.2)
-            : theme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isUnlocked
-              ? achievement.rarityColor.withValues(alpha: 0.5)
-              : theme.primaryColor.withValues(alpha: 0.3),
-        ),
+      // Rarity survives as the card's edge and the icon's tile, not as a
+      // wash over the whole row. Tinting the entire card meant an unlocked
+      // legendary and an unlocked common were two differently-coloured
+      // panels, and a list of them read as confetti.
+      decoration: screenCardDecoration(
+        theme,
+        borderColor: isUnlocked
+            ? achievement.rarityColor.withValues(alpha: 0.5)
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -289,11 +288,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   decoration: BoxDecoration(
                     color: isUnlocked
                         ? achievement.rarityColor
-                        : Colors.grey.withValues(alpha: 0.5),
+                        : Colors.white.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(achievement.icon,
-                      color: Colors.white, size: context.scaled(24)),
+                  child: Icon(
+                    achievement.icon,
+                    color: Colors.white,
+                    size: context.scaled(24),
+                  ),
                 ),
 
                 const SizedBox(width: 16),
@@ -331,7 +333,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              achievement.localizedRarityName(l10n).toUpperCase(),
+                              achievement
+                                  .localizedRarityName(l10n)
+                                  .toUpperCase(),
                               style: TextStyle(
                                 color: achievement.rarityColor,
                                 fontSize: 10,
@@ -440,13 +444,13 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.2),
+                        color: kRewardGold.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         l10n.mpCoinReward(achievement.coinReward),
                         style: const TextStyle(
-                          color: Colors.amber,
+                          color: kRewardGold,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -464,7 +468,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: theme.accentColor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -472,7 +476,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     Icon(
                       Icons.access_time,
                       size: context.scaled(16),
-                      color: Colors.green.withValues(alpha: 0.8),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 8),
 
@@ -482,7 +486,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                       ),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.green.withValues(alpha: 0.8),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
