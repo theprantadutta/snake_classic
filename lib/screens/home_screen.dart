@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,7 +47,6 @@ import 'package:snake_classic/widgets/home/home_arcade_bar.dart';
 import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -556,29 +554,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             ),
                           ),
                         ),
-                        // Debug-only. It sat on top of the Versus button in the
-                        // corner; up here it covers nothing.
-                        floatingActionButtonLocation:
-                            FloatingActionButtonLocation.miniStartTop,
-                        floatingActionButton: kDebugMode
-                            ? FloatingActionButton(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => TalkerScreen(
-                                        talker: AppLogger.instance,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                backgroundColor: theme.accentColor.withValues(
-                                  alpha: 0.1,
-                                ),
-                                foregroundColor: theme.accentColor,
-                                mini: true,
-                                child: const Icon(Icons.bug_report),
-                              )
-                            : null,
                       ),
                     ),
 
@@ -893,21 +868,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (adsOn) ...[
-          HomeRailButton(
-            theme: theme,
-            icon: Icons.bolt,
-            label: l10n.homeTileFree,
-            tint: const Color(0xFF2FBF71),
-            highlight: true,
-            onTap: () => _watchForFreePowerUp(context),
-          ),
-          SizedBox(height: isCompact ? 6 : 8),
-        ],
-        // Versus gets a rail slot as well as its bottom-bar destination.
-        // Two ways in is not clutter for the one mode nobody discovers on
-        // their own — it was the eighth tile of a nav grid for most of this
-        // app's life, and the subtitle says what it actually is.
+        HomeRailButton(
+          theme: theme,
+          icon: Icons.emoji_events_outlined,
+          label: l10n.homeTileEvents,
+          tint: Colors.deepOrange,
+          onTap: () => context.push(AppRoutes.tournaments),
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
+        // Versus gets a rail slot as well as its bottom-bar destination. Two
+        // ways in is not clutter for the one mode nobody discovers on their
+        // own — it was the eighth tile of a nav grid for most of this app's
+        // life — and the subtitle says what it actually is.
         HomeRailButton(
           theme: theme,
           icon: Icons.sports_esports,
@@ -916,14 +888,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           tint: Colors.greenAccent,
           onTap: () => _openVersusLobby(context),
         ),
-        SizedBox(height: isCompact ? 6 : 8),
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.emoji_events_outlined,
-          label: l10n.homeTileEvents,
-          tint: Colors.deepOrange,
-          onTap: () => context.push(AppRoutes.tournaments),
-        ),
+        // The free reward sits at the bottom of the rail, nearest the thumb.
+        if (adsOn) ...[
+          SizedBox(height: isCompact ? 6 : 8),
+          HomeRailButton(
+            theme: theme,
+            icon: Icons.bolt,
+            label: l10n.homeTileFree,
+            tint: const Color(0xFF2FBF71),
+            highlight: true,
+            onTap: () => _watchForFreePowerUp(context),
+          ),
+        ],
       ],
     );
   }
