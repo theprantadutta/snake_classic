@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
@@ -28,6 +27,7 @@ import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 class StoreScreen extends StatefulWidget {
   final int initialTab;
@@ -86,8 +86,9 @@ class _StoreScreenState extends State<StoreScreen>
     );
     _tabIndex = _tabController.index;
     _tabController.addListener(_onTabChanged);
-    _purchaseStatusSub =
-        PurchaseService().purchaseStatusStream.listen(_onPurchaseStatus);
+    _purchaseStatusSub = PurchaseService().purchaseStatusStream.listen(
+      _onPurchaseStatus,
+    );
   }
 
   /// Drop the "Verifying…" spinner the moment a purchase is canceled or fails.
@@ -123,8 +124,9 @@ class _StoreScreenState extends State<StoreScreen>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) {
-      getIt<AnalyticsFacade>()
-          .trackStoreTabViewed(_tabNames[_tabController.index]);
+      getIt<AnalyticsFacade>().trackStoreTabViewed(
+        _tabNames[_tabController.index],
+      );
     }
     // Tracked separately from the analytics guard above, which deliberately
     // fires once at the START of a transition. The banner needs the SETTLED
@@ -159,30 +161,18 @@ class _StoreScreenState extends State<StoreScreen>
                   // surface where it has to land, and it is the one place in
                   // the app where the ad and the product are in direct
                   // conflict. Every other tab keeps it.
-                  bottomNavigationBar:
-                      _tabIndex == _proTabIndex ? null : const SnakeBannerAd(),
+                  bottomNavigationBar: _tabIndex == _proTabIndex
+                      ? null
+                      : const SnakeBannerAd(),
                   extendBodyBehindAppBar: true,
-                  appBar: AppBar(
-                    title: Text(
-                      l10n.storeTitle,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    leading: IconButton(
-                      icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-                      onPressed: () => context.pop(),
-                    ),
-                  ),
+                  appBar: appScreenBar(context, theme, l10n.storeTitle),
                   body: AppBackground(
                     theme: theme,
                     child: Column(
                       children: [
                         SizedBox(
-                          height: MediaQuery.of(context).padding.top +
+                          height:
+                              MediaQuery.of(context).padding.top +
                               kToolbarHeight,
                         ),
                         _buildCoinsHeader(theme, coinsState),
@@ -193,8 +183,9 @@ class _StoreScreenState extends State<StoreScreen>
                           ),
                           indicatorColor: theme.accentColor,
                           labelColor: theme.accentColor,
-                          unselectedLabelColor:
-                              theme.accentColor.withValues(alpha: 0.6),
+                          unselectedLabelColor: theme.accentColor.withValues(
+                            alpha: 0.6,
+                          ),
                           isScrollable: true,
                           tabs: [
                             Tab(
@@ -241,7 +232,10 @@ class _StoreScreenState extends State<StoreScreen>
                                 _buildSkinsTab(theme, premiumState),
                                 _buildTrailsTab(theme, premiumState),
                                 _buildPowerUpsTab(
-                                    theme, premiumState, coinsState),
+                                  theme,
+                                  premiumState,
+                                  coinsState,
+                                ),
                               ],
                             ),
                           ),
@@ -271,27 +265,21 @@ class _StoreScreenState extends State<StoreScreen>
       ),
       child: Container(
         padding: const EdgeInsets.all(16),
+        // The balance, on the same card as everything else with a wash of
+        // gold over it. It was an amber-to-orange gradient inside a glow —
+        // the loudest thing on a screen whose entire job is to make the
+        // products look good.
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
             colors: [
-              Colors.amber.withValues(alpha: 0.15),
-              Colors.orange.withValues(alpha: 0.08),
+              kRewardGold.withValues(alpha: 0.14),
+              theme.backgroundColor.withValues(alpha: 0.30),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.amber.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: kRewardGold.withValues(alpha: 0.30)),
         ),
         child: Row(
           children: [
@@ -299,12 +287,12 @@ class _StoreScreenState extends State<StoreScreen>
               padding: EdgeInsets.all(context.scaled(8)),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Colors.amber, Colors.orange],
+                  colors: [kRewardGold, kRewardGold],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.4),
+                    color: kRewardGold.withValues(alpha: 0.4),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -332,7 +320,7 @@ class _StoreScreenState extends State<StoreScreen>
                   Text(
                     '${coinsState.balance.total}',
                     style: const TextStyle(
-                      color: Colors.amber,
+                      color: kRewardGold,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -342,15 +330,9 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             if (coinsState.hasPremiumBonus)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.purple.shade400,
-                      Colors.indigo.shade400,
-                    ],
-                  ),
+                  gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -525,18 +507,18 @@ class _StoreScreenState extends State<StoreScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.shade400.withValues(alpha: 0.18),
-            Colors.indigo.shade400.withValues(alpha: 0.10),
+            kRewardGold.withValues(alpha: 0.18),
+            kRewardGold.withValues(alpha: 0.10),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.purple.shade400.withValues(alpha: 0.35),
+          color: kRewardGold.withValues(alpha: 0.35),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.shade400.withValues(alpha: 0.18),
+            color: kRewardGold.withValues(alpha: 0.18),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -547,13 +529,14 @@ class _StoreScreenState extends State<StoreScreen>
           Container(
             padding: EdgeInsets.all(context.scaled(14)),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple.shade400, Colors.indigo.shade400],
-              ),
+              gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.diamond,
-                color: Colors.white, size: context.scaled(32)),
+            child: Icon(
+              Icons.diamond,
+              color: Colors.white,
+              size: context.scaled(32),
+            ),
           ),
           const SizedBox(height: 14),
           Text(
@@ -598,17 +581,19 @@ class _StoreScreenState extends State<StoreScreen>
     // the user can't kick off a second purchase before the first one's
     // VerifyPurchase response lands — that would double-charge and bug out
     // the PremiumCubit's mid-flight state.
-    final anyProPending = _pendingProductIds
-            .contains(ProductIds.snakeClassicProMonthly) ||
+    final anyProPending =
+        _pendingProductIds.contains(ProductIds.snakeClassicProMonthly) ||
         _pendingProductIds.contains(ProductIds.snakeClassicProYearly);
     final borderColor = highlight
-        ? Colors.amber.withValues(alpha: 0.6)
+        ? kRewardGold.withValues(alpha: 0.6)
         : theme.accentColor.withValues(alpha: 0.25);
     return GestureDetector(
       onTap: anyProPending
           ? null
           : () => _purchaseSubscription(
-              productId, l10n.storePlanDisplayName(title)),
+              productId,
+              l10n.storePlanDisplayName(title),
+            ),
       child: Container(
         padding: EdgeInsets.all(context.scaled(16)),
         decoration: BoxDecoration(
@@ -618,7 +603,7 @@ class _StoreScreenState extends State<StoreScreen>
           boxShadow: highlight
               ? [
                   BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.25),
+                    color: kRewardGold.withValues(alpha: 0.25),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -642,10 +627,12 @@ class _StoreScreenState extends State<StoreScreen>
                 if (savingsLabel != null) ...[
                   const SizedBox(width: 6),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.amber,
+                      color: kRewardGold,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -683,17 +670,18 @@ class _StoreScreenState extends State<StoreScreen>
                 onPressed: anyProPending
                     ? null
                     : () => _purchaseSubscription(
-                        productId, l10n.storePlanDisplayName(title)),
+                        productId,
+                        l10n.storePlanDisplayName(title),
+                      ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: highlight
-                      ? Colors.amber
+                      ? kRewardGold
                       : theme.primaryColor.withValues(alpha: 0.9),
-                  foregroundColor:
-                      highlight ? Colors.black : Colors.white,
-                  disabledBackgroundColor: (highlight
-                          ? Colors.amber
-                          : theme.primaryColor)
-                      .withValues(alpha: 0.45),
+                  foregroundColor: highlight ? Colors.black : Colors.white,
+                  disabledBackgroundColor:
+                      (highlight ? kRewardGold : theme.primaryColor).withValues(
+                        alpha: 0.45,
+                      ),
                   disabledForegroundColor: highlight
                       ? Colors.black.withValues(alpha: 0.7)
                       : Colors.white.withValues(alpha: 0.85),
@@ -721,14 +709,18 @@ class _StoreScreenState extends State<StoreScreen>
                           Text(
                             l10n.storeVerifyingEllipsis,
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       )
                     : Text(
                         l10n.storeSubscribe,
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
               ),
             ),
@@ -750,19 +742,19 @@ class _StoreScreenState extends State<StoreScreen>
         : premiumState.subscriptionExpiry;
     final gradientColors = isPromo
         ? [
-            Colors.amber.withValues(alpha: 0.22),
-            Colors.orange.withValues(alpha: 0.12),
+            kRewardGold.withValues(alpha: 0.22),
+            kRewardGold.withValues(alpha: 0.12),
           ]
         : [
-            Colors.green.withValues(alpha: 0.18),
+            theme.accentColor.withValues(alpha: 0.18),
             Colors.teal.withValues(alpha: 0.10),
           ];
     final borderColor = isPromo
-        ? Colors.amber.withValues(alpha: 0.45)
-        : Colors.green.withValues(alpha: 0.35);
+        ? kRewardGold.withValues(alpha: 0.45)
+        : theme.accentColor.withValues(alpha: 0.35);
     final iconGradient = isPromo
-        ? const LinearGradient(colors: [Colors.amber, Colors.orange])
-        : const LinearGradient(colors: [Colors.green, Colors.teal]);
+        ? const LinearGradient(colors: [kRewardGold, kRewardGold])
+        : LinearGradient(colors: [theme.accentColor, theme.primaryColor]);
     final icon = isPromo ? Icons.card_giftcard : Icons.verified;
     final title = isPromo ? l10n.storeYoureOnFreePro : l10n.storeYourePro;
     final expiryLabel = isPromo
@@ -786,7 +778,11 @@ class _StoreScreenState extends State<StoreScreen>
                   gradient: iconGradient,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: Colors.white, size: context.scaled(24)),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: context.scaled(24),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -819,7 +815,9 @@ class _StoreScreenState extends State<StoreScreen>
                         style: TextStyle(
                           color: theme.accentColor.withValues(alpha: 0.78),
                           fontSize: 12,
-                          fontWeight: isPromo ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: isPromo
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -853,10 +851,12 @@ class _StoreScreenState extends State<StoreScreen>
                 label: Text(
                   l10n.storeKeepPro,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber.shade700,
+                  backgroundColor: kRewardGold,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -876,15 +876,10 @@ class _StoreScreenState extends State<StoreScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Colors.amber, Colors.orange],
-        ),
+        gradient: const LinearGradient(colors: [kRewardGold, kRewardGold]),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          BoxShadow(
-            color: Colors.amber.withValues(alpha: 0.6),
-            blurRadius: 6,
-          ),
+          BoxShadow(color: kRewardGold.withValues(alpha: 0.6), blurRadius: 6),
         ],
       ),
       child: Text(
@@ -938,59 +933,54 @@ class _StoreScreenState extends State<StoreScreen>
       (Icons.workspace_premium, l10n.storeFeatureBattlePass, false),
     ];
     return Column(
-      children: features
-          .map(
-            (f) {
-              final hl = f.$3;
-              final accent = hl ? Colors.amber : theme.accentColor;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: hl ? 0.14 : 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: accent.withValues(alpha: hl ? 0.6 : 0.18),
-                    width: hl ? 1.5 : 1,
+      children: features.map((f) {
+        final hl = f.$3;
+        final accent = hl ? kRewardGold : theme.accentColor;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: hl ? 0.14 : 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: accent.withValues(alpha: hl ? 0.6 : 0.18),
+              width: hl ? 1.5 : 1,
+            ),
+            boxShadow: hl
+                ? [
+                    BoxShadow(
+                      color: kRewardGold.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(f.$1, color: accent, size: context.scaled(18)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  f.$2,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 13,
+                    fontWeight: hl ? FontWeight.w700 : FontWeight.w500,
                   ),
-                  boxShadow: hl
-                      ? [
-                          BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                      : null,
                 ),
-                child: Row(
-                  children: [
-                    Icon(f.$1, color: accent, size: context.scaled(18)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        f.$2,
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: 13,
-                          fontWeight: hl ? FontWeight.w700 : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.check_circle,
-                      color: hl
-                          ? Colors.amber
-                          : Colors.green.withValues(alpha: 0.8),
-                      size: context.scaled(18),
-                    ),
-                  ],
-                ),
-              );
-            },
-          )
-          .toList(),
+              ),
+              Icon(
+                Icons.check_circle,
+                color: hl
+                    ? kRewardGold
+                    : theme.accentColor.withValues(alpha: 0.8),
+                size: context.scaled(18),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -1008,7 +998,10 @@ class _StoreScreenState extends State<StoreScreen>
     return false;
   }
 
-  Future<void> _purchaseSubscription(String productId, String displayName) async {
+  Future<void> _purchaseSubscription(
+    String productId,
+    String displayName,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
@@ -1019,13 +1012,14 @@ class _StoreScreenState extends State<StoreScreen>
     // by _reconcilePendingPurchases when hasPremium flips true, or by the
     // 45s safety timeout in _markPending if the webhook is genuinely lost.
     _markPending(productId);
+    final accent = context.read<ThemeCubit>().state.currentTheme.accentColor;
     try {
       await PurchaseService().purchaseProduct(productId);
       if (mounted) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(l10n.storeInitiatingPurchase(displayName)),
-            backgroundColor: Colors.blue,
+            backgroundColor: accent,
           ),
         );
       }
@@ -1109,19 +1103,24 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchaseCoinPack(
-      CoinPurchaseOption option, GameTheme theme) async {
+    CoinPurchaseOption option,
+    GameTheme theme,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final price = PurchaseService().getStorePriceOrDefault(
-        ProductIds.withPrefix(option.id), option.price,
-        localeTag: Localizations.localeOf(context).toLanguageTag());
+      ProductIds.withPrefix(option.id),
+      option.price,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
+    );
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.storeBuyItem(option.localizedName(l10n))),
-        content:
-            Text(l10n.storeBuyCoinsBody(option.localizedDisplayCoins(l10n), price)),
+        content: Text(
+          l10n.storeBuyCoinsBody(option.localizedDisplayCoins(l10n), price),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -1133,13 +1132,15 @@ class _StoreScreenState extends State<StoreScreen>
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
               try {
-                await PurchaseService()
-                    .purchaseProduct(ProductIds.withPrefix(option.id));
+                await PurchaseService().purchaseProduct(
+                  ProductIds.withPrefix(option.id),
+                );
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
-                      content:
-                          Text(l10n.storeInitiatingFor(option.localizedName(l10n))),
+                      content: Text(
+                        l10n.storeInitiatingFor(option.localizedName(l10n)),
+                      ),
                       backgroundColor: theme.accentColor,
                     ),
                   );
@@ -1175,15 +1176,15 @@ class _StoreScreenState extends State<StoreScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.amber.withValues(alpha: 0.15),
-              Colors.orange.withValues(alpha: 0.08),
+              kRewardGold.withValues(alpha: 0.15),
+              kRewardGold.withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: option.isPopular
                 ? Colors.red.withValues(alpha: 0.4)
-                : Colors.amber.withValues(alpha: 0.3),
+                : kRewardGold.withValues(alpha: 0.3),
             width: option.isPopular ? 2 : 1.5,
           ),
         ),
@@ -1192,9 +1193,7 @@ class _StoreScreenState extends State<StoreScreen>
             Container(
               padding: EdgeInsets.all(context.scaled(8)),
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.amber, Colors.orange],
-                ),
+                gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1254,10 +1253,12 @@ class _StoreScreenState extends State<StoreScreen>
             ),
             Text(
               PurchaseService().getStorePriceOrDefault(
-                  ProductIds.withPrefix(option.id), option.price,
-                  localeTag: Localizations.localeOf(context).toLanguageTag()),
+                ProductIds.withPrefix(option.id),
+                option.price,
+                localeTag: Localizations.localeOf(context).toLanguageTag(),
+              ),
               style: const TextStyle(
-                color: Colors.amber,
+                color: kRewardGold,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -1281,9 +1282,7 @@ class _StoreScreenState extends State<StoreScreen>
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -1293,7 +1292,11 @@ class _StoreScreenState extends State<StoreScreen>
               color: theme.accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: theme.accentColor, size: context.scaled(20)),
+            child: Icon(
+              icon,
+              color: theme.accentColor,
+              size: context.scaled(20),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1309,7 +1312,7 @@ class _StoreScreenState extends State<StoreScreen>
           Text(
             reward,
             style: const TextStyle(
-              color: Colors.amber,
+              color: kRewardGold,
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
@@ -1343,18 +1346,20 @@ class _StoreScreenState extends State<StoreScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.purple.shade400.withValues(alpha: 0.22),
-              Colors.indigo.shade400.withValues(alpha: 0.14),
+              kRewardGold.withValues(alpha: 0.22),
+              kRewardGold.withValues(alpha: 0.14),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: Colors.purple.shade300.withValues(alpha: 0.45)),
+          border: Border.all(color: kRewardGold.withValues(alpha: 0.45)),
         ),
         child: Row(
           children: [
-            Icon(isPro ? Icons.check_circle : Icons.diamond,
-                color: Colors.purple.shade200, size: context.scaled(22)),
+            Icon(
+              isPro ? Icons.check_circle : Icons.diamond,
+              color: kRewardGold,
+              size: context.scaled(22),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -1384,9 +1389,11 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
             if (!isPro)
-              Icon(Icons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  size: context.scaled(20)),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.7),
+                size: context.scaled(20),
+              ),
           ],
         ),
       ),
@@ -1545,22 +1552,22 @@ class _StoreScreenState extends State<StoreScreen>
       onTap: (bundleOwned || isPending)
           ? null
           : () => _purchaseThemeProduct(
-                ProductIds.themesBundle,
-                l10n.storeAllThemesBundle,
-              ),
+              ProductIds.themesBundle,
+              l10n.storeAllThemesBundle,
+            ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.purple.shade400.withValues(alpha: 0.18),
-              Colors.indigo.shade400.withValues(alpha: 0.10),
+              kRewardGold.withValues(alpha: 0.18),
+              kRewardGold.withValues(alpha: 0.10),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.amber.withValues(alpha: 0.5),
+            color: kRewardGold.withValues(alpha: 0.5),
             width: 2,
           ),
         ),
@@ -1569,13 +1576,14 @@ class _StoreScreenState extends State<StoreScreen>
             Container(
               padding: EdgeInsets.all(context.scaled(12)),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.purple.shade400, Colors.indigo.shade400],
-                ),
+                gradient: LinearGradient(colors: [kRewardGold, kRewardGold]),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.card_giftcard,
-                  color: Colors.white, size: context.scaled(24)),
+              child: Icon(
+                Icons.card_giftcard,
+                color: Colors.white,
+                size: context.scaled(24),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1602,6 +1610,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
             _buildBundleStatusPill(
+              theme: theme,
               isOwned: bundleOwned,
               isPending: isPending,
               priceLabel: price,
@@ -1613,6 +1622,7 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Widget _buildBundleStatusPill({
+    required GameTheme theme,
     required bool isOwned,
     required bool isPending,
     required String priceLabel,
@@ -1622,7 +1632,7 @@ class _StoreScreenState extends State<StoreScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blueGrey,
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -1652,7 +1662,7 @@ class _StoreScreenState extends State<StoreScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isOwned ? Colors.green : Colors.amber,
+        color: isOwned ? theme.accentColor : kRewardGold,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -1678,8 +1688,11 @@ class _StoreScreenState extends State<StoreScreen>
         productId != null && _pendingProductIds.contains(productId);
     final price = productId == null
         ? AppLocalizations.of(context)!.storePillFree
-        : PurchaseService().getStorePriceOrDefault(productId, 1.99,
-            localeTag: Localizations.localeOf(context).toLanguageTag());
+        : PurchaseService().getStorePriceOrDefault(
+            productId,
+            1.99,
+            localeTag: Localizations.localeOf(context).toLanguageTag(),
+          );
     return GestureDetector(
       onTap: isPending
           ? null
@@ -1735,8 +1748,7 @@ class _StoreScreenState extends State<StoreScreen>
                   Text(
                     _shortThemeDescription(target),
                     style: TextStyle(
-                      color:
-                          currentTheme.accentColor.withValues(alpha: 0.65),
+                      color: currentTheme.accentColor.withValues(alpha: 0.65),
                       fontSize: 11,
                     ),
                     maxLines: 1,
@@ -1800,7 +1812,7 @@ class _StoreScreenState extends State<StoreScreen>
     final Color foreground;
     Widget child;
     if (isPending) {
-      background = Colors.blueGrey;
+      background = Colors.white.withValues(alpha: 0.25);
       foreground = Colors.white;
       child = Row(
         mainAxisSize: MainAxisSize.min,
@@ -1836,7 +1848,7 @@ class _StoreScreenState extends State<StoreScreen>
         ),
       );
     } else if (isOwned) {
-      background = Colors.green;
+      background = currentTheme.accentColor;
       foreground = Colors.white;
       child = Text(
         l10n.storePillApply,
@@ -1847,7 +1859,7 @@ class _StoreScreenState extends State<StoreScreen>
         ),
       );
     } else {
-      background = Colors.amber;
+      background = kRewardGold;
       foreground = Colors.black;
       child = Text(
         fallbackPriceLabel,
@@ -1888,21 +1900,25 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
-  Future<void> _purchaseThemeProduct(String productId, String displayName) async {
+  Future<void> _purchaseThemeProduct(
+    String productId,
+    String displayName,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final theme = context.read<ThemeCubit>().state.currentTheme;
-    final price = PurchaseService().getStorePriceOrDefault(productId, 1.99,
-        localeTag: Localizations.localeOf(context).toLanguageTag());
+    final price = PurchaseService().getStorePriceOrDefault(
+      productId,
+      1.99,
+      localeTag: Localizations.localeOf(context).toLanguageTag(),
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.color_lens, color: theme.accentColor),
@@ -1936,7 +1952,7 @@ class _StoreScreenState extends State<StoreScreen>
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(l10n.storeVerifyingPurchase(displayName)),
-          backgroundColor: Colors.blue,
+          backgroundColor: theme.accentColor,
         ),
       );
     } catch (e) {
@@ -1997,44 +2013,49 @@ class _StoreScreenState extends State<StoreScreen>
               mainAxisSpacing: context.scaled(12),
             ),
             itemCount: SnakeSkinType.values.length,
-      itemBuilder: (context, index) {
-        final skin = SnakeSkinType.values[index];
-        // Pro subscription unlocks all premium skins (mirrors theme bundling).
-        final isUnlocked = premiumState.isSkinUnlocked(skin);
-        final isSelected = premiumState.selectedSkinId == skin.id;
-        final productId = ProductIds.skinStoreId(skin.id);
-        return _buildSkinCard(
-          skin: skin,
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPending: _pendingProductIds.contains(productId),
-          price: skin.isPremium
-              ? PurchaseService().getStorePriceOrDefault(
-                  productId, skin.price,
-                  localeTag: Localizations.localeOf(context).toLanguageTag())
-              : l10n.storePillFree,
-          theme: theme,
-          onTap: () {
-            if (isUnlocked) {
-              context.read<PremiumCubit>().selectSkin(skin.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(l10n.storeEquippedToast(skin.localizedName(l10n))),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 1),
-                ),
+            itemBuilder: (context, index) {
+              final skin = SnakeSkinType.values[index];
+              // Pro subscription unlocks all premium skins (mirrors theme bundling).
+              final isUnlocked = premiumState.isSkinUnlocked(skin);
+              final isSelected = premiumState.selectedSkinId == skin.id;
+              final productId = ProductIds.skinStoreId(skin.id);
+              return _buildSkinCard(
+                skin: skin,
+                isUnlocked: isUnlocked,
+                isSelected: isSelected,
+                isPending: _pendingProductIds.contains(productId),
+                price: skin.isPremium
+                    ? PurchaseService().getStorePriceOrDefault(
+                        productId,
+                        skin.price,
+                        localeTag: Localizations.localeOf(
+                          context,
+                        ).toLanguageTag(),
+                      )
+                    : l10n.storePillFree,
+                theme: theme,
+                onTap: () {
+                  if (isUnlocked) {
+                    context.read<PremiumCubit>().selectSkin(skin.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          l10n.storeEquippedToast(skin.localizedName(l10n)),
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  } else {
+                    _purchaseCosmetic(
+                      productId: productId,
+                      displayName: skin.localizedName(l10n),
+                      fallbackPrice: skin.price,
+                    );
+                  }
+                },
               );
-            } else {
-              _purchaseCosmetic(
-                productId: productId,
-                displayName: skin.localizedName(l10n),
-                fallbackPrice: skin.price,
-              );
-            }
-          },
-        );
-      },
+            },
           ),
         ),
       ],
@@ -2058,10 +2079,7 @@ class _StoreScreenState extends State<StoreScreen>
     final l10n = AppLocalizations.of(context)!;
     final palette = skin.colors.isNotEmpty
         ? skin.colors
-        : [
-            theme.snakeColor,
-            theme.snakeColor.withValues(alpha: 0.6),
-          ];
+        : [theme.snakeColor, theme.snakeColor.withValues(alpha: 0.6)];
     final headerStart = palette.first.withValues(alpha: 0.85);
     final headerEnd = palette.last.withValues(alpha: 0.35);
 
@@ -2076,8 +2094,8 @@ class _StoreScreenState extends State<StoreScreen>
             color: isSelected
                 ? theme.accentColor
                 : isUnlocked
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : palette.last.withValues(alpha: 0.45),
+                ? Colors.white.withValues(alpha: 0.10)
+                : palette.last.withValues(alpha: 0.45),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -2134,7 +2152,9 @@ class _StoreScreenState extends State<StoreScreen>
                         right: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.45),
                             borderRadius: BorderRadius.circular(10),
@@ -2142,8 +2162,11 @@ class _StoreScreenState extends State<StoreScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.lock,
-                                  color: Colors.white, size: 11),
+                              const Icon(
+                                Icons.lock,
+                                color: Colors.white,
+                                size: 11,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 AppLocalizations.of(context)!.settingsProBadge,
@@ -2239,44 +2262,49 @@ class _StoreScreenState extends State<StoreScreen>
               mainAxisSpacing: context.scaled(12),
             ),
             itemCount: TrailEffectType.values.length,
-      itemBuilder: (context, index) {
-        final trail = TrailEffectType.values[index];
-        // Pro subscription unlocks all premium trails (mirrors theme bundling).
-        final isUnlocked = premiumState.isTrailUnlocked(trail);
-        final isSelected = premiumState.selectedTrailId == trail.id;
-        final productId = ProductIds.withPrefix(trail.id);
-        return _buildTrailCard(
-          trail: trail,
-          isUnlocked: isUnlocked,
-          isSelected: isSelected,
-          isPending: _pendingProductIds.contains(productId),
-          price: trail.isPremium
-              ? PurchaseService().getStorePriceOrDefault(
-                  productId, trail.price,
-                  localeTag: Localizations.localeOf(context).toLanguageTag())
-              : l10n.storePillFree,
-          theme: theme,
-          onTap: () {
-            if (isUnlocked) {
-              context.read<PremiumCubit>().selectTrail(trail.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text(l10n.storeEquippedToast(trail.localizedName(l10n))),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 1),
-                ),
+            itemBuilder: (context, index) {
+              final trail = TrailEffectType.values[index];
+              // Pro subscription unlocks all premium trails (mirrors theme bundling).
+              final isUnlocked = premiumState.isTrailUnlocked(trail);
+              final isSelected = premiumState.selectedTrailId == trail.id;
+              final productId = ProductIds.withPrefix(trail.id);
+              return _buildTrailCard(
+                trail: trail,
+                isUnlocked: isUnlocked,
+                isSelected: isSelected,
+                isPending: _pendingProductIds.contains(productId),
+                price: trail.isPremium
+                    ? PurchaseService().getStorePriceOrDefault(
+                        productId,
+                        trail.price,
+                        localeTag: Localizations.localeOf(
+                          context,
+                        ).toLanguageTag(),
+                      )
+                    : l10n.storePillFree,
+                theme: theme,
+                onTap: () {
+                  if (isUnlocked) {
+                    context.read<PremiumCubit>().selectTrail(trail.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          l10n.storeEquippedToast(trail.localizedName(l10n)),
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  } else {
+                    _purchaseCosmetic(
+                      productId: productId,
+                      displayName: trail.localizedName(l10n),
+                      fallbackPrice: trail.price,
+                    );
+                  }
+                },
               );
-            } else {
-              _purchaseCosmetic(
-                productId: productId,
-                displayName: trail.localizedName(l10n),
-                fallbackPrice: trail.price,
-              );
-            }
-          },
-        );
-      },
+            },
           ),
         ),
       ],
@@ -2322,8 +2350,8 @@ class _StoreScreenState extends State<StoreScreen>
             color: isSelected
                 ? theme.accentColor
                 : isUnlocked
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : palette.last.withValues(alpha: 0.45),
+                ? Colors.white.withValues(alpha: 0.10)
+                : palette.last.withValues(alpha: 0.45),
             width: isSelected ? 2 : 1,
           ),
           // Soft outer glow for the active trail so the selection state
@@ -2394,8 +2422,11 @@ class _StoreScreenState extends State<StoreScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.lock,
-                                  color: Colors.white, size: 11),
+                              const Icon(
+                                Icons.lock,
+                                color: Colors.white,
+                                size: 11,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 AppLocalizations.of(context)!.settingsProBadge,
@@ -2472,7 +2503,7 @@ class _StoreScreenState extends State<StoreScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: Colors.blueGrey,
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -2505,22 +2536,22 @@ class _StoreScreenState extends State<StoreScreen>
         color: isSelected
             ? theme.accentColor
             : isUnlocked
-                ? Colors.green
-                : Colors.amber,
+            ? Colors.green
+            : kRewardGold,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         isSelected
             ? l10n.storePillEquipped
             : isUnlocked
-                ? l10n.storePillEquip
-                : priceLabel,
+            ? l10n.storePillEquip
+            : priceLabel,
         style: TextStyle(
           color: isSelected
               ? theme.backgroundColor
               : isUnlocked
-                  ? Colors.white
-                  : Colors.black,
+              ? Colors.white
+              : Colors.black,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
@@ -2547,9 +2578,7 @@ class _StoreScreenState extends State<StoreScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.shopping_cart, color: theme.accentColor),
@@ -2583,7 +2612,7 @@ class _StoreScreenState extends State<StoreScreen>
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(l10n.storeVerifyingPurchase(displayName)),
-          backgroundColor: Colors.blue,
+          backgroundColor: theme.accentColor,
         ),
       );
     } catch (e) {
@@ -2643,17 +2672,22 @@ class _StoreScreenState extends State<StoreScreen>
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [
-              theme.accentColor.withValues(alpha: 0.18),
-              theme.foodColor.withValues(alpha: 0.10),
-            ]),
+            gradient: LinearGradient(
+              colors: [
+                theme.accentColor.withValues(alpha: 0.18),
+                theme.foodColor.withValues(alpha: 0.10),
+              ],
+            ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: theme.accentColor.withValues(alpha: 0.4)),
           ),
           child: Row(
             children: [
-              Icon(Icons.play_circle_fill,
-                  color: theme.accentColor, size: context.scaled(28)),
+              Icon(
+                Icons.play_circle_fill,
+                color: theme.accentColor,
+                size: context.scaled(28),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -2669,7 +2703,9 @@ class _StoreScreenState extends State<StoreScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      ready ? l10n.storeWatchAdReady : l10n.storeWatchAdNotReady,
+                      ready
+                          ? l10n.storeWatchAdReady
+                          : l10n.storeWatchAdNotReady,
                       style: TextStyle(
                         color: theme.accentColor.withValues(alpha: 0.65),
                         fontSize: 12,
@@ -2678,9 +2714,11 @@ class _StoreScreenState extends State<StoreScreen>
                   ],
                 ),
               ),
-              Icon(Icons.bolt,
-                  color: theme.accentColor.withValues(alpha: 0.9),
-                  size: context.scaled(22)),
+              Icon(
+                Icons.bolt,
+                color: theme.accentColor.withValues(alpha: 0.9),
+                size: context.scaled(22),
+              ),
             ],
           ),
         ),
@@ -2749,8 +2787,11 @@ class _StoreScreenState extends State<StoreScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        color: theme.accentColor, size: context.scaled(18)),
+                    Icon(
+                      Icons.info_outline,
+                      color: theme.accentColor,
+                      size: context.scaled(18),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -2800,7 +2841,11 @@ class _StoreScreenState extends State<StoreScreen>
               const SizedBox(height: 12),
               ...PowerUpBundle.availableBundles.map(
                 (bundle) => _buildPowerUpBundleCard(
-                    bundle, theme, premiumState, coinsState),
+                  bundle,
+                  theme,
+                  premiumState,
+                  coinsState,
+                ),
               ),
             ],
           ),
@@ -2822,9 +2867,7 @@ class _StoreScreenState extends State<StoreScreen>
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -2837,8 +2880,11 @@ class _StoreScreenState extends State<StoreScreen>
                   color: theme.accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(item.icon,
-                    color: theme.accentColor, size: context.scaled(22)),
+                child: Icon(
+                  item.icon,
+                  color: theme.accentColor,
+                  size: context.scaled(22),
+                ),
               ),
               if (owned > 0)
                 Positioned(
@@ -2895,8 +2941,7 @@ class _StoreScreenState extends State<StoreScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.primaryColor.withValues(alpha: 0.85),
               foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -2905,8 +2950,7 @@ class _StoreScreenState extends State<StoreScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.monetization_on,
-                    size: 14, color: Colors.amber),
+                const Icon(Icons.monetization_on, size: 14, color: kRewardGold),
                 const SizedBox(width: 4),
                 Text(
                   '${item.coinCost}',
@@ -2924,7 +2968,9 @@ class _StoreScreenState extends State<StoreScreen>
   }
 
   Future<void> _purchasePowerUpWithCoins(
-      _PowerUpCatalogItem item, GameTheme theme) async {
+    _PowerUpCatalogItem item,
+    GameTheme theme,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
@@ -2946,9 +2992,7 @@ class _StoreScreenState extends State<StoreScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(item.icon, color: theme.accentColor),
@@ -2974,8 +3018,10 @@ class _StoreScreenState extends State<StoreScreen>
     );
     if (confirmed != true || !mounted) return;
 
-    final newBalance =
-        await powerUpCubit.purchaseWithCoins(item.type, item.coinCost);
+    final newBalance = await powerUpCubit.purchaseWithCoins(
+      item.type,
+      item.coinCost,
+    );
     if (!mounted) return;
     if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
@@ -3014,15 +3060,15 @@ class _StoreScreenState extends State<StoreScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.purple.withValues(alpha: 0.14),
-            Colors.indigo.withValues(alpha: 0.08),
+            kRewardGold.withValues(alpha: 0.14),
+            kRewardGold.withValues(alpha: 0.08),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOwned
-              ? Colors.green.withValues(alpha: 0.4)
-              : Colors.purple.withValues(alpha: 0.3),
+              ? theme.accentColor.withValues(alpha: 0.4)
+              : kRewardGold.withValues(alpha: 0.3),
           width: isOwned ? 2 : 1,
         ),
       ),
@@ -3035,7 +3081,7 @@ class _StoreScreenState extends State<StoreScreen>
                 padding: EdgeInsets.all(context.scaled(10)),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Colors.purple, Colors.indigo],
+                    colors: [kRewardGold, kRewardGold],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -3079,7 +3125,7 @@ class _StoreScreenState extends State<StoreScreen>
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.purple.withValues(alpha: 0.2),
+                      color: kRewardGold.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -3110,7 +3156,7 @@ class _StoreScreenState extends State<StoreScreen>
               Text(
                 l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
                 style: const TextStyle(
-                  color: Colors.amber,
+                  color: kRewardGold,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -3124,8 +3170,8 @@ class _StoreScreenState extends State<StoreScreen>
                   backgroundColor: isOwned
                       ? Colors.green
                       : canAfford
-                          ? theme.primaryColor
-                          : Colors.grey.shade600,
+                      ? theme.primaryColor
+                      : Colors.grey.shade600,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -3135,11 +3181,13 @@ class _StoreScreenState extends State<StoreScreen>
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: Text(isOwned
-                    ? l10n.storePillOwned
-                    : canAfford
-                        ? l10n.storeBuyUpper
-                        : l10n.storeNeedCoins),
+                child: Text(
+                  isOwned
+                      ? l10n.storePillOwned
+                      : canAfford
+                      ? l10n.storeBuyUpper
+                      : l10n.storeNeedCoins,
+                ),
               ),
             ],
           ),
@@ -3218,9 +3266,7 @@ class _ThemePreview extends StatelessWidget {
         children: [
           // Faint grid hint
           Positioned.fill(
-            child: CustomPaint(
-              painter: _ThemePreviewPainter(theme: theme),
-            ),
+            child: CustomPaint(painter: _ThemePreviewPainter(theme: theme)),
           ),
         ],
       ),
@@ -3258,13 +3304,17 @@ class _ThemePreviewPainter extends CustomPainter {
 
     // Coiled snake path (head → tail). Index 0 is the head.
     const snakeCells = <(int, int)>[
-      (4, 2), (3, 2), (2, 2), (2, 3), (2, 4), (3, 4),
+      (4, 2),
+      (3, 2),
+      (2, 2),
+      (2, 3),
+      (2, 4),
+      (3, 4),
     ];
     final r = (cellW < cellH ? cellW : cellH) * 0.40;
     for (int i = 0; i < snakeCells.length; i++) {
       final fade = 1.0 - (i / snakeCells.length) * 0.55;
-      final paint = Paint()
-        ..color = theme.snakeColor.withValues(alpha: fade);
+      final paint = Paint()..color = theme.snakeColor.withValues(alpha: fade);
       final (col, row) = snakeCells[i];
       canvas.drawCircle(
         Offset(cellW * col + cellW / 2, cellH * row + cellH / 2),
@@ -3291,8 +3341,7 @@ class _ThemePreviewPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ThemePreviewPainter old) =>
-      old.theme != theme;
+  bool shouldRepaint(covariant _ThemePreviewPainter old) => old.theme != theme;
 }
 
 class _PowerUpCatalogItem {
@@ -3412,11 +3461,16 @@ class _TrailPreviewPainter extends CustomPainter {
 
   // ------------- Per-trail signature helpers -------------
 
-  void _drawSparkles(Canvas canvas, Size size, List<Color> palette,
-      {required int density}) {
+  void _drawSparkles(
+    Canvas canvas,
+    Size size,
+    List<Color> palette, {
+    required int density,
+  }) {
     final paint = Paint()
-      ..color = (palette.isEmpty ? Colors.white : palette.first)
-          .withValues(alpha: 0.9);
+      ..color = (palette.isEmpty ? Colors.white : palette.first).withValues(
+        alpha: 0.9,
+      );
     final rng = math.Random(7);
     for (var i = 0; i < density; i++) {
       final cx = rng.nextDouble() * size.width;
@@ -3426,22 +3480,34 @@ class _TrailPreviewPainter extends CustomPainter {
     }
   }
 
-  void _drawHalos(Canvas canvas, List<Offset> centers, List<Color> palette,
-      double r) {
+  void _drawHalos(
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+    double r,
+  ) {
     for (var i = 0; i < centers.length; i++) {
       final paint = Paint()
-        ..color = (palette.isEmpty
-                ? Colors.cyan
-                : Color.lerp(palette.first, palette.last,
-                    i / centers.length)!)
-            .withValues(alpha: 0.30)
+        ..color =
+            (palette.isEmpty
+                    ? Colors.cyan
+                    : Color.lerp(
+                        palette.first,
+                        palette.last,
+                        i / centers.length,
+                      )!)
+                .withValues(alpha: 0.30)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
       canvas.drawCircle(centers[i], r * 2.0, paint);
     }
   }
 
-  void _drawRainbowArc(Canvas canvas, List<Offset> centers,
-      List<Color> palette, double r) {
+  void _drawRainbowArc(
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+    double r,
+  ) {
     if (palette.isEmpty) return;
     final path = Path()..moveTo(centers.first.dx, centers.first.dy);
     for (var i = 1; i < centers.length; i++) {
@@ -3450,8 +3516,7 @@ class _TrailPreviewPainter extends CustomPainter {
     final paint = Paint()
       ..shader = LinearGradient(
         colors: palette,
-      ).createShader(
-          Rect.fromPoints(centers.first, centers.last))
+      ).createShader(Rect.fromPoints(centers.first, centers.last))
       ..strokeWidth = r * 1.8
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke
@@ -3464,30 +3529,41 @@ class _TrailPreviewPainter extends CustomPainter {
     final tail = centers.first;
     for (var i = 0; i < 6; i++) {
       final t = i / 5;
-      final flameTip = Offset(
-        tail.dx - 10 - i * 3,
-        tail.dy + 8 - i * 2.5,
-      );
+      final flameTip = Offset(tail.dx - 10 - i * 3, tail.dy + 8 - i * 2.5);
       final flameBase = Offset(tail.dx + (i % 2 == 0 ? -2 : 2), tail.dy);
       final path = Path()
         ..moveTo(flameBase.dx - 4, flameBase.dy + 4)
         ..quadraticBezierTo(
-          flameTip.dx - 2, flameTip.dy + 4, flameTip.dx, flameTip.dy)
+          flameTip.dx - 2,
+          flameTip.dy + 4,
+          flameTip.dx,
+          flameTip.dy,
+        )
         ..quadraticBezierTo(
-          flameTip.dx + 2, flameTip.dy + 4, flameBase.dx + 4, flameBase.dy + 4)
+          flameTip.dx + 2,
+          flameTip.dy + 4,
+          flameBase.dx + 4,
+          flameBase.dy + 4,
+        )
         ..close();
       canvas.drawPath(
         path,
         Paint()
-          ..color = Color.lerp(palette.last, palette.first, t)!
-              .withValues(alpha: 0.55 - t * 0.4)
+          ..color = Color.lerp(
+            palette.last,
+            palette.first,
+            t,
+          )!.withValues(alpha: 0.55 - t * 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
       );
     }
   }
 
   void _drawLightning(
-      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+  ) {
     if (palette.isEmpty) return;
     final paint = Paint()
       ..color = palette.first.withValues(alpha: 0.85)
@@ -3519,9 +3595,7 @@ class _TrailPreviewPainter extends CustomPainter {
         canvas,
         Offset(cx, cy),
         r,
-        Paint()
-          ..color = palette[i % palette.length]
-              .withValues(alpha: 0.85),
+        Paint()..color = palette[i % palette.length].withValues(alpha: 0.85),
       );
     }
   }
@@ -3530,7 +3604,10 @@ class _TrailPreviewPainter extends CustomPainter {
     final path = Path();
     for (var i = 0; i < 4; i++) {
       final angle = (math.pi / 2) * i;
-      final tip = Offset(c.dx + math.cos(angle) * r, c.dy + math.sin(angle) * r);
+      final tip = Offset(
+        c.dx + math.cos(angle) * r,
+        c.dy + math.sin(angle) * r,
+      );
       final inner = Offset(
         c.dx + math.cos(angle + math.pi / 4) * r * 0.35,
         c.dy + math.sin(angle + math.pi / 4) * r * 0.35,
@@ -3564,8 +3641,12 @@ class _TrailPreviewPainter extends CustomPainter {
     }
   }
 
-  void _drawNeonGlow(Canvas canvas, List<Offset> centers, List<Color> palette,
-      double r) {
+  void _drawNeonGlow(
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+    double r,
+  ) {
     if (palette.isEmpty) return;
     for (var i = 0; i < centers.length; i++) {
       final color = palette[i % palette.length];
@@ -3580,7 +3661,10 @@ class _TrailPreviewPainter extends CustomPainter {
   }
 
   void _drawShadowSmoke(
-      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+  ) {
     if (palette.isEmpty) return;
     final rng = math.Random(99);
     for (var i = 0; i < 9; i++) {
@@ -3599,8 +3683,12 @@ class _TrailPreviewPainter extends CustomPainter {
     }
   }
 
-  void _drawCrystalShards(Canvas canvas, List<Offset> centers,
-      List<Color> palette, double r) {
+  void _drawCrystalShards(
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+    double r,
+  ) {
     if (palette.isEmpty) return;
     final rng = math.Random(13);
     for (var i = 0; i < 6; i++) {
@@ -3618,14 +3706,16 @@ class _TrailPreviewPainter extends CustomPainter {
         ..close();
       canvas.drawPath(
         path,
-        Paint()
-          ..color = palette[i % palette.length].withValues(alpha: 0.75),
+        Paint()..color = palette[i % palette.length].withValues(alpha: 0.75),
       );
     }
   }
 
   void _drawDragonBreath(
-      Canvas canvas, List<Offset> centers, List<Color> palette) {
+    Canvas canvas,
+    List<Offset> centers,
+    List<Color> palette,
+  ) {
     if (palette.length < 2) return;
     // Curving plume from the head, fanning out as it trails.
     final head = centers.last;
@@ -3638,8 +3728,11 @@ class _TrailPreviewPainter extends CustomPainter {
         Offset(cx, cy),
         r,
         Paint()
-          ..color = Color.lerp(palette.last, palette.first, t)!
-              .withValues(alpha: 0.65 - t * 0.5)
+          ..color = Color.lerp(
+            palette.last,
+            palette.first,
+            t,
+          )!.withValues(alpha: 0.65 - t * 0.5)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
       );
     }
@@ -3770,15 +3863,21 @@ class _SkinPreviewPainter extends CustomPainter {
     }
   }
 
-  void _whiteSparkles(Canvas canvas, List<Offset> centers, double r,
-      {required int count}) {
+  void _whiteSparkles(
+    Canvas canvas,
+    List<Offset> centers,
+    double r, {
+    required int count,
+  }) {
     final rng = math.Random(3);
     final paint = Paint()..color = Colors.white.withValues(alpha: 0.85);
     for (var i = 0; i < count; i++) {
       final c = centers[i % centers.length];
       canvas.drawCircle(
-        Offset(c.dx + (rng.nextDouble() - 0.5) * r * 0.8,
-            c.dy + (rng.nextDouble() - 0.5) * r * 0.8),
+        Offset(
+          c.dx + (rng.nextDouble() - 0.5) * r * 0.8,
+          c.dy + (rng.nextDouble() - 0.5) * r * 0.8,
+        ),
         1.4,
         paint,
       );
@@ -3802,8 +3901,11 @@ class _SkinPreviewPainter extends CustomPainter {
       ..strokeWidth = 1.1
       ..strokeCap = StrokeCap.round;
     for (final c in centers) {
-      final rect =
-          Rect.fromCenter(center: Offset(c.dx, c.dy - r * 0.1), width: r * 1.4, height: r * 0.9);
+      final rect = Rect.fromCenter(
+        center: Offset(c.dx, c.dy - r * 0.1),
+        width: r * 1.4,
+        height: r * 0.9,
+      );
       canvas.drawArc(rect, math.pi, math.pi, false, paint);
     }
   }
@@ -3838,8 +3940,10 @@ class _SkinPreviewPainter extends CustomPainter {
           1.2 + rng.nextDouble(),
           Paint()
             ..color = Color.lerp(
-                    const Color(0xFFFFD86A), const Color(0xFFFF4500), s / 2)!
-                .withValues(alpha: 0.8)
+              const Color(0xFFFFD86A),
+              const Color(0xFFFF4500),
+              s / 2,
+            )!.withValues(alpha: 0.8)
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
         );
       }
@@ -3858,8 +3962,11 @@ class _SkinPreviewPainter extends CustomPainter {
       final fy = c.dy - r * 0.5;
       canvas.drawLine(Offset(fx - s, fy - s), Offset(fx + s, fy + s), paint);
       canvas.drawLine(Offset(fx - s, fy + s), Offset(fx + s, fy - s), paint);
-      canvas.drawLine(Offset(fx, fy - s * 1.4), Offset(fx, fy + s * 1.4),
-          paint);
+      canvas.drawLine(
+        Offset(fx, fy - s * 1.4),
+        Offset(fx, fy + s * 1.4),
+        paint,
+      );
     }
   }
 
