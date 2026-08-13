@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Tutte le tue partite, contate",
   "settingsReplaysSubtitle": "Rivedi le partite salvate",
   "homeTapToPlay": "Tocca per giocare",
-  "homeTileMe": "Io"
+  "homeTileMe": "Io",
+  "dchSectionChallenges": "Sfide",
+  "dchRewardLine": "{coins} monete · {xp} XP"
 }

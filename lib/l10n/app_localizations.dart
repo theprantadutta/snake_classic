@@ -10971,6 +10971,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Me'**
   String get homeTileMe;
+
+  /// No description provided for @dchSectionChallenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenges'**
+  String get dchSectionChallenges;
+
+  /// Reward summary on a daily challenge row
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins · {xp} XP'**
+  String dchRewardLine(int coins, int xp);
 }
 
 class _AppLocalizationsDelegate

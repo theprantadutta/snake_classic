@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Todas as partidas que jogaste, somadas",
   "settingsReplaysSubtitle": "Revê as partidas guardadas",
   "homeTapToPlay": "Toca para jogar",
-  "homeTileMe": "Eu"
+  "homeTileMe": "Eu",
+  "dchSectionChallenges": "Desafios",
+  "dchRewardLine": "{coins} moedas · {xp} XP"
 }

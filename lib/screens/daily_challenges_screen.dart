@@ -6,12 +6,10 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -20,6 +18,8 @@ import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -27,7 +27,8 @@ class DailyChallengesScreen extends ConsumerStatefulWidget {
   const DailyChallengesScreen({super.key});
 
   @override
-  ConsumerState<DailyChallengesScreen> createState() => _DailyChallengesScreenState();
+  ConsumerState<DailyChallengesScreen> createState() =>
+      _DailyChallengesScreenState();
 }
 
 class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
@@ -38,7 +39,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   }
 
   Future<void> _claimReward(DailyChallenge challenge) async {
-    final success = await ref.read(dailyChallengesProvider.notifier).claimReward(challenge.id);
+    final success = await ref
+        .read(dailyChallengesProvider.notifier)
+        .claimReward(challenge.id);
     if (success) {
       getIt<AnalyticsFacade>().trackDailyChallengeRewardClaimed();
       // The coins are NOT granted here. DailyChallengeService.claimReward
@@ -56,10 +59,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                 Icon(Icons.monetization_on, color: Colors.amber),
                 const SizedBox(width: 8),
                 Text(
-                  AppLocalizations.of(context)!.dchClaimedReward(
-                    challenge.coinReward,
-                    challenge.xpReward,
-                  ),
+                  AppLocalizations.of(
+                    context,
+                  )!.dchClaimedReward(challenge.coinReward, challenge.xpReward),
                 ),
               ],
             ),
@@ -72,7 +74,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   }
 
   Future<void> _claimAllRewards() async {
-    final totalClaimed = await ref.read(dailyChallengesProvider.notifier).claimAllRewards();
+    final totalClaimed = await ref
+        .read(dailyChallengesProvider.notifier)
+        .claimAllRewards();
     if (totalClaimed > 0) {
       // Same as _claimReward: claimAllRewards already credited the total.
       // The 2x rewarded-ad grant further down IS a separate, additional
@@ -127,6 +131,28 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     }
   }
 
+  /// Maps the locally-generated "all challenges" bonus row's English title
+  /// to its localized string at render time; server-provided titles pass
+  /// through untouched (the Drift row stays English).
+  String _localizedChallengeTitle(
+    DailyChallenge challenge,
+    AppLocalizations l10n,
+  ) {
+    if (challenge.title == 'All Challenges Bonus') return l10n.dchAllBonusTitle;
+    return challenge.localizedTitle(l10n);
+  }
+
+  /// Same render-time mapping for the bonus row's description.
+  String _localizedChallengeDescription(
+    DailyChallenge challenge,
+    AppLocalizations l10n,
+  ) {
+    if (challenge.description == 'Completed every daily challenge today.') {
+      return l10n.dchAllBonusDesc;
+    }
+    return challenge.localizedDescription(l10n);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch the daily challenges state from Riverpod
@@ -140,7 +166,29 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, GameTheme theme, DailyChallengesState challengesState) {
+  /// The screen, in the language Settings and Profile settled on: an
+  /// uppercase accent eyebrow over a hairline-bordered translucent card, one
+  /// column, monochrome against the active theme.
+  ///
+  /// It had drifted a long way from that. The summary was a primary-to-accent
+  /// gradient; every challenge card changed its own fill AND its border colour
+  /// with state (green when done, amber when claimable, primary otherwise);
+  /// difficulty was a red, orange or green pill; the two rewards were an amber
+  /// chip and a purple chip; the all-complete banner was an amber-to-orange
+  /// gradient with a shimmer running across it. Six palettes and four entrance
+  /// animations on one screen, which leaves nothing for the one thing that
+  /// actually needs attention — the challenge you can claim right now.
+  ///
+  /// Now colour means one thing here: gold is a reward, the theme's accent is
+  /// progress and action, and everything else is white at some opacity. State
+  /// is carried by the status glyph and the claim button, not by repainting
+  /// the whole row.
+  Widget _buildContent(
+    BuildContext context,
+    GameTheme theme,
+    DailyChallengesState challengesState,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     final isRefreshing = challengesState.isLoading;
     final challenges = challengesState.challenges;
     final hasUnclaimedRewards = challengesState.hasUnclaimedRewards;
@@ -148,28 +196,42 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
 
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          AppLocalizations.of(context)!.dcTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          l10n.dcTitle.toUpperCase(),
+          style: TextStyle(
+            color: theme.accentColor,
+            fontWeight: FontWeight.bold,
+            letterSpacing: context.letterSpacing(2),
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                color: Colors.black.withValues(alpha: 0.3),
+              ),
+            ],
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.primaryColor),
-          onPressed: () => context.pop(),
-        ),
+        iconTheme: IconThemeData(color: theme.accentColor),
         actions: [
           if (hasUnclaimedRewards)
-            TextButton.icon(
+            TextButton(
               onPressed: _claimAllRewards,
-              icon: Icon(Icons.redeem, color: Colors.amber),
-              label: Text(
-                AppLocalizations.of(context)!.dchClaimAll,
-                style: TextStyle(color: Colors.amber),
+              child: Text(
+                l10n.dchClaimAll.toUpperCase(),
+                style: TextStyle(
+                  color: _gold,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  letterSpacing: context.letterSpacing(1),
+                ),
               ),
             ),
           IconButton(
+            tooltip: l10n.dchLoading,
             icon: isRefreshing
                 ? SizedBox(
                     width: 20,
@@ -186,41 +248,49 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       ),
       body: AppBackground(
         theme: theme,
-        child: RefreshIndicator(
-          onRefresh: _refreshChallenges,
-          color: theme.accentColor,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(
-              horizontal: 16 + context.sideInset(),
-              vertical: 16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Progress summary card
-                _buildProgressSummary(theme, challengesState),
-                const SizedBox(height: 20),
-
-                // Challenges list
-                if (isRefreshing && challenges.isEmpty)
-                  _buildLoadingState(theme)
-                else if (challenges.isEmpty)
-                  _buildEmptyState(theme)
-                else
-                  ...challenges.asMap().entries.map(
-                    (e) => _buildChallengeCard(e.value, e.key, theme),
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _refreshChallenges,
+            color: theme.accentColor,
+            backgroundColor: theme.backgroundColor,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: 24 + context.sideInset(),
+                vertical: 24,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _section(
+                    theme,
+                    l10n.dchTodaysProgress,
+                    _buildProgressSummary(theme, challengesState),
                   ),
+                  const SizedBox(height: 32),
 
-                // All complete bonus
-                if (allCompleted)
-                  _buildAllCompleteBonusCard(theme, challengesState),
+                  _sectionHeader(theme, l10n.dchSectionChallenges),
+                  if (isRefreshing && challenges.isEmpty)
+                    // Skeleton rows rather than a spinner: the list that
+                    // arrives is this tall, so nothing below it moves when it
+                    // does.
+                    ...List.generate(3, (_) => _skeletonCard(theme))
+                  else if (challenges.isEmpty)
+                    _buildEmptyState(theme)
+                  else
+                    ...challenges.map((c) => _buildChallengeCard(c, theme)),
 
-                const SizedBox(height: 20),
+                  if (allCompleted) ...[
+                    const SizedBox(height: 8),
+                    _buildAllCompleteBonusCard(theme, challengesState),
+                  ],
 
-                // Info section
-                _buildInfoSection(theme),
-              ],
+                  const SizedBox(height: 32),
+
+                  _section(theme, l10n.dchAbout, _buildInfoList(l10n)),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -228,621 +298,429 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     );
   }
 
-  Widget _buildProgressSummary(GameTheme theme, DailyChallengesState challengesState) {
+  // ==================== Shared shapes ====================
+
+  /// Gold means a reward, here and on the home screen's best-score medal. It
+  /// is the only colour on this screen that is not the theme's own.
+  static const Color _gold = Color(0xFFFFC53D);
+
+  Widget _sectionHeader(GameTheme theme, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: theme.accentColor,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: context.letterSpacing(1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _card(GameTheme theme, {required Widget child, Color? borderColor}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.backgroundColor.withValues(alpha: 0.3),
+        border: Border.all(
+          color: borderColor ?? theme.accentColor.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _section(GameTheme theme, String title, Widget child) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(theme, title),
+        _card(theme, child: child),
+      ],
+    );
+  }
+
+  /// A progress bar in the theme's accent. One shape for every bar on the
+  /// screen, so a full one and a half-full one are the same object.
+  Widget _bar(GameTheme theme, double value, {double height = 6}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height),
+      child: LinearProgressIndicator(
+        value: value.clamp(0.0, 1.0),
+        backgroundColor: Colors.white.withValues(alpha: 0.10),
+        valueColor: AlwaysStoppedAnimation(theme.accentColor),
+        minHeight: height,
+      ),
+    );
+  }
+
+  // ==================== Sections ====================
+
+  Widget _buildProgressSummary(
+    GameTheme theme,
+    DailyChallengesState challengesState,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     final completed = challengesState.completedCount;
     final total = challengesState.totalCount;
     final progress = total > 0 ? completed / total : 0.0;
-    final allCompleted = challengesState.allCompleted;
 
-    return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.primaryColor.withValues(alpha: 0.3),
-                theme.accentColor.withValues(alpha: 0.2),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.primaryColor.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    color: theme.accentColor,
-                    size: 32,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.dchTodaysProgress,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          AppLocalizations.of(context)!
-                              .dchProgressSummary(completed, total),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          value: progress,
-                          backgroundColor: theme.primaryColor.withValues(
-                            alpha: 0.2,
-                          ),
-                          valueColor: AlwaysStoppedAnimation(
-                            allCompleted
-                                ? Colors.green
-                                : theme.accentColor,
-                          ),
-                          strokeWidth: 6,
-                        ),
-                        Text(
-                          '${(progress * 100).toInt()}%',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
-                  valueColor: AlwaysStoppedAnimation(
-                    allCompleted
-                        ? Colors.green
-                        : theme.accentColor,
-                  ),
-                  minHeight: 8,
+    // One statement of progress, not three. It used to say the same thing as
+    // a sentence, a ring and a bar, all at once.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Text(
+                l10n.dchProgressSummary(completed, total),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
-        )
-        .gameZoomIn();
+            ),
+            Text(
+              '${(progress * 100).round()}%',
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                height: 1.0,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _bar(theme, progress, height: 8),
+      ],
+    );
   }
 
-  /// Maps the locally-generated "all challenges" bonus row's English title
-  /// to its localized string at render time; server-provided titles pass
-  /// through untouched (the Drift row stays English).
-  String _localizedChallengeTitle(DailyChallenge challenge, AppLocalizations l10n) {
-    if (challenge.title == 'All Challenges Bonus') return l10n.dchAllBonusTitle;
-    return challenge.localizedTitle(l10n);
-  }
-
-  /// Same render-time mapping for the bonus row's description.
-  String _localizedChallengeDescription(
-    DailyChallenge challenge,
-    AppLocalizations l10n,
-  ) {
-    if (challenge.description == 'Completed every daily challenge today.') {
-      return l10n.dchAllBonusDesc;
-    }
-    return challenge.localizedDescription(l10n);
-  }
-
-  Widget _buildChallengeCard(
-    DailyChallenge challenge,
-    int index,
-    GameTheme theme,
-  ) {
+  Widget _buildChallengeCard(DailyChallenge challenge, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
     final isCompleted = challenge.isCompleted;
     final canClaim = challenge.canClaim;
+    final claimed = challenge.claimedReward;
 
-    Color difficultyColor;
-    switch (challenge.difficulty) {
-      case ChallengeDifficulty.easy:
-        difficultyColor = Colors.green;
-        break;
-      case ChallengeDifficulty.medium:
-        difficultyColor = Colors.orange;
-        break;
-      case ChallengeDifficulty.hard:
-        difficultyColor = Colors.red;
-        break;
-    }
-
-    return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: isCompleted
-                ? Colors.green.withValues(alpha: 0.15)
-                : theme.primaryColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: canClaim
-                  ? Colors.amber.withValues(alpha: 0.8)
-                  : isCompleted
-                  ? Colors.green.withValues(alpha: 0.5)
-                  : theme.primaryColor.withValues(alpha: 0.3),
-              width: canClaim ? 2 : 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: canClaim ? () => _claimReward(challenge) : null,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // Challenge type icon
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: isCompleted
-                                ? Colors.green.withValues(alpha: 0.2)
-                                : theme.primaryColor.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isCompleted
-                                  ? Colors.green
-                                  : theme.primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                          child: isCompleted
-                              ? Icon(Icons.check, color: Colors.green, size: 28)
-                              : _getChallengeTypeIcon(challenge.type, theme),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // Title and description
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _localizedChallengeTitle(
-                                        challenge,
-                                        AppLocalizations.of(context)!,
-                                      ),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        decoration: challenge.claimedReward
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: difficultyColor.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: difficultyColor,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      challenge.difficulty.localizedName(
-                                        AppLocalizations.of(context)!,
-                                      ),
-                                      style: TextStyle(
-                                        color: difficultyColor,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _localizedChallengeDescription(
-                                  challenge,
-                                  AppLocalizations.of(context)!,
-                                ),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Progress bar
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(
-                              value: challenge.progressPercentage,
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.1,
-                              ),
-                              valueColor: AlwaysStoppedAnimation(
-                                isCompleted ? Colors.green : theme.accentColor,
-                              ),
-                              minHeight: 8,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '${challenge.currentProgress}/${challenge.targetValue}',
-                          style: TextStyle(
-                            color: isCompleted
-                                ? Colors.green
-                                : Colors.white.withValues(alpha: 0.7),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Rewards row
-                    Row(
-                      children: [
-                        // Coin reward
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.monetization_on,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${challenge.coinReward}',
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // XP reward
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.star, color: Colors.purple, size: 18),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${challenge.xpReward} XP',
-                                style: TextStyle(
-                                  color: Colors.purple.shade200,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-
-                        // Claim button
-                        if (canClaim)
-                          ElevatedButton(
-                            onPressed: () => _claimReward(challenge),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.redeem, size: 18),
-                                const SizedBox(width: 4),
-                                Text(AppLocalizations.of(context)!.dchClaim),
-                              ],
-                            ),
-                          ),
-                        if (challenge.claimedReward)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppLocalizations.of(context)!.dchClaimed,
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _card(
+        theme,
+        // The one thing on this screen that wants attention is a reward you
+        // can take. That — and only that — gets the gold edge.
+        borderColor: canClaim ? _gold.withValues(alpha: 0.65) : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status, in one glyph. The card used to repaint its fill and
+                // its border to say the same thing.
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    claimed
+                        ? Icons.check_circle
+                        : isCompleted
+                        ? Icons.check_circle_outline
+                        : _challengeTypeIcon(challenge.type),
+                    color: claimed
+                        ? Colors.white.withValues(alpha: 0.45)
+                        : isCompleted
+                        ? _gold
+                        : theme.accentColor.withValues(alpha: 0.85),
+                    size: 22,
+                  ),
                 ),
-              ),
-            ),
-          ),
-        )
-        .gameListItem(index);
-  }
-
-  Widget _buildAllCompleteBonusCard(GameTheme theme, DailyChallengesState challengesState) {
-    return Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.amber.withValues(alpha: 0.3),
-                Colors.orange.withValues(alpha: 0.3),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _localizedChallengeTitle(challenge, l10n),
+                        style: TextStyle(
+                          color: claimed
+                              ? Colors.white.withValues(alpha: 0.55)
+                              : Colors.white,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _localizedChallengeDescription(challenge, l10n),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 13,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Difficulty as a word, not a red/orange/green pill. A hard
+                // challenge is a description, not a warning.
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    challenge.difficulty.localizedName(l10n).toUpperCase(),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: context.letterSpacing(1),
+                    ),
+                  ),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.amber, width: 2),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: _bar(theme, challenge.progressPercentage)),
+                const SizedBox(width: 12),
+                Text(
+                  '${challenge.currentProgress}/${challenge.targetValue}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-                child: Icon(Icons.celebration, color: Colors.amber, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.dchAllCompleteTitle,
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      challengesState.isBonusClaimed
-                          ? AppLocalizations.of(context)!.dchBonusClaimed
-                          : AppLocalizations.of(context)!.dchBonusPending,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      challengesState.isBonusClaimed
-                          ? Icons.check_circle
-                          : Icons.monetization_on,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '+${challengesState.bonusCoins}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        )
-        .gamePop(delay: 300.ms)
-        .animate()
-        .shimmer(duration: 2000.ms, delay: 500.ms);
-  }
-
-  Widget _buildLoadingState(GameTheme theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(theme.accentColor),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context)!.dchLoading,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.monetization_on, color: _gold, size: 15),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.dchRewardLine(
+                      challenge.coinReward,
+                      challenge.xpReward,
+                    ),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (canClaim)
+                  GradientButton(
+                    onPressed: () => _claimReward(challenge),
+                    text: l10n.dchClaim,
+                    primaryColor: _gold,
+                    secondaryColor: theme.accentColor,
+                    icon: Icons.redeem,
+                    width: 132,
+                    height: 40,
+                  )
+                else if (claimed)
+                  Text(
+                    l10n.dchClaimed.toUpperCase(),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: context.letterSpacing(1),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAllCompleteBonusCard(
+    GameTheme theme,
+    DailyChallengesState challengesState,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final claimed = challengesState.isBonusClaimed;
+
+    return _card(
+      theme,
+      borderColor: claimed ? null : _gold.withValues(alpha: 0.65),
+      child: Row(
+        children: [
+          Icon(
+            claimed ? Icons.check_circle : Icons.celebration,
+            color: claimed ? Colors.white.withValues(alpha: 0.45) : _gold,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.dchAllCompleteTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  claimed ? l10n.dchBonusClaimed : l10n.dchBonusPending,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 12.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '+${challengesState.bonusCoins}',
+            style: TextStyle(
+              color: claimed ? Colors.white.withValues(alpha: 0.45) : _gold,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A challenge-shaped placeholder. The list used to be replaced by a
+  /// centred spinner, so everything below it jumped when the challenges
+  /// arrived.
+  Widget _skeletonCard(GameTheme theme) {
+    Widget bone(double width, double height) => Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+
+    return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _card(
+            theme,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    bone(22, 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          bone(140, 14),
+                          const SizedBox(height: 8),
+                          bone(200, 11),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                bone(double.infinity, 6),
+                const SizedBox(height: 16),
+                bone(110, 12),
+              ],
+            ),
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .fade(begin: 0.55, end: 1.0, duration: 800.ms);
   }
 
   Widget _buildEmptyState(GameTheme theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            Icon(
-              Icons.calendar_today,
-              color: theme.primaryColor.withValues(alpha: 0.5),
-              size: 64,
+    final l10n = AppLocalizations.of(context)!;
+    return _card(
+      theme,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.dcNoChallenges,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context)!.dcNoChallenges,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.dchCheckBack,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 13,
+              height: 1.35,
             ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.dchCheckBack,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoSection(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, color: theme.accentColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                l10n.dchAbout,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildInfoItem(Icons.schedule, l10n.dchAbout1),
-          _buildInfoItem(Icons.monetization_on, l10n.dchAbout2),
-          _buildInfoItem(Icons.star, l10n.dchAbout3),
-          _buildInfoItem(Icons.celebration, l10n.dchAbout4),
-        ],
-      ),
-    ).gameEntrance(delay: 300.ms);
+  Widget _buildInfoList(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildInfoItem(l10n.dchAbout1),
+        _buildInfoItem(l10n.dchAbout2),
+        _buildInfoItem(l10n.dchAbout3),
+        _buildInfoItem(l10n.dchAbout4),
+      ],
+    );
   }
 
-  Widget _buildInfoItem(IconData icon, String text) {
+  /// A hanging bullet, so a wrapped line aligns with the text above it rather
+  /// than sliding back under the marker.
+  Widget _buildInfoItem(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.5), size: 16),
-          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 7),
+            child: Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.35),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 13.5,
+                height: 1.45,
               ),
             ),
           ),
@@ -851,25 +729,18 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     );
   }
 
-  Widget _getChallengeTypeIcon(ChallengeType type, GameTheme theme) {
-    IconData iconData;
+  IconData _challengeTypeIcon(ChallengeType type) {
     switch (type) {
       case ChallengeType.score:
-        iconData = Icons.stars;
-        break;
+        return Icons.stars;
       case ChallengeType.foodEaten:
-        iconData = Icons.restaurant;
-        break;
+        return Icons.restaurant;
       case ChallengeType.gameMode:
-        iconData = Icons.games;
-        break;
+        return Icons.games;
       case ChallengeType.survival:
-        iconData = Icons.timer;
-        break;
+        return Icons.timer;
       case ChallengeType.gamesPlayed:
-        iconData = Icons.play_circle_outline;
-        break;
+        return Icons.play_circle_outline;
     }
-    return Icon(iconData, color: theme.primaryColor, size: 28);
   }
 }

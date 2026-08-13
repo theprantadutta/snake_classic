@@ -6064,4 +6064,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get homeTileMe => 'أنا';
+
+  @override
+  String get dchSectionChallenges => 'التحديات';
+
+  @override
+  String dchRewardLine(int coins, int xp) {
+    return '$coins عملة · $xp XP';
+  }
 }

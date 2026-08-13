@@ -6128,4 +6128,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get homeTileMe => 'Eu';
+
+  @override
+  String get dchSectionChallenges => 'Desafios';
+
+  @override
+  String dchRewardLine(int coins, int xp) {
+    return '$coins moedas · $xp XP';
+  }
 }

@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "كل جولاتك مجموعة",
   "settingsReplaysSubtitle": "شاهد جولاتك المحفوظة",
   "homeTapToPlay": "انقر للعب",
-  "homeTileMe": "أنا"
+  "homeTileMe": "أنا",
+  "dchSectionChallenges": "التحديات",
+  "dchRewardLine": "{coins} عملة · {xp} XP"
 }

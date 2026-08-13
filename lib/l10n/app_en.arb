@@ -2299,5 +2299,18 @@
   "settingsStatisticsSubtitle": "Every run you have played, counted up",
   "settingsReplaysSubtitle": "Watch your saved runs back",
   "homeTapToPlay": "Tap to play",
-  "homeTileMe": "Me"
+  "homeTileMe": "Me",
+  "dchSectionChallenges": "Challenges",
+  "dchRewardLine": "{coins} coins · {xp} XP",
+  "@dchRewardLine": {
+    "description": "Reward summary on a daily challenge row",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "xp": {
+        "type": "int"
+      }
+    }
+  }
 }

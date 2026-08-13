@@ -6118,4 +6118,12 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get homeTileMe => 'Ja';
+
+  @override
+  String get dchSectionChallenges => 'Wyzwania';
+
+  @override
+  String dchRewardLine(int coins, int xp) {
+    return '$coins monet · $xp XP';
+  }
 }

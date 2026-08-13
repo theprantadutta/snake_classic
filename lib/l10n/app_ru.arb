@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Все ваши игры в цифрах",
   "settingsReplaysSubtitle": "Пересмотреть сохранённые игры",
   "homeTapToPlay": "Нажмите, чтобы играть",
-  "homeTileMe": "Я"
+  "homeTileMe": "Я",
+  "dchSectionChallenges": "Задания",
+  "dchRewardLine": "{coins} монет · {xp} XP"
 }

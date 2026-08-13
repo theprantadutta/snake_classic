@@ -6108,4 +6108,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get homeTileMe => 'Я';
+
+  @override
+  String get dchSectionChallenges => 'Задания';
+
+  @override
+  String dchRewardLine(int coins, int xp) {
+    return '$coins монет · $xp XP';
+  }
 }

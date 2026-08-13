@@ -6060,4 +6060,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get homeTileMe => 'मैं';
+
+  @override
+  String get dchSectionChallenges => 'चुनौतियाँ';
+
+  @override
+  String dchRewardLine(int coins, int xp) {
+    return '$coins सिक्के · $xp XP';
+  }
 }

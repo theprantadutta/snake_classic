@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Wszystkie twoje rozgrywki, podliczone",
   "settingsReplaysSubtitle": "Obejrzyj zapisane rozgrywki",
   "homeTapToPlay": "Dotknij, aby grać",
-  "homeTileMe": "Ja"
+  "homeTileMe": "Ja",
+  "dchSectionChallenges": "Wyzwania",
+  "dchRewardLine": "{coins} monet · {xp} XP"
 }

@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Todas tus partidas, sumadas",
   "settingsReplaysSubtitle": "Vuelve a ver tus partidas guardadas",
   "homeTapToPlay": "Toca para jugar",
-  "homeTileMe": "Yo"
+  "homeTileMe": "Yo",
+  "dchSectionChallenges": "Desafíos",
+  "dchRewardLine": "{coins} monedas · {xp} XP"
 }

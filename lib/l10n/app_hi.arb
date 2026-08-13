@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "आपके सभी गेमों का हिसाब",
   "settingsReplaysSubtitle": "अपने सहेजे गए गेम दोबारा देखें",
   "homeTapToPlay": "खेलने के लिए टैप करें",
-  "homeTileMe": "मैं"
+  "homeTileMe": "मैं",
+  "dchSectionChallenges": "चुनौतियाँ",
+  "dchRewardLine": "{coins} सिक्के · {xp} XP"
 }

@@ -1809,5 +1809,7 @@
   "settingsStatisticsSubtitle": "Toutes tes parties, comptées",
   "settingsReplaysSubtitle": "Revois tes parties enregistrées",
   "homeTapToPlay": "Touche pour jouer",
-  "homeTileMe": "Moi"
+  "homeTileMe": "Moi",
+  "dchSectionChallenges": "Défis",
+  "dchRewardLine": "{coins} pièces · {xp} XP"
 }
