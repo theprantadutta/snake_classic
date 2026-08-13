@@ -8,7 +8,6 @@ class ArcadeDestination {
   const ArcadeDestination({
     required this.icon,
     required this.label,
-    required this.tint,
     required this.onTap,
     this.badgeCount = 0,
     this.widgetKey,
@@ -16,19 +15,22 @@ class ArcadeDestination {
 
   final IconData icon;
   final String label;
-  final Color tint;
   final VoidCallback onTap;
   final int badgeCount;
   final Key? widgetKey;
 }
 
-/// Four big buttons across the bottom, replacing the eight-tile grid.
+/// Four quiet buttons across the bottom, replacing the eight-tile grid.
 ///
 /// The grid gave every destination the same weight and the same shout: eight
 /// tiles in eight hues, two rows deep, louder than the play button above them.
-/// Four is what fits a thumb, and the runners settled on four for the same
-/// reason. Everything the grid used to reach is still reachable — the four
-/// here are the ones worth a permanent slot, and the rest live behind them.
+/// Four is what fits a thumb.
+///
+/// They are deliberately plain and deliberately identical — one translucent
+/// panel, one hairline border, the theme's accent on the glyph — because a
+/// row of navigation is not the point of this screen and should not be drawn
+/// as though it were. The glyph and the word are the only things that differ
+/// between them, which is all that needs to.
 class HomeArcadeBar extends StatelessWidget {
   const HomeArcadeBar({
     super.key,
@@ -70,30 +72,13 @@ class HomeArcadeBar extends StatelessWidget {
           children: [
             Container(
               key: destination.widgetKey,
-              // Full width of its Expanded slot. Without this the Container
-              // sizes to the icon and label inside it and the bar renders as
-              // four narrow pills adrift in their own gaps.
               width: double.infinity,
-              height: compact ? 62 : 72,
+              height: compact ? 62 : 70,
               decoration: BoxDecoration(
-                // Themed, not eight different hues: the tint only colours the
-                // glyph and the edge, so the bar reads as one control strip.
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    destination.tint.withValues(alpha: 0.22),
-                    Color.lerp(
-                      theme.backgroundColor,
-                      Colors.black,
-                      0.3,
-                    )!.withValues(alpha: 0.75),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
+                color: theme.backgroundColor.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: destination.tint.withValues(alpha: 0.45),
-                  width: 1.5,
+                  color: theme.accentColor.withValues(alpha: 0.28),
                 ),
               ),
               child: Column(
@@ -101,10 +86,10 @@ class HomeArcadeBar extends StatelessWidget {
                 children: [
                   Icon(
                     destination.icon,
-                    color: destination.tint,
-                    size: compact ? 22 : 26,
+                    color: theme.accentColor,
+                    size: compact ? 21 : 24,
                   ),
-                  SizedBox(height: compact ? 3 : 5),
+                  SizedBox(height: compact ? 5 : 6),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
@@ -113,9 +98,9 @@ class HomeArcadeBar extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: compact ? 9.5 : 11,
-                        fontWeight: FontWeight.w900,
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: compact ? 9.5 : 10.5,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: context.letterSpacing(0.8),
                         height: 1.0,
                       ),

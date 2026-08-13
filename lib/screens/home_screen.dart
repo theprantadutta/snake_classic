@@ -885,7 +885,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           icon: Icons.sports_esports,
           label: l10n.homeTileVersus,
           subtitle: l10n.insVersusOnline,
-          tint: Colors.greenAccent,
           onTap: () => _openVersusLobby(context),
         ),
         // The free reward sits at the bottom of the rail, nearest the thumb.
@@ -918,7 +917,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ArcadeDestination(
         icon: Icons.checklist_rounded,
         label: l10n.homeTileDaily,
-        tint: Colors.cyan,
         badgeCount: _getDailyChallengesBadge() ?? 0,
         widgetKey: HomeWalkthrough.dailyChallengesKey,
         onTap: () => context.push(AppRoutes.dailyChallenges),
@@ -926,20 +924,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ArcadeDestination(
         icon: Icons.person_rounded,
         label: l10n.homeTileMe,
-        tint: theme.accentColor,
         onTap: () => context.push(AppRoutes.profile),
       ),
       ArcadeDestination(
         icon: Icons.store_rounded,
         label: l10n.homeTileStore,
-        tint: Colors.amber,
         widgetKey: HomeWalkthrough.storeKey,
         onTap: () => context.push(AppRoutes.store),
       ),
       ArcadeDestination(
         icon: Icons.sports_esports_rounded,
         label: l10n.homeTileVersus,
-        tint: Colors.greenAccent,
         widgetKey: HomeWalkthrough.versusKey,
         onTap: () => _openVersusLobby(context),
       ),
