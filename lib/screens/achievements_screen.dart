@@ -94,6 +94,19 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         theme: theme,
         child: Column(
           children: [
+            // Clear the app bar and its tab strip.
+            //
+            // extendBodyBehindAppBar draws the themed background up behind
+            // the bar, which is what the other screens want — but the body
+            // then starts at y=0, so without this the summary card was drawn
+            // underneath the title and the tab labels landed on top of it.
+            SizedBox(
+              height:
+                  MediaQuery.of(context).padding.top +
+                  kToolbarHeight +
+                  kTextTabBarHeight,
+            ),
+
             // Progress Summary
             _buildProgressSummary(theme),
 
@@ -258,266 +271,203 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     );
   }
 
+  /// One achievement.
+  ///
+  /// It was three columns — icon, a text block, and a stack of chips — with
+  /// the rarity as a filled pill in one of four hues and the two rewards as
+  /// a cyan chip above a gold chip. Every row was a different height because
+  /// the middle column wrapped while the right column did not, and the four
+  /// rarity colours plus cyan meant five hues per screenful. Nothing in it
+  /// pointed at what the row was for.
+  ///
+  /// Now it is two columns and three lines: what it is called, what it asks
+  /// of you, and what it pays. Rarity is a word in its own colour rather
+  /// than a filled chip, the rewards read as one line of text, and the
+  /// progress bar only appears when there is progress to show.
   Widget _buildAchievementCard(Achievement achievement, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     final isUnlocked = achievement.isUnlocked;
+    final claimed = achievement.rewardClaimed;
     final progress = achievement.progressPercentage;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      // Rarity survives as the card's edge and the icon's tile, not as a
-      // wash over the whole row. Tinting the entire card meant an unlocked
-      // legendary and an unlocked common were two differently-coloured
-      // panels, and a list of them read as confetti.
-      decoration: screenCardDecoration(
-        theme,
-        borderColor: isUnlocked
-            ? achievement.rarityColor.withValues(alpha: 0.5)
-            : null,
-      ),
-      child: Padding(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        decoration: screenCardDecoration(
+          theme,
+          borderColor: isUnlocked
+              ? achievement.rarityColor.withValues(alpha: 0.45)
+              : null,
+        ),
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                // Achievement Icon
-                Container(
-                  padding: EdgeInsets.all(context.scaled(12)),
-                  decoration: BoxDecoration(
-                    color: isUnlocked
-                        ? achievement.rarityColor
-                        : Colors.white.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    achievement.icon,
-                    color: Colors.white,
-                    size: context.scaled(24),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Achievement Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              achievement.localizedTitle(l10n),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isUnlocked
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ),
-
-                          // Rarity Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: achievement.rarityColor.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              achievement
-                                  .localizedRarityName(l10n)
-                                  .toUpperCase(),
-                              style: TextStyle(
-                                color: achievement.rarityColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        achievement.localizedDescription(l10n),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-
-                      if (!isUnlocked && progress > 0) ...[
-                        const SizedBox(height: 8),
-
-                        // Progress Bar
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: progress,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: theme.accentColor,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Text(
-                              '${achievement.currentProgress}/${achievement.targetValue}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Rewards and Status
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (isUnlocked) ...[
-                      Icon(
-                        achievement.rewardClaimed
-                            ? Icons.check_circle
-                            : Icons.hourglass_top,
-                        color: achievement.rewardClaimed
-                            ? Colors.green
-                            : Colors.amber,
-                        size: context.scaled(20),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-
-                    // XP badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.lightBlueAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.acXpReward(achievement.xpReward),
-                        style: const TextStyle(
-                          color: Colors.lightBlueAccent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Coin badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kRewardGold.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.mpCoinReward(achievement.coinReward),
-                        style: const TextStyle(
-                          color: kRewardGold,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            // Unlock Date
-            if (isUnlocked && achievement.unlockedAt != null) ...[
-              const SizedBox(height: 12),
-
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: context.scaled(16),
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                    const SizedBox(width: 8),
-
-                    Text(
-                      l10n.acUnlockedDate(
-                        _formatDate(l10n, achievement.unlockedAt!),
-                      ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
+            // The badge. Filled in the rarity colour once earned, a quiet
+            // outline until then — "not yet", rather than the dead grey
+            // square it used to be.
+            Container(
+              width: context.scaled(44),
+              height: context.scaled(44),
+              decoration: BoxDecoration(
+                color: isUnlocked
+                    ? achievement.rarityColor.withValues(alpha: 0.9)
+                    : theme.accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isUnlocked
+                      ? achievement.rarityColor
+                      : theme.accentColor.withValues(alpha: 0.25),
                 ),
               ),
-            ],
+              child: Icon(
+                achievement.icon,
+                color: isUnlocked
+                    ? Colors.white
+                    : theme.accentColor.withValues(alpha: 0.55),
+                size: context.scaled(22),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          achievement.localizedTitle(l10n),
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                            color: claimed
+                                ? Colors.white.withValues(alpha: 0.6)
+                                : Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Rarity as a word, not a filled chip. The colour still
+                      // says which tier it is; it just no longer draws a
+                      // coloured box around every row on the screen.
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          achievement.localizedRarityName(l10n).toUpperCase(),
+                          style: TextStyle(
+                            color: achievement.rarityColor.withValues(
+                              alpha: 0.9,
+                            ),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: context.letterSpacing(1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    achievement.localizedDescription(l10n),
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  if (!isUnlocked && progress > 0) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: progress.clamp(0.0, 1.0),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.10,
+                              ),
+                              valueColor: AlwaysStoppedAnimation(
+                                theme.accentColor,
+                              ),
+                              minHeight: 5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${achievement.currentProgress}/'
+                          '${achievement.targetValue}',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  // The reward, as one line. It was a cyan chip stacked over
+                  // a gold chip in a third column, which is what made every
+                  // row a different height.
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.monetization_on,
+                        size: 13,
+                        color: kRewardGold.withValues(
+                          alpha: claimed ? 0.4 : 0.9,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          '${l10n.coinsAmount(achievement.coinReward)}'
+                          '  ·  ${l10n.acXpReward(achievement.xpReward)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(
+                              alpha: claimed ? 0.4 : 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isUnlocked)
+                        Text(
+                          (claimed ? l10n.acClaimedUpper : l10n.acUnlockedUpper)
+                              .toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: context.letterSpacing(1),
+                            color: claimed
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : kRewardGold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  String _formatDate(AppLocalizations l10n, DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 0) {
-      return l10n.frDaysAgo(difference.inDays);
-    } else if (difference.inHours > 0) {
-      return l10n.frHoursAgo(difference.inHours);
-    } else if (difference.inMinutes > 0) {
-      return l10n.frMinutesAgo(difference.inMinutes);
-    } else {
-      return l10n.frJustNow;
-    }
-  }
 }
 
-/// Compact stat tile used by the Achievements header grid. Mirrors the
-/// dashboard's StatTile primitive so a Total/Unlocked/Claimed/Pending
-/// row reads identically in both surfaces.
+/// One figure in the summary row. Mirrors the dashboard's StatTile primitive
+/// so a Total / Unlocked / Claimed / Pending row reads identically in both
+/// surfaces.
 class _StatTile extends StatelessWidget {
   final String label;
   final String value;
