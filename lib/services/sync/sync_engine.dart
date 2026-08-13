@@ -66,7 +66,15 @@ enum FirstSignInResult {
 /// [idle] / [done]. `welcoming` covers the brand-new-user path so
 /// the user still sees a setup modal during their first sign-in
 /// (even when there's nothing to pull).
-enum FirstSignInState { idle, welcoming, pulling, applying, restored, failed, done }
+enum FirstSignInState {
+  idle,
+  welcoming,
+  pulling,
+  applying,
+  restored,
+  failed,
+  done,
+}
 
 /// User-driven resolution of the failed-modal. Used by the engine to
 /// distinguish "Try Again" (loop) from "Continue Anyway" (give up).
@@ -105,6 +113,7 @@ class SyncEngine {
 
   static const int _maxRetries = 5;
   static const Duration _debounce = Duration(seconds: 3);
+
   /// Hard ceiling on how far a burst of mutations can defer the drain.
   /// Without this, a sustained mutation rate >1 / 3s would keep
   /// resetting [_debounceTimer] indefinitely and starve the drain.
@@ -115,7 +124,8 @@ class SyncEngine {
   /// successfully on this install. A subsequent reinstall (which
   /// wipes SharedPreferences) returns the flag to false and the
   /// first-sign-in pull runs again to restore cloud data.
-  static const String _hasEverSignedInPrefsKey = 'sync_engine_has_ever_signed_in';
+  static const String _hasEverSignedInPrefsKey =
+      'sync_engine_has_ever_signed_in';
 
   /// Backend user id this device last synced under.
   ///
@@ -150,16 +160,16 @@ class SyncEngine {
 
   /// The coin-carrying rows a cross-account restore must drop rather than
   /// preserve. See [_lastSyncedUserIdKey].
-  static const Set<String> _guestCoinDataTypes = {
-    SyncDataType.coinTransaction,
-  };
+  static const Set<String> _guestCoinDataTypes = {SyncDataType.coinTransaction};
 
   bool _isDraining = false;
+
   /// Future of the currently-running [_drain] call, or null if idle.
   /// Callers that need to block on the active drain (notably the
   /// first-sign-in pull's pre-fetch step) await this before kicking
   /// off their own drain.
   Future<void>? _drainInFlight;
+
   /// True once the watcher + periodic-timer + connectivity drain
   /// triggers are attached. Set by [_armDrainLoop]; the method is
   /// idempotent so repeated calls (initialize fast-path + every
@@ -173,6 +183,7 @@ class SyncEngine {
   StreamSubscription<bool>? _connectivityWatcher;
   Timer? _debounceTimer;
   Timer? _periodicTimer;
+
   /// The earliest moment a debounce-deferred drain MUST run by, set
   /// the first time the debounce begins ticking. Rapid mutations can
   /// keep restarting [_debounceTimer] but can never push the actual
@@ -243,11 +254,13 @@ class SyncEngine {
       final legacy = pending.length - owned;
       final deadLetters = await dao.getScoreDeadLetters();
 
-      _publishStatus(_status.copyWith(
-        pendingCount: owned,
-        legacyPendingCount: legacy,
-        deadLetterCount: deadLetters.length,
-      ));
+      _publishStatus(
+        _status.copyWith(
+          pendingCount: owned,
+          legacyPendingCount: legacy,
+          deadLetterCount: deadLetters.length,
+        ),
+      );
     } catch (e) {
       AppLogger.error('SyncEngine: status refresh failed', e);
     }
@@ -290,8 +303,7 @@ class SyncEngine {
       FirstSignInState.pulling ||
       FirstSignInState.applying ||
       FirstSignInState.restored ||
-      FirstSignInState.failed =>
-        true,
+      FirstSignInState.failed => true,
       FirstSignInState.idle || FirstSignInState.done => false,
     };
 
@@ -471,8 +483,9 @@ class SyncEngine {
   void markFirstSignInSkipped({String? userId}) {
     if (userId != null) {
       unawaited(
-        SharedPreferences.getInstance()
-            .then((p) => p.setString(_lastSyncedUserIdKey, userId)),
+        SharedPreferences.getInstance().then(
+          (p) => p.setString(_lastSyncedUserIdKey, userId),
+        ),
       );
     }
     _armDrainLoop();
@@ -679,10 +692,10 @@ class SyncEngine {
           final summary = v == null
               ? 'null'
               : v is List
-                  ? '${v.length} item(s)'
-                  : v is Map
-                      ? '${v.length} field(s)'
-                      : v.toString();
+              ? '${v.length} item(s)'
+              : v is Map
+              ? '${v.length} field(s)'
+              : v.toString();
           AppLogger.network('  • ${entry.key}: $summary');
         }
       }
@@ -783,16 +796,12 @@ class SyncEngine {
     final now = DateTime.now();
     _debounceDeadline ??= now.add(_debounceMaxDefer);
     final remainingDefer = _debounceDeadline!.difference(now);
-    final delay =
-        remainingDefer < _debounce ? remainingDefer : _debounce;
+    final delay = remainingDefer < _debounce ? remainingDefer : _debounce;
 
-    _debounceTimer = Timer(
-      delay.isNegative ? Duration.zero : delay,
-      () {
-        _debounceDeadline = null;
-        _drain();
-      },
-    );
+    _debounceTimer = Timer(delay.isNegative ? Duration.zero : delay, () {
+      _debounceDeadline = null;
+      _drain();
+    });
   }
 
   Future<void> _drain() async {
@@ -827,10 +836,9 @@ class SyncEngine {
     if (!_connectivity.shouldAttemptNetworkWork) return;
 
     _isDraining = true;
-    _publishStatus(_status.copyWith(
-      isDraining: true,
-      lastAttemptAt: DateTime.now(),
-    ));
+    _publishStatus(
+      _status.copyWith(isDraining: true, lastAttemptAt: DateTime.now()),
+    );
     final completer = Completer<void>();
     _drainInFlight = completer.future;
     try {
@@ -892,9 +900,7 @@ class SyncEngine {
         for (final item in items) {
           await _syncDao!.removeSyncItem(item.id);
         }
-        AppLogger.network(
-          'SyncEngine: drained $dataType x${items.length} OK',
-        );
+        AppLogger.network('SyncEngine: drained $dataType x${items.length} OK');
         break;
 
       case _DispatchResult.notReady:
@@ -991,14 +997,17 @@ class SyncEngine {
       // per-item verdicts exist, and resending is pointless.
       for (final item in items) {
         final key = byKey.entries
-            .firstWhere((e) => e.value.id == item.id,
-                orElse: () => MapEntry('unknown:${item.id}', item))
+            .firstWhere(
+              (e) => e.value.id == item.id,
+              orElse: () => MapEntry('unknown:${item.id}', item),
+            )
             .key;
         await _syncDao!.deadLetterScore(
           outboxId: item.id,
           idempotencyKey: key,
           payload: item.data,
-          reason: 'Batch rejected by server '
+          reason:
+              'Batch rejected by server '
               '(HTTP ${outcome.statusCode ?? "unknown"})',
         );
       }
@@ -1074,8 +1083,9 @@ class SyncEngine {
     // Rows the server said nothing about. Could be a shorter response, a
     // version skew, or a dropped item. Leave them queued: a missing verdict
     // is not permission to delete a player's game.
-    final unsettled =
-        byKey.entries.where((e) => !settled.contains(e.key)).toList();
+    final unsettled = byKey.entries
+        .where((e) => !settled.contains(e.key))
+        .toList();
     for (final entry in unsettled) {
       await _syncDao!.incrementRetryCount(entry.value.id);
     }
@@ -1102,9 +1112,7 @@ class SyncEngine {
       try {
         await _syncDao!.pruneScoreDeadLetters();
         final byReason = await _syncDao!.getScoreDeadLetterCountsByReason();
-        AppLogger.error(
-          'SyncEngine: score dead letters by reason → $byReason',
-        );
+        AppLogger.error('SyncEngine: score dead letters by reason → $byReason');
         if (GetIt.I.isRegistered<AnalyticsFacade>() && byReason.isNotEmpty) {
           // One cause normally explains a whole cluster, so the most common
           // reason is the one worth carrying on the event.
@@ -1122,6 +1130,14 @@ class SyncEngine {
     }());
   }
 
+  /// Every branch below `return await`, never a bare `return`.
+  ///
+  /// The catch at the bottom is what turns a failed dispatch into
+  /// [_DispatchResult.failed], which is what makes the items retry instead of
+  /// being dropped. A bare `return someFuture` hands that Future straight to
+  /// the caller and leaves this try with nothing to catch — so a Drift read
+  /// that threw, or an API call that threw rather than returning an outcome,
+  /// escaped the handler written for exactly that case.
   Future<_DispatchResult> _dispatch(
     String dataType,
     List<SyncQueueData> items,
@@ -1129,7 +1145,7 @@ class SyncEngine {
     try {
       switch (dataType) {
         case SyncDataType.settings:
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _settingsDao!.getSettings();
               return row == null ? null : _settingsToPayload(row);
@@ -1138,7 +1154,7 @@ class SyncEngine {
           );
 
         case SyncDataType.statistics:
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _gameDao!.getStatistics();
               if (row == null) return null;
@@ -1151,7 +1167,7 @@ class SyncEngine {
           );
 
         case SyncDataType.coinBalance:
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _storeDao!.getCoinBalanceRow();
               if (row == null) return null;
@@ -1166,7 +1182,7 @@ class SyncEngine {
           );
 
         case SyncDataType.premiumStatus:
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _storeDao!.getPremiumStatus();
               return row == null ? null : _premiumToPayload(row);
@@ -1180,18 +1196,15 @@ class SyncEngine {
           // in a single batched query, send as a batch.
           final ids = _extractIds(items, prefix: 'achievement:');
           if (ids.isEmpty) return _DispatchResult.success;
-          final achievementRows =
-              await _gameDao!.getAchievementsByIds(ids);
+          final achievementRows = await _gameDao!.getAchievementsByIds(ids);
           if (achievementRows.isEmpty) return _DispatchResult.success;
-          final payload =
-              achievementRows.map(_achievementToPayload).toList();
+          final payload = achievementRows.map(_achievementToPayload).toList();
           return _mapOutcome(await _api.syncAchievements(payload));
 
         case SyncDataType.battlePass:
           final ids = _extractIds(items, prefix: 'battle_pass:');
           if (ids.isEmpty) return _DispatchResult.success;
-          final passes =
-              await _storeDao!.getBattlePassesBySeasonIds(ids);
+          final passes = await _storeDao!.getBattlePassesBySeasonIds(ids);
           if (passes.isEmpty) return _DispatchResult.success;
           final passPayload = passes.map(_battlePassToPayload).toList();
           return _mapOutcome(await _api.syncBattlePass(passPayload));
@@ -1199,7 +1212,7 @@ class SyncEngine {
         case SyncDataType.playerProgress:
           // Lifetime XP + level singleton. Read the current Drift row and
           // send it to the backend's absorbing-merge handler (MAX on totalXp).
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _gameDao!.getPlayerProgress();
               if (row == null) return null;
@@ -1259,7 +1272,7 @@ class SyncEngine {
           // Singleton snapshot: read the current Drift row and send it
           // to the backend's absorbing-merge handler. Outbox payload is
           // ignored; the latest row state is authoritative.
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _storeDao!.getDailyBonusRow();
               if (row == null) return null;
@@ -1291,7 +1304,7 @@ class SyncEngine {
           // Singleton snapshot: read the current Drift row and send it
           // to the backend's last-write-wins mirror. Outbox payload is
           // ignored; the latest row state is authoritative.
-          return _dispatchSnapshot(
+          return await _dispatchSnapshot(
             read: () async {
               final row = await _storeDao!.getPowerUpInventoryRow();
               if (row == null) return null;
@@ -1410,75 +1423,75 @@ class SyncEngine {
   // wire boundary so the backend never sees a non-UTC timestamp.
 
   Map<String, dynamic> _settingsToPayload(GameSetting r) => {
-        'theme_index': r.themeIndex,
-        'sound_enabled': r.soundEnabled,
-        'music_enabled': r.musicEnabled,
-        'd_pad_enabled': r.dPadEnabled,
-        'd_pad_position_index': r.dPadPositionIndex,
-        'board_size_index': r.boardSizeIndex,
-        'difficulty_index': r.difficultyIndex,
-        'high_score': r.highScore,
-        'crash_feedback_duration_seconds': r.crashFeedbackDurationSeconds,
-        'trail_system_enabled': r.trailSystemEnabled,
-        'screen_shake_enabled': r.screenShakeEnabled,
-        'haptics_enabled': r.hapticsEnabled,
-        'notify_daily_reminder': r.notifyDailyReminder,
-        'notify_tournament': r.notifyTournament,
-        'notify_achievement': r.notifyAchievement,
-        'notify_social': r.notifySocial,
-        'notify_special_event': r.notifySpecialEvent,
-        'selected_skin_id': r.selectedSkinId,
-        'selected_trail_id': r.selectedTrailId,
-        // Null = "follow device". The backend keeps its stored value on
-        // null, so pre-i18n rows aren't wiped by legacy payloads.
-        'locale_code': r.localeCode,
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'theme_index': r.themeIndex,
+    'sound_enabled': r.soundEnabled,
+    'music_enabled': r.musicEnabled,
+    'd_pad_enabled': r.dPadEnabled,
+    'd_pad_position_index': r.dPadPositionIndex,
+    'board_size_index': r.boardSizeIndex,
+    'difficulty_index': r.difficultyIndex,
+    'high_score': r.highScore,
+    'crash_feedback_duration_seconds': r.crashFeedbackDurationSeconds,
+    'trail_system_enabled': r.trailSystemEnabled,
+    'screen_shake_enabled': r.screenShakeEnabled,
+    'haptics_enabled': r.hapticsEnabled,
+    'notify_daily_reminder': r.notifyDailyReminder,
+    'notify_tournament': r.notifyTournament,
+    'notify_achievement': r.notifyAchievement,
+    'notify_social': r.notifySocial,
+    'notify_special_event': r.notifySpecialEvent,
+    'selected_skin_id': r.selectedSkinId,
+    'selected_trail_id': r.selectedTrailId,
+    // Null = "follow device". The backend keeps its stored value on
+    // null, so pre-i18n rows aren't wiped by legacy payloads.
+    'locale_code': r.localeCode,
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   Map<String, dynamic> _achievementToPayload(Achievement r) => {
-        'id': r.id,
-        'current_progress': r.currentProgress,
-        'target_progress': r.targetProgress,
-        'is_unlocked': r.isUnlocked,
-        'unlocked_at': _utcIsoNullable(r.unlockedAt),
-        'reward_claimed': r.rewardClaimed,
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'id': r.id,
+    'current_progress': r.currentProgress,
+    'target_progress': r.targetProgress,
+    'is_unlocked': r.isUnlocked,
+    'unlocked_at': _utcIsoNullable(r.unlockedAt),
+    'reward_claimed': r.rewardClaimed,
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   Map<String, dynamic> _premiumToPayload(PremiumStatusData r) => {
-        'is_premium_active': r.isPremiumActive,
-        'premium_expiration_date': _utcIsoNullable(r.premiumExpirationDate),
-        'is_on_trial': r.isOnTrial,
-        'trial_start_date': _utcIsoNullable(r.trialStartDate),
-        'trial_end_date': _utcIsoNullable(r.trialEndDate),
-        'bronze_tournament_entries': r.bronzeTournamentEntries,
-        'silver_tournament_entries': r.silverTournamentEntries,
-        'gold_tournament_entries': r.goldTournamentEntries,
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'is_premium_active': r.isPremiumActive,
+    'premium_expiration_date': _utcIsoNullable(r.premiumExpirationDate),
+    'is_on_trial': r.isOnTrial,
+    'trial_start_date': _utcIsoNullable(r.trialStartDate),
+    'trial_end_date': _utcIsoNullable(r.trialEndDate),
+    'bronze_tournament_entries': r.bronzeTournamentEntries,
+    'silver_tournament_entries': r.silverTournamentEntries,
+    'gold_tournament_entries': r.goldTournamentEntries,
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   Map<String, dynamic> _playerProgressToPayload(PlayerProgressRow r) => {
-        'total_xp': r.totalXp,
-        'level': r.level,
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'total_xp': r.totalXp,
+    'level': r.level,
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   Map<String, dynamic> _battlePassToPayload(BattlePassesData r) => {
-        'season_id': r.seasonId,
-        'current_tier': r.currentTier,
-        'current_xp': r.currentXp,
-        'xp_for_next_tier': r.xpForNextTier,
-        'is_premium_pass': r.isPremiumPass,
-        // Wire schema is a flat List<int>; the local Drift column
-        // stores `{"free": [...], "premium": [...]}` (see StoreDao).
-        // Flatten via union+sort here. Cross-device restore loses the
-        // free-vs-premium split — acceptable until the wire format is
-        // updated to carry the structure.
-        'claimed_rewards': _flattenClaimedRewards(r.claimedRewards),
-        'season_start_date': _utcIsoNullable(r.seasonStartDate),
-        'season_end_date': _utcIsoNullable(r.seasonEndDate),
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'season_id': r.seasonId,
+    'current_tier': r.currentTier,
+    'current_xp': r.currentXp,
+    'xp_for_next_tier': r.xpForNextTier,
+    'is_premium_pass': r.isPremiumPass,
+    // Wire schema is a flat List<int>; the local Drift column
+    // stores `{"free": [...], "premium": [...]}` (see StoreDao).
+    // Flatten via union+sort here. Cross-device restore loses the
+    // free-vs-premium split — acceptable until the wire format is
+    // updated to carry the structure.
+    'claimed_rewards': _flattenClaimedRewards(r.claimedRewards),
+    'season_start_date': _utcIsoNullable(r.seasonStartDate),
+    'season_end_date': _utcIsoNullable(r.seasonEndDate),
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   /// Reduce the structured `{"free":[...], "premium":[...]}` Drift
   /// payload (or a legacy flat array) to the flat `List<int>` the
@@ -1487,11 +1500,13 @@ class SyncEngine {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is Map) {
-        final free = (decoded['free'] as List?)
+        final free =
+            (decoded['free'] as List?)
                 ?.map((e) => (e as num).toInt())
                 .toList() ??
             const <int>[];
-        final premium = (decoded['premium'] as List?)
+        final premium =
+            (decoded['premium'] as List?)
                 ?.map((e) => (e as num).toInt())
                 .toList() ??
             const <int>[];
@@ -1508,38 +1523,38 @@ class SyncEngine {
   }
 
   Map<String, dynamic> _dailyChallengeToPayload(DailyChallenge r) => {
-        'challenge_id': r.challengeId,
-        'challenge_type': r.challengeType,
-        'title': r.title,
-        'description': r.description,
-        'current_progress': r.currentProgress,
-        'target_progress': r.targetProgress,
-        'reward_coins': r.rewardCoins,
-        'is_completed': r.isCompleted,
-        'reward_claimed': r.rewardClaimed,
-        'challenge_date': _utcIso(r.challengeDate),
-        'expires_at': _utcIso(r.expiresAt),
-        'completed_at': _utcIsoNullable(r.completedAt),
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'challenge_id': r.challengeId,
+    'challenge_type': r.challengeType,
+    'title': r.title,
+    'description': r.description,
+    'current_progress': r.currentProgress,
+    'target_progress': r.targetProgress,
+    'reward_coins': r.rewardCoins,
+    'is_completed': r.isCompleted,
+    'reward_claimed': r.rewardClaimed,
+    'challenge_date': _utcIso(r.challengeDate),
+    'expires_at': _utcIso(r.expiresAt),
+    'completed_at': _utcIsoNullable(r.completedAt),
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   // Mirrors _dailyChallengeToPayload — keys match SyncWeeklyQuestClaimPayload
   // on the backend (snake_case via JsonNamingPolicy.SnakeCaseLower).
   Map<String, dynamic> _weeklyQuestToPayload(WeeklyQuest r) => {
-        'quest_id': r.questId,
-        'quest_type': r.questType,
-        'title': r.title,
-        'description': r.description,
-        'current_progress': r.currentProgress,
-        'target_value': r.targetValue,
-        'coin_reward': r.coinReward,
-        'battle_pass_xp_reward': r.battlePassXpReward,
-        'is_completed': r.isCompleted,
-        'claimed_reward': r.claimedReward,
-        'week_start_date': _utcIso(r.weekStartDate),
-        'completed_at': _utcIsoNullable(r.completedAt),
-        'updated_at': _utcIso(r.updatedAt),
-      };
+    'quest_id': r.questId,
+    'quest_type': r.questType,
+    'title': r.title,
+    'description': r.description,
+    'current_progress': r.currentProgress,
+    'target_value': r.targetValue,
+    'coin_reward': r.coinReward,
+    'battle_pass_xp_reward': r.battlePassXpReward,
+    'is_completed': r.isCompleted,
+    'claimed_reward': r.claimedReward,
+    'week_start_date': _utcIso(r.weekStartDate),
+    'completed_at': _utcIsoNullable(r.completedAt),
+    'updated_at': _utcIso(r.updatedAt),
+  };
 
   /// Serialize a DateTime as a UTC ISO 8601 string with the trailing
   /// "Z" suffix — required by Postgres + Npgsql on the backend.
@@ -1599,33 +1614,45 @@ class SyncEngine {
             soundEnabled: Value(settings['sound_enabled'] as bool? ?? true),
             musicEnabled: Value(settings['music_enabled'] as bool? ?? true),
             dPadEnabled: Value(settings['d_pad_enabled'] as bool? ?? false),
-            dPadPositionIndex:
-                Value(settings['d_pad_position_index'] as int? ?? 1),
+            dPadPositionIndex: Value(
+              settings['d_pad_position_index'] as int? ?? 1,
+            ),
             boardSizeIndex: Value(settings['board_size_index'] as int? ?? 1),
             // Absent for accounts last synced by a pre-difficulty client —
             // fall back to normal rather than 0, which is easy.
             difficultyIndex: Value(settings['difficulty_index'] as int? ?? 1),
             highScore: Value(mergedHighScore),
             crashFeedbackDurationSeconds: Value(
-                settings['crash_feedback_duration_seconds'] as int? ?? 3),
-            trailSystemEnabled:
-                Value(settings['trail_system_enabled'] as bool? ?? false),
-            screenShakeEnabled:
-                Value(settings['screen_shake_enabled'] as bool? ?? false),
+              settings['crash_feedback_duration_seconds'] as int? ?? 3,
+            ),
+            trailSystemEnabled: Value(
+              settings['trail_system_enabled'] as bool? ?? false,
+            ),
+            screenShakeEnabled: Value(
+              settings['screen_shake_enabled'] as bool? ?? false,
+            ),
             hapticsEnabled: Value(settings['haptics_enabled'] as bool? ?? true),
-            notifyDailyReminder:
-                Value(settings['notify_daily_reminder'] as bool? ?? true),
-            notifyTournament:
-                Value(settings['notify_tournament'] as bool? ?? true),
-            notifyAchievement:
-                Value(settings['notify_achievement'] as bool? ?? true),
+            notifyDailyReminder: Value(
+              settings['notify_daily_reminder'] as bool? ?? true,
+            ),
+            notifyTournament: Value(
+              settings['notify_tournament'] as bool? ?? true,
+            ),
+            notifyAchievement: Value(
+              settings['notify_achievement'] as bool? ?? true,
+            ),
             notifySocial: Value(settings['notify_social'] as bool? ?? true),
-            notifySpecialEvent:
-                Value(settings['notify_special_event'] as bool? ?? true),
+            notifySpecialEvent: Value(
+              settings['notify_special_event'] as bool? ?? true,
+            ),
             selectedSkinId: Value(settings['selected_skin_id'] as String?),
             selectedTrailId: Value(settings['selected_trail_id'] as String?),
-            lastUpdated: Value(_parseDate(settings['updated_at']) ?? DateTime.now()),
-            updatedAt: Value(_parseDate(settings['updated_at']) ?? DateTime.now()),
+            lastUpdated: Value(
+              _parseDate(settings['updated_at']) ?? DateTime.now(),
+            ),
+            updatedAt: Value(
+              _parseDate(settings['updated_at']) ?? DateTime.now(),
+            ),
           ),
         );
       }
@@ -1744,24 +1771,31 @@ class SyncEngine {
         final existing = await _db!.select(_db!.coinTransactions).get();
         final fingerprints = <String>{};
         for (final row in existing) {
-          fingerprints.add(_coinTxnFingerprint(
-            row.createdAt,
-            row.amount,
-            row.type,
-            row.source,
-          ));
+          fingerprints.add(
+            _coinTxnFingerprint(
+              row.createdAt,
+              row.amount,
+              row.type,
+              row.source,
+            ),
+          );
         }
         for (final raw in transactions) {
           if (raw is! Map<String, dynamic>) continue;
-          final createdAt =
-              _parseDate(raw['created_at']) ?? DateTime.now();
+          final createdAt = _parseDate(raw['created_at']) ?? DateTime.now();
           final amount = raw['amount'] as int? ?? 0;
           final type = raw['type'] as String? ?? 'earned';
           final source = raw['source'] as String? ?? 'cloud';
-          final fingerprint =
-              _coinTxnFingerprint(createdAt, amount, type, source);
+          final fingerprint = _coinTxnFingerprint(
+            createdAt,
+            amount,
+            type,
+            source,
+          );
           if (!fingerprints.add(fingerprint)) continue; // duplicate
-          await _db!.into(_db!.coinTransactions).insert(
+          await _db!
+              .into(_db!.coinTransactions)
+              .insert(
                 CoinTransactionsCompanion.insert(
                   amount: amount,
                   type: type,
@@ -1850,11 +1884,13 @@ class SyncEngine {
           final rawProgress = raw['current_progress'] as int? ?? 0;
           final mergedProgress =
               (existing != null && existing.currentProgress > rawProgress)
-                  ? existing.currentProgress
-                  : rawProgress;
-          final mergedUnlocked = (raw['is_unlocked'] as bool? ?? false) ||
+              ? existing.currentProgress
+              : rawProgress;
+          final mergedUnlocked =
+              (raw['is_unlocked'] as bool? ?? false) ||
               (existing?.isUnlocked ?? false);
-          final mergedClaimed = (raw['reward_claimed'] as bool? ?? false) ||
+          final mergedClaimed =
+              (raw['reward_claimed'] as bool? ?? false) ||
               (existing?.rewardClaimed ?? false);
           // Keep the local unlock timestamp if we already had one.
           final mergedUnlockedAt =
@@ -1874,8 +1910,7 @@ class SyncEngine {
               isUnlocked: Value(mergedUnlocked),
               unlockedAt: Value(mergedUnlockedAt),
               rewardClaimed: Value(mergedClaimed),
-              updatedAt:
-                  Value(_parseDate(raw['updated_at']) ?? DateTime.now()),
+              updatedAt: Value(_parseDate(raw['updated_at']) ?? DateTime.now()),
             ),
             enqueueSync: false,
           );
@@ -1944,7 +1979,8 @@ class SyncEngine {
           final cloudXp = raw['current_xp'] as int? ?? 0;
           final localTier = existing?.currentTier ?? 0;
           final localXp = existing?.currentXp ?? 0;
-          final localFurther = localTier > cloudTier ||
+          final localFurther =
+              localTier > cloudTier ||
               (localTier == cloudTier && localXp > cloudXp);
           if (localFurther) {
             AppLogger.network(
@@ -1990,18 +2026,24 @@ class SyncEngine {
       if (premium is Map<String, dynamic>) {
         await _storeDao!.applyPremiumStatusSnapshot(
           PremiumStatusCompanion(
-            isPremiumActive: Value(premium['is_premium_active'] as bool? ?? false),
-            premiumExpirationDate:
-                Value(_parseDate(premium['premium_expiration_date'])),
+            isPremiumActive: Value(
+              premium['is_premium_active'] as bool? ?? false,
+            ),
+            premiumExpirationDate: Value(
+              _parseDate(premium['premium_expiration_date']),
+            ),
             isOnTrial: Value(premium['is_on_trial'] as bool? ?? false),
             trialStartDate: Value(_parseDate(premium['trial_start_date'])),
             trialEndDate: Value(_parseDate(premium['trial_end_date'])),
-            bronzeTournamentEntries:
-                Value(premium['bronze_tournament_entries'] as int? ?? 0),
-            silverTournamentEntries:
-                Value(premium['silver_tournament_entries'] as int? ?? 0),
-            goldTournamentEntries:
-                Value(premium['gold_tournament_entries'] as int? ?? 0),
+            bronzeTournamentEntries: Value(
+              premium['bronze_tournament_entries'] as int? ?? 0,
+            ),
+            silverTournamentEntries: Value(
+              premium['silver_tournament_entries'] as int? ?? 0,
+            ),
+            goldTournamentEntries: Value(
+              premium['gold_tournament_entries'] as int? ?? 0,
+            ),
           ),
         );
       }
@@ -2016,9 +2058,7 @@ class SyncEngine {
       final claims = snapshot['daily_challenge_claims'];
       if (claims is List && claims.isNotEmpty) {
         final existingRows = await _db!.select(_db!.dailyChallenges).get();
-        final existingById = {
-          for (final r in existingRows) r.challengeId: r,
-        };
+        final existingById = {for (final r in existingRows) r.challengeId: r};
         for (final raw in claims) {
           if (raw is! Map<String, dynamic>) continue;
           final challengeId = raw['challenge_id'] as String?;
@@ -2029,10 +2069,14 @@ class SyncEngine {
           final cloudCompleted = raw['is_completed'] as bool? ?? false;
           final cloudClaimed = raw['reward_claimed'] as bool? ?? false;
 
-          final mergedProgress =
-              math.max(existing?.currentProgress ?? 0, cloudProgress);
-          final mergedCompleted = cloudCompleted || (existing?.isCompleted ?? false);
-          final mergedClaimed = cloudClaimed || (existing?.rewardClaimed ?? false);
+          final mergedProgress = math.max(
+            existing?.currentProgress ?? 0,
+            cloudProgress,
+          );
+          final mergedCompleted =
+              cloudCompleted || (existing?.isCompleted ?? false);
+          final mergedClaimed =
+              cloudClaimed || (existing?.rewardClaimed ?? false);
 
           // Re-enqueue PER CHALLENGE: the drain resolves the row to push by
           // parsing the id back out of the entity key (_extractIds), so a
@@ -2062,10 +2106,13 @@ class SyncEngine {
               rewardCoins: Value(raw['reward_coins'] as int? ?? 0),
               isCompleted: Value(mergedCompleted),
               rewardClaimed: Value(mergedClaimed),
-              challengeDate:
-                  Value(_parseDate(raw['challenge_date']) ?? DateTime.now()),
-              expiresAt: Value(_parseDate(raw['expires_at']) ??
-                  DateTime.now().add(const Duration(days: 1))),
+              challengeDate: Value(
+                _parseDate(raw['challenge_date']) ?? DateTime.now(),
+              ),
+              expiresAt: Value(
+                _parseDate(raw['expires_at']) ??
+                    DateTime.now().add(const Duration(days: 1)),
+              ),
               // Keep the local completion stamp when we have one — it's the
               // moment the player actually finished it on this device.
               completedAt: Value(
@@ -2096,8 +2143,10 @@ class SyncEngine {
           final cloudCompleted = raw['is_completed'] as bool? ?? false;
           final cloudClaimed = raw['claimed_reward'] as bool? ?? false;
 
-          final mergedProgress =
-              math.max(existing?.currentProgress ?? 0, cloudProgress);
+          final mergedProgress = math.max(
+            existing?.currentProgress ?? 0,
+            cloudProgress,
+          );
           final mergedCompleted =
               cloudCompleted || (existing?.isCompleted ?? false);
           final mergedClaimed =
@@ -2125,12 +2174,14 @@ class SyncEngine {
               currentProgress: Value(mergedProgress),
               targetValue: Value(raw['target_value'] as int? ?? 0),
               coinReward: Value(raw['coin_reward'] as int? ?? 0),
-              battlePassXpReward:
-                  Value(raw['battle_pass_xp_reward'] as int? ?? 0),
+              battlePassXpReward: Value(
+                raw['battle_pass_xp_reward'] as int? ?? 0,
+              ),
               isCompleted: Value(mergedCompleted),
               claimedReward: Value(mergedClaimed),
-              weekStartDate:
-                  Value(_parseDate(raw['week_start_date']) ?? DateTime.now()),
+              weekStartDate: Value(
+                _parseDate(raw['week_start_date']) ?? DateTime.now(),
+              ),
               completedAt: Value(
                 existing?.completedAt ?? _parseDate(raw['completed_at']),
               ),
@@ -2153,9 +2204,7 @@ class SyncEngine {
         final currentStreak = dailyBonus['current_streak'] as int? ?? 0;
         final totalClaims = dailyBonus['total_claims'] as int? ?? 0;
         final weeklyMap = dailyBonus['weekly_claims'];
-        final weeklyJson = weeklyMap is Map
-            ? jsonEncode(weeklyMap)
-            : '{}';
+        final weeklyJson = weeklyMap is Map ? jsonEncode(weeklyMap) : '{}';
 
         final cloudLastUtcMs = lastClaimUtcStr == null
             ? null
@@ -2175,13 +2224,17 @@ class SyncEngine {
         if (localRow?.lastClaimUtcMs != null) {
           localLocalDay = _userLocalDay(
             DateTime.fromMillisecondsSinceEpoch(
-                localRow!.lastClaimUtcMs!, isUtc: true),
+              localRow!.lastClaimUtcMs!,
+              isUtc: true,
+            ),
             localRow.lastClaimTzOffsetMinutes ?? 0,
           );
         }
 
-        final adoptCloud = localLocalDay == null ||
-            (cloudLocalDay != null && cloudLocalDay.compareTo(localLocalDay) >= 0);
+        final adoptCloud =
+            localLocalDay == null ||
+            (cloudLocalDay != null &&
+                cloudLocalDay.compareTo(localLocalDay) >= 0);
 
         if (adoptCloud) {
           await _storeDao!.applyDailyBonusSnapshot(
@@ -2214,12 +2267,14 @@ class SyncEngine {
       final powerUps = snapshot['power_up_inventory'];
       if (powerUps is Map<String, dynamic>) {
         final cloudInventory = powerUps['inventory'];
-        final cloudInventoryJson =
-            cloudInventory is Map ? jsonEncode(cloudInventory) : '{}';
+        final cloudInventoryJson = cloudInventory is Map
+            ? jsonEncode(cloudInventory)
+            : '{}';
         final cloudUpdatedAt = _parseDate(powerUps['updated_at']);
 
         final localRow = await _storeDao!.getPowerUpInventoryRow();
-        final localAhead = localRow != null &&
+        final localAhead =
+            localRow != null &&
             cloudUpdatedAt != null &&
             localRow.updatedAt.toUtc().isAfter(cloudUpdatedAt.toUtc());
 
@@ -2262,8 +2317,7 @@ class SyncEngine {
     int amount,
     String type,
     String source,
-  ) =>
-      '${createdAt.toUtc().toIso8601String()}|$amount|$type|$source';
+  ) => '${createdAt.toUtc().toIso8601String()}|$amount|$type|$source';
 
   DateTime? _parseDate(dynamic raw) {
     if (raw == null) return null;

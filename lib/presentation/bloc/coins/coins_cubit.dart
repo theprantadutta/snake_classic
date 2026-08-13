@@ -65,7 +65,8 @@ class CoinsCubit extends Cubit<CoinsState> {
   // (`daily_bonus_state` table). Kept as constants so the one-shot
   // migration in [initialize] can find and clean up the legacy values.
   static const String _legacyDailyBonusesKey = 'daily_bonuses';
-  static const String _legacyLastBonusClaimDateKey = 'last_daily_bonus_claim_date';
+  static const String _legacyLastBonusClaimDateKey =
+      'last_daily_bonus_claim_date';
 
   /// Retired SharedPreferences keys — the Drift-first refactor moves
   /// balance and transactions into Drift. Kept here so the one-shot
@@ -185,8 +186,8 @@ class CoinsCubit extends Cubit<CoinsState> {
         // the write and re-emits state — no manual emit here.
         final delta = serverCoins - localTotal;
         await StorageService().storeDao.applyCoinBalanceSnapshot(
-              balance: serverCoins,
-            );
+          balance: serverCoins,
+        );
         AppLogger.info(
           'Coin sync: local=$localTotal, server=$serverCoins (synced +$delta)',
         );
@@ -324,14 +325,16 @@ class CoinsCubit extends Cubit<CoinsState> {
     final balance = _balanceFromRow(row);
     final transactions = txns.map(_modelFromDriftTxn).toList();
 
-    emit(state.copyWith(
-      balance: balance,
-      transactions: transactions,
-      dailyBonuses: _dailyBonusesFromRow(bonusRow),
-      dailyBonusLastClaimUtcMs: bonusRow?.lastClaimUtcMs,
-      dailyBonusLastClaimTzOffsetMinutes: bonusRow?.lastClaimTzOffsetMinutes,
-      dailyBonusCurrentStreak: bonusRow?.currentStreak ?? 0,
-    ));
+    emit(
+      state.copyWith(
+        balance: balance,
+        transactions: transactions,
+        dailyBonuses: _dailyBonusesFromRow(bonusRow),
+        dailyBonusLastClaimUtcMs: bonusRow?.lastClaimUtcMs,
+        dailyBonusLastClaimTzOffsetMinutes: bonusRow?.lastClaimTzOffsetMinutes,
+        dailyBonusCurrentStreak: bonusRow?.currentStreak ?? 0,
+      ),
+    );
   }
 
   /// Subscribe to Drift watches so any later write (snapshot apply,
@@ -345,33 +348,33 @@ class CoinsCubit extends Cubit<CoinsState> {
     _transactionsWatch?.cancel();
     _dailyBonusWatch?.cancel();
 
-    _coinsRowWatch = storageService.storeDao.watchCoinBalanceRow().listen(
-      (row) {
-        final newBalance = _balanceFromRow(row);
-        if (newBalance == state.balance) return;
-        emit(state.copyWith(balance: newBalance));
-      },
-    );
+    _coinsRowWatch = storageService.storeDao.watchCoinBalanceRow().listen((
+      row,
+    ) {
+      final newBalance = _balanceFromRow(row);
+      if (newBalance == state.balance) return;
+      emit(state.copyWith(balance: newBalance));
+    });
 
-    _transactionsWatch =
-        storageService.storeDao.watchCoinTransactions(limit: 200).listen(
-      (rows) {
-        final modelTxns = rows.map(_modelFromDriftTxn).toList();
-        emit(state.copyWith(transactions: modelTxns));
-      },
-    );
+    _transactionsWatch = storageService.storeDao
+        .watchCoinTransactions(limit: 200)
+        .listen((rows) {
+          final modelTxns = rows.map(_modelFromDriftTxn).toList();
+          emit(state.copyWith(transactions: modelTxns));
+        });
 
-    _dailyBonusWatch =
-        storageService.storeDao.watchDailyBonusRow().listen(
-      (row) {
-        emit(state.copyWith(
+    _dailyBonusWatch = storageService.storeDao.watchDailyBonusRow().listen((
+      row,
+    ) {
+      emit(
+        state.copyWith(
           dailyBonuses: _dailyBonusesFromRow(row),
           dailyBonusLastClaimUtcMs: row?.lastClaimUtcMs,
           dailyBonusLastClaimTzOffsetMinutes: row?.lastClaimTzOffsetMinutes,
           dailyBonusCurrentStreak: row?.currentStreak ?? 0,
-        ));
-      },
-    );
+        ),
+      );
+    });
   }
 
   /// Project the Drift singleton into the 7-day cycle list used by the
@@ -398,10 +401,7 @@ class CoinsCubit extends Cubit<CoinsState> {
       } catch (_) {
         collectedAt = null;
       }
-      return bonus.copyWith(
-        isCollected: true,
-        collectedAt: collectedAt,
-      );
+      return bonus.copyWith(isCollected: true, collectedAt: collectedAt);
     }).toList();
   }
 
@@ -522,8 +522,7 @@ class CoinsCubit extends Cubit<CoinsState> {
     final prefs = _prefs;
     if (prefs == null) return;
 
-    final hasLegacyClaimDate =
-        prefs.containsKey(_legacyLastBonusClaimDateKey);
+    final hasLegacyClaimDate = prefs.containsKey(_legacyLastBonusClaimDateKey);
     final hasLegacyBonuses = prefs.containsKey(_legacyDailyBonusesKey);
     if (!hasLegacyClaimDate && !hasLegacyBonuses) return;
 
@@ -542,8 +541,7 @@ class CoinsCubit extends Cubit<CoinsState> {
             // the day stays stable across reasonable tz offsets.
             final parsedDate = DateTime.parse('${lastClaimDate}T12:00:00Z');
             lastClaimUtcMs = parsedDate.millisecondsSinceEpoch;
-            lastClaimTzOffsetMinutes =
-                DateTime.now().timeZoneOffset.inMinutes;
+            lastClaimTzOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
           } catch (_) {
             // Malformed legacy value — ignore.
           }
@@ -613,15 +611,15 @@ class CoinsCubit extends Cubit<CoinsState> {
   void _checkAndResetDailyEarnings() {
     final now = DateTime.now().toUtc();
     final lastReset = state.lastEarningReset;
-    final resetDate =
-        DateTime.utc(lastReset.year, lastReset.month, lastReset.day);
+    final resetDate = DateTime.utc(
+      lastReset.year,
+      lastReset.month,
+      lastReset.day,
+    );
     final today = DateTime.utc(now.year, now.month, now.day);
 
     if (today.isAfter(resetDate)) {
-      emit(state.copyWith(
-        dailyEarnings: 0,
-        lastEarningReset: now,
-      ));
+      emit(state.copyWith(dailyEarnings: 0, lastEarningReset: now));
       AppLogger.info('Daily earnings reset at midnight UTC');
     }
   }
@@ -678,7 +676,8 @@ class CoinsCubit extends Cubit<CoinsState> {
       // daily login bonus (a once-per-day engagement claim, not a grind
       // vector), and server-declared multiplayer rewards (the server
       // decides the number; matches are rate-limited by matchmaking).
-      final bypassesCap = source == CoinEarningSource.purchase ||
+      final bypassesCap =
+          source == CoinEarningSource.purchase ||
           source == CoinEarningSource.dailyLogin ||
           isServerDeclared;
       if (!bypassesCap && _wouldExceedDailyCap(multipliedAmount)) {
@@ -687,11 +686,25 @@ class CoinsCubit extends Cubit<CoinsState> {
           AppLogger.info('Daily earning cap reached, no coins awarded');
           return false;
         }
-        return _processEarning(source, cappedAmount, itemName, metadata,
-            wasCapped: true);
+        // Awaited inside the try, not just returned from it: a bare `return
+        // future` hands the Future to the caller and leaves this catch with
+        // nothing to catch, so a failure while writing the earning would
+        // escape the handler that exists to swallow it.
+        return await _processEarning(
+          source,
+          cappedAmount,
+          itemName,
+          metadata,
+          wasCapped: true,
+        );
       }
 
-      return _processEarning(source, multipliedAmount, itemName, metadata);
+      return await _processEarning(
+        source,
+        multipliedAmount,
+        itemName,
+        metadata,
+      );
     } catch (e) {
       AppLogger.error('Error earning coins', e);
       return false;
@@ -715,10 +728,10 @@ class CoinsCubit extends Cubit<CoinsState> {
     // the async stream emission.
     try {
       await StorageService().storeDao.addCoins(
-            amount,
-            source.name,
-            description: itemName,
-          );
+        amount,
+        source.name,
+        description: itemName,
+      );
     } catch (e) {
       AppLogger.error(
         'CoinsCubit: addCoins failed for +$amount from ${source.name}',
@@ -734,7 +747,8 @@ class CoinsCubit extends Cubit<CoinsState> {
 
     // Daily cap counter is device-only. Cap-bypassing sources also don't
     // count toward the cap (consistent with the bypass check above).
-    final countsTowardCap = source != CoinEarningSource.purchase &&
+    final countsTowardCap =
+        source != CoinEarningSource.purchase &&
         source != CoinEarningSource.dailyLogin;
     if (countsTowardCap) {
       emit(state.copyWith(dailyEarnings: state.dailyEarnings + amount));
@@ -756,8 +770,8 @@ class CoinsCubit extends Cubit<CoinsState> {
   Future<void> setServerBalance(int serverTotal) async {
     if (state.balance.total == serverTotal) return;
     await StorageService().storeDao.applyCoinBalanceSnapshot(
-          balance: serverTotal,
-        );
+      balance: serverTotal,
+    );
     // watchCoinBalanceRow fires and triggers the state refresh.
   }
 
@@ -777,10 +791,10 @@ class CoinsCubit extends Cubit<CoinsState> {
       }
 
       final ok = await StorageService().storeDao.spendCoins(
-            amount,
-            category.name,
-            description: itemName,
-          );
+        amount,
+        category.name,
+        description: itemName,
+      );
       if (!ok) {
         AppLogger.warning('StoreDao.spendCoins refused — balance race');
         return false;
@@ -814,10 +828,10 @@ class CoinsCubit extends Cubit<CoinsState> {
           'bonus: ${option.bonusCoins}, price: \$${option.price})';
 
       await StorageService().storeDao.addCoins(
-            totalCoins,
-            'purchase',
-            description: description,
-          );
+        totalCoins,
+        'purchase',
+        description: description,
+      );
 
       await _refreshBalanceFromDrift();
 
