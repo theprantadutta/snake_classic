@@ -39,6 +39,11 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   /// loaded non-blocking; the lobby renders fine without it.
   Map<String, dynamic>? _record;
 
+  /// Whether the lifetime record is still being fetched. The strip renders
+  /// from the first frame either way — this only decides whether the numbers
+  /// or their placeholders are showing.
+  bool _recordLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -59,17 +64,24 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         }
       }
 
-      if (_connectivityService.isOnline) {
-        _loadRecord();
-      }
+      // Attempted regardless: offline the request fails fast and the strip
+      // settles on dashes rather than sitting in a loading state forever.
+      _loadRecord();
     });
   }
 
   Future<void> _loadRecord() async {
-    final record = await ApiService().getMultiplayerRecord();
-    if (mounted && record != null) {
-      setState(() => _record = record);
+    Map<String, dynamic>? record;
+    try {
+      record = await ApiService().getMultiplayerRecord();
+    } catch (_) {
+      record = null;
     }
+    if (!mounted) return;
+    setState(() {
+      _record = record;
+      _recordLoading = false;
+    });
   }
 
   void _onRoomCodeChanged() {
@@ -94,11 +106,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     if (friends.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.mpLobbyNoFriends),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.mpLobbyNoFriends)));
       return;
     }
     showModalBottomSheet<void>(
@@ -165,8 +175,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       trailing: Icon(Icons.send, size: 18, color: theme.foodColor),
       onTap: () async {
         Navigator.of(sheetContext).pop();
-        final (sent, message) = await SocialService()
-            .pingFriendForMatch(friend.uid, roomCode: roomCode);
+        final (sent, message) = await SocialService().pingFriendForMatch(
+          friend.uid,
+          roomCode: roomCode,
+        );
         if (!mounted) return;
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -176,8 +188,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                   ? l10n.mpLobbyInviteSent(friend.displayName)
                   : (message ?? l10n.mpLobbyInviteFailed),
             ),
-            backgroundColor:
-                sent ? Colors.green.shade700 : Colors.red.shade700,
+            backgroundColor: sent ? Colors.green.shade700 : Colors.red.shade700,
           ),
         );
       },
@@ -330,11 +341,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             ),
             child: Column(
               children: [
-                // Lifetime VS record (renders only once loaded)
-                if (_record != null) ...[
-                  _buildRecordStrip(theme),
-                  const SizedBox(height: 20),
-                ],
+                // Lifetime VS record. Always in the tree — it used to be
+                // gated on the fetch having returned, so the whole screen
+                // jumped down a strip's height when the network answered, and
+                // offline it never appeared at all.
+                _buildRecordStrip(theme),
+                const SizedBox(height: 20),
 
                 // Quick Match Section
                 _buildQuickMatchSection(context, multiplayerState, theme),
@@ -500,10 +512,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             ),
             child: IconButton(
               onPressed: () => context.pop(),
-              icon: Icon(
-                Icons.arrow_back_rounded,
-                color: theme.primaryColor,
-              ),
+              icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
             ),
           ),
           const SizedBox(width: 12),
@@ -562,9 +571,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: theme.backgroundColor.withValues(alpha: 0.3),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(16),
           ),
           child: child,
@@ -632,10 +639,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 context.read<MultiplayerCubit>().leaveGame();
                 context.pop();
               },
-              icon: Icon(
-                Icons.arrow_back_rounded,
-                color: theme.primaryColor,
-              ),
+              icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
             ),
           ),
           const SizedBox(width: 12),
@@ -1024,19 +1028,35 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  /// Compact lifetime record chip row: "W · L · D" plus rating.
+  /// Lifetime record: wins, losses, draws, rating.
+  ///
+  /// Present from the first frame, whatever the network is doing. It used to
+  /// be gated on the fetch having returned, so the strip materialised a
+  /// second after the screen did and shoved Quick Match, Join and Create down
+  /// the page — the reader's eye was already on a button that moved out from
+  /// under it. Offline it never arrived at all, which left the screen looking
+  /// like it had forgotten the mode exists.
+  ///
+  /// So the shape is fixed and only the contents change: four cells, always,
+  /// with placeholders where the numbers will be. Nothing below it can move,
+  /// because nothing about it moves.
   Widget _buildRecordStrip(GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
-    final wins = (_record?['wins'] as num?)?.toInt() ?? 0;
-    final losses = (_record?['losses'] as num?)?.toInt() ?? 0;
-    final draws = (_record?['draws'] as num?)?.toInt() ?? 0;
-    final rating = (_record?['rating'] as num?)?.toInt() ?? 1000;
 
-    // Label above value, same cell as the profile statistics grid. The old
+    String? valueOf(String key, {int? fallback}) {
+      if (_recordLoading) return null;
+      final raw = (_record?[key] as num?)?.toInt();
+      if (raw != null) return '$raw';
+      // Fetched and unavailable — offline, or the call failed. A dash says
+      // "not known" honestly; a zero would be a claim about your record.
+      return fallback == null ? '—' : '$fallback';
+    }
+
+    // Label above value, same cell as the profile statistics grid. An earlier
     // strip gave each figure its own tinted pill in its own colour — green
     // wins, red losses, orange draws — so a record of 0–0 lit up like a
     // warning panel. A record is a set of numbers, not a set of alerts.
-    Widget cell(String label, String value) {
+    Widget cell(String label, String? value) {
       return Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1053,15 +1073,42 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            // Same height whether it holds a number or a placeholder, so the
+            // swap when the fetch lands is a cross-fade and not a reflow.
+            SizedBox(
+              height: 26,
+              child: value == null
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child:
+                          Container(
+                                width: 34,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              )
+                              .animate(
+                                onPlay: (controller) =>
+                                    controller.repeat(reverse: true),
+                              )
+                              .fade(begin: 0.45, end: 1.0, duration: 700.ms),
+                    )
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          height: 1.1,
+                        ),
+                      ).animate().fadeIn(duration: 220.ms),
+                    ),
             ),
           ],
         ),
@@ -1079,10 +1126,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          cell(l10n.mpLobbyWinsLabel, '$wins'),
-          cell(l10n.mpLobbyLossesLabel, '$losses'),
-          if (draws > 0) cell(l10n.mpLobbyDrawsLabel, '$draws'),
-          cell(l10n.mpLobbyRatingLabel, '$rating'),
+          cell(l10n.mpLobbyWinsLabel, valueOf('wins')),
+          cell(l10n.mpLobbyLossesLabel, valueOf('losses')),
+          // Draws used to appear only when there were any, which moved the
+          // other three columns sideways the moment a draw was recorded.
+          // Four columns, always.
+          cell(l10n.mpLobbyDrawsLabel, valueOf('draws')),
+          cell(l10n.mpLobbyRatingLabel, valueOf('rating', fallback: 1000)),
         ],
       ),
     ).gameEntrance(delay: 50.ms);
@@ -1550,9 +1600,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               letterSpacing: context.letterSpacing(1),
             ),
           ),
-          style: TextButton.styleFrom(
-            minimumSize: const Size.fromHeight(44),
-          ),
+          style: TextButton.styleFrom(minimumSize: const Size.fromHeight(44)),
         ),
       ],
     );
