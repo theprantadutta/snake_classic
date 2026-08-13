@@ -11,9 +11,9 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 class TournamentsScreen extends ConsumerStatefulWidget {
   const TournamentsScreen({super.key});
@@ -51,14 +51,27 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
 
+        final l10n = AppLocalizations.of(context)!;
+
         return Scaffold(
           bottomNavigationBar: const SnakeBannerAd(),
+          extendBodyBehindAppBar: true,
+          appBar: appScreenBar(
+            context,
+            theme,
+            l10n.tnTitle,
+            actions: [
+              IconButton(
+                onPressed: _loadData,
+                icon: Icon(Icons.refresh, color: theme.accentColor),
+              ),
+            ],
+          ),
           body: AppBackground(
             theme: theme,
             child: SafeArea(
               child: Column(
                 children: [
-                  _buildHeader(theme),
                   _buildTabBar(theme),
                   // "Updated X ago" chip — surfaces Drift cache
                   // freshness for the currently-active tab so the user
@@ -74,9 +87,18 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         : TabBarView(
                             controller: _tabController,
                             children: [
-                              _buildActiveTournaments(theme, tournamentsState.activeTournaments),
-                              _buildTournamentHistory(theme, tournamentsState.historyTournaments),
-                              _buildUserStats(theme, tournamentsState.userStats),
+                              _buildActiveTournaments(
+                                theme,
+                                tournamentsState.activeTournaments,
+                              ),
+                              _buildTournamentHistory(
+                                theme,
+                                tournamentsState.historyTournaments,
+                              ),
+                              _buildUserStats(
+                                theme,
+                                tournamentsState.userStats,
+                              ),
                             ],
                           ),
                   ),
@@ -86,43 +108,6 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHeader(GameTheme theme) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.emoji_events, color: theme.accentColor, size: 28),
-          const SizedBox(width: 12),
-          Text(
-            AppLocalizations.of(context)!.tnTitle,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: _loadData,
-            icon: Icon(
-              Icons.refresh,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: 24,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -148,10 +133,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   /// is. Tap triggers a forced refresh. The My Stats tab has no cache
   /// of its own — fall back to whichever list was most recently
   /// touched so the user still gets a signal.
-  Widget _buildStalenessChip(
-    GameTheme theme,
-    TournamentsState state,
-  ) {
+  Widget _buildStalenessChip(GameTheme theme, TournamentsState state) {
     final tabIndex = _tabController.index;
     DateTime? ts;
     switch (tabIndex) {
@@ -183,8 +165,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           onTap: () => ref.read(tournamentsProvider.notifier).refresh(),
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
@@ -247,7 +228,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     );
   }
 
-  Widget _buildActiveTournaments(GameTheme theme, List<Tournament> activeTournaments) {
+  Widget _buildActiveTournaments(
+    GameTheme theme,
+    List<Tournament> activeTournaments,
+  ) {
     if (activeTournaments.isEmpty) {
       final l10n = AppLocalizations.of(context)!;
       return _buildEmptyState(
@@ -270,12 +254,15 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           tournament: tournament,
           theme: theme,
           onTap: () => _openTournamentDetail(tournament),
-        ).gameListItem(index);
+        );
       },
     );
   }
 
-  Widget _buildTournamentHistory(GameTheme theme, List<Tournament> historyTournaments) {
+  Widget _buildTournamentHistory(
+    GameTheme theme,
+    List<Tournament> historyTournaments,
+  ) {
     if (historyTournaments.isEmpty) {
       final l10n = AppLocalizations.of(context)!;
       return _buildEmptyState(
@@ -299,7 +286,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
           theme: theme,
           showResults: true,
           onTap: () => _openTournamentDetail(tournament),
-        ).gameListItem(index);
+        );
       },
     );
   }
@@ -445,7 +432,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.2),
+                      color: theme.accentColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -458,9 +445,9 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         const SizedBox(width: 4),
                         Text(
                           tournament.gameMode.localizedName(l10n),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Colors.blue,
+                            color: theme.accentColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -514,14 +501,14 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.2),
+                        color: theme.accentColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         l10n.tnJoined,
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.green,
+                          color: theme.accentColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -532,7 +519,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                         l10n.tnBestScoreChip(tournament.userBestScore!),
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.amber,
+                          color: kRewardGold,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -547,15 +534,15 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
+                    color: kRewardGold.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.amber.withValues(alpha: 0.3),
+                      color: kRewardGold.withValues(alpha: 0.30),
                     ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                      Icon(Icons.emoji_events, color: kRewardGold, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -572,7 +559,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber,
+                                color: kRewardGold,
                               ),
                             ),
                             if (tournament.userReward!.coins > 0)
@@ -580,7 +567,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                                 l10n.mpCoinReward(tournament.userReward!.coins),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.amber.withValues(alpha: 0.8),
+                                  color: Colors.white.withValues(alpha: 0.6),
                                 ),
                               ),
                           ],
@@ -640,11 +627,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
+      decoration: screenCardDecoration(theme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -664,7 +647,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                   l10n.tnTitle,
                   '${userStats['totalTournaments'] ?? 0}',
                   Icons.emoji_events,
-                  Colors.blue,
+                  theme.accentColor,
                   theme,
                 ),
               ),
@@ -673,7 +656,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                   l10n.tnWins,
                   '${userStats['wins'] ?? 0}',
                   Icons.emoji_events,
-                  Colors.amber,
+                  kRewardGold,
                   theme,
                 ),
               ),
@@ -687,7 +670,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                   l10n.tnTopThree,
                   '${userStats['topThreeFinishes'] ?? 0}',
                   Icons.military_tech,
-                  Colors.orange,
+                  theme.accentColor,
                   theme,
                 ),
               ),
@@ -696,7 +679,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
                   l10n.tnBestScore,
                   '${userStats['bestScore'] ?? 0}',
                   Icons.star,
-                  Colors.purple,
+                  theme.accentColor,
                   theme,
                 ),
               ),
@@ -711,11 +694,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
+      decoration: screenCardDecoration(theme),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -849,29 +828,35 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     );
   }
 
+  /// Green / blue / grey for status and blue / orange / pink for type meant
+  /// six colours describing two facts, none of them the theme's. A tournament
+  /// that is running is the one worth looking at, so it gets the accent; the
+  /// rest are white, and the words already say which is which.
   Color _getTournamentStatusColor(TournamentStatus status) {
     switch (status) {
       case TournamentStatus.active:
-        return Colors.green;
+        return _theme.accentColor;
       case TournamentStatus.upcoming:
-        return Colors.blue;
+        return Colors.white.withValues(alpha: 0.55);
       case TournamentStatus.ended:
-        return Colors.grey;
+        return Colors.white.withValues(alpha: 0.35);
     }
   }
 
-  Color _getTournamentTypeColor(TournamentType type) {
-    switch (type) {
-      case TournamentType.daily:
-        return Colors.blue;
-      case TournamentType.weekly:
-        return Colors.orange;
-      case TournamentType.special:
-        return Colors.pink;
-    }
-  }
+  /// Type is a label, not a warning. It reads in white at the weight the rest
+  /// of the card's secondary text uses.
+  Color _getTournamentTypeColor(TournamentType type) => switch (type) {
+    TournamentType.special => kRewardGold,
+    _ => Colors.white.withValues(alpha: 0.5),
+  };
+
+  /// The active theme, for the two colour helpers above.
+  GameTheme get _theme => context.read<ThemeCubit>().state.currentTheme;
 
   void _openTournamentDetail(Tournament tournament) {
-    context.push(AppRoutes.tournamentDetailPath(tournament.id), extra: tournament);
+    context.push(
+      AppRoutes.tournamentDetailPath(tournament.id),
+      extra: tournament,
+    );
   }
 }
