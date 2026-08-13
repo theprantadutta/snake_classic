@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -13,8 +12,8 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
 class FriendsScreen extends ConsumerStatefulWidget {
@@ -59,14 +58,32 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       builder: (context, themeState) {
         final theme = themeState.currentTheme;
 
+        final l10n = AppLocalizations.of(context)!;
+
         return Scaffold(
           bottomNavigationBar: const SnakeBannerAd(),
+          extendBodyBehindAppBar: true,
+          appBar: appScreenBar(
+            context,
+            theme,
+            l10n.frTitle,
+            actions: [
+              IconButton(
+                tooltip: l10n.frBlockedUsers,
+                onPressed: _showBlockedUsersDialog,
+                icon: Icon(Icons.block, color: theme.accentColor, size: 22),
+              ),
+              IconButton(
+                onPressed: _loadData,
+                icon: Icon(Icons.refresh, color: theme.accentColor),
+              ),
+            ],
+          ),
           body: AppBackground(
             theme: theme,
             child: SafeArea(
               child: Column(
                 children: [
-                  _buildHeader(theme),
                   _buildSearchBar(theme, friendsState),
                   _buildTabBar(theme, friendsState),
                   // "Updated X ago" — Drift cache freshness signal so
@@ -96,53 +113,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHeader(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: 24),
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.people, color: theme.accentColor, size: 28),
-          const SizedBox(width: 12),
-          Text(
-            l10n.frTitle,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            tooltip: l10n.frBlockedUsers,
-            onPressed: _showBlockedUsersDialog,
-            icon: Icon(
-              Icons.block,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: 22,
-            ),
-          ),
-          IconButton(
-            onPressed: _loadData,
-            icon: Icon(
-              Icons.refresh,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: 24,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -296,7 +266,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         ? l10n.frNoCacheYet
         : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
     final label = failed ? l10n.frRefreshFailed(base) : base;
-    final chipColor = failed ? Colors.orange : theme.accentColor;
+    final chipColor = failed ? kRewardGold : theme.accentColor;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -311,14 +281,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           onTap: () => ref.read(friendsProvider.notifier).refresh(),
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: chipColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: chipColor.withValues(alpha: 0.18),
-              ),
+              border: Border.all(color: chipColor.withValues(alpha: 0.18)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -409,7 +376,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                 value: 'ping_match',
                 child: Row(
                   children: [
-                    const Icon(Icons.sports_esports, color: Colors.green),
+                    Icon(Icons.sports_esports, color: theme.accentColor),
                     const SizedBox(width: 8),
                     Text(l10n.frChallengeMenu),
                   ],
@@ -448,7 +415,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             ],
             onSelected: (value) => _handleFriendAction(value, friend),
           ),
-        ).gameListItem(index);
+        );
       },
     );
   }
@@ -546,7 +513,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           user: user,
           theme: theme,
           trailing: _buildSearchUserActions(user, theme, friendsState),
-        ).gameListItem(index);
+        );
       },
     );
   }
@@ -624,7 +591,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.emoji_events, size: 14, color: Colors.amber),
+                      Icon(Icons.emoji_events, size: 14, color: kRewardGold),
                       const SizedBox(width: 4),
                       Text(
                         '${user.highScore}',
@@ -642,8 +609,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        AppLocalizations.of(context)!
-                            .frGamesCount(user.totalGamesPlayed),
+                        AppLocalizations.of(
+                          context,
+                        )!.frGamesCount(user.totalGamesPlayed),
                         style: TextStyle(
                           fontSize: 14,
                           color: theme.accentColor.withValues(alpha: 0.6),
@@ -679,7 +647,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
+        side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -691,7 +659,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               backgroundImage: request.fromUserPhotoUrl != null
                   ? NetworkImage(request.fromUserPhotoUrl!)
                   : null,
-              onBackgroundImageError: request.fromUserPhotoUrl != null ? (e, s) {} : null,
+              onBackgroundImageError: request.fromUserPhotoUrl != null
+                  ? (e, s) {}
+                  : null,
               child: request.fromUserPhotoUrl == null
                   ? Text(
                       request.fromUserName.isNotEmpty
@@ -819,14 +789,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.2),
+                color: kRewardGold.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 l10n.frPending,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.orange,
+                  color: kRewardGold,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -848,7 +818,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     );
   }
 
-  Widget _buildSearchUserActions(UserProfile user, GameTheme theme, FriendsState friendsState) {
+  Widget _buildSearchUserActions(
+    UserProfile user,
+    GameTheme theme,
+    FriendsState friendsState,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     // Check if already friends or have pending request using provider helper methods
     final notifier = ref.read(friendsProvider.notifier);
@@ -860,14 +834,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.2),
+          color: theme.accentColor.withValues(alpha: 0.16),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           l10n.frAlreadyFriends,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.green,
+            color: theme.accentColor,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -878,14 +852,14 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.orange.withValues(alpha: 0.2),
+          color: kRewardGold.withValues(alpha: 0.16),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           l10n.frPending,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.orange,
+            color: kRewardGold,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -908,7 +882,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     return ElevatedButton(
       onPressed: () => _sendFriendRequest(user.uid),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
+        backgroundColor: theme.accentColor,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -951,16 +925,21 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     );
   }
 
+  /// Presence, in two states rather than three colours. Green-online,
+  /// blue-playing and grey-offline was three hues carrying what the label
+  /// beside the dot already spells out; the dot only has to say "here" or
+  /// "not here".
   Color _getStatusColor(UserStatus status) {
     switch (status) {
       case UserStatus.online:
-        return Colors.green;
       case UserStatus.playing:
-        return Colors.blue;
+        return _theme.accentColor;
       case UserStatus.offline:
-        return Colors.grey;
+        return Colors.white.withValues(alpha: 0.3);
     }
   }
+
+  GameTheme get _theme => context.read<ThemeCubit>().state.currentTheme;
 
   /// Failure feedback for friend mutations. Previously failures were
   /// SILENT (snackbar only on success) — a guest with no backend JWT, or
@@ -982,7 +961,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _sendFriendRequest(String userId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref.read(friendsProvider.notifier).sendFriendRequest(userId);
+    final success = await ref
+        .read(friendsProvider.notifier)
+        .sendFriendRequest(userId);
     if (!mounted) return;
     if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
@@ -996,7 +977,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _acceptFriendRequest(String fromUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref.read(friendsProvider.notifier).acceptFriendRequest(fromUserId);
+    final success = await ref
+        .read(friendsProvider.notifier)
+        .acceptFriendRequest(fromUserId);
     if (!mounted) return;
     if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
@@ -1010,7 +993,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _rejectFriendRequest(String fromUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref.read(friendsProvider.notifier).rejectFriendRequest(fromUserId);
+    final success = await ref
+        .read(friendsProvider.notifier)
+        .rejectFriendRequest(fromUserId);
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(
@@ -1041,8 +1026,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _cancelSentRequest(String toUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success =
-        await ref.read(friendsProvider.notifier).cancelSentRequest(toUserId);
+    final success = await ref
+        .read(friendsProvider.notifier)
+        .cancelSentRequest(toUserId);
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(
@@ -1089,8 +1075,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
           TextButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              final success =
-                  await ref.read(friendsProvider.notifier).blockUser(friend.uid);
+              final success = await ref
+                  .read(friendsProvider.notifier)
+                  .blockUser(friend.uid);
               if (!mounted) return;
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1100,7 +1087,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                 _showMutationError(l10n.frBlockFailed);
               }
             },
-            child: Text(l10n.frBlock, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              l10n.frBlock,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -1111,8 +1101,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   Future<void> _showBlockedUsersDialog() async {
     final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
-    final blocked =
-        await ref.read(friendsProvider.notifier).getBlockedUsers();
+    final blocked = await ref.read(friendsProvider.notifier).getBlockedUsers();
     if (!mounted) return;
     showDialog<void>(
       context: context,
@@ -1154,9 +1143,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(ok
-                                  ? l10n.frUnblocked(user.displayName)
-                                  : l10n.frUnblockFailed),
+                              content: Text(
+                                ok
+                                    ? l10n.frUnblocked(user.displayName)
+                                    : l10n.frUnblockFailed,
+                              ),
                             ),
                           );
                         },
@@ -1224,7 +1215,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.commonClose, style: TextStyle(color: theme.accentColor)),
+            child: Text(
+              l10n.commonClose,
+              style: TextStyle(color: theme.accentColor),
+            ),
           ),
         ],
       ),
@@ -1264,19 +1258,22 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               final navigator = Navigator.of(dialogContext);
               final scaffoldMessenger = ScaffoldMessenger.of(context);
               navigator.pop();
-              final success = await ref.read(friendsProvider.notifier).removeFriend(friend.uid);
+              final success = await ref
+                  .read(friendsProvider.notifier)
+                  .removeFriend(friend.uid);
               if (success) {
                 getIt<AnalyticsFacade>().trackFriendRemoved();
               }
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.frRemoved(friend.displayName)),
-                  ),
+                  SnackBar(content: Text(l10n.frRemoved(friend.displayName))),
                 );
               }
             },
-            child: Text(l10n.frRemove, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              l10n.frRemove,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
