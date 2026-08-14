@@ -1090,9 +1090,19 @@ class AppDatabase extends _$AppDatabase {
         // existing rows land on NULL = "any mode" — the same value the
         // backend uses for an unrestricted challenge. The next successful
         // refresh writes the real value for today's set.
-        await m.addColumn(dailyChallenges, dailyChallenges.requiredGameMode);
-        await m.addColumn(dailyChallenges, dailyChallenges.xpReward);
-        await m.addColumn(dailyChallenges, dailyChallenges.difficulty);
+        //
+        // Added defensively because these three are the only bare
+        // ADD COLUMNs a device can already have applied while its
+        // user_version still reads 15: the v19 bug below crashed the run
+        // two steps later, and drift neither wraps the run in a transaction
+        // nor bumps user_version until every step succeeds. Without the
+        // check those devices replay v17 on each launch and die on
+        // "duplicate column name" forever. See [_addColumnIfMissing].
+        await _addColumnIfMissing(
+            m, dailyChallenges, dailyChallenges.requiredGameMode);
+        await _addColumnIfMissing(m, dailyChallenges, dailyChallenges.xpReward);
+        await _addColumnIfMissing(
+            m, dailyChallenges, dailyChallenges.difficulty);
       }
       if (from < 18) {
         // v18: the client half of exactly-once multiplayer settlement.
@@ -1100,10 +1110,18 @@ class AppDatabase extends _$AppDatabase {
         // off the GameEnded broadcast and were never tracked at all.
         await m.createTable(appliedMultiplayerSettlements);
       }
-      if (from < 19) {
+      if (from >= 18 && from < 19) {
         // v19: per-step progress, so a crash midway through applying a
         // settlement neither loses the remaining rewards nor replays the ones
         // already applied.
+        //
+        // The `from >= 18` lower bound is load-bearing, and its absence was a
+        // launch-crash for every existing install. m.createTable above builds
+        // the table from its CURRENT Dart definition, which already carries
+        // these four columns — so a device coming from 17 or earlier gets the
+        // finished table at v18 and must not then be told to add the columns
+        // again. Only a device that stopped at exactly 18, when the table was
+        // genuinely four columns shorter, needs this step.
         await m.addColumn(
             appliedMultiplayerSettlements, appliedMultiplayerSettlements.statsApplied);
         await m.addColumn(
@@ -1147,6 +1165,34 @@ class AppDatabase extends _$AppDatabase {
       }
     },
   );
+
+  /// [Migrator.addColumn] with the "if it isn't already there" that SQLite
+  /// does not offer.
+  ///
+  /// `ALTER TABLE ... ADD COLUMN` has no `IF NOT EXISTS` form, so a replayed
+  /// migration step throws instead of no-op'ing. That matters because a failed
+  /// upgrade is not rolled back: drift runs onUpgrade outside a transaction
+  /// and only writes the new user_version once every step has succeeded. A run
+  /// that dies at step N therefore leaves steps 1..N-1 durably applied and the
+  /// version number still pointing at the start — and every subsequent launch
+  /// replays them into a duplicate-column error, which is unrecoverable
+  /// without wiping app data.
+  ///
+  /// Reserve this for steps a device may already have applied. A brand new
+  /// step cannot have run anywhere, and plain [Migrator.addColumn] says so.
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    final rows = await customSelect(
+      'PRAGMA table_info("${table.actualTableName}")',
+    ).get();
+    final present = rows.any((r) => r.read<String>('name') == column.name);
+    if (!present) {
+      await m.addColumn(table, column);
+    }
+  }
 
   /// Create indexes for better query performance
   Future<void> _createIndexes() async {
