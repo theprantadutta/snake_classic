@@ -77,6 +77,18 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
 
+        <!-- Small icon and tint for notifications the FCM SDK posts itself,
+             i.e. every push that lands while the app is backgrounded or dead
+             and so never reaches the Dart handler. Without these it falls
+             back to the launcher icon, and since Android keeps only a small
+             icon's alpha, the adaptive icon flattens to a white square. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+
         <!-- AdMob App ID (real — from admob_ad_list.md). The SDK reads this at
              init; it must be the app id, not an ad unit id. Ad UNIT ids live in
              lib/services/ads/ad_config.dart (test ids in debug). -->

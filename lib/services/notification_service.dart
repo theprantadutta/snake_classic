@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui' show Locale, PlatformDispatcher;
+import 'dart:ui' show Color, Locale, PlatformDispatcher;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -39,6 +39,18 @@ class NotificationService {
   static const String _channelName = 'Snake Classic Notifications';
   static const String _channelDescription =
       'Notifications for Snake Classic game events';
+
+  /// Status-bar icon, as a bare drawable name.
+  ///
+  /// The plugin resolves this with `getIdentifier(name, "drawable", pkg)`, so
+  /// it must name a drawable — a mipmap will not be found. The asset is a
+  /// white-on-transparent glyph because Android discards a small icon's
+  /// colours and renders it from its alpha alone.
+  static const String _smallIcon = 'ic_notification';
+
+  /// Tint Android applies to [_smallIcon] and the app name in the shade.
+  /// Without it the system falls back to its own grey.
+  static const Color _brandColor = Color(0xFF9BBD0F);
 
   // SharedPreferences key for the Hangfire job id of a pending backend-
   // scheduled test push. Persisted by scheduleTestNotificationAt so
@@ -332,8 +344,14 @@ class NotificationService {
   }
 
   Future<void> _initializeLocalNotifications({bool requestPermission = true}) async {
-    // Android initialization settings
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Android initialization settings.
+    //
+    // The small icon must be [_smallIcon], never the launcher icon: Android
+    // throws away a status-bar icon's colours and keeps only its alpha, so
+    // the full-colour mascot arrives as a featureless white blob (and on
+    // API 26+ @mipmap/ic_launcher resolves to the adaptive-icon XML, which
+    // flattens to a solid white square).
+    const androidInit = AndroidInitializationSettings(_smallIcon);
 
     // iOS initialization settings
     const iosInit = DarwinInitializationSettings(
@@ -655,7 +673,8 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Snake Classic',
-      icon: '@mipmap/ic_launcher',
+      icon: _smallIcon,
+      color: _brandColor,
       playSound: true,
       enableVibration: true,
     );
@@ -1053,7 +1072,8 @@ class NotificationService {
         channelDescription: _channelDescription,
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: _smallIcon,
+        color: _brandColor,
       );
       const details = NotificationDetails(
         android: androidDetails,
