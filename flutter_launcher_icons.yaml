@@ -1,34 +1,43 @@
-# flutter pub run flutter_launcher_icons
+# dart run flutter_launcher_icons
+#
+# Sources live in assets/icon/ and are derived from the master artwork at
+# assets/images/snake_classic_transparent.png. They are separate files
+# because each target crops and pads differently:
+#
+#   adaptive_foreground.png  the snake alone, scaled so that EVERY opaque
+#                            pixel sits inside the central circle Android
+#                            guarantees is visible (the inner 66% of the
+#                            108dp canvas). Launcher masks vary by OEM, so
+#                            anything outside that circle is not safe.
+#   adaptive_monochrome.png  the same shape as ink coverage for themed
+#                            icons — the artwork's dark outlines are gaps,
+#                            which keeps the coil readable once Android
+#                            flattens it to a single tint.
+#   legacy_icon.png          pre-composited on the brand green, for the
+#                            square pre-adaptive icon and for iOS (which
+#                            forbids alpha).
+#
+# The adaptive layers are what Android 8+ actually draws. Leaving them out
+# of this file regenerates only the legacy icons, which no modern launcher
+# ever shows.
 flutter_launcher_icons:
-  image_path: "assets/images/snake_classic_transparent.png"
+  image_path: "assets/icon/legacy_icon.png"
 
   android: "launcher_icon"
-  # image_path_android: "assets/images/snake_classic_transparent.png"
-  min_sdk_android: 21 # android min sdk min:16, default 21
-  # adaptive_icon_background: "assets/icon/background.png"
-  # adaptive_icon_foreground: "assets/icon/foreground.png"
-  # adaptive_icon_foreground_inset: 16
-  # adaptive_icon_monochrome: "assets/icon/monochrome.png"
+  image_path_android: "assets/icon/legacy_icon.png"
+  min_sdk_android: 24 # matches flutter.minSdkVersion
+  adaptive_icon_background: "#092E09"
+  adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/adaptive_monochrome.png"
+  # The two sources above already carry their own safe-zone padding, so the
+  # generator must not inset them again — its 16% default would shrink the
+  # snake to ~38% of the canvas and leave it swimming in the mask.
+  adaptive_icon_foreground_inset: 0
 
   ios: true
-  # image_path_ios: "assets/images/snake_classic_transparent.png"
+  image_path_ios: "assets/icon/legacy_icon.png"
+  # iOS icons may not carry an alpha channel. The source is already
+  # composited on the brand green, so this flatten is a no-op — the
+  # background colour below is only a backstop.
   remove_alpha_ios: true
-  # image_path_ios_dark_transparent: "assets/icon/icon_dark.png"
-  # image_path_ios_tinted_grayscale: "assets/icon/icon_tinted.png"
-  # desaturate_tinted_to_grayscale_ios: true
-  # background_color_ios: "#ffffff"
-
-  # web:
-  #   generate: true
-  #   image_path: "path/to/image.png"
-  #   background_color: "#hexcode"
-  #   theme_color: "#hexcode"
-
-  # windows:
-  #   generate: true
-  #   image_path: "path/to/image.png"
-  #   icon_size: 48 # min:48, max:256, default: 48
-
-  # macos:
-  #   generate: true
-  #   image_path: "path/to/image.png"
+  background_color_ios: "#092E09"
