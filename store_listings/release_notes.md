@@ -1,4 +1,11 @@
-# Release notes — v5.1.0
+# Release notes — pending submission
+
+<!-- Not named for a version on purpose. This file is the "What's new" text
+     for whatever ships next, rewritten in place each release; pinning a
+     number to it only guarantees the name goes stale at the next bump.
+     release_notes_5.0.0.md is kept as the archive of a release that
+     actually shipped. -->
+
 
 Paste-ready "What's new" text for Play Console / App Store Connect
 (each block is under the 500-character Play limit).

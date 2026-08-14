@@ -112,7 +112,7 @@ Doing it in the other order silently loses everything you typed.
 
 **2. Emoji are rejected in version metadata.** `What's New in This Version` refuses
 non-BMP characters with "This field contains one or more invalid characters." The emoji in
-`release_notes_5.1.0.md` (🎮 💾 🐍 🔔 🎁) all fail; `⚡` happens to be BMP but isn't worth the
+`release_notes.md` (🎮 💾 🐍 🔔 🎁) all fail; `⚡` happens to be BMP but isn't worth the
 risk. Use `•` bullets for the App Store and keep the emoji version for Play, which accepts
 them. Em-dashes and accented Latin characters are fine.
 

@@ -1,8 +1,8 @@
 # App Store metadata — ready to paste
 
-## Status in App Store Connect (v5.1.0 draft, as of 2026-08-07)
+## Status in App Store Connect (as of 2026-08-07)
 
-Applied and saved in the 5.1.0 "Prepare for Submission" draft. **Nothing has been
+Applied and saved in the open "Prepare for Submission" draft. **Nothing has been
 submitted for review** — "Add for Review" was deliberately not touched.
 
 | Locale | App Info (name/subtitle) | Version (desc/keywords/promo/what's-new/URLs) |

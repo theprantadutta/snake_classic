@@ -46,7 +46,7 @@ SAĞLAM YAPILDI
 
 Snake Classic'i indirin ve ne kadar uzayabildiğinizi görün!
 
-## release notes 5.1.0
+## release notes
 • Hemen oyna — kayıt yok, form yok. Simgeye dokun ve oynamaya başla.
 • İlerlemeni buluta kaydetmek istediğinde giriş yap. Artık tamamen isteğe bağlı.
 • Özellikle yavaş bağlantılarda çok daha hızlı açılış.
