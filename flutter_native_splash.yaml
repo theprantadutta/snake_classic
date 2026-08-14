@@ -1,3 +1,16 @@
+# dart run flutter_native_splash:create
+#
+# AFTERWARDS: set android:windowDrawsSystemBarBackgrounds back to true in all
+# four android/app/src/main/res/values*/styles.xml. The generator rewrites it
+# to false every single run, and it is the flag Android 15 edge-to-edge
+# compliance depends on. Then revert the generator's reformat-only churn in
+# Info.plist, LaunchScreen.storyboard, web/index.html and the .xcassets
+# manifests. See the comment in values/styles.xml.
+#
+# All five images below are true alpha over the `color` window background —
+# nothing carries a baked-in backdrop. android_12_splash_dark.png is derived
+# from splash_logo_transparent.png and is cropped by the system to a circle
+# 2/3 the canvas wide, so its content must stay inside that radius.
 flutter_native_splash:
   color: "#0F380F"
   color_dark: "#0F380F"

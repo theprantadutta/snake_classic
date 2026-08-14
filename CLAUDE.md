@@ -83,6 +83,13 @@ The rule, applied to every new code path:
 - `flutter analyze` - Static analysis (run regularly during development)
 - `flutter clean` - Clean build cache
 
+### Regenerating Icons and Splash (LOAD-BEARING)
+- `dart run flutter_native_splash:create` **rewrites `android:windowDrawsSystemBarBackgrounds` to `false`** in all four `values*/styles.xml` variants. It must be `true` (Android 15 edge-to-edge — see the comment in `values/styles.xml`). **Restore it after every run.** The generator also reformats `Info.plist`, `LaunchScreen.storyboard`, `web/index.html` and the imageset manifests without changing their meaning — revert that churn so the diff is only real changes.
+- `@mipmap/launcher_icon` is the app icon; **`@mipmap/ic_launcher` is not an icon at all any more** — the status-bar icon is `drawable/ic_notification`, a white-on-transparent glyph, because Android renders a small icon from its alpha alone and a colour icon arrives as a white blob.
+- `dart run flutter_launcher_icons` owns `values/colors.xml`. Hand-written colours go in `values/colors_brand.xml` or they get overwritten.
+- `assets/splash/android_12_splash_dark.png` is cropped by the system to a circle 2/3 the canvas wide. Verify `content_radius <= width/3` before shipping one; it is derived from `splash_logo_transparent.png`, not commissioned separately.
+- Every splash asset is true alpha over the `#0F380F` window colour. Delivered "transparent" artwork must be checked by compositing over magenta — matte fringing and inverted drop shadows are invisible on dark green.
+
 ### Development Workflow
 - Run `flutter analyze` regularly to catch issues early
 - Always ask user before running the project on specific platforms

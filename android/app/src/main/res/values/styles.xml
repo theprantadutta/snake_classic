@@ -10,7 +10,17 @@
         <!-- Edge-to-edge: theme-level transparent bars so the splash screen
              extends under the system bars during process startup, matching
              the SystemUiMode.edgeToEdge bootstrap in main.dart. Required
-             for Android 15 (SDK 35) compliance — see flutter#183372. -->
+             for Android 15 (SDK 35) compliance — see flutter#183372.
+
+             WARNING: `dart run flutter_native_splash:create` rewrites this
+             to false, in this file and in the -night, -v31 and -night-v31
+             variants, on EVERY run. It is not a one-off; it has been undone
+             by hand after each regeneration. Set all four back to true
+             afterwards, or the app silently loses edge-to-edge during
+             startup and falls out of SDK 35 compliance. The generator also
+             reformats Info.plist, LaunchScreen.storyboard, web/index.html
+             and the .xcassets manifests without changing their meaning —
+             revert those too, so the diff shows only real changes. -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

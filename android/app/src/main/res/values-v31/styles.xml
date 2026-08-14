@@ -4,7 +4,8 @@
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowFullscreen">false</item>
-        <!-- Edge-to-edge (v31 splash variant): see values/styles.xml comment. -->
+        <!-- Edge-to-edge (v31 splash variant): see values/styles.xml comment.
+             flutter_native_splash:create resets this to false on every run. -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
