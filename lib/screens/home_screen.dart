@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -690,7 +691,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // The middle of this screen is mostly air, so the brand takes it. The
     // logo and wordmark are the only things up here competing for attention
     // and they are supposed to win.
-    final logoSize = isCompact ? 132.0 : 196.0;
+    // The full logo carries its own wordmark, so it stands in for the mark
+    // AND the two lines of type that used to sit under it.
+    //
+    // Capped against the screen width rather than set outright. isCompact only
+    // trips below 350dp, so a flat 328 was landing on a 360dp phone as 91% of
+    // the width, which put the logo's leaves inside the left and right rails.
+    // The artwork fills its canvas edge to edge, so the box size is very
+    // nearly the ink size — unlike the old mark, which had air around it.
+    final logoSize = math.min(
+      isCompact ? 200.0 : 264.0,
+      MediaQuery.sizeOf(context).width * 0.66,
+    );
 
     return Semantics(
       button: true,
@@ -711,7 +723,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               scale: _playButtonPulseAnimation,
               child:
                   Image.asset(
-                        'assets/images/snake_classic_transparent.png',
+                        'assets/images/snake_classic_logo.png',
                         width: logoSize,
                         height: logoSize,
                         fit: BoxFit.contain,
@@ -730,44 +742,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         color: theme.accentColor.withValues(alpha: 0.25),
                       ),
             ),
-            SizedBox(height: isCompact ? 6 : 10),
-            // Scales down rather than clipping when a locale spells the
-            // title long or the screen is narrow — softWrap is off so the
-            // lines stay exactly two.
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [theme.primaryColor, theme.accentColor],
-                ).createShader(bounds),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final line in _appTitleLines(l10n))
-                      Text(
-                        line,
-                        maxLines: 1,
-                        softWrap: false,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: isCompact ? 38 : 56,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white, // base for ShaderMask
-                          height: 1.02,
-                          letterSpacing: context.letterSpacing(1.5),
-                          shadows: [
-                            Shadow(
-                              color: theme.accentColor.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            // The drawn wordmark that used to sit here is gone — the logo
+            // above carries "Snake Classic" itself, and keeping both would
+            // print the title twice. Nothing is lost in translation: all nine
+            // locales spell appTitle "Snake Classic". If that ever stops being
+            // true for a locale, the wordmark has to come back, because the
+            // one in the image cannot be localized.
             const Spacer(flex: 3),
             // The armed power-up, still the last thing seen before the tap.
             _buildPowerUpLoadoutChip(theme),
@@ -1156,18 +1136,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
       ],
     );
-  }
-
-  /// "Snake" over "Classic".
-  ///
-  /// Split on whitespace, so a locale that writes the title as a single word
-  /// keeps it on one line rather than being broken at an arbitrary point.
-  List<String> _appTitleLines(AppLocalizations l10n) {
-    final title = l10n.appTitle.trim();
-    final words = title.split(RegExp(r'\s+'));
-    if (words.length < 2) return [title];
-    if (words.length == 2) return words;
-    return [words.first, words.skip(1).join(' ')];
   }
 
   Widget _buildPowerUpLoadoutChip(GameTheme theme) {
