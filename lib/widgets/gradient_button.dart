@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -90,6 +91,11 @@ class _GradientButtonState extends State<GradientButton>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
+          final fillStart = shadeFill(widget.primaryColor, 0.82);
+          final fillEnd = shadeFill(widget.secondaryColor, 0.68);
+          final ink = widget.outlined
+              ? widget.primaryColor
+              : inkOn(fillStart, fillEnd);
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
@@ -103,7 +109,7 @@ class _GradientButtonState extends State<GradientButton>
                     : LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [widget.primaryColor, widget.secondaryColor],
+                        colors: [fillStart, fillEnd],
                       ),
                 border: widget.outlined
                     ? Border.all(color: widget.primaryColor, width: 2)
@@ -111,8 +117,10 @@ class _GradientButtonState extends State<GradientButton>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
+                    // A glow sized for a mid-tone fill doubles the apparent
+                    // brightness of a light one.
                     color: widget.primaryColor.withValues(
-                      alpha: 0.3 + (_glowAnimation.value * 0.2),
+                      alpha: 0.15 + (_glowAnimation.value * 0.1),
                     ),
                     blurRadius: 8 + (_glowAnimation.value * 4),
                     spreadRadius: 1 + (_glowAnimation.value * 2),
@@ -129,9 +137,7 @@ class _GradientButtonState extends State<GradientButton>
                       if (widget.icon != null) ...[
                         Icon(
                           widget.icon,
-                          color: widget.outlined
-                              ? widget.primaryColor
-                              : Colors.white,
+                          color: ink,
                           size: 24 * context.uiScale,
                         ),
                         const SizedBox(width: 8),
@@ -140,9 +146,7 @@ class _GradientButtonState extends State<GradientButton>
                         child: Text(
                           widget.text,
                           style: TextStyle(
-                            color: widget.outlined
-                                ? widget.primaryColor
-                                : Colors.white,
+                            color: ink,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             letterSpacing: context.letterSpacing(1),

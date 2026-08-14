@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
@@ -364,13 +365,21 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.amber, Colors.orange]),
+                gradient: LinearGradient(
+                  colors: [
+                    shadeFill(Colors.amber, 0.86),
+                    shadeFill(Colors.orange, 0.78),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 AppLocalizations.of(context)!.pbMostPopular,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: inkOn(
+                    shadeFill(Colors.amber, 0.86),
+                    shadeFill(Colors.orange, 0.78),
+                  ),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -579,15 +588,21 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.amber, Colors.orange],
+                          gradient: LinearGradient(
+                            colors: [
+                              shadeFill(Colors.amber, 0.86),
+                              shadeFill(Colors.orange, 0.78),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.pbProPerk,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: inkOn(
+                              shadeFill(Colors.amber, 0.86),
+                              shadeFill(Colors.orange, 0.78),
+                            ),
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: context.letterSpacing(0.5),

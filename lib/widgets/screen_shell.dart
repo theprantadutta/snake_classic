@@ -67,8 +67,11 @@ PreferredSizeWidget appScreenBar(
 BoxDecoration screenCardDecoration(GameTheme theme, {Color? borderColor}) {
   return BoxDecoration(
     color: theme.backgroundColor.withValues(alpha: 0.3),
+    // 0.3 was chosen when the art on these screens was as restrained as the
+    // chrome. Against the current logo a hairline that faint reads as a
+    // smudge rather than an edge.
     border: Border.all(
-      color: borderColor ?? theme.accentColor.withValues(alpha: 0.3),
+      color: borderColor ?? theme.accentColor.withValues(alpha: 0.42),
     ),
     borderRadius: BorderRadius.circular(16),
   );
@@ -207,7 +210,7 @@ Widget screenKeyValue(String label, String value, {Color? valueColor}) {
             value,
             textAlign: TextAlign.end,
             style: TextStyle(
-              color: valueColor ?? Colors.white.withValues(alpha: 0.5),
+              color: valueColor ?? Colors.white.withValues(alpha: 0.64),
               fontSize: 13,
               fontWeight: valueColor == null ? null : FontWeight.w700,
             ),
@@ -223,7 +226,7 @@ Widget screenGroupLabel(BuildContext context, String label) {
   return Text(
     label.toUpperCase(),
     style: TextStyle(
-      color: Colors.white.withValues(alpha: 0.45),
+      color: Colors.white.withValues(alpha: 0.58),
       fontSize: 11,
       fontWeight: FontWeight.w600,
       letterSpacing: context.letterSpacing(1),

@@ -78,7 +78,7 @@ class HomeArcadeBar extends StatelessWidget {
                 color: theme.backgroundColor.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.28),
+                  color: theme.accentColor.withValues(alpha: 0.40),
                 ),
               ),
               child: Column(

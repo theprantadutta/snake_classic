@@ -247,10 +247,25 @@ class GameConstants {
   static const int specialScore = 50;
 
   // Colors - Classic Theme
+  //
+  // Pulled toward the logo rather than the Game Boy DMG palette it started
+  // as. Sampling the logo gives lime #B0E000 and gold #F0C000; the old
+  // values sat at two-thirds that brightness (#8BAC0F is V=0.67 against the
+  // logo lime's 0.88), which is why the artwork read as vivid and every
+  // control around it read as washed out.
+  //
+  // The background stays put: it is the flutter_native_splash colour, so
+  // moving it would put a visible seam between the splash and the first
+  // frame of the app.
   static const Color classicBackground = Color(0xFF0F380F);
-  static const Color classicSnake = Color(0xFF9BBD0F);
-  static const Color classicFood = Color(0xFF9BBD0F);
-  static const Color classicBorder = Color(0xFF8BAC0F);
+  static const Color classicSnake = Color(0xFFAEDC10);
+  // Was identical to classicSnake. Food itself is drawn from a sprite, so
+  // this is not the apple's colour — it is the glow, particle and trail
+  // colour around it, plus the procedural shape used if a sprite fails to
+  // load. Lime made all of that read as more snake; the logo's gold is
+  // warmer, closer to the apple art, and unmistakably not the body.
+  static const Color classicFood = Color(0xFFF5C518);
+  static const Color classicBorder = Color(0xFFBFEA3A);
 
   // Colors - Modern Theme (Improved Contrast)
   static const Color modernBackground = Color(0xFF1a1a2e);

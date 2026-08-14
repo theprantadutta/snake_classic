@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
@@ -1168,13 +1169,16 @@ class _ClaimAllPill extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.amber, Colors.orange],
+          gradient: LinearGradient(
+            colors: [
+              shadeFill(Colors.amber, 0.86),
+              shadeFill(Colors.orange, 0.78),
+            ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.5),
+              color: Colors.amber.withValues(alpha: 0.28),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -1193,12 +1197,22 @@ class _ClaimAllPill extends StatelessWidget {
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.bolt, size: 14, color: Colors.white),
+                  Icon(
+                    Icons.bolt,
+                    size: 14,
+                    color: inkOn(
+                      shadeFill(Colors.amber, 0.86),
+                      shadeFill(Colors.orange, 0.78),
+                    ),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     AppLocalizations.of(context)!.goClaimAll,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: inkOn(
+                        shadeFill(Colors.amber, 0.86),
+                        shadeFill(Colors.orange, 0.78),
+                      ),
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       letterSpacing: context.letterSpacing(0.8),

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/models/food.dart';
@@ -873,20 +874,26 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.amber, Colors.orange],
+              gradient: LinearGradient(
+                colors: [
+                  shadeFill(Colors.amber, 0.86),
+                  shadeFill(Colors.orange, 0.78),
+                ],
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.4),
+                  color: Colors.amber.withValues(alpha: 0.25),
                   blurRadius: 6,
                 ),
               ],
             ),
             child: Icon(
               Icons.emoji_events,
-              color: Colors.white,
+              color: inkOn(
+                shadeFill(Colors.amber, 0.86),
+                shadeFill(Colors.orange, 0.78),
+              ),
               size: isSmallScreen ? 12 : 14,
             ),
           ),

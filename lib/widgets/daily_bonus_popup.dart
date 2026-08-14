@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
@@ -625,11 +626,16 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Colors.amber, Colors.orange]),
+          // Amber and orange are both far too light to carry white text —
+          // white measures under 2:1 on them. Shaded, and the label takes
+          // whichever ink actually contrasts.
+          gradient: LinearGradient(
+            colors: [shadeFill(Colors.amber, 0.86), shadeFill(Colors.orange, 0.78)],
+          ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.4),
+              color: Colors.amber.withValues(alpha: 0.22),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -653,7 +659,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
                   Text(
                     AppLocalizations.of(context)!.dbClaim,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: inkOn(
+                        shadeFill(Colors.amber, 0.86),
+                        shadeFill(Colors.orange, 0.78),
+                      ),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       letterSpacing: context.letterSpacing(1),

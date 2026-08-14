@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -195,7 +196,10 @@ class _GameButtonState extends State<GameButton>
               ? LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [widget.theme.accentColor, widget.theme.snakeColor],
+                  colors: [
+                    shadeFill(widget.theme.accentColor, 0.78),
+                    shadeFill(widget.theme.snakeColor, 0.62),
+                  ],
                 )
               : null,
           color: _isEnabled ? null : widget.theme.accentColor.withValues(alpha: 0.3),
@@ -203,8 +207,10 @@ class _GameButtonState extends State<GameButton>
           boxShadow: _isEnabled
               ? [
                   BoxShadow(
+                    // Halved: a glow sized for a mid-tone fill doubles the
+                    // apparent brightness of a bright one.
                     color: widget.theme.accentColor.withValues(
-                      alpha: 0.3 + (glowIntensity * 0.2),
+                      alpha: 0.15 + (glowIntensity * 0.1),
                     ),
                     blurRadius: 8 + (glowIntensity * 4),
                     offset: const Offset(0, 2),
@@ -320,6 +326,13 @@ class _GameButtonState extends State<GameButton>
 
     switch (widget.variant) {
       case GameButtonVariant.primary:
+        // Measured against the fill this variant actually paints. That fill
+        // is the theme's accent, and some themes are far too light to carry
+        // white — crystal's accent is #E6E6FA.
+        return inkOn(
+          shadeFill(widget.theme.accentColor, 0.78),
+          shadeFill(widget.theme.snakeColor, 0.62),
+        );
       case GameButtonVariant.danger:
       case GameButtonVariant.success:
         return Colors.white;
