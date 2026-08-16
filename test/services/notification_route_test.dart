@@ -91,6 +91,60 @@ void main() {
     });
   });
 
+  group('deep-link key (the green-splash freeze)', () {
+    String? deepLink(Map<String, dynamic> data) =>
+        NavigationService.resolveDeepLinkRoute(data);
+
+    // `route` is reserved on Android. FCM copies every data key onto the
+    // notification's launch Intent as a String extra, and Flutter's
+    // FlutterActivity.getInitialRoute() reads the extra named exactly `route`
+    // and hands it to Dart as PlatformDispatcher.defaultRouteName. go_router
+    // prefers a non-"/" platform default over its own initialLocation, so
+    // `route=home` cold-started the router at a location called `home` — no
+    // leading slash, matches nothing. No screen mounted, so LoadingScreen's
+    // FlutterNativeSplash.remove() never ran and the app sat on the flat
+    // #0F380F launch image forever. Reproduced with:
+    //   adb shell am start -n com.pranta.snakeclassic/.MainActivity \
+    //     --es route home
+    // The extra alone is sufficient; no FCM keys or Intent flags needed.
+    test('reads the current key, nav_route', () {
+      expect(deepLink({'nav_route': 'daily_challenge'}), 'daily_challenge');
+    });
+
+    test('still reads legacy route, for a server not yet redeployed', () {
+      // Safe to READ — it was only ever unsafe to SEND.
+      expect(deepLink({'route': 'leaderboard'}), 'leaderboard');
+    });
+
+    test('nav_route wins when a payload carries both', () {
+      expect(
+        deepLink({'nav_route': 'tournaments', 'route': 'home'}),
+        'tournaments',
+      );
+    });
+
+    test('a push naming no destination yields null, not an empty route', () {
+      expect(deepLink({}), isNull);
+      expect(deepLink({'type': 'daily_reminder'}), isNull);
+      expect(deepLink({'nav_route': ''}), isNull);
+      expect(deepLink({'route': ''}), isNull);
+      expect(deepLink({'nav_route': 42}), isNull);
+    });
+
+    test('every deep link the backend can send resolves to a real path', () {
+      // The end-to-end contract: wire key → route value → concrete path.
+      for (final route in const [
+        'home', 'game', 'daily_challenge', 'leaderboard', 'tournament_detail',
+        'friends_screen', 'multiplayer', 'store',
+      ]) {
+        final resolved = deepLink({'nav_route': route});
+        expect(resolved, route);
+        expect(NavigationService.resolveRoutePath(resolved!).startsWith('/'),
+            isTrue);
+      }
+    });
+  });
+
   group('robustness', () {
     test('route matching is case-insensitive', () {
       expect(resolve('GAME'), AppRoutes.home);

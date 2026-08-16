@@ -56,6 +56,33 @@ class MainActivity : FlutterActivity() {
         createNotificationChannel()
     }
 
+    // NEVER let the launch Intent choose Flutter's initial route.
+    //
+    // FlutterActivity.getInitialRoute() reads the String extra literally named
+    // "route" (FlutterActivityLaunchConfigs.EXTRA_INITIAL_ROUTE) and hands it
+    // to Dart as PlatformDispatcher.defaultRouteName. FCM, meanwhile, copies
+    // EVERY key of a push's data payload onto the launch Intent as a String
+    // extra — and every push this app sends carries ["route"] = "home" /
+    // "game" / "daily_challenge" as its deep-link discriminator.
+    //
+    // So tapping ANY notification launched the app with defaultRouteName set
+    // to a bare word like "home". go_router treats a non-"/" platform default
+    // as the initial location, "home" matches no route (it isn't even a valid
+    // path — no leading slash), and the router settles on nothing: no screen
+    // mounts, LoadingScreen.initState never runs, so the
+    // FlutterNativeSplash.remove() that lives there never fires and the native
+    // launch image — a flat #0F380F green — stays on screen forever. The app
+    // was fully alive behind it (services initialising, logs flowing); it just
+    // had no route to draw. Launching from the icon carries no extras and so
+    // was never affected.
+    //
+    // Returning null makes the delegate fall back to "/", which is what
+    // go_router's own initialLocation is keyed to. The notification's
+    // deep-link target is unaffected: it is read from the FCM message data in
+    // NotificationService, not from the Intent, and is applied after the app
+    // has reached home (see markAppReady).
+    override fun getInitialRoute(): String? = null
+
     // Deep link straight to THIS app's system notification settings.
     // Needed by the in-app permission primer: once POST_NOTIFICATIONS has
     // been permanently denied, Android never re-shows the OS prompt — the

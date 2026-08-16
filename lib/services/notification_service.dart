@@ -601,8 +601,11 @@ class NotificationService {
     Map<String, dynamic> data, {
     required bool deferIfNotReady,
   }) {
-    final route = data['route'];
-    if (route is! String || route.isEmpty) return;
+    // `nav_route`, with `route` as the legacy fallback — see
+    // NavigationService.resolveDeepLinkRoute for why `route` is a reserved
+    // key on Android and what sending it used to do to cold starts.
+    final route = NavigationService.resolveDeepLinkRoute(data);
+    if (route == null) return;
 
     if (deferIfNotReady && !_appReady) {
       _pendingRoute = route;

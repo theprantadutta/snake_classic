@@ -44,6 +44,35 @@ class NavigationService {
   /// backend for `["route"]` — they are set in DailyChallengeJobService,
   /// NotificationJobService, TournamentManagementJobService and the Social
   /// command handlers.
+  /// The deep-link target carried by a notification's data map, or null when
+  /// the push names no destination.
+  ///
+  /// The key is `nav_route`, NOT `route`. `route` is reserved on Android:
+  /// FCM copies every data key onto the notification's launch Intent as a
+  /// String extra, and Flutter's `FlutterActivity.getInitialRoute()` reads the
+  /// extra named exactly `route` and feeds it to Dart as
+  /// `PlatformDispatcher.defaultRouteName`. go_router prefers a non-`/`
+  /// platform default over its own `initialLocation`, so a push carrying
+  /// `route=home` cold-started the router at a location called `home` — which
+  /// has no leading slash and matches nothing. The router settled on no route
+  /// at all, LoadingScreen never mounted, and the
+  /// `FlutterNativeSplash.remove()` that lives only in its initState never
+  /// fired: the app sat on the flat #0F380F launch image forever, alive but
+  /// with nothing to draw. Cold launches only — a warm tap is delivered to the
+  /// running activity via onNewIntent, which never consults getInitialRoute.
+  ///
+  /// `MainActivity.getInitialRoute()` returns null as the permanent native
+  /// guard, and the backend now emits `nav_route`. The `route` fallback here
+  /// is for pushes from a server that has not been redeployed yet — it is
+  /// safe to READ, it was only ever unsafe to send.
+  ///
+  /// Static and pure so the wire contract is unit-testable without a live
+  /// router — the same reason [resolveRoutePath] is.
+  static String? resolveDeepLinkRoute(Map<String, dynamic> data) {
+    final route = data['nav_route'] ?? data['route'];
+    return (route is String && route.isNotEmpty) ? route : null;
+  }
+
   @visibleForTesting
   static String resolveRoutePath(String route, [Map<String, dynamic>? params]) {
     switch (route.toLowerCase()) {
