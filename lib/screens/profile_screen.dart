@@ -17,6 +17,7 @@ import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/not_backed_up_notice.dart';
@@ -111,28 +112,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return Scaffold(
             bottomNavigationBar: const SnakeBannerAd(),
             extendBodyBehindAppBar: true,
-            appBar: AppBar(
-              // Matches SettingsScreen exactly — accent, tracked, uppercase.
-              // Every other top-level screen wears this; Profile was the one
-              // still in title case and primaryColor, which is a small part of
-              // why it read as belonging to a different app.
-              title: Text(
-                AppLocalizations.of(context)!.pfTitle.toUpperCase(),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: theme.accentColor,
-                  letterSpacing: context.letterSpacing(2),
-                  shadows: [
-                    Shadow(
-                      offset: const Offset(0, 2),
-                      blurRadius: 4,
-                      color: Colors.black.withValues(alpha: 0.3),
-                    ),
-                  ],
-                ),
-              ),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
+            // Was a hand-copied match of SettingsScreen's bar, with a comment
+            // saying so. Both come from the shared bar now, so "matches
+            // Settings exactly" is enforced rather than asserted.
+            appBar: appScreenBar(
+              context,
+              theme,
+              AppLocalizations.of(context)!.pfTitle,
               leading: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -367,77 +353,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// screens read as the same product; [onViewAll] renders as a quiet text
   /// affordance rather than the filled gradient pill this screen used to have,
   /// which competed with the content it was pointing at.
+  /// A section panel.
+  ///
+  /// Was a hand-rolled twin of `SettingsScreen._buildSection` — the same
+  /// eyebrow and card retyped, kept in step by hand. Both now read from
+  /// `screen_shell.dart`, so the two screens stay the same product because
+  /// they are built from the same parts rather than because somebody
+  /// remembered to copy the change across.
   Widget _buildSection({
     required GameTheme theme,
     required String title,
     required Widget child,
     VoidCallback? onViewAll,
+    IconData? icon,
+    int? index,
   }) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, right: 4, bottom: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: context.letterSpacing(1.5),
-                  ),
+    return screenSection(
+      context,
+      theme,
+      title,
+      child,
+      icon: icon,
+      index: index,
+      trailing: onViewAll == null
+          ? null
+          : GestureDetector(
+              onTap: onViewAll,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.commonViewAll,
+                      style: GameTypography.labelMedium(
+                        color: theme.accentColor.withValues(alpha: 0.9),
+                      ).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left_rounded
+                          : Icons.chevron_right_rounded,
+                      size: context.scaled(18),
+                      color: theme.accentColor.withValues(alpha: 0.9),
+                    ),
+                  ],
                 ),
               ),
-              if (onViewAll != null)
-                GestureDetector(
-                  onTap: onViewAll,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          l10n.commonViewAll,
-                          style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.9),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: context.scaled(18),
-                          color: theme.accentColor.withValues(alpha: 0.9),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.3),
             ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: child,
-        ),
-      ],
     );
   }
 

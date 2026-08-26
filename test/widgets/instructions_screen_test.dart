@@ -176,13 +176,16 @@ void main() {
       expect(title.style?.fontWeight, FontWeight.bold);
     });
 
-    testWidgets('no card carries a drop shadow any more', (tester) async {
-      // The old sections each sat under an accent-tinted shadow, which is the
-      // single loudest difference from Settings and Profile.
+    testWidgets('every card wears the shared panel treatment', (tester) async {
+      // This test used to assert the opposite — that no card carried a
+      // shadow — because at the time the shared language was deliberately
+      // flat and this screen was the one still glowing. The language is an
+      // arcade HUD now, and the point of the test is unchanged: How to Play
+      // must not drift from what screen_shell.dart says a panel looks like.
       await pump(tester);
 
-      // The section cards are the hairline-bordered, 16-radius boxes. Buttons
-      // and the background are allowed their own treatment.
+      // The section cards are the bordered, 16-radius boxes. Buttons and the
+      // background are allowed their own treatment.
       final cards = tester
           .widgetList<Container>(find.byType(Container))
           .map((c) => c.decoration)
@@ -196,7 +199,16 @@ void main() {
 
       expect(cards, hasLength(5), reason: 'five sections are carded');
       for (final card in cards) {
-        expect(card.boxShadow ?? const [], isEmpty);
+        expect(
+          card.boxShadow ?? const [],
+          isNotEmpty,
+          reason: 'panels carry the accent glow',
+        );
+        expect(
+          card.gradient,
+          isNotNull,
+          reason: 'panels are top-lit, not a flat fill',
+        );
       }
     });
 

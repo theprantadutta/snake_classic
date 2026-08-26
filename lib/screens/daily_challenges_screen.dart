@@ -22,6 +22,7 @@ import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 class DailyChallengesScreen extends ConsumerStatefulWidget {
   const DailyChallengesScreen({super.key});
@@ -197,25 +198,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          l10n.dcTitle.toUpperCase(),
-          style: TextStyle(
-            color: theme.accentColor,
-            fontWeight: FontWeight.bold,
-            letterSpacing: context.letterSpacing(2),
-            shadows: [
-              Shadow(
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-                color: Colors.black.withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: theme.accentColor),
+      appBar: appScreenBar(
+        context,
+        theme,
+        l10n.dcTitle,
         actions: [
           if (hasUnclaimedRewards)
             TextButton(
@@ -263,13 +249,21 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _section(
+                    context,
                     theme,
                     l10n.dchTodaysProgress,
                     _buildProgressSummary(theme, challengesState),
+                    icon: Icons.today_rounded,
+                    index: 0,
                   ),
                   const SizedBox(height: 32),
 
-                  _sectionHeader(theme, l10n.dchSectionChallenges),
+                  _sectionHeader(
+                    context,
+                    theme,
+                    l10n.dchSectionChallenges,
+                    icon: Icons.checklist_rounded,
+                  ),
                   if (isRefreshing && challenges.isEmpty)
                     // Skeleton rows rather than a spinner: the list that
                     // arrives is this tall, so nothing below it moves when it
@@ -287,7 +281,14 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
 
                   const SizedBox(height: 32),
 
-                  _section(theme, l10n.dchAbout, _buildInfoList(l10n)),
+                  _section(
+                    context,
+                    theme,
+                    l10n.dchAbout,
+                    _buildInfoList(l10n),
+                    icon: Icons.info_outline_rounded,
+                    index: 1,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -302,47 +303,39 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
 
   /// Gold means a reward, here and on the home screen's best-score medal. It
   /// is the only colour on this screen that is not the theme's own.
-  static const Color _gold = Color(0xFFFFC53D);
+  /// The one gold in the app, from the shared language rather than a second
+  /// copy of the same hex.
+  static const Color _gold = kRewardGold;
 
-  Widget _sectionHeader(GameTheme theme, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: theme.accentColor,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          letterSpacing: context.letterSpacing(1.5),
-        ),
-      ),
-    );
-  }
+  Widget _sectionHeader(
+    BuildContext context,
+    GameTheme theme,
+    String title, {
+    IconData? icon,
+  }) => screenEyebrow(context, theme, title, icon: icon);
 
-  Widget _card(GameTheme theme, {required Widget child, Color? borderColor}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        border: Border.all(
-          color: borderColor ?? theme.accentColor.withValues(alpha: 0.3),
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: child,
-    );
-  }
+  Widget _card(GameTheme theme, {required Widget child, Color? borderColor}) =>
+      screenCard(theme, borderColor: borderColor, child: child);
 
-  Widget _section(GameTheme theme, String title, Widget child) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(theme, title),
-        _card(theme, child: child),
-      ],
-    );
-  }
+  /// One section panel. Was a hand-rolled copy of the shell's eyebrow and
+  /// card, with a doc comment saying it was "in the language Settings and
+  /// Profile settled on" — which it now is by construction rather than by
+  /// retyping.
+  Widget _section(
+    BuildContext context,
+    GameTheme theme,
+    String title,
+    Widget child, {
+    IconData? icon,
+    int? index,
+  }) => screenSection(
+    context,
+    theme,
+    title,
+    child,
+    icon: icon,
+    index: index,
+  );
 
   /// A progress bar in the theme's accent. One shape for every bar on the
   /// screen, so a full one and a half-full one are the same object.

@@ -5,9 +5,9 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 
 /// How to Play, in the language the rest of the app settled on.
@@ -38,26 +38,7 @@ class InstructionsScreen extends StatelessWidget {
         return Scaffold(
           bottomNavigationBar: const SnakeBannerAd(),
           extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            title: Text(
-              l10n.insHowToPlay.toUpperCase(),
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(2),
-                shadows: [
-                  Shadow(
-                    offset: const Offset(0, 2),
-                    blurRadius: 4,
-                    color: Colors.black.withValues(alpha: 0.3),
-                  ),
-                ],
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            iconTheme: IconThemeData(color: theme.accentColor),
-          ),
+          appBar: appScreenBar(context, theme, l10n.insHowToPlay),
           body: AppBackground(
             theme: theme,
             child: SafeArea(
@@ -144,7 +125,7 @@ class InstructionsScreen extends StatelessWidget {
     GameTheme theme,
     AppLocalizations l10n,
   ) {
-    return _section(context, l10n.insControls, theme, [
+    return _section(context, l10n.insControls, theme, Icons.videogame_asset_rounded, 0, [
       _groupLabel(context, l10n.insOnPhone),
       const SizedBox(height: 10),
       _row(l10n.insSwipeUp, l10n.insSwipeUpDesc),
@@ -173,7 +154,7 @@ class InstructionsScreen extends StatelessWidget {
     GameTheme theme,
     AppLocalizations l10n,
   ) {
-    return _section(context, l10n.insVersus, theme, [
+    return _section(context, l10n.insVersus, theme, Icons.people_alt_rounded, 1, [
       _row(l10n.insVersusOnline, l10n.insVersusOnlineDesc),
       _row(l10n.insVersusQuick, l10n.insVersusQuickDesc),
       _row(l10n.insVersusRoom, l10n.insVersusRoomDesc),
@@ -185,7 +166,7 @@ class InstructionsScreen extends StatelessWidget {
     GameTheme theme,
     AppLocalizations l10n,
   ) {
-    return _section(context, l10n.insFoodTypes, theme, [
+    return _section(context, l10n.insFoodTypes, theme, Icons.restaurant_rounded, 2, [
       _foodRow(l10n.insNormalFood, l10n.insPoints10, theme.foodColor, theme),
       _foodRow(l10n.insBonusFood, l10n.insPoints25, Colors.orange, theme),
       _foodRow(
@@ -202,7 +183,7 @@ class InstructionsScreen extends StatelessWidget {
     GameTheme theme,
     AppLocalizations l10n,
   ) {
-    return _section(context, l10n.insRules, theme, [
+    return _section(context, l10n.insRules, theme, Icons.rule_rounded, 3, [
       for (final rule in [
         l10n.insRule1,
         l10n.insRule2,
@@ -219,7 +200,7 @@ class InstructionsScreen extends StatelessWidget {
     GameTheme theme,
     AppLocalizations l10n,
   ) {
-    return _section(context, l10n.insProTips, theme, [
+    return _section(context, l10n.insProTips, theme, Icons.lightbulb_rounded, 4, [
       for (final tip in [
         l10n.insTip1,
         l10n.insTip2,
@@ -234,62 +215,43 @@ class InstructionsScreen extends StatelessWidget {
 
   /// Uppercase accent label above a card. Identical to Settings' section
   /// heading, which is what makes the two screens read as one product.
-  Widget _eyebrow(BuildContext context, String title, GameTheme theme) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: theme.accentColor,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          letterSpacing: context.letterSpacing(1.5),
-        ),
-      ),
-    );
-  }
+  /// The objective's heading, which is the only eyebrow here that is not
+  /// attached to a card.
+  Widget _eyebrow(BuildContext context, String title, GameTheme theme) =>
+      screenEyebrow(context, theme, title, icon: Icons.flag_rounded);
 
+  /// One section panel.
+  ///
+  /// Was a hand-rolled copy of the shell's eyebrow and card — the comment
+  /// above it even said it existed so this screen would "read as one product"
+  /// with Settings. It now reads as one product because it is built from the
+  /// same parts.
   Widget _section(
     BuildContext context,
     String title,
     GameTheme theme,
+    IconData icon,
+    int index,
     List<Widget> children,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _eyebrow(context, title, theme),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          // stretch, not the default centre: a bare Text shrink-wraps, which
-          // is how a caption ends up centred under a left-aligned table.
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
-          ),
-        ),
-      ],
+    return screenSection(
+      context,
+      theme,
+      title,
+      // stretch, not the default centre: a bare Text shrink-wraps, which
+      // is how a caption ends up centred under a left-aligned table.
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+      icon: icon,
+      index: index,
     );
   }
 
   /// A quiet heading inside a card, for the two halves of the controls table.
-  Widget _groupLabel(BuildContext context, String label) {
-    return Text(
-      label.toUpperCase(),
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.45),
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: context.letterSpacing(1),
-      ),
-    );
-  }
+  Widget _groupLabel(BuildContext context, String label) =>
+      screenGroupLabel(context, label);
 
   /// One line of reference: the thing, and what it does.
   ///

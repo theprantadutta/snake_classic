@@ -17,6 +17,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
 
 /// Reward-Showcase battle pass — the hero is **what you're about to earn**,
@@ -39,56 +40,33 @@ import 'package:snake_classic/widgets/themed_loading.dart';
 /// colour here that is not the active theme's own — the screen used to carry
 /// amber, orange, green, purple and the theme accent all at once, which left
 /// nothing for any of them to mean.
-const Color kBattlePassGold = Color(0xFFFFC53D);
+const Color kBattlePassGold = kRewardGold;
 
-/// The card every section on this screen sits in: flat translucent fill,
-/// hairline border, 16px radius. Identical to Settings, Profile, How to Play
-/// and Daily Challenges, because reading as one product is the point.
-BoxDecoration battlePassCard(GameTheme theme, {Color? borderColor}) {
-  return BoxDecoration(
-    color: theme.backgroundColor.withValues(alpha: 0.3),
-    border: Border.all(
-      color: borderColor ?? theme.accentColor.withValues(alpha: 0.3),
-    ),
-    borderRadius: BorderRadius.circular(16),
-  );
-}
+/// The card every section on this screen sits in.
+///
+/// The doc here used to claim it was "identical to Settings, Profile, How to
+/// Play and Daily Challenges" — which was true only for as long as nobody
+/// changed any of them. It is the shared decoration now, so the claim holds
+/// itself up.
+///
+/// Returns a decoration rather than a widget, so these cards get the panel
+/// gradient and glow but not the corner brackets: brackets need a Stack, and
+/// the callers here build their own Container.
+BoxDecoration battlePassCard(GameTheme theme, {Color? borderColor}) =>
+    screenCardDecoration(theme, borderColor: borderColor);
 
 /// An uppercase accent eyebrow over whatever follows it.
+///
+/// Was a third copy of the same Padding/Row/Text; it is the shared one now,
+/// which is how it picked up the emblem and the rule without this screen
+/// asking for them.
 Widget battlePassSectionHeader(
   BuildContext context,
   GameTheme theme,
   String title, {
   int? count,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(left: 4, bottom: 12),
-    child: Row(
-      children: [
-        Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            color: theme.accentColor,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: context.letterSpacing(1.5),
-          ),
-        ),
-        if (count != null && count > 0) ...[
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: TextStyle(
-              color: kBattlePassGold,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ],
-    ),
-  );
-}
+  IconData? icon,
+}) => screenEyebrow(context, theme, title, count: count, icon: icon);
 
 class BattlePassScreen extends StatefulWidget {
   const BattlePassScreen({super.key});
@@ -200,19 +178,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
             if (bpState.status == BattlePassStatus.loading && season == null) {
               return Scaffold(
                 extendBodyBehindAppBar: true,
-                appBar: AppBar(
-                  title: Text(
-                    l10n.bpTitle.toUpperCase(),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: context.letterSpacing(2),
-                    ),
-                  ),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  iconTheme: IconThemeData(color: theme.accentColor),
-                ),
+                appBar: appScreenBar(context, theme, l10n.bpTitle),
                 body: AppBackground(
                   theme: theme,
                   child: SafeArea(
@@ -229,28 +195,11 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
             return Scaffold(
               bottomNavigationBar: const SnakeBannerAd(),
               extendBodyBehindAppBar: true,
-              appBar: AppBar(
-                title: Text(
-                  localizedBattlePassSeasonName(
-                    season.name,
-                    l10n,
-                  ).toUpperCase(),
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: context.letterSpacing(2),
-                    shadows: [
-                      Shadow(
-                        offset: const Offset(0, 2),
-                        blurRadius: 4,
-                        color: Colors.black.withValues(alpha: 0.3),
-                      ),
-                    ],
-                  ),
-                ),
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                iconTheme: IconThemeData(color: theme.accentColor),
+              // appScreenBar uppercases the title itself.
+              appBar: appScreenBar(
+                context,
+                theme,
+                localizedBattlePassSeasonName(season.name, l10n),
               ),
               body: AppBackground(
                 theme: theme,
@@ -1641,19 +1590,7 @@ class _NoActiveSeasonScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          l10n.bpTitleUpper,
-          style: TextStyle(
-            color: theme.accentColor,
-            fontWeight: FontWeight.bold,
-            letterSpacing: context.letterSpacing(2),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: theme.accentColor),
-      ),
+      appBar: appScreenBar(context, theme, l10n.bpTitleUpper),
       body: AppBackground(
         theme: theme,
         child: SafeArea(

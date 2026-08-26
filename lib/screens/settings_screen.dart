@@ -34,7 +34,36 @@ import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/not_backed_up_notice.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/arcade_controls.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/settings_category_rail.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
+
+/// The sections of this screen, in the order they appear.
+///
+/// The category rail, the jump targets and the entrance stagger are all
+/// derived from this one enum, so a chip cannot end up without a section to
+/// scroll to, and the two orders cannot drift apart.
+enum _SettingsSection {
+  controls(Icons.videogame_asset_rounded),
+  gameplay(Icons.sports_esports_rounded),
+  audio(Icons.graphic_eq_rounded),
+  visual(Icons.palette_rounded),
+  display(Icons.motion_photos_on_rounded),
+  language(Icons.translate_rounded),
+  notifications(Icons.notifications_active_rounded),
+  testNotifications(Icons.bug_report_rounded),
+  profile(Icons.person_rounded),
+  yourGame(Icons.insights_rounded),
+  help(Icons.school_rounded),
+  legal(Icons.gavel_rounded),
+  premium(Icons.workspace_premium_rounded);
+
+  const _SettingsSection(this.icon);
+
+  /// Shown in the section's emblem and on its rail chip.
+  final IconData icon;
+}
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -46,6 +75,16 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final AudioService _audioService = AudioService();
   final StorageService _storageService = StorageService();
+
+  /// Driven by the category rail: it listens to this to know which section
+  /// you are in, and animates it when you tap a chip.
+  final ScrollController _bodyScroll = ScrollController();
+
+  /// One per section, attached where the section is built so the rail has
+  /// something to scroll to.
+  final Map<_SettingsSection, GlobalKey> _sectionKeys = {
+    for (final section in _SettingsSection.values) section: GlobalKey(),
+  };
   late final AppDataCache _appCache;
   late final AnalyticsFacade _analytics;
   bool _soundEnabled = true;
@@ -70,6 +109,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifAchievement = true;
   bool _notifSocial = true;
   bool _notifSpecialEvent = true;
+
+  @override
+  void dispose() {
+    _bodyScroll.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -235,26 +280,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       return Scaffold(
                         bottomNavigationBar: const SnakeBannerAd(),
                         extendBodyBehindAppBar: true,
-                        appBar: AppBar(
-                          title: Text(
-                            l10n.settingsTitle,
-                            style: TextStyle(
-                              color: theme.accentColor,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: context.letterSpacing(2),
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 4,
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                ),
-                              ],
-                            ),
-                          ),
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          iconTheme: IconThemeData(color: theme.accentColor),
-                        ),
+                        // The shared bar, so this screen tracks the design
+                        // language instead of carrying its own copy of it.
+                        appBar: appScreenBar(context, theme, l10n.settingsTitle),
                         body: AppBackground(
                           theme: theme,
                           child: SafeArea(
@@ -264,14 +292,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               // instead of stretching rows full-screen.
                               padding: EdgeInsets.symmetric(
                                 horizontal: 24.0 + context.sideInset(),
-                                vertical: 24.0,
                               ),
-                              child: SingleChildScrollView(
-                                child: Column(
+                              child: Column(
+                                children: [
+                                  // No spacer for the app bar here, though it
+                                  // is drawn over the body: with
+                                  // extendBodyBehindAppBar, Scaffold hands the
+                                  // body a MediaQuery whose top padding is the
+                                  // WHOLE bar height, so the SafeArea above
+                                  // has already cleared it. Adding
+                                  // kToolbarHeight on top of that counted it
+                                  // twice and left a dead band under the
+                                  // title.
+                                  SettingsCategoryRail(
+                                    categories: _railCategories(
+                                      l10n,
+                                      premiumState,
+                                    ),
+                                    bodyController: _bodyScroll,
+                                    theme: theme,
+                                  ),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      controller: _bodyScroll,
+                                      padding: const EdgeInsets.only(
+                                        top: 20,
+                                        bottom: 24,
+                                      ),
+                                      child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // 1. Controls Section (most frequently adjusted during gameplay)
-                                    _buildSection(l10n.settingsSectionControls, [
+                                    _buildSection(_SettingsSection.controls, l10n.settingsSectionControls, [
                                       _buildAudioSwitch(
                                         l10n.settingsDPadControls,
                                         _dPadEnabled,
@@ -305,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 2. Gameplay Section (mode + board size + crash feedback + effects)
-                                    _buildSection(
+                                    _buildSection(_SettingsSection.gameplay, 
                                       l10n.settingsSectionGameplay,
                                       [
                                         _buildGameModeSelector(
@@ -384,7 +436,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 3. Audio Section
-                                    _buildSection(l10n.settingsSectionAudio, [
+                                    _buildSection(_SettingsSection.audio, l10n.settingsSectionAudio, [
                                       _buildAudioSwitch(
                                         l10n.settingsSoundEffects,
                                         _soundEnabled,
@@ -425,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 4. Visual Section (theme + trail effects)
-                                    _buildSection(l10n.settingsSectionVisual, [
+                                    _buildSection(_SettingsSection.visual, l10n.settingsSectionVisual, [
                                       _buildThemeSelector(themeState, theme),
                                       const SizedBox(height: 24),
                                       const Divider(height: 1),
@@ -454,7 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     // App language picker. Section title comes
                                     // from the ARB (the picker itself is the
                                     // first localized surface in the app).
-                                    _buildSection(
+                                    _buildSection(_SettingsSection.language, 
                                       AppLocalizations.of(
                                         context,
                                       )!.settingsSectionLanguage,
@@ -465,7 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 5. User Profile Section
-                                    _buildSection(
+                                    _buildSection(_SettingsSection.notifications, 
                                       l10n.settingsSectionNotifications,
                                       [
                                         _buildAudioSwitch(
@@ -536,13 +588,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     // internal testing, not user features. See
                                     // NOTIFICATIONS_TESTING.md for triage guide.
                                     if (kDebugMode) ...[
-                                      _buildSection('TEST NOTIFICATIONS', [
+                                      _buildSection(_SettingsSection.testNotifications, 'TEST NOTIFICATIONS', [
                                         _buildNotificationTestPanel(theme),
                                       ], theme),
                                       const SizedBox(height: 32),
                                     ],
 
-                                    _buildSection(
+                                    _buildSection(_SettingsSection.profile, 
                                       l10n.settingsSectionUserProfile,
                                       [
                                         _buildUserProfileSettings(
@@ -562,7 +614,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     // offer two things a player looks at
                                     // occasionally. They live here now, where
                                     // the rest of "about your game" already is.
-                                    _buildSection(
+                                    _buildSection(_SettingsSection.yourGame, 
                                       l10n.settingsSectionYourGame,
                                       [
                                         _buildLinkButton(
@@ -592,7 +644,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 6. Help & Tutorial Section
-                                    _buildSection(l10n.settingsSectionHelp, [
+                                    _buildSection(_SettingsSection.help, l10n.settingsSectionHelp, [
                                       _buildReplayTutorialButton(theme),
                                       const SizedBox(height: 16),
                                       _buildCreditsButton(theme),
@@ -603,7 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     const SizedBox(height: 32),
 
                                     // 6b. Legal Section
-                                    _buildSection(l10n.settingsSectionLegal, [
+                                    _buildSection(_SettingsSection.legal, l10n.settingsSectionLegal, [
                                       _buildPrivacyPolicyButton(theme),
                                       const SizedBox(height: 12),
                                       _buildTermsButton(theme),
@@ -613,7 +665,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                                     // 7. Premium Section (if available)
                                     if (premiumState.isInitialized)
-                                      _buildSection(
+                                      _buildSection(_SettingsSection.premium, 
                                         l10n.settingsSectionPremium,
                                         [
                                           _buildPremiumStatusCard(
@@ -663,6 +715,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ],
                                 ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -769,42 +824,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Eyebrow + hairline card. Kept identical to `ProfileScreen._buildSection`
-  /// so the two screens are visibly the same product.
-  Widget _buildSection(String title, List<Widget> children, GameTheme theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(1.5),
-            ),
-          ),
+  /// The rail's chips, in section order, filtered to what is actually built.
+  ///
+  /// The conditionals here have to mirror the ones around the sections
+  /// themselves — a chip that scrolls to a section this build does not have
+  /// is a dead control.
+  List<SettingsCategory> _railCategories(
+    AppLocalizations l10n,
+    PremiumState premiumState,
+  ) {
+    SettingsCategory of(_SettingsSection section, String label) =>
+        SettingsCategory(
+          label: label,
+          icon: section.icon,
+          key: _sectionKeys[section]!,
+        );
+
+    return [
+      of(_SettingsSection.controls, l10n.settingsSectionControls),
+      of(_SettingsSection.gameplay, l10n.settingsSectionGameplay),
+      of(_SettingsSection.audio, l10n.settingsSectionAudio),
+      of(_SettingsSection.visual, l10n.settingsSectionVisual),
+      of(_SettingsSection.display, l10n.settingsSectionDisplay),
+      of(_SettingsSection.language, l10n.settingsSectionLanguage),
+      of(_SettingsSection.notifications, l10n.settingsSectionNotifications),
+      if (kDebugMode) of(_SettingsSection.testNotifications, 'TEST'),
+      of(_SettingsSection.profile, l10n.settingsSectionUserProfile),
+      of(_SettingsSection.yourGame, l10n.settingsSectionYourGame),
+      of(_SettingsSection.help, l10n.settingsSectionHelp),
+      of(_SettingsSection.legal, l10n.settingsSectionLegal),
+      if (premiumState.isInitialized)
+        of(_SettingsSection.premium, l10n.settingsSectionPremium),
+    ];
+  }
+
+  /// One section panel: emblem, tracked title, rule out to a terminator, and
+  /// a card with bracketed corners.
+  ///
+  /// Delegates to [screenSection] rather than drawing its own chrome. This
+  /// used to be a hand-rolled copy of `ProfileScreen._buildSection`, kept in
+  /// sync by hand — which is the exact drift `screen_shell.dart` exists to
+  /// stop. Both screens now read from the one language.
+  Widget _buildSection(
+    _SettingsSection section,
+    String title,
+    List<Widget> children,
+    GameTheme theme,
+  ) {
+    return KeyedSubtree(
+      // The rail scrolls to this.
+      key: _sectionKeys[section],
+      child: screenSection(
+        context,
+        theme,
+        title,
+        // stretch, not the default centre. Rows fill either way, but a bare
+        // Text shrink-wraps — which is why every hint and caption on this
+        // screen used to sit centred while the control it described was
+        // left-aligned above it.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
         ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          // stretch, not the default centre. Rows fill either way, but a bare
-          // Text shrink-wraps — which is why every hint and caption on this
-          // screen used to sit centred while the control it described was
-          // left-aligned above it.
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
-          ),
-        ),
-      ],
+        icon: section.icon,
+        index: section.index,
+      ),
     );
   }
 
@@ -827,7 +911,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return BlocBuilder<DisplayCubit, DisplayState>(
       builder: (context, display) {
-        return _buildSection(l10n.settingsSectionDisplay, [
+        return _buildSection(_SettingsSection.display, l10n.settingsSectionDisplay, [
           _buildRefreshRateCard(display, theme),
           const SizedBox(height: 20),
           const Divider(height: 1),
@@ -1151,6 +1235,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// The label is white, not accent. When every label on the screen is the
   /// theme colour there is nothing left for the theme colour to mean, and the
   /// eyebrows and selected states stop standing out.
+  /// A labelled toggle.
+  ///
+  /// Named for the audio switches it was first written for; it drives every
+  /// boolean on this screen. The Material [Switch] it used to wrap is what
+  /// made the screen read as a phone settings screen, so the body is now an
+  /// [ArcadeSwitchTile] — same signature, same call sites, different metaphor.
+  ///
   /// [enabled] false greys the row out and swallows taps — for a control the
   /// hardware cannot honour (a single-rate panel has no refresh rate to
   /// unlock), where hiding it entirely would just be confusing.
@@ -1162,50 +1253,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String? description,
     bool enabled = true,
   }) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (description != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12.5,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Switch(
-            value: value,
-            onChanged: enabled ? onChanged : null,
-            activeThumbColor: theme.accentColor,
-            activeTrackColor: theme.accentColor.withValues(alpha: 0.3),
-          ),
-        ],
-      ),
-      ),
+    return ArcadeSwitchTile(
+      title: title,
+      value: value,
+      onChanged: onChanged,
+      theme: theme,
+      description: description,
+      enabled: enabled,
     );
   }
 
@@ -1509,17 +1563,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 14,
                   vertical: 10,
                 ),
+                // Matches ArcadeOptionChip. The selected state is a wash, a
+                // heavier border AND a glow rather than a colour change
+                // alone — on the bright themes (crystal, desert) an accent
+                // border on a transparent chip is nearly invisible, so which
+                // option is live has to be carried by more than hue.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.2)
-                      : Colors.transparent,
+                      ? theme.accentColor.withValues(alpha: 0.22)
+                      : Colors.white.withValues(alpha: 0.04),
                   border: Border.all(
                     color: isSelected
                         ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.3),
+                        : theme.accentColor.withValues(alpha: 0.28),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.30),
+                            blurRadius: 12,
+                            spreadRadius: -3,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   '${mode.icon} ${mode.localizedName(l10n)}',
@@ -1603,17 +1671,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 14,
                   vertical: 10,
                 ),
+                // Matches ArcadeOptionChip. The selected state is a wash, a
+                // heavier border AND a glow rather than a colour change
+                // alone — on the bright themes (crystal, desert) an accent
+                // border on a transparent chip is nearly invisible, so which
+                // option is live has to be carried by more than hue.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.2)
-                      : Colors.transparent,
+                      ? theme.accentColor.withValues(alpha: 0.22)
+                      : Colors.white.withValues(alpha: 0.04),
                   border: Border.all(
                     color: isSelected
                         ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.3),
+                        : theme.accentColor.withValues(alpha: 0.28),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.30),
+                            blurRadius: 12,
+                            spreadRadius: -3,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   '${difficulty.icon} ${difficulty.localizedLabel(l10n)}',
@@ -1782,17 +1864,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 14,
                   vertical: 10,
                 ),
+                // Matches ArcadeOptionChip. The selected state is a wash, a
+                // heavier border AND a glow rather than a colour change
+                // alone — on the bright themes (crystal, desert) an accent
+                // border on a transparent chip is nearly invisible, so which
+                // option is live has to be carried by more than hue.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.2)
-                      : Colors.transparent,
+                      ? theme.accentColor.withValues(alpha: 0.22)
+                      : Colors.white.withValues(alpha: 0.04),
                   border: Border.all(
                     color: isSelected
                         ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.3),
+                        : theme.accentColor.withValues(alpha: 0.28),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.30),
+                            blurRadius: 12,
+                            spreadRadius: -3,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   '${boardSize.localizedName(l10n)}\n${boardSize.width}×${boardSize.height}',
@@ -1933,17 +2029,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   horizontal: 14,
                   vertical: 10,
                 ),
+                // Matches ArcadeOptionChip. The selected state is a wash, a
+                // heavier border AND a glow rather than a colour change
+                // alone — on the bright themes (crystal, desert) an accent
+                // border on a transparent chip is nearly invisible, so which
+                // option is live has to be carried by more than hue.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.2)
-                      : Colors.transparent,
+                      ? theme.accentColor.withValues(alpha: 0.22)
+                      : Colors.white.withValues(alpha: 0.04),
                   border: Border.all(
                     color: isSelected
                         ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.3),
+                        : theme.accentColor.withValues(alpha: 0.28),
                     width: isSelected ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: theme.accentColor.withValues(alpha: 0.30),
+                            blurRadius: 12,
+                            spreadRadius: -3,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   _crashLabel(l10n, duration),
@@ -2570,6 +2680,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ///
   /// Same shape as the tutorial replay button below it, which is the pattern
   /// this screen already uses for "this opens something else".
+  /// A row that opens somewhere else.
+  ///
+  /// Was a full-width outlined button with a caption underneath, which gave a
+  /// section of five links five identical slabs and no scanline. An icon chip
+  /// plus a chevron says "this navigates" without spending a whole button on
+  /// saying it.
   Widget _buildLinkButton(
     GameTheme theme, {
     required IconData icon,
@@ -2577,28 +2693,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String subtitle,
     required VoidCallback onPressed,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GradientButton(
-          onPressed: onPressed,
-          text: label,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: icon,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
+    return ArcadeLinkTile(
+      label: label,
+      description: subtitle,
+      icon: icon,
+      onTap: onPressed,
+      theme: theme,
     );
   }
 

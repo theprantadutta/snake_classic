@@ -59,25 +59,12 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     return Scaffold(
       bottomNavigationBar: const SnakeBannerAd(),
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(
-          l10n.pfAchievements.toUpperCase(),
-          style: TextStyle(
-            color: theme.accentColor,
-            fontWeight: FontWeight.bold,
-            letterSpacing: context.letterSpacing(2),
-            shadows: [
-              Shadow(
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-                color: Colors.black.withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: theme.accentColor),
+      // The last hand-rolled bar in the app. It only ever differed because it
+      // needed a tab strip, which the shared one now takes.
+      appBar: appScreenBar(
+        context,
+        theme,
+        l10n.pfAchievements,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: theme.accentColor,
