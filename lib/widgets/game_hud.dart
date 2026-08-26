@@ -629,18 +629,20 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: theme.accentColor.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation(
-                      isNearLevelUp ? Colors.amber : theme.snakeColor,
-                    ),
-                    minHeight: isSmallScreen ? 4 : 5,
-                  ),
+                _HudGauge(
+                  value: progress,
+                  fill: isNearLevelUp ? Colors.amber : theme.snakeColor,
+                  track: theme.accentColor,
+                  // 5/6 against the old 4/5, with the gap below cut from 2
+                  // to 1 to pay for it — net zero against the slot this row
+                  // reserves. 6/7 was the first attempt and it overflowed by
+                  // exactly 1px on tall phones and tablets at text scale 1.3
+                  // and up: the slot had a single pixel of slack and a
+                  // two-pixel bar spent it twice. gameplay_accessibility_test
+                  // caught it, which is the whole reason that matrix exists.
+                  height: isSmallScreen ? 5 : 6,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   '$pointsInLevel/$pointsNeeded',
                   // height:1.0 strips the inherent line-height padding
@@ -1270,6 +1272,101 @@ class _ComboDecayBarState extends State<_ComboDecayBar>
       },
     );
   }
+}
+
+/// The level bar, as an instrument rather than a Material widget.
+///
+/// LinearProgressIndicator is the same kind of tell the Material Switch was on
+/// the settings screen: correct, legible, and unmistakably a phone app's. This
+/// is the same value read as a gauge — an inset track, a lit fill that carries
+/// its own bloom, and segment ticks so a glance reads roughly how far along
+/// the level is without parsing the number underneath.
+///
+/// Ticks are drawn OVER the fill in the track colour, so they read as notches
+/// cut into the bar rather than as marks floating above it.
+class _HudGauge extends StatelessWidget {
+  const _HudGauge({
+    required this.value,
+    required this.fill,
+    required this.track,
+    required this.height,
+  });
+
+  final double value;
+  final Color fill;
+  final Color track;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value.clamp(0.0, 1.0);
+
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.30),
+        borderRadius: BorderRadius.circular(height / 2),
+        border: Border.all(color: track.withValues(alpha: 0.28), width: 0.8),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(height / 2),
+        child: Stack(
+          children: [
+            // The lit fill.
+            FractionallySizedBox(
+              widthFactor: v,
+              heightFactor: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [fill.withValues(alpha: 0.75), fill],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: fill.withValues(alpha: 0.55),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Segment notches.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _GaugeTicks(color: track.withValues(alpha: 0.55)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GaugeTicks extends CustomPainter {
+  const _GaugeTicks({required this.color});
+
+  final Color color;
+
+  /// Five segments — enough to read position at a glance, few enough that the
+  /// ticks do not turn a 6px bar into a dotted line.
+  static const int _segments = 5;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    for (var i = 1; i < _segments; i++) {
+      final x = size.width * i / _segments;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GaugeTicks oldDelegate) => oldDelegate.color != color;
 }
 
 /// Lightweight 8-spoke radial burst drawn behind the level badge for the

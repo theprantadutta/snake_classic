@@ -33,6 +33,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/achievement_reveal_overlay.dart';
 import 'package:snake_classic/widgets/app_background.dart';
@@ -807,8 +808,13 @@ class _ScoreCard extends StatelessWidget {
             spreadRadius: 2,
           ),
         ],
-      ),
-      child: Column(
+      ),child: HudCorners(
+  // The mark, not the material: this card keeps its own gradient,
+  // because gold means a reward and accent means progress here and
+  // the shared surface would flatten both into the same thing.
+  color: theme.accentColor,
+  inset: compact ? 6 : 8,
+  child: Column(
         children: [
           // Score row — label left, big animated number right.
           Row(
@@ -888,7 +894,7 @@ class _ScoreCard extends StatelessWidget {
             _CoinsEarnedRow(coinsEarned: coinsEarned, theme: theme),
           ],
         ],
-      ),
+      )),
     ).gameEntrance(delay: 400.ms);
   }
 }
@@ -1078,8 +1084,13 @@ class _DailyRewardsCard extends StatelessWidget {
             spreadRadius: 1,
           ),
         ],
-      ),
-      child: Column(
+      ),child: HudCorners(
+  // The mark, not the material: this card keeps its own gradient,
+  // because gold means a reward and accent means progress here and
+  // the shared surface would flatten both into the same thing.
+  color: Colors.amber,
+  inset: compact ? 5 : 6,
+  child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header — title, total rewards, claim-all CTA.
@@ -1150,7 +1161,7 @@ class _DailyRewardsCard extends StatelessWidget {
                 ),
               ),
         ],
-      ),
+      )),
     ).gameZoomIn(delay: 500.ms);
   }
 }
@@ -1452,28 +1463,26 @@ class _AchievementSection extends StatelessWidget {
                   offset: const Offset(0, 4),
                 ),
               ],
-            ),
-            child: Column(
+            ),child: HudCorners(
+  // The mark, not the material: this card keeps its own gradient,
+  // because gold means a reward and accent means progress here and
+  // the shared surface would flatten both into the same thing.
+  color: theme.accentColor,
+  inset: compact ? 5 : 6,
+  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.emoji_events,
-                        color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.goAchievements,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: context.letterSpacing(1.2),
-                      ),
-                    ),
-                  ],
+                // The shared eyebrow rather than an icon beside a label, so
+                // this section is headed the same way one in Settings or on
+                // the profile is.
+                screenEyebrow(
+                  context,
+                  theme,
+                  l10n.goAchievements,
+                  icon: Icons.emoji_events,
                 ),
-                SizedBox(height: compact ? 8 : 10),
+                SizedBox(height: compact ? 0 : 2),
                 if (recent.isNotEmpty) ...[
                   _SubsectionLabel(
                     text: l10n.goRecentlyUnlocked,
@@ -1509,7 +1518,7 @@ class _AchievementSection extends StatelessWidget {
                       ),
                 ],
               ],
-            ),
+            )),
           ),
         ),
       ),

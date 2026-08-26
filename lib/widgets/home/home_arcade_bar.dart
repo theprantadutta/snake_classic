@@ -80,32 +80,45 @@ class HomeArcadeBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 borderColor: theme.accentColor.withValues(alpha: 0.40),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    destination.icon,
-                    color: theme.accentColor,
-                    size: compact ? 21 : 24,
-                  ),
-                  SizedBox(height: compact ? 5 : 6),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      destination.label.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: compact ? 9.5 : 10.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: context.letterSpacing(0.8),
-                        height: 1.0,
+              child: HudCorners(
+                color: theme.accentColor,
+                // NEGATIVE inset, so these sit INSIDE the chip rather than
+                // outside it. The rail chips can afford to be framed from
+                // without — they have clear space around them. These four
+                // sit shoulder to shoulder, and drawn outward their arms
+                // reached across the gaps into each other, which reads as
+                // one broken frame rather than four tidy ones. A
+                // destination has no padding of its own to hide them in,
+                // so they go inward.
+                inset: compact ? -6 : -7,
+                arm: compact ? 7 : 9,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      destination.icon,
+                      color: theme.accentColor,
+                      size: compact ? 21 : 24,
+                    ),
+                    SizedBox(height: compact ? 5 : 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        destination.label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: compact ? 9.5 : 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: context.letterSpacing(0.8),
+                          height: 1.0,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (destination.badgeCount > 0)

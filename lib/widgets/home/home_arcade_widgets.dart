@@ -46,50 +46,57 @@ class HomeStatPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         borderColor: theme.accentColor.withValues(alpha: 0.30),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: compact ? 32 : 38,
-            height: compact ? 32 : 38,
-            decoration: BoxDecoration(
-              color: tint.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: tint.withValues(alpha: 0.35)),
+      child: HudCorners(
+        color: theme.accentColor,
+        // Sized to the chip, not to a card.
+        inset: compact ? 3 : 4,
+        arm: compact ? 7 : 9,
+        clipBehavior: Clip.none,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: compact ? 32 : 38,
+              height: compact ? 32 : 38,
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: tint.withValues(alpha: 0.35)),
+              ),
+              child: Icon(icon, color: tint, size: compact ? 18 : 21),
             ),
-            child: Icon(icon, color: tint, size: compact ? 18 : 21),
-          ),
-          SizedBox(width: compact ? 8 : 10),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                maxLines: 1,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: compact ? 8.5 : 9.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: context.letterSpacing(1.2),
-                  height: 1.1,
+            SizedBox(width: compact ? 8 : 10),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: compact ? 8.5 : 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: context.letterSpacing(1.2),
+                    height: 1.1,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                value,
-                maxLines: 1,
-                style: TextStyle(
-                  color: tint,
-                  fontSize: compact ? 15 : 17,
-                  fontWeight: FontWeight.w900,
-                  height: 1.1,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+                const SizedBox(height: 1),
+                Text(
+                  value,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: tint,
+                    fontSize: compact ? 15 : 17,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
 
@@ -178,44 +185,51 @@ class HomeRailButton extends StatelessWidget {
                       tint: colour,
                       borderRadius: BorderRadius.circular(14),
                     ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: highlight ? Colors.white : colour,
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label.toUpperCase(),
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: highlight ? Colors.white : colour,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: context.letterSpacing(1),
-                          height: 1.1,
-                        ),
-                      ),
-                      if (subtitle != null)
+              child: HudCorners(
+                color: colour,
+                // Sized to the chip, not to a card.
+                inset: 4,
+                arm: 9,
+                clipBehavior: Clip.none,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 20,
+                      color: highlight ? Colors.white : colour,
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          subtitle!,
+                          label.toUpperCase(),
                           maxLines: 1,
                           style: TextStyle(
-                            color: (highlight ? Colors.white : colour)
-                                .withValues(alpha: 0.75),
-                            fontSize: 9.5,
-                            height: 1.2,
+                            color: highlight ? Colors.white : colour,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: context.letterSpacing(1),
+                            height: 1.1,
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: (highlight ? Colors.white : colour)
+                                  .withValues(alpha: 0.75),
+                              fontSize: 9.5,
+                              height: 1.2,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             if (badgeCount > 0)
