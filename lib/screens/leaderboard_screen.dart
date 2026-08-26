@@ -258,29 +258,23 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         child: InkWell(
           onTap: () => ref.read(combinedLeaderboardProvider.notifier).refresh(),
           borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.18),
-              ),
-            ),
+          child: Padding(
+            // No box. Padding keeps the tap target without drawing one.
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.refresh_rounded,
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  size: 12,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  size: 13,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Text(
                   label,
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.75),
-                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -599,19 +593,27 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       // else flat. On a board where the first four rows all glow, none of
       // them stands out — and the one the player is actually looking for is
       // their own.
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(
-          alpha: isCurrentUser ? 0.45 : 0.3,
-        ),
+      // The panel material, but no brackets: a leaderboard is a list of rows,
+      // not twenty framed panels stacked on each other. The border keeps
+      // doing the work of saying which row is which.
+      decoration: arcadeSurface(
+        theme,
+        tint: isCurrentUser
+            ? theme.accentColor
+            : isPodium
+            ? podium.color
+            : theme.accentColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCurrentUser
-              ? theme.accentColor
-              : isPodium
-              ? podium.color.withValues(alpha: 0.5)
-              : theme.accentColor.withValues(alpha: 0.18),
-          width: isCurrentUser ? 1.5 : 1,
-        ),
+        borderColor: isCurrentUser
+            ? theme.accentColor
+            : isPodium
+            ? podium.color.withValues(alpha: 0.5)
+            : theme.accentColor.withValues(alpha: 0.18),
+        borderWidth: isCurrentUser ? 1.5 : 1,
+        baseAlpha: isCurrentUser ? 0.55 : 0.42,
+        // Only the row you are looking for glows. Twenty glowing rows is the
+        // same as none glowing.
+        glow: isCurrentUser,
       ),
       child: Row(
         children: [

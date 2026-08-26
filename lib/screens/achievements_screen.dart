@@ -148,7 +148,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       ),
       padding: const EdgeInsets.all(16),
       decoration: screenCardDecoration(theme),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         children: [
           // 4-tile grid — same labels and counting logic as the dashboard
           // AchievementsGrid header so the operator and the player see the
@@ -213,7 +216,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -287,7 +290,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               : null,
         ),
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 8,
+          child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // The badge. Filled in the rarity colour once earned, a quiet
@@ -446,7 +452,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }

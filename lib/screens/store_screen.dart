@@ -289,7 +289,10 @@ class _StoreScreenState extends State<StoreScreen>
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: kRewardGold.withValues(alpha: 0.21)),
         ),
-        child: Row(
+        child: HudCorners(
+          color: kRewardGold,
+          inset: 8,
+          child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(context.scaled(8)),
@@ -358,7 +361,7 @@ class _StoreScreenState extends State<StoreScreen>
             const SizedBox(width: 8),
             const RewardedCoinsPill(),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -538,7 +541,10 @@ class _StoreScreenState extends State<StoreScreen>
           ),
         ],
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           Container(
             padding: EdgeInsets.all(context.scaled(14)),
@@ -571,7 +577,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -624,7 +630,10 @@ class _StoreScreenState extends State<StoreScreen>
                 ]
               : null,
         ),
-        child: Column(
+        child: HudCorners(
+          color: kRewardGold,
+          inset: 8,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -739,7 +748,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -782,7 +791,10 @@ class _StoreScreenState extends State<StoreScreen>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor, width: 1.5),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           Row(
             children: [
@@ -882,7 +894,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ],
         ],
-      ),
+      )),
     );
   }
 
@@ -1202,7 +1214,10 @@ class _StoreScreenState extends State<StoreScreen>
             width: option.isPopular ? 2 : 1.5,
           ),
         ),
-        child: Row(
+        child: HudCorners(
+          color: kRewardGold,
+          inset: 8,
+          child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(context.scaled(8)),
@@ -1278,7 +1293,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1298,7 +1313,10 @@ class _StoreScreenState extends State<StoreScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 7,
+        child: Row(
         children: [
           Container(
             padding: EdgeInsets.all(context.scaled(8)),
@@ -1332,7 +1350,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -1367,7 +1385,10 @@ class _StoreScreenState extends State<StoreScreen>
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: kRewardGold.withValues(alpha: 0.32)),
         ),
-        child: Row(
+        child: HudCorners(
+          color: kRewardGold,
+          inset: 7,
+          child: Row(
           children: [
             Icon(
               isPro ? Icons.check_circle : Icons.diamond,
@@ -1409,7 +1430,7 @@ class _StoreScreenState extends State<StoreScreen>
                 size: context.scaled(20),
               ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1585,7 +1606,10 @@ class _StoreScreenState extends State<StoreScreen>
             width: 2,
           ),
         ),
-        child: Row(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 8,
+          child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(context.scaled(12)),
@@ -1630,7 +1654,7 @@ class _StoreScreenState extends State<StoreScreen>
               priceLabel: price,
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -1729,7 +1753,10 @@ class _StoreScreenState extends State<StoreScreen>
             width: isActive ? 2 : 1,
           ),
         ),
-        child: Row(
+        child: HudCorners(
+          color: currentTheme.accentColor,
+          inset: 7,
+          child: Row(
           children: [
             // Preview swatch — fixed height row makes this a small
             // landscape rectangle, plenty of pixels for the painter
@@ -1780,7 +1807,7 @@ class _StoreScreenState extends State<StoreScreen>
               fallbackPriceLabel: price,
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2124,7 +2151,10 @@ class _StoreScreenState extends State<StoreScreen>
               : null,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 8,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Preview band — painted snake silhouette with the skin's
@@ -2239,7 +2269,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2382,7 +2412,10 @@ class _StoreScreenState extends State<StoreScreen>
               : null,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 8,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Preview band — custom-painted trail signature on a
@@ -2500,7 +2533,7 @@ class _StoreScreenState extends State<StoreScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -2695,7 +2728,10 @@ class _StoreScreenState extends State<StoreScreen>
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: theme.accentColor.withValues(alpha: 0.4)),
           ),
-          child: Row(
+          child: HudCorners(
+            color: theme.accentColor,
+            inset: 8,
+            child: Row(
             children: [
               Icon(
                 Icons.play_circle_fill,
@@ -2734,7 +2770,7 @@ class _StoreScreenState extends State<StoreScreen>
                 size: context.scaled(22),
               ),
             ],
-          ),
+          )),
         ),
       ),
     );
@@ -2799,7 +2835,10 @@ class _StoreScreenState extends State<StoreScreen>
                     color: theme.accentColor.withValues(alpha: 0.18),
                   ),
                 ),
-                child: Row(
+                child: HudCorners(
+                  color: theme.accentColor,
+                  inset: 7,
+                  child: Row(
                   children: [
                     Icon(
                       Icons.info_outline,
@@ -2818,7 +2857,7 @@ class _StoreScreenState extends State<StoreScreen>
                       ),
                     ),
                   ],
-                ),
+                )),
               ),
               const SizedBox(height: 16),
               // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
@@ -2883,7 +2922,10 @@ class _StoreScreenState extends State<StoreScreen>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 7,
+        child: Row(
         children: [
           Stack(
             clipBehavior: Clip.none,
@@ -2977,7 +3019,7 @@ class _StoreScreenState extends State<StoreScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -3086,7 +3128,10 @@ class _StoreScreenState extends State<StoreScreen>
           width: isOwned ? 2 : 1,
         ),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 7,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -3206,7 +3251,7 @@ class _StoreScreenState extends State<StoreScreen>
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 

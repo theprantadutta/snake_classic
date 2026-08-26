@@ -164,29 +164,23 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
         child: InkWell(
           onTap: () => ref.read(tournamentsProvider.notifier).refresh(),
           borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.18),
-              ),
-            ),
+          child: Padding(
+            // No box. Padding keeps the tap target without drawing one.
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.refresh_rounded,
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  size: 12,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  size: 13,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Text(
                   label,
                   style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.75),
-                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -628,7 +622,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: screenCardDecoration(theme),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -686,7 +683,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -695,7 +692,10 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: screenCardDecoration(theme),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -723,7 +723,7 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
             theme,
           ),
         ],
-      ),
+      )),
     );
   }
 

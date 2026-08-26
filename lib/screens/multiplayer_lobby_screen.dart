@@ -17,6 +17,7 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/social_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -801,7 +802,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       color: theme.accentColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: Column(
+                  child: HudCorners(
+                    color: theme.accentColor,
+                    inset: 8,
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Stack(
@@ -904,7 +908,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         outlined: true,
                       ),
                     ],
-                  ),
+                  )),
                 ),
               ),
             ),
@@ -941,7 +945,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                       color: theme.accentColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: Column(
+                  child: HudCorners(
+                    color: theme.accentColor,
+                    inset: 8,
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -1018,7 +1025,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         outlined: true,
                       ),
                     ],
-                  ),
+                  )),
                 ),
               ),
             ),
@@ -1123,7 +1130,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 7,
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           cell(l10n.mpLobbyWinsLabel, valueOf('wins')),
@@ -1134,7 +1144,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           cell(l10n.mpLobbyDrawsLabel, valueOf('draws')),
           cell(l10n.mpLobbyRatingLabel, valueOf('rating', fallback: 1000)),
         ],
-      ),
+      )),
     ).gameEntrance(delay: 50.ms);
   }
 
@@ -1273,7 +1283,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 7,
+        child: Row(
         children: [
           Container(
             width: 48,
@@ -1313,7 +1326,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
