@@ -191,6 +191,18 @@ class HudCorners extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      // passthrough, NOT the default loose. A Stack normally hands its
+      // non-positioned children loose constraints, so they shrink-wrap and
+      // settle at top-start — which silently re-laid-out everything this
+      // wrapped. The home bar's icon and label stopped being centred in
+      // their chip and drifted to the corner, because the Column was no
+      // longer being told to fill the height it used to.
+      //
+      // passthrough forwards the constraints this Stack was given straight
+      // to the child, so wrapping a widget in brackets leaves its layout
+      // exactly as it was. Decoration must never move the thing it
+      // decorates.
+      fit: StackFit.passthrough,
       clipBehavior: clipBehavior,
       children: [
         child,

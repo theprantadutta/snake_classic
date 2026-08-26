@@ -187,6 +187,53 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('brackets do not move what they decorate', (tester) async {
+      // HudCorners wraps its child in a Stack, and a Stack hands
+      // non-positioned children LOOSE constraints by default — so they
+      // shrink-wrap and settle at top-start. That silently re-laid-out
+      // everything it was put around: the home bar's icon and label stopped
+      // being centred in their chip and drifted into the corner. Decoration
+      // must never move the thing it decorates, so the child's geometry is
+      // pinned here against the identical tree without the brackets.
+      Widget subject({required bool bracketed}) {
+        final content = Column(
+          key: const ValueKey('content'),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [Icon(Icons.videogame_asset_rounded), Text('DAILY')],
+        );
+        return MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 90,
+                child: bracketed
+                    ? HudCorners(color: const Color(0xFF00FF00), child: content)
+                    : content,
+              ),
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(subject(bracketed: false));
+      final bare = tester.getRect(find.byKey(const ValueKey('content')));
+
+      await tester.pumpWidget(subject(bracketed: true));
+      final framed = tester.getRect(find.byKey(const ValueKey('content')));
+
+      expect(
+        framed,
+        bare,
+        reason: 'the bracketed child occupies exactly the same box',
+      );
+      // And the thing that actually broke: the label stays centred.
+      expect(
+        tester.getCenter(find.text('DAILY')).dx,
+        tester.getCenter(find.byType(SizedBox).first).dx,
+      );
+    });
+
     testWidgets('a rebuild does not replay the entrance', (tester) async {
       // Settings rebuilds its whole tree on every toggle. If the panels
       // re-ran their staggered fade each time, flipping one switch would make
