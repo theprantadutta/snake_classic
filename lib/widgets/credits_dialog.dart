@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// "About / Credits" dialog for Snake Classic. Reached from the Settings
@@ -50,7 +51,13 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
               ],
             ),
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-            child: Column(
+            // A dialog is a framed panel, so it takes the mark. It keeps its
+            // own gradient rather than the shared surface: it floats over a
+            // dimmed screen instead of sitting on one, and needs to be
+            // opaque enough to read against whatever is behind it.
+            child: HudCorners(
+              color: theme.accentColor,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -93,10 +100,15 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                             ).createShader(bounds),
                             child: Text(
                               'Snake Classic',
-                              style: TextStyle(
+                              // Orbitron, like every other title in the app.
+                              // This was Rajdhani at w900 — a weight Rajdhani
+                              // does not ship, so it was being synthesised,
+                              // and the wrong family besides.
+                              style: GameTypography.headlineSmall(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w900,
+                              ).copyWith(
                                 fontSize: 22,
+                                fontWeight: FontWeight.w700,
                                 letterSpacing: context.letterSpacing(0.5),
                               ),
                             ),
@@ -169,12 +181,14 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
 
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.06),
+                  // Material only. Brackets inside a bracketed card stack
+                  // into a moire of little Ls and stop meaning "framed".
+                  decoration: arcadeSurface(
+                    theme,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.12),
-                    ),
+                    borderColor: theme.accentColor.withValues(alpha: 0.22),
+                    baseAlpha: 0.38,
+                    glow: false,
                   ),
                   child: Row(
                     children: [
@@ -276,6 +290,7 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                   textAlign: TextAlign.center,
                 ),
               ],
+              ),
             ),
           ),
         ),
@@ -287,12 +302,12 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
 Widget _buildAboutChip(String label, IconData icon, GameTheme theme) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-      color: theme.accentColor.withValues(alpha: 0.10),
+    decoration: arcadeSurface(
+      theme,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: theme.accentColor.withValues(alpha: 0.22),
-      ),
+      borderColor: theme.accentColor.withValues(alpha: 0.30),
+      baseAlpha: 0.40,
+      glow: false,
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
