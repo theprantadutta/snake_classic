@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -163,7 +164,10 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                     ),
                   ],
                 ),
-                child: Column(
+                child: HudCorners(
+                  color: theme.accentColor,
+                  inset: 10,
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (copy.spinning)
@@ -221,7 +225,7 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                       ),
                     ],
                   ],
-                ),
+                )),
               ),
             ),
           ),

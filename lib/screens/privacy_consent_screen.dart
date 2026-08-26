@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
@@ -225,7 +226,10 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: HudCorners(
+                      color: theme.accentColor,
+                      inset: 8,
+                      child: Row(
                       children: [
                         Transform.scale(
                           scale: 1.2,
@@ -253,7 +257,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
                           ),
                         ),
                       ],
-                    ),
+                    )),
                   ),
 
                   const SizedBox(height: 16),

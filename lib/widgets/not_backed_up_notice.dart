@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
@@ -44,7 +45,10 @@ class NotBackedUpNotice extends StatelessWidget {
               width: 1.5,
             ),
           ),
-          child: Row(
+          child: HudCorners(
+            color: Colors.orange,
+            inset: 7,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
@@ -84,7 +88,7 @@ class NotBackedUpNotice extends StatelessWidget {
                 size: context.scaled(22),
               ),
             ],
-          ),
+          )),
         ),
       ),
     );

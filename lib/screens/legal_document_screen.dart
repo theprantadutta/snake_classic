@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 
@@ -91,7 +92,10 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
                       width: 1.5,
                     ),
                   ),
-                  child: Row(
+                  child: HudCorners(
+                    color: theme.accentColor,
+                    inset: 8,
+                    child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
@@ -119,7 +123,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
                         tooltip: l10n.commonClose,
                       ),
                     ],
-                  ),
+                  )),
                 ),
                 const SizedBox(height: 16),
                 // Document content

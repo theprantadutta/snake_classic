@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -109,7 +110,10 @@ Widget _buildControlChoiceCard({
           width: 1,
         ),
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 7,
+        child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
@@ -149,7 +153,7 @@ Widget _buildControlChoiceCard({
             color: theme.accentColor.withValues(alpha: 0.6),
           ),
         ],
-      ),
+      )),
     ),
   );
 }

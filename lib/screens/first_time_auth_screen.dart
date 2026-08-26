@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -628,7 +629,10 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                     width: 1,
                   ),
                 ),
-                child: Row(
+                child: HudCorners(
+                  color: theme.accentColor,
+                  inset: 8,
+                  child: Row(
                   children: [
                     Transform.scale(
                       scale: 1.2,
@@ -663,7 +667,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                       ),
                     ),
                   ],
-                ),
+                )),
               )
               .gameZoomIn(delay: 300.ms),
 

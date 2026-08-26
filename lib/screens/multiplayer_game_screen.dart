@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -238,7 +239,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: titleColor.withValues(alpha: 0.3)),
               ),
-              child: Row(
+              child: HudCorners(
+                color: titleColor,
+                inset: 9,
+                child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _resultScoreColumn(theme, l10n.mpYou, me?.score ?? 0),
@@ -255,7 +259,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     opponent?.score ?? 0,
                   ),
                 ],
-              ),
+              )),
             ),
             // The reward is whatever the SERVER settled, not a number read
             // off the broadcast. Until the settlement lands this says so,

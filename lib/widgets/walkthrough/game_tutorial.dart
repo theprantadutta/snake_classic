@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
@@ -447,7 +448,10 @@ class WalkthroughOverlayWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.foodColor,
+        inset: 8,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Title with icon
@@ -483,7 +487,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
