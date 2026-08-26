@@ -7,6 +7,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/subscription_legal_footer.dart';
@@ -122,7 +123,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           width: 1.5,
         ),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -158,7 +162,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             textAlign: TextAlign.center,
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -189,7 +193,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
         ],
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -227,7 +234,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             textAlign: TextAlign.center,
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -359,7 +366,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           ),
         ],
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           if (isPopular)
             Container(
@@ -437,7 +447,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -555,7 +565,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               ]
             : null,
       ),
-      child: Row(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -626,7 +639,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

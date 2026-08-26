@@ -17,6 +17,7 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
@@ -327,7 +328,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
           ).withValues(alpha: 0.3),
         ),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         children: [
           Row(
             children: [
@@ -516,7 +520,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
           ],
         ],
-      ),
+      )),
     );
   }
 
@@ -696,7 +700,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -744,7 +751,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -760,7 +767,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -833,7 +843,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             );
           }),
         ],
-      ),
+      )),
     );
   }
 
@@ -847,7 +857,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -877,7 +890,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -994,7 +1007,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1044,7 +1060,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -1057,7 +1073,10 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1084,7 +1103,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

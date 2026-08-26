@@ -12,8 +12,10 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
@@ -162,16 +164,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
           const SizedBox(width: 12),
 
-          Text(
-            AppLocalizations.of(context)!.pfStatistics,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
+          // Matches appScreenBar. This screen builds its own header row
+          // rather than using a Scaffold appBar, so it cannot take the shared
+          // widget — but it can wear the same title.
+          // Expanded, not Flexible-beside-a-Spacer: both would be flex 1 and
+          // split the free space evenly, which is what cut the title to
+          // "STATI...". This takes the room and the refresh button keeps its
+          // place at the end. FittedBox then shrinks rather than truncates,
+          // the same way the shared app bar does.
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+              AppLocalizations.of(context)!.pfStatistics.toUpperCase(),
+              overflow: TextOverflow.ellipsis,
+              style: GameTypography.headlineSmall(color: theme.accentColor)
+                  .copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: context.letterSpacing(2),
+                shadows: [
+                  Shadow(
+                    blurRadius: 18,
+                    color: theme.accentColor.withValues(alpha: 0.45),
+                  ),
+                ],
+              ),
+            ),
             ),
           ),
-
-          const Spacer(),
 
           IconButton(
             onPressed: _refreshStatistics,
@@ -475,7 +497,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   color: theme.accentColor.withValues(alpha: 0.2),
                 ),
               ),
-              child: Column(
+              child: HudCorners(
+                color: theme.accentColor,
+                inset: 8,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -535,7 +560,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ],
                   ),
                 ],
-              ),
+              )),
             ),
 
             const SizedBox(height: 16),
@@ -598,7 +623,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   color: theme.accentColor.withValues(alpha: 0.2),
                 ),
               ),
-              child: Column(
+              child: HudCorners(
+                color: theme.accentColor,
+                inset: 8,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -620,7 +648,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ),
                 ],
-              ),
+              )),
             ),
           ],
         ],
@@ -641,7 +669,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
         ),
-        child: Row(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 8,
+          child: Row(
           children: [
             Container(
               width: context.scaled(60),
@@ -729,7 +760,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -821,42 +852,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
+      decoration: arcadeSurface(
+        theme,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderColor: theme.accentColor.withValues(alpha: 0.28),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: theme.accentColor, size: context.scaled(24)),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: theme.accentColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+            // The shared eyebrow: emblem, tracked title, rule, terminator.
+            // This was the same header hand-rolled, which is how the screen
+            // ended up looking like a different product to the one next door.
+            screenEyebrow(context, theme, title, icon: icon),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
 
             child,
           ],
@@ -879,7 +890,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: context.scaled(28)),
@@ -914,7 +928,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -932,7 +946,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         children: [
           Icon(icon, color: color, size: context.scaled(28)),
 
@@ -958,7 +975,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             textAlign: TextAlign.center,
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -975,7 +992,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -1028,7 +1048,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ),
         ],
-      ),
+      )),
     );
   }
 
@@ -1246,7 +1266,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1299,7 +1322,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

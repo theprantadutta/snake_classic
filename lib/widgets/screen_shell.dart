@@ -378,7 +378,12 @@ Widget screenEyebrow(
   // everything else has been reserved, and the rule takes exactly the
   // remainder. Nothing can overflow, because the cap already accounts for
   // every sibling.
-  const ruleMin = 32.0;
+  // A stub, not a proper rule. The rule is the most expendable thing in this
+  // row: reserving 32 for it cost "PERFORMANCE OVERVIEW" its last word inside
+  // a padded card. A title that long simply gets a shorter rule, and a title
+  // longer still gets none — which is the right way round, because the words
+  // carry the meaning and the line is decoration.
+  const ruleMin = 8.0;
   final trailingReserve = trailing == null ? 8.0 * scale : 108.0;
   final countReserve = (count != null && count > 0) ? 30.0 : 0.0;
 
@@ -424,7 +429,16 @@ Widget screenEyebrow(
         SizedBox(width: 10 * scale),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxTitle),
-          child: Text(
+          // Shrink rather than truncate, like the app bar. This is the third
+          // place the same thing has bitten: Orbitron is a wide face, and a
+          // twenty-character title ("PERFORMANCE OVERVIEW") does not fit a
+          // padded card at 15px however the row is divided up. Losing a word
+          // is always worse than losing a point of type size, and with nine
+          // locales the longest translation is never the one anybody tested.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
             title.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -436,6 +450,7 @@ Widget screenEyebrow(
               fontWeight: FontWeight.w700,
               letterSpacing: context.letterSpacing(1.5),
             ),
+          ),
           ),
         ),
         if (count != null && count > 0) ...[

@@ -10,6 +10,7 @@ import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 import '../widgets/app_background.dart';
 
@@ -237,7 +238,10 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -304,7 +308,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -398,7 +402,10 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: theme.accentColor,
+        inset: 8,
+        child: Column(
         children: [
           // Progress slider
           Row(
@@ -530,7 +537,7 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 
