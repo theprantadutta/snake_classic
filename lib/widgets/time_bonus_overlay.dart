@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Time-Attack "out of time" offer shown over the frozen board when the clock
@@ -106,7 +107,10 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
               ),
             ],
           ),
-          child: Column(
+          child: HudCorners(
+            color: kRewardGold,
+            inset: 10,
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Countdown ring with a stopwatch.
@@ -201,7 +205,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                 ),
               ),
             ],
-          ),
+          )),
         ),
       ),
     );

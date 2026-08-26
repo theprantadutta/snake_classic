@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Data class for daily bonus reward
@@ -278,7 +279,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 9,
+        child: Column(
         children: [
           // Close button
           Align(
@@ -376,7 +380,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             ),
           ],
         ],
-      ),
+      )),
     );
   }
 
@@ -506,7 +510,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: Column(
+      child: HudCorners(
+        color: kRewardGold,
+        inset: 8,
+        child: Column(
         children: [
           Text(
             AppLocalizations.of(context)!.dbTodaysReward,
@@ -582,7 +589,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             ],
           ),
         ],
-      ),
+      )),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0);
   }
 

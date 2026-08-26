@@ -570,12 +570,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
+          decoration: arcadeSurface(
+            theme,
             borderRadius: BorderRadius.circular(16),
+            borderColor: theme.accentColor.withValues(alpha: 0.32),
           ),
-          child: child,
+          child: HudCorners(
+            color: theme.accentColor,
+            inset: 10,
+            child: child,
+          ),
         ),
       ],
     );

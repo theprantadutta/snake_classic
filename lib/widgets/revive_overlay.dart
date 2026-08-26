@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Post-crash "Continue?" offer shown over the frozen board. Counts down, then
@@ -118,7 +119,10 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
               ),
             ],
           ),
-          child: Column(
+          child: HudCorners(
+            color: theme.accentColor,
+            inset: 10,
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Countdown ring with a heart.
@@ -212,7 +216,7 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                 ),
               ),
             ],
-          ),
+          )),
         ),
       ),
     );

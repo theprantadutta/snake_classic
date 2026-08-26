@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Celebratory dialog shown when the player crosses a level threshold.
@@ -56,7 +57,10 @@ class LevelUpPopup extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
+        child: HudCorners(
+          color: theme.accentColor,
+          inset: 10,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -159,7 +163,7 @@ class LevelUpPopup extends StatelessWidget {
               ),
             ),
           ],
-        ),
+        )),
       )
           .animate()
           .fadeIn(duration: 250.ms)

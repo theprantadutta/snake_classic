@@ -13,6 +13,7 @@ import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -87,7 +88,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
           ),
           // Stack so the top-right close button sits inside the dialog's
           // padded area, above the scrollable content.
-          child: Stack(
+          child: HudCorners(
+            color: theme.accentColor,
+            inset: 7,
+            child: Stack(
             children: [
               // Scrollable so expanding the Game Guide on a short screen doesn't
               // overflow the dialog. shrinkWrap behaviour from SingleChildScrollView
@@ -299,7 +303,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 ),
               ),
             ],
-          ),
+          )),
         ),
       ),
       ),
