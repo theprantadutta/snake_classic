@@ -9,6 +9,7 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
 
@@ -298,12 +299,24 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       width: _s(isSmallScreen ? 36 : 42),
       height: _s(isSmallScreen ? 36 : 42),
       decoration: BoxDecoration(
-        color: isPrimary
-            ? color.withValues(alpha: 0.15)
-            : theme.backgroundColor.withValues(alpha: 0.6),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isPrimary
+              ? [
+                  color.withValues(alpha: 0.22),
+                  color.withValues(alpha: 0.10),
+                ]
+              : [
+                  Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
+                      .withValues(alpha: 0.55),
+                  Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
+                      .withValues(alpha: 0.37),
+                ],
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withValues(alpha: isPrimary ? 0.4 : 0.2),
+          color: color.withValues(alpha: isPrimary ? 0.5 : 0.28),
           width: 1.5,
         ),
         boxShadow: isPrimary
@@ -327,18 +340,14 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         horizontal: _s(isSmallScreen ? 16 : 24),
         vertical: _s(isSmallScreen ? 8 : 10),
       ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.accentColor.withValues(alpha: 0.08),
-            theme.snakeColor.withValues(alpha: 0.05),
-          ],
-        ),
+      // The chrome around the board is made of the same material as a
+      // settings panel now. It sits outside the play area, so it can carry
+      // the treatment without competing with anything the player is reading.
+      decoration: arcadeSurface(
+        theme,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        borderColor: theme.accentColor.withValues(alpha: 0.28),
+        baseAlpha: 0.42,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -474,13 +483,12 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         horizontal: _s(isSmallScreen ? 8 : 10),
         vertical: _s(isSmallScreen ? 6 : 8),
       ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
+      decoration: arcadeSurface(
+        theme,
+        tint: Colors.redAccent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.redAccent.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        borderColor: Colors.redAccent.withValues(alpha: 0.4),
+        baseAlpha: 0.42,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -517,15 +525,14 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         horizontal: _s(isSmallScreen ? 10 : 12),
         vertical: _s(isSmallScreen ? 6 : 8),
       ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
+      decoration: arcadeSurface(
+        theme,
+        tint: isNearLevelUp ? Colors.amber : theme.accentColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isNearLevelUp
-              ? Colors.amber.withValues(alpha: 0.5)
-              : theme.accentColor.withValues(alpha: 0.15),
-          width: 1,
-        ),
+        borderColor: isNearLevelUp
+            ? Colors.amber.withValues(alpha: 0.5)
+            : theme.accentColor.withValues(alpha: 0.22),
+        baseAlpha: 0.42,
       ),
       child: Row(
         children: [
@@ -820,10 +827,19 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 8),
       decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.08),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
+                .withValues(alpha: 0.42),
+            Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
+                .withValues(alpha: 0.24),
+          ],
+        ),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.2),
+          color: theme.accentColor.withValues(alpha: 0.28),
           width: 1,
         ),
       ),

@@ -152,27 +152,65 @@ Widget screenCard(
     // store alone, and the brackets need `uiScale` to keep their weight on a
     // tablet. Reading it here changes no call site.
     child: brackets
-        ? Builder(
-            builder: (context) => Stack(
-              children: [
-                child,
-                // Decoration only: it must never intercept a tap meant for
-                // the control underneath it.
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _HudBrackets(
-                        color: theme.accentColor,
-                        scale: context.uiScale,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
+        ? HudCorners(color: theme.accentColor, child: child)
         : child,
   );
+}
+
+/// The four corner brackets, over whatever you put under them.
+///
+/// The signature of the language: brackets say "framed panel" or "arena".
+/// They need room to sit in — they are drawn from the content box OUTWARD,
+/// so the surface they go on needs padding wider than [HudBracketPainter]'s
+/// inset, or the arms land on the border instead of floating inside it. That
+/// is why home's small chips take the gradient and glow but not these.
+class HudCorners extends StatelessWidget {
+  const HudCorners({
+    super.key,
+    required this.child,
+    required this.color,
+    this.inset,
+    this.arm,
+    this.clipBehavior = Clip.hardEdge,
+  });
+
+  final Widget child;
+  final Color color;
+
+  /// How far outside [child]'s box the corner sits. Defaults suit a card,
+  /// where the brackets land inside the card's own padding.
+  final double? inset;
+  final double? arm;
+
+  /// A card's brackets fall within its padding, so the default clip never
+  /// touches them. A surface with no padding to spare — the arena frame —
+  /// needs [Clip.none] or the arms are cut off at the edge they are drawn
+  /// outside of.
+  final Clip clipBehavior;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: clipBehavior,
+      children: [
+        child,
+        // Decoration only: it must never intercept a tap meant for the
+        // control underneath it.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: HudBracketPainter(
+                color: color,
+                scale: context.uiScale,
+                inset: inset,
+                arm: arm,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// The four corner brackets that make a card read as an instrument panel.
@@ -181,8 +219,14 @@ Widget screenCard(
 /// clear of the hairline instead of doubling it. Painted from the content
 /// box's corners outward by [_inset], which is why the arms appear to float
 /// just inside the edge.
-class _HudBrackets extends CustomPainter {
-  const _HudBrackets({required this.color, this.scale = 1.0});
+class HudBracketPainter extends CustomPainter {
+  const HudBracketPainter({
+    required this.color,
+    this.scale = 1.0,
+    double? inset,
+    double? arm,
+  }) : _insetOverride = inset,
+       _armOverride = arm;
 
   final Color color;
 
@@ -198,10 +242,13 @@ class _HudBrackets extends CustomPainter {
   /// Arm length.
   static const double _arm = 13;
 
+  final double? _insetOverride;
+  final double? _armOverride;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final inset = _inset * scale;
-    final arm = _arm * scale;
+    final inset = (_insetOverride ?? _inset) * scale;
+    final arm = (_armOverride ?? _arm) * scale;
     final paint = Paint()
       ..color = color.withValues(alpha: 0.55)
       ..strokeWidth = 1.6 * scale
@@ -232,8 +279,63 @@ class _HudBrackets extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_HudBrackets oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.scale != scale;
+  bool shouldRepaint(HudBracketPainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.scale != scale ||
+      oldDelegate._insetOverride != _insetOverride ||
+      oldDelegate._armOverride != _armOverride;
+}
+
+/// The panel material, for a surface that is not a section card.
+///
+/// Home's stat panels, the gameplay HUD chips and the arena frame all need to
+/// be made of the same stuff as a panel without becoming one — they are a
+/// menu, a readout and a playfield, not documents. This is the half of the
+/// treatment that travels: the top-lit gradient and the low accent glow.
+/// The brackets and the eyebrow stay with [screenCard], which is what keeps
+/// "panel" meaning something.
+///
+/// [tint] overrides the accent for a surface that means something else — the
+/// red of a countdown, the gold of a reward.
+BoxDecoration arcadeSurface(
+  GameTheme theme, {
+  required BorderRadius borderRadius,
+  Color? tint,
+  Color? borderColor,
+  double borderWidth = 1,
+  double baseAlpha = 0.55,
+  bool glow = true,
+}) {
+  final accent = tint ?? theme.accentColor;
+  // Darkened before the alpha, the way home's chips already did it: against a
+  // background that is itself the theme colour, a straight translucent fill
+  // of that same colour reads as nothing at all.
+  final base = Color.lerp(theme.backgroundColor, Colors.black, 0.25)!;
+
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        base.withValues(alpha: baseAlpha),
+        base.withValues(alpha: (baseAlpha - 0.18).clamp(0.0, 1.0)),
+      ],
+    ),
+    borderRadius: borderRadius,
+    border: Border.all(
+      color: borderColor ?? accent.withValues(alpha: 0.35),
+      width: borderWidth,
+    ),
+    boxShadow: glow
+        ? [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.10),
+              blurRadius: 12,
+              spreadRadius: -2,
+            ),
+          ]
+        : null,
+  );
 }
 
 /// The uppercase accent label that names a section.

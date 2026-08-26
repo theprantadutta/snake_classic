@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 
@@ -74,12 +75,10 @@ class HomeArcadeBar extends StatelessWidget {
               key: destination.widgetKey,
               width: double.infinity,
               height: compact ? 62 : 70,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor.withValues(alpha: 0.45),
+              decoration: arcadeSurface(
+                theme,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.40),
-                ),
+                borderColor: theme.accentColor.withValues(alpha: 0.40),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

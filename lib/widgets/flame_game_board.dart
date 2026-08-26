@@ -7,6 +7,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 /// The single-player gameplay board, rendered with the Flame engine.
 ///
@@ -137,21 +138,45 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                 // playfield has no visible edge. Mirrors GameBoard's decorated
                 // Container so both renderers frame the board identically.
                 return RepaintBoundary(
-                  child: Container(
-                    // No extra margin: the game screen already pads the board
-                    // slot; the old 8px on top of that shrank the playfield
-                    // and deepened the floating-panel look.
-                    margin: EdgeInsets.zero,
-                    decoration: _boardFrameDecoration(themeState.currentTheme),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(0),
-                      child: GameWidget(
-                        key: ValueKey(
-                          gs == null
-                              ? 'none'
-                              : '${gs.boardWidth}x${gs.boardHeight}',
+                  // Corner brackets on the arena, the same mark a settings
+                  // panel wears — this is the frame around the playfield, so
+                  // it gets the language too.
+                  //
+                  // Everything about them is chosen to cost the game nothing:
+                  // they are static, they sit OUTSIDE the wall line in the
+                  // padding the game screen already leaves, and they never
+                  // overlap a cell the snake can occupy. Nothing inside the
+                  // frame animates — a moving thing in there competes with
+                  // the only object the player is tracking.
+                  //
+                  // inset 4 rather than the card default of 10: the board
+                  // deliberately carries no margin of its own, so there is
+                  // only the slot's padding to reach into.
+                  child: HudCorners(
+                    color: widget.isTournamentMode
+                        ? Colors.purple
+                        : themeState.currentTheme.accentColor,
+                    inset: 4,
+                    arm: 16,
+                    clipBehavior: Clip.none,
+                    child: Container(
+                      // No extra margin: the game screen already pads the
+                      // board slot; the old 8px on top of that shrank the
+                      // playfield and deepened the floating-panel look.
+                      margin: EdgeInsets.zero,
+                      decoration: _boardFrameDecoration(
+                        themeState.currentTheme,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(0),
+                        child: GameWidget(
+                          key: ValueKey(
+                            gs == null
+                                ? 'none'
+                                : '${gs.boardWidth}x${gs.boardHeight}',
+                          ),
+                          game: _game,
                         ),
-                        game: _game,
                       ),
                     ),
                   ),

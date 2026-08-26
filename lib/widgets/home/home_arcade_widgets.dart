@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 
 /// The small panels down the left of the arcade home screen.
 ///
@@ -37,14 +38,13 @@ class HomeStatPanel extends StatelessWidget {
         compact ? 10 : 14,
         compact ? 6 : 7,
       ),
-      decoration: BoxDecoration(
-        color: Color.lerp(
-          theme.backgroundColor,
-          Colors.black,
-          0.25,
-        )!.withValues(alpha: 0.55),
+      // The same material as a settings panel. Home used to be the flat
+      // pre-redesign card — which read as the older screen once everything
+      // else had moved, even though it is the first thing anyone sees.
+      decoration: arcadeSurface(
+        theme,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.22)),
+        borderColor: theme.accentColor.withValues(alpha: 0.30),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -156,28 +156,28 @@ class HomeRailButton extends StatelessWidget {
             Container(
               constraints: const BoxConstraints(minWidth: 96, minHeight: 48),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: highlight
-                    ? LinearGradient(
+              // The highlighted (rewarded) slot keeps its solid accent
+              // gradient — it is meant to be the loudest thing on the screen
+              // and the panel material would quiet it down.
+              decoration: highlight
+                  ? BoxDecoration(
+                      gradient: LinearGradient(
                         colors: [
                           colour.withValues(alpha: 0.85),
                           colour.withValues(alpha: 0.55),
                         ],
-                      )
-                    : null,
-                color: highlight
-                    ? null
-                    : Color.lerp(
-                        theme.backgroundColor,
-                        Colors.black,
-                        0.25,
-                      )!.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: colour.withValues(alpha: highlight ? 0.9 : 0.35),
-                  width: highlight ? 2 : 1,
-                ),
-              ),
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: colour.withValues(alpha: 0.9),
+                        width: 2,
+                      ),
+                    )
+                  : arcadeSurface(
+                      theme,
+                      tint: colour,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
