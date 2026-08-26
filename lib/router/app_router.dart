@@ -27,6 +27,7 @@ import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/replay_viewer_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/route_error_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
 import 'package:snake_classic/screens/store_screen.dart';
@@ -93,12 +94,28 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
   // diagnostics in production logs.
   debugLogDiagnostics: kDebugMode,
   observers: observers ?? [],
+  // Ours, not go_router's. Without this the no-match case falls to whichever
+  // built-in error screen its app-type detection picks — and since 18.0 that
+  // detection looks for material_ui's MaterialApp, so it always misses and
+  // lands on the unstyled WidgetsApp one.
+  errorBuilder: (context, state) => RouteErrorScreen(error: state.error),
   routes: [
     // Core routes
     GoRoute(
       path: AppRoutes.loading,
       name: 'loading',
-      builder: (context, state) => const LoadingScreen(),
+      // Explicit page, like every other route here. `builder:` would leave the
+      // page type up to go_router's _cacheAppType, which since 18.0 walks the
+      // tree for material_ui's MaterialApp — a different type from the
+      // package:flutter/material.dart one we actually use. It never matches,
+      // so the app silently gets the WidgetsApp defaults. Naming the page
+      // makes this route's behaviour ours rather than a side effect of that.
+      //
+      // No transition is right here regardless: this is the initial location,
+      // handed over from the native splash, so there is nothing to animate
+      // from. Leaving is animated by whatever page comes next.
+      pageBuilder: (context, state) =>
+          NoTransitionPage(key: state.pageKey, child: const LoadingScreen()),
     ),
     GoRoute(
       path: AppRoutes.firstTimeAuth,
