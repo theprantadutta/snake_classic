@@ -15,6 +15,7 @@ import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/typography.dart';
@@ -475,7 +476,10 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
           ),
         ],
       ),
-      child: Row(
+       child: HudCorners(
+         color: theme.accentColor,
+         inset: 8,
+         child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
@@ -546,7 +550,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             ),
           ),
         ],
-      ),
+      )),
     ).gameEntrance(delay: 150.ms);
   }
 
@@ -611,7 +615,10 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
           width: 1.2,
         ),
       ),
-      child: Row(
+       child: HudCorners(
+         color: theme.accentColor,
+         inset: 7,
+         child: Row(
         children: [
           Expanded(
             child: _statTile(
@@ -640,7 +647,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             ),
           ),
         ],
-      ),
+      )),
     ).gameEntrance(delay: 260.ms);
   }
 
@@ -728,7 +735,10 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
             ),
           ],
         ),
-        child: Column(
+         child: HudCorners(
+           color: kRewardGold,
+           inset: 7,
+           child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -762,7 +772,7 @@ class _PreGameLoadingScreenState extends State<PreGameLoadingScreen>
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }

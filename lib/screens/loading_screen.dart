@@ -24,6 +24,7 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -833,7 +834,10 @@ class _LoadingScreenState extends State<LoadingScreen>
                 ),
               ],
             ),
-            child: SingleChildScrollView(
+             child: HudCorners(
+               color: theme.accentColor,
+               inset: isSmallScreen ? 7 : 9,
+               child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -918,7 +922,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ),
                 ],
               ),
-            ),
+            )),
           ),
         ],
       ),
@@ -1073,7 +1077,10 @@ class _LoadingScreenState extends State<LoadingScreen>
           ),
         ],
       ),
-      child: Column(
+       child: HudCorners(
+         color: theme.accentColor,
+         inset: isSmallScreen ? 7 : 9,
+         child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Header: glowing bulb + label
@@ -1138,7 +1145,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             ),
           ),
         ],
-      ),
+      )),
     ).gameZoomIn(delay: 400.ms);
   }
 
