@@ -434,6 +434,50 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsSnakeTrailSubtitle => 'साँप के पीछे कण ट्रेल सक्षम करें';
 
   @override
+  String get settingsSectionDisplay => 'डिस्प्ले';
+
+  @override
+  String get settingsSmoothMotion => 'स्मूद मोशन';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'यह स्क्रीन जिस सबसे ऊँची रिफ़्रेश रेट को सपोर्ट करती है, उसका उपयोग करें';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return '$rate Hz तक';
+  }
+
+  @override
+  String get settingsDisplayReading => 'आपकी स्क्रीन पढ़ी जा रही है…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'अभी आपकी स्क्रीन जिस दर पर रिफ़्रेश हो रही है।';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'बैटरी सेवर चालू है, इसलिए बंद करने तक आपकी स्क्रीन अपनी सामान्य दर पर ही रह सकती है।';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'आपका डिवाइस गर्म है। ठंडा होने तक यह कुछ समय के लिए कम दर पर चल सकता है, जो सामान्य है।';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'यह स्क्रीन केवल एक ही रिफ़्रेश रेट पर चलती है, इसलिए यहाँ अनलॉक करने को कुछ नहीं है। इस डिवाइस पर गेम पहले से ही उतना स्मूद है जितना हो सकता है।';
+
+  @override
+  String get settingsDisplayFooter =>
+      'ऊँची रिफ़्रेश रेट से साँप और मेन्यू ज़्यादा स्मूद लगते हैं, और बैटरी थोड़ी ज़्यादा खर्च होती है। Snake Classic इसे डिफ़ॉल्ट रूप से चालू रखता है और आपके डिवाइस की पावर सेविंग को कभी नहीं बदलता।';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'यह डिस्प्ले';
+
+  @override
   String get settingsNotifDailyReminder => 'दैनिक अनुस्मारक';
 
   @override

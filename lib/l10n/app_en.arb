@@ -205,6 +205,26 @@
   "settingsBrowseThemes": "BROWSE THEMES",
   "settingsSnakeTrail": "Snake Trail Effects",
   "settingsSnakeTrailSubtitle": "Enable particle trails behind the snake",
+  "settingsSectionDisplay": "DISPLAY",
+  "settingsSmoothMotion": "Smooth Motion",
+  "settingsSmoothMotionSubtitle": "Use the highest refresh rate this screen supports",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "up to {rate} Hz",
+  "@settingsDisplayUpTo": {
+    "description": "Ceiling shown next to the live refresh-rate readout in Display settings.",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Reading your display…",
+  "settingsDisplayCurrentCaption": "What your screen is refreshing at right now.",
+  "settingsDisplayBatteryNote": "Battery saver is on, so your display may stay at its standard rate until you turn it off.",
+  "settingsDisplayThermalNote": "Your device is warm. It may hold a lower rate for a while to cool down, which is normal.",
+  "settingsDisplaySingleRateNote": "This screen runs at a single refresh rate, so there is nothing to unlock here. The game is already as smooth as it gets on this device.",
+  "settingsDisplayFooter": "Higher refresh rates make the snake and menus feel smoother, and use a little more battery. Snake Classic leaves this on by default and never overrides your device's power saving.",
+  "settingsDisplaySupportedTitle": "THIS DISPLAY",
   "settingsNotifDailyReminder": "Daily Reminder",
   "settingsNotifTournament": "Tournament Alerts",
   "settingsNotifAchievement": "Achievement Unlocks",

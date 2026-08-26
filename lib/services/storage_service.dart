@@ -128,6 +128,21 @@ class StorageService {
     await _settingsDao?.updateHapticsEnabled(enabled);
   }
 
+  // ==================== Display (device-local) ====================
+
+  /// Whether this device opts into its display's highest refresh rate.
+  ///
+  /// Stored in [DevicePreferences], not the synced settings row: whether
+  /// smooth motion is worth the battery depends on the hardware in your hand,
+  /// so a phone and a tablet on the same account should be able to disagree.
+  Future<bool> isHighRefreshRateEnabled() async {
+    return await _settingsDao?.isHighRefreshRateEnabled() ?? true;
+  }
+
+  Future<void> setHighRefreshRateEnabled(bool enabled) async {
+    await _settingsDao?.updateHighRefreshRateEnabled(enabled);
+  }
+
   // ==================== Notification Preferences ====================
 
   /// Per-category notification opt-ins, keyed by NotificationType.key

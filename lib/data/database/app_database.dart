@@ -621,6 +621,37 @@ class ScoreDeadLetters extends Table {
 }
 
 // =====================================================
+// TABLE: Device preferences (never synced, never cleared)
+// =====================================================
+//
+// Settings that describe THIS HANDSET rather than this account, and so must
+// not round-trip through the backend the way [GameSettings] does. A 120 Hz
+// phone and a 60 Hz tablet signed into the same account should be able to
+// disagree; pushing one device's answer to the other would be wrong.
+//
+// Three deliberate omissions keep that true, and each one is load-bearing:
+//   * SyncEngine never reads or writes this table — it is absent from both
+//     the settings push payload and `applySettingsSnapshot`.
+//   * `clearAllData()` (account switch / logout) leaves it alone. The screen
+//     in the user's hand did not change when they signed out.
+//   * `SettingsDao.resetSettings()` leaves it alone for the same reason.
+//
+// Singleton row, id 1, seeded by [AppDatabase.initializeDefaults].
+class DevicePreferences extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Whether the game asks the display for its highest refresh rate.
+  ///
+  /// On by default — someone who paid for a high-refresh screen should see the
+  /// snake move at 120 Hz without hunting through settings first.
+  BoolColumn get highRefreshRateEnabled =>
+      boolean().withDefault(const Constant(true))();
+
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+// =====================================================
 // TABLE 11: Cache Store (Offline cache with TTL)
 // =====================================================
 class CacheStore extends Table {
@@ -868,6 +899,7 @@ class PlayerProgressTable extends Table {
     SyncQueue,
     ScoreDeadLetters,
     CacheStore,
+    DevicePreferences,
     UserProfile,
     PurchaseHistory,
     LeaderboardEntries,
@@ -901,7 +933,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1163,6 +1195,15 @@ class AppDatabase extends _$AppDatabase {
           "FROM daily_challenges WHERE reward_claimed = 1",
         );
       }
+      if (from < 21) {
+        // v21: device-local preferences get their own table rather than
+        // another column on the synced settings row. The first tenant is the
+        // high-refresh-rate toggle, which describes the panel in the user's
+        // hand and must not be pushed to their other devices.
+        await m.createTable(devicePreferences);
+        // createTable does not seed; initializeDefaults() runs on every open
+        // and inserts the singleton row right after this returns.
+      }
     },
   );
 
@@ -1300,6 +1341,15 @@ class AppDatabase extends _$AppDatabase {
     final existingSettings = await select(gameSettings).getSingleOrNull();
     if (existingSettings == null) {
       await into(gameSettings).insert(GameSettingsCompanion.insert());
+    }
+
+    // Initialize device preferences if not exists. Device-scoped, so unlike
+    // the rows below this one is NOT cleared by clearAllData() — signing out
+    // does not change what the screen in your hand can do.
+    final existingDevicePrefs =
+        await select(devicePreferences).getSingleOrNull();
+    if (existingDevicePrefs == null) {
+      await into(devicePreferences).insert(DevicePreferencesCompanion.insert());
     }
 
     // Initialize statistics if not exists

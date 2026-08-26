@@ -438,6 +438,50 @@ class AppLocalizationsPl extends AppLocalizations {
   String get settingsSnakeTrailSubtitle => 'Włącz ślad cząsteczek za wężem';
 
   @override
+  String get settingsSectionDisplay => 'EKRAN';
+
+  @override
+  String get settingsSmoothMotion => 'Płynny ruch';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Używaj najwyższej częstotliwości odświeżania obsługiwanej przez ten ekran';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'do $rate Hz';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Odczytywanie ekranu…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'Częstotliwość, z jaką odświeża się teraz Twój ekran.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'Oszczędzanie baterii jest włączone, więc ekran może pozostać przy standardowej częstotliwości, dopóki go nie wyłączysz.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Urządzenie jest ciepłe. Przez chwilę może utrzymywać niższą częstotliwość, żeby ostygnąć — to normalne.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'Ten ekran działa z jedną częstotliwością odświeżania, więc nie ma tu czego odblokowywać. Gra jest już tak płynna, jak to możliwe na tym urządzeniu.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Wyższa częstotliwość odświeżania sprawia, że wąż i menu są płynniejsze, i zużywa nieco więcej baterii. Snake Classic domyślnie zostawia tę opcję włączoną i nigdy nie omija oszczędzania energii w Twoim urządzeniu.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'TEN EKRAN';
+
+  @override
   String get settingsNotifDailyReminder => 'Codzienne przypomnienie';
 
   @override

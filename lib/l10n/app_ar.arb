@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "تصفح السمات",
   "settingsSnakeTrail": "مؤثرات أثر الثعبان",
   "settingsSnakeTrailSubtitle": "تفعيل أثر الجسيمات خلف الثعبان",
+  "settingsSectionDisplay": "العرض",
+  "settingsSmoothMotion": "حركة سلسة",
+  "settingsSmoothMotionSubtitle": "استخدم أعلى معدل تحديث تدعمه هذه الشاشة",
+  "settingsDisplayHz": "هرتز",
+  "settingsDisplayUpTo": "حتى {rate} هرتز",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "جارٍ قراءة شاشتك…",
+  "settingsDisplayCurrentCaption": "معدل تحديث شاشتك في الوقت الحالي.",
+  "settingsDisplayBatteryNote": "وضع توفير البطارية مفعّل، لذا قد تبقى شاشتك على المعدل القياسي حتى تُوقفه.",
+  "settingsDisplayThermalNote": "جهازك دافئ. قد يبقى على معدل أقل لبعض الوقت حتى يبرد، وهذا أمر طبيعي.",
+  "settingsDisplaySingleRateNote": "تعمل هذه الشاشة بمعدل تحديث واحد فقط، لذا لا يوجد ما يمكن تفعيله هنا. اللعبة سلسة بالفعل بأقصى ما يتيحه هذا الجهاز.",
+  "settingsDisplayFooter": "معدلات التحديث الأعلى تجعل الثعبان والقوائم أكثر سلاسة، وتستهلك قدرًا أكبر قليلًا من البطارية. يُبقي Snake Classic هذا الخيار مفعّلًا افتراضيًا ولا يتجاوز إعدادات توفير الطاقة في جهازك.",
+  "settingsDisplaySupportedTitle": "هذه الشاشة",
   "settingsNotifDailyReminder": "التذكير اليومي",
   "settingsNotifTournament": "تنبيهات البطولات",
   "settingsNotifAchievement": "فتح الإنجازات",

@@ -438,6 +438,50 @@ class AppLocalizationsPt extends AppLocalizations {
       'Ativar rastros de partículas atrás da cobra';
 
   @override
+  String get settingsSectionDisplay => 'TELA';
+
+  @override
+  String get settingsSmoothMotion => 'Movimento suave';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Usar a maior taxa de atualização compatível com esta tela';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'até $rate Hz';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Lendo sua tela…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'A taxa em que sua tela está atualizando agora.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'A economia de bateria está ativada, então sua tela pode permanecer na taxa padrão até você desativá-la.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Seu dispositivo está quente. Ele pode manter uma taxa menor por um tempo para esfriar, o que é normal.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'Esta tela funciona com uma única taxa de atualização, então não há nada a desbloquear aqui. O jogo já está tão suave quanto é possível neste dispositivo.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Taxas de atualização mais altas deixam a cobra e os menus mais suaves e consomem um pouco mais de bateria. O Snake Classic deixa isso ativado por padrão e nunca sobrepõe a economia de energia do seu dispositivo.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'ESTA TELA';
+
+  @override
   String get settingsNotifDailyReminder => 'Lembrete diário';
 
   @override

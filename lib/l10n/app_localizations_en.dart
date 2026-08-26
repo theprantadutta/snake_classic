@@ -437,6 +437,50 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enable particle trails behind the snake';
 
   @override
+  String get settingsSectionDisplay => 'DISPLAY';
+
+  @override
+  String get settingsSmoothMotion => 'Smooth Motion';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Use the highest refresh rate this screen supports';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'up to $rate Hz';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Reading your display…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'What your screen is refreshing at right now.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'Battery saver is on, so your display may stay at its standard rate until you turn it off.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Your device is warm. It may hold a lower rate for a while to cool down, which is normal.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'This screen runs at a single refresh rate, so there is nothing to unlock here. The game is already as smooth as it gets on this device.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Higher refresh rates make the snake and menus feel smoother, and use a little more battery. Snake Classic leaves this on by default and never overrides your device\'s power saving.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'THIS DISPLAY';
+
+  @override
   String get settingsNotifDailyReminder => 'Daily Reminder';
 
   @override

@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "СМОТРЕТЬ ТЕМЫ",
   "settingsSnakeTrail": "Эффекты следа змейки",
   "settingsSnakeTrailSubtitle": "Включить след из частиц за змейкой",
+  "settingsSectionDisplay": "ЭКРАН",
+  "settingsSmoothMotion": "Плавность движения",
+  "settingsSmoothMotionSubtitle": "Использовать максимальную частоту обновления, которую поддерживает этот экран",
+  "settingsDisplayHz": "Гц",
+  "settingsDisplayUpTo": "до {rate} Гц",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Читаем параметры экрана…",
+  "settingsDisplayCurrentCaption": "С какой частотой ваш экран обновляется прямо сейчас.",
+  "settingsDisplayBatteryNote": "Включён режим энергосбережения, поэтому экран может оставаться на стандартной частоте, пока вы его не отключите.",
+  "settingsDisplayThermalNote": "Устройство нагрелось. Какое-то время оно может держать более низкую частоту, чтобы остыть, — это нормально.",
+  "settingsDisplaySingleRateNote": "Этот экран работает только на одной частоте обновления, так что здесь нечего разблокировать. На этом устройстве игра уже настолько плавная, насколько возможно.",
+  "settingsDisplayFooter": "Высокая частота обновления делает движение змейки и меню плавнее и немного больше расходует батарею. Snake Classic оставляет её включённой по умолчанию и никогда не отменяет энергосбережение вашего устройства.",
+  "settingsDisplaySupportedTitle": "ЭТОТ ЭКРАН",
   "settingsNotifDailyReminder": "Ежедневное напоминание",
   "settingsNotifTournament": "Оповещения о турнирах",
   "settingsNotifAchievement": "Новые достижения",

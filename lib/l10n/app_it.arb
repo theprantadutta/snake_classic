@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "SFOGLIA I TEMI",
   "settingsSnakeTrail": "Effetti scia del serpente",
   "settingsSnakeTrailSubtitle": "Attiva scie di particelle dietro il serpente",
+  "settingsSectionDisplay": "DISPLAY",
+  "settingsSmoothMotion": "Movimento fluido",
+  "settingsSmoothMotionSubtitle": "Usa la frequenza di aggiornamento più alta supportata da questo schermo",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "fino a {rate} Hz",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Lettura del display…",
+  "settingsDisplayCurrentCaption": "La frequenza con cui il tuo schermo si aggiorna in questo momento.",
+  "settingsDisplayBatteryNote": "Il risparmio energetico è attivo, quindi il display potrebbe restare alla frequenza standard finché non lo disattivi.",
+  "settingsDisplayThermalNote": "Il dispositivo è caldo. Potrebbe mantenere una frequenza più bassa per un po’ per raffreddarsi: è normale.",
+  "settingsDisplaySingleRateNote": "Questo schermo funziona a una sola frequenza di aggiornamento, quindi qui non c’è nulla da sbloccare. Il gioco è già fluido quanto può esserlo su questo dispositivo.",
+  "settingsDisplayFooter": "Frequenze di aggiornamento più alte rendono il serpente e i menù più fluidi e consumano un po’ più di batteria. Snake Classic lascia l’opzione attiva per impostazione predefinita e non forza mai il risparmio energetico del dispositivo.",
+  "settingsDisplaySupportedTitle": "QUESTO DISPLAY",
   "settingsNotifDailyReminder": "Promemoria giornaliero",
   "settingsNotifTournament": "Avvisi dei tornei",
   "settingsNotifAchievement": "Obiettivi sbloccati",

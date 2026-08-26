@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "थीम देखें",
   "settingsSnakeTrail": "साँप ट्रेल प्रभाव",
   "settingsSnakeTrailSubtitle": "साँप के पीछे कण ट्रेल सक्षम करें",
+  "settingsSectionDisplay": "डिस्प्ले",
+  "settingsSmoothMotion": "स्मूद मोशन",
+  "settingsSmoothMotionSubtitle": "यह स्क्रीन जिस सबसे ऊँची रिफ़्रेश रेट को सपोर्ट करती है, उसका उपयोग करें",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "{rate} Hz तक",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "आपकी स्क्रीन पढ़ी जा रही है…",
+  "settingsDisplayCurrentCaption": "अभी आपकी स्क्रीन जिस दर पर रिफ़्रेश हो रही है।",
+  "settingsDisplayBatteryNote": "बैटरी सेवर चालू है, इसलिए बंद करने तक आपकी स्क्रीन अपनी सामान्य दर पर ही रह सकती है।",
+  "settingsDisplayThermalNote": "आपका डिवाइस गर्म है। ठंडा होने तक यह कुछ समय के लिए कम दर पर चल सकता है, जो सामान्य है।",
+  "settingsDisplaySingleRateNote": "यह स्क्रीन केवल एक ही रिफ़्रेश रेट पर चलती है, इसलिए यहाँ अनलॉक करने को कुछ नहीं है। इस डिवाइस पर गेम पहले से ही उतना स्मूद है जितना हो सकता है।",
+  "settingsDisplayFooter": "ऊँची रिफ़्रेश रेट से साँप और मेन्यू ज़्यादा स्मूद लगते हैं, और बैटरी थोड़ी ज़्यादा खर्च होती है। Snake Classic इसे डिफ़ॉल्ट रूप से चालू रखता है और आपके डिवाइस की पावर सेविंग को कभी नहीं बदलता।",
+  "settingsDisplaySupportedTitle": "यह डिस्प्ले",
   "settingsNotifDailyReminder": "दैनिक अनुस्मारक",
   "settingsNotifTournament": "टूर्नामेंट अलर्ट",
   "settingsNotifAchievement": "उपलब्धि अनलॉक",

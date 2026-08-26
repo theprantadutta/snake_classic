@@ -441,6 +441,50 @@ class AppLocalizationsEs extends AppLocalizations {
       'Activar estelas de partículas detrás de la serpiente';
 
   @override
+  String get settingsSectionDisplay => 'PANTALLA';
+
+  @override
+  String get settingsSmoothMotion => 'Movimiento fluido';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Usa la frecuencia de actualización más alta que admita esta pantalla';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'hasta $rate Hz';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Leyendo tu pantalla…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'La frecuencia a la que se actualiza tu pantalla ahora mismo.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'El ahorro de batería está activado, así que tu pantalla puede mantenerse en su frecuencia estándar hasta que lo desactives.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Tu dispositivo está caliente. Puede mantener una frecuencia más baja durante un rato para enfriarse; es normal.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'Esta pantalla funciona a una sola frecuencia de actualización, así que aquí no hay nada que desbloquear. El juego ya es todo lo fluido que puede ser en este dispositivo.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Las frecuencias de actualización más altas hacen que la serpiente y los menús se sientan más fluidos, y consumen algo más de batería. Snake Classic deja esto activado por defecto y nunca anula el ahorro de energía de tu dispositivo.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'ESTA PANTALLA';
+
+  @override
   String get settingsNotifDailyReminder => 'Recordatorio diario';
 
   @override

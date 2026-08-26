@@ -892,6 +892,78 @@ abstract class AppLocalizations {
   /// **'Enable particle trails behind the snake'**
   String get settingsSnakeTrailSubtitle;
 
+  /// No description provided for @settingsSectionDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'DISPLAY'**
+  String get settingsSectionDisplay;
+
+  /// No description provided for @settingsSmoothMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth Motion'**
+  String get settingsSmoothMotion;
+
+  /// No description provided for @settingsSmoothMotionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the highest refresh rate this screen supports'**
+  String get settingsSmoothMotionSubtitle;
+
+  /// No description provided for @settingsDisplayHz.
+  ///
+  /// In en, this message translates to:
+  /// **'Hz'**
+  String get settingsDisplayHz;
+
+  /// Ceiling shown next to the live refresh-rate readout in Display settings.
+  ///
+  /// In en, this message translates to:
+  /// **'up to {rate} Hz'**
+  String settingsDisplayUpTo(String rate);
+
+  /// No description provided for @settingsDisplayReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your display…'**
+  String get settingsDisplayReading;
+
+  /// No description provided for @settingsDisplayCurrentCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'What your screen is refreshing at right now.'**
+  String get settingsDisplayCurrentCaption;
+
+  /// No description provided for @settingsDisplayBatteryNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery saver is on, so your display may stay at its standard rate until you turn it off.'**
+  String get settingsDisplayBatteryNote;
+
+  /// No description provided for @settingsDisplayThermalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device is warm. It may hold a lower rate for a while to cool down, which is normal.'**
+  String get settingsDisplayThermalNote;
+
+  /// No description provided for @settingsDisplaySingleRateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This screen runs at a single refresh rate, so there is nothing to unlock here. The game is already as smooth as it gets on this device.'**
+  String get settingsDisplaySingleRateNote;
+
+  /// No description provided for @settingsDisplayFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher refresh rates make the snake and menus feel smoother, and use a little more battery. Snake Classic leaves this on by default and never overrides your device\'s power saving.'**
+  String get settingsDisplayFooter;
+
+  /// No description provided for @settingsDisplaySupportedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'THIS DISPLAY'**
+  String get settingsDisplaySupportedTitle;
+
   /// No description provided for @settingsNotifDailyReminder.
   ///
   /// In en, this message translates to:

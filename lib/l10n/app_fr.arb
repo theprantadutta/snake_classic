@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "PARCOURIR LES THÈMES",
   "settingsSnakeTrail": "Effets de traînée",
   "settingsSnakeTrailSubtitle": "Activer les traînées de particules derrière le serpent",
+  "settingsSectionDisplay": "AFFICHAGE",
+  "settingsSmoothMotion": "Mouvement fluide",
+  "settingsSmoothMotionSubtitle": "Utiliser la fréquence d’affichage la plus élevée prise en charge par cet écran",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "jusqu’à {rate} Hz",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Lecture de votre écran…",
+  "settingsDisplayCurrentCaption": "La fréquence à laquelle votre écran se rafraîchit en ce moment.",
+  "settingsDisplayBatteryNote": "L’économiseur de batterie est activé, votre écran peut donc rester à sa fréquence standard jusqu’à ce que vous le désactiviez.",
+  "settingsDisplayThermalNote": "Votre appareil est chaud. Il peut conserver une fréquence plus basse le temps de refroidir, c’est normal.",
+  "settingsDisplaySingleRateNote": "Cet écran fonctionne à une seule fréquence d’affichage : il n’y a donc rien à débloquer ici. Le jeu est déjà aussi fluide que possible sur cet appareil.",
+  "settingsDisplayFooter": "Des fréquences d’affichage plus élevées rendent le serpent et les menus plus fluides, et consomment un peu plus de batterie. Snake Classic laisse cette option activée par défaut et ne contourne jamais l’économie d’énergie de votre appareil.",
+  "settingsDisplaySupportedTitle": "CET ÉCRAN",
   "settingsNotifDailyReminder": "Rappel quotidien",
   "settingsNotifTournament": "Alertes de tournoi",
   "settingsNotifAchievement": "Succès débloqués",

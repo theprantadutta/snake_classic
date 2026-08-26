@@ -440,6 +440,50 @@ class AppLocalizationsFr extends AppLocalizations {
       'Activer les traînées de particules derrière le serpent';
 
   @override
+  String get settingsSectionDisplay => 'AFFICHAGE';
+
+  @override
+  String get settingsSmoothMotion => 'Mouvement fluide';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Utiliser la fréquence d’affichage la plus élevée prise en charge par cet écran';
+
+  @override
+  String get settingsDisplayHz => 'Hz';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'jusqu’à $rate Hz';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Lecture de votre écran…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'La fréquence à laquelle votre écran se rafraîchit en ce moment.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'L’économiseur de batterie est activé, votre écran peut donc rester à sa fréquence standard jusqu’à ce que vous le désactiviez.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Votre appareil est chaud. Il peut conserver une fréquence plus basse le temps de refroidir, c’est normal.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'Cet écran fonctionne à une seule fréquence d’affichage : il n’y a donc rien à débloquer ici. Le jeu est déjà aussi fluide que possible sur cet appareil.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Des fréquences d’affichage plus élevées rendent le serpent et les menus plus fluides, et consomment un peu plus de batterie. Snake Classic laisse cette option activée par défaut et ne contourne jamais l’économie d’énergie de votre appareil.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'CET ÉCRAN';
+
+  @override
   String get settingsNotifDailyReminder => 'Rappel quotidien';
 
   @override

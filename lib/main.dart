@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -21,6 +22,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/data/database/legacy_prefs_import.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/display/display_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
@@ -547,6 +549,12 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // Same reason as the main app below. The recovery screen is the one
+      // surface that must never fail to render, so it does not get to skip
+      // the delegates just because it is plain.
+      localizationsDelegates: const [
+        ...material_ui.GlobalMaterialLocalizations.delegates,
+      ],
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -627,6 +635,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // Re-apply immersive mode when app resumes
     if (state == AppLifecycleState.resumed) {
       _setImmersiveMode();
+      // Android drops the window's preferred display mode when the app is
+      // backgrounded, so re-assert it rather than silently sliding to 60 Hz
+      // for the rest of the session.
+      unawaited(getIt<DisplayCubit>().apply());
       // A silently-cancelled Play billing sheet emits no purchaseStream event,
       // so clear any stuck "Verifying…" state now that we're back in front.
       PurchaseService().notifyAppResumed();
@@ -706,6 +718,12 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         BlocProvider<ThemeCubit>(
           create: (_) => getIt<ThemeCubit>()..initialize(),
         ),
+        // Display — reads the stored high-refresh-rate opt-in and asks the
+        // platform for it. Provided app-wide (not just on the settings
+        // screen) because the opt-in has to be applied at launch.
+        BlocProvider<DisplayCubit>.value(
+          value: getIt<DisplayCubit>()..initialize(),
+        ),
         // Game Settings & Game
         BlocProvider<GameSettingsCubit>(
           create: (_) => getIt<GameSettingsCubit>()..initialize(),
@@ -780,7 +798,16 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // i18n: generated from lib/l10n/*.arb (see l10n.yaml). A null
       // locale follows the device language; unsupported device
       // languages resolve to English via the default resolution.
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // Flutter's delegates, plus material_ui's own. go_router 18 has moved
+      // to package:material_ui, whose MaterialLocalizations is a DIFFERENT
+      // Dart type that flutter_localizations cannot satisfy — so both sets
+      // have to be registered or any material_ui widget in the tree throws
+      // "No MaterialLocalizations found" at runtime. Both coexist happily,
+      // and material_ui ships 80 locales, so this costs no coverage.
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        ...material_ui.GlobalMaterialLocalizations.delegates,
+      ],
       supportedLocales: SupportedLocales.locales,
       locale: SupportedLocales.fromCode(settingsState.localeCode),
       // Root text scaling. The app's typography uses fixed fontSize

@@ -3,7 +3,7 @@ import 'package:snake_classic/data/database/app_database.dart';
 
 part 'settings_dao.g.dart';
 
-@DriftAccessor(tables: [GameSettings])
+@DriftAccessor(tables: [GameSettings, DevicePreferences])
 class SettingsDao extends DatabaseAccessor<AppDatabase>
     with _$SettingsDaoMixin {
   SettingsDao(super.db);
@@ -138,8 +138,48 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  // ==================== Device preferences ====================
+  //
+  // Deliberately NOT routed through [_writeSettings]: these describe the
+  // handset, not the account, so they must never enqueue a sync outbox row.
+  // See [DevicePreferences] for why.
+
+  /// Watch the device-local preferences row.
+  Stream<DevicePreference?> watchDevicePreferences() =>
+      select(devicePreferences).watchSingleOrNull();
+
+  /// Read the device-local preferences row. Null only in the window before
+  /// [AppDatabase.initializeDefaults] has seeded it.
+  Future<DevicePreference?> getDevicePreferences() =>
+      select(devicePreferences).getSingleOrNull();
+
+  /// Whether this device opts into its display's highest refresh rate.
+  /// Defaults to true when the row has not been seeded yet.
+  Future<bool> isHighRefreshRateEnabled() async {
+    final prefs = await getDevicePreferences();
+    return prefs?.highRefreshRateEnabled ?? true;
+  }
+
+  /// Persist the high-refresh-rate choice for this device only.
+  ///
+  /// Upserts rather than updates: a device whose v21 migration ran but whose
+  /// `initializeDefaults` seed has not yet landed would otherwise silently
+  /// write zero rows and lose the user's tap.
+  Future<void> updateHighRefreshRateEnabled(bool enabled) async {
+    await into(devicePreferences).insertOnConflictUpdate(
+      DevicePreferencesCompanion(
+        id: const Value(1),
+        highRefreshRateEnabled: Value(enabled),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Reset settings to defaults. Outbox row queues a fresh sync so
   /// the backend picks up the reset.
+  ///
+  /// Leaves [devicePreferences] untouched — resetting your game settings is
+  /// not a statement about your screen's refresh rate.
   Future<void> resetSettings() async {
     await transaction(() async {
       await delete(gameSettings).go();

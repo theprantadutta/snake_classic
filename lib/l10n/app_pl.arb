@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "PRZEGLĄDAJ MOTYWY",
   "settingsSnakeTrail": "Efekty śladu węża",
   "settingsSnakeTrailSubtitle": "Włącz ślad cząsteczek za wężem",
+  "settingsSectionDisplay": "EKRAN",
+  "settingsSmoothMotion": "Płynny ruch",
+  "settingsSmoothMotionSubtitle": "Używaj najwyższej częstotliwości odświeżania obsługiwanej przez ten ekran",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "do {rate} Hz",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Odczytywanie ekranu…",
+  "settingsDisplayCurrentCaption": "Częstotliwość, z jaką odświeża się teraz Twój ekran.",
+  "settingsDisplayBatteryNote": "Oszczędzanie baterii jest włączone, więc ekran może pozostać przy standardowej częstotliwości, dopóki go nie wyłączysz.",
+  "settingsDisplayThermalNote": "Urządzenie jest ciepłe. Przez chwilę może utrzymywać niższą częstotliwość, żeby ostygnąć — to normalne.",
+  "settingsDisplaySingleRateNote": "Ten ekran działa z jedną częstotliwością odświeżania, więc nie ma tu czego odblokowywać. Gra jest już tak płynna, jak to możliwe na tym urządzeniu.",
+  "settingsDisplayFooter": "Wyższa częstotliwość odświeżania sprawia, że wąż i menu są płynniejsze, i zużywa nieco więcej baterii. Snake Classic domyślnie zostawia tę opcję włączoną i nigdy nie omija oszczędzania energii w Twoim urządzeniu.",
+  "settingsDisplaySupportedTitle": "TEN EKRAN",
   "settingsNotifDailyReminder": "Codzienne przypomnienie",
   "settingsNotifTournament": "Alerty turniejowe",
   "settingsNotifAchievement": "Odblokowane osiągnięcia",

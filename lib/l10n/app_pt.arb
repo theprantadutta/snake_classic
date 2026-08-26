@@ -130,6 +130,25 @@
   "settingsBrowseThemes": "VER TEMAS",
   "settingsSnakeTrail": "Efeitos de rastro da cobra",
   "settingsSnakeTrailSubtitle": "Ativar rastros de partículas atrás da cobra",
+  "settingsSectionDisplay": "TELA",
+  "settingsSmoothMotion": "Movimento suave",
+  "settingsSmoothMotionSubtitle": "Usar a maior taxa de atualização compatível com esta tela",
+  "settingsDisplayHz": "Hz",
+  "settingsDisplayUpTo": "até {rate} Hz",
+  "@settingsDisplayUpTo": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsDisplayReading": "Lendo sua tela…",
+  "settingsDisplayCurrentCaption": "A taxa em que sua tela está atualizando agora.",
+  "settingsDisplayBatteryNote": "A economia de bateria está ativada, então sua tela pode permanecer na taxa padrão até você desativá-la.",
+  "settingsDisplayThermalNote": "Seu dispositivo está quente. Ele pode manter uma taxa menor por um tempo para esfriar, o que é normal.",
+  "settingsDisplaySingleRateNote": "Esta tela funciona com uma única taxa de atualização, então não há nada a desbloquear aqui. O jogo já está tão suave quanto é possível neste dispositivo.",
+  "settingsDisplayFooter": "Taxas de atualização mais altas deixam a cobra e os menus mais suaves e consomem um pouco mais de bateria. O Snake Classic deixa isso ativado por padrão e nunca sobrepõe a economia de energia do seu dispositivo.",
+  "settingsDisplaySupportedTitle": "ESTA TELA",
   "settingsNotifDailyReminder": "Lembrete diário",
   "settingsNotifTournament": "Alertas de torneio",
   "settingsNotifAchievement": "Conquistas desbloqueadas",

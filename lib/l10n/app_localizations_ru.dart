@@ -436,6 +436,50 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsSnakeTrailSubtitle => 'Включить след из частиц за змейкой';
 
   @override
+  String get settingsSectionDisplay => 'ЭКРАН';
+
+  @override
+  String get settingsSmoothMotion => 'Плавность движения';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'Использовать максимальную частоту обновления, которую поддерживает этот экран';
+
+  @override
+  String get settingsDisplayHz => 'Гц';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'до $rate Гц';
+  }
+
+  @override
+  String get settingsDisplayReading => 'Читаем параметры экрана…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'С какой частотой ваш экран обновляется прямо сейчас.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'Включён режим энергосбережения, поэтому экран может оставаться на стандартной частоте, пока вы его не отключите.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'Устройство нагрелось. Какое-то время оно может держать более низкую частоту, чтобы остыть, — это нормально.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'Этот экран работает только на одной частоте обновления, так что здесь нечего разблокировать. На этом устройстве игра уже настолько плавная, насколько возможно.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'Высокая частота обновления делает движение змейки и меню плавнее и немного больше расходует батарею. Snake Classic оставляет её включённой по умолчанию и никогда не отменяет энергосбережение вашего устройства.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'ЭТОТ ЭКРАН';
+
+  @override
   String get settingsNotifDailyReminder => 'Ежедневное напоминание';
 
   @override

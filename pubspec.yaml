@@ -107,8 +107,21 @@ dependencies:
   # In-app updates from Play Store
   in_app_update: ^5.0.0
 
+  # Opts the app into the display's high refresh rate. Flutter's engine never
+  # calls the platform's rate-setting APIs, so a 120 Hz phone renders the game
+  # at 60 Hz unless we ask for more.
+  refresh_rate: ^1.0.2
+
   # Declarative routing
-  go_router: ^17.1.0
+  go_router: ^18.0.0
+
+  # NOT used directly — a DIRECT dependency purely so we can register its
+  # localization delegates. go_router 18 has migrated to package:material_ui,
+  # which declares its OWN MaterialLocalizations: a different Dart type from
+  # the one in package:flutter/material.dart that flutter_localizations
+  # cannot satisfy. Any material_ui widget that reaches
+  # debugCheckHasMaterialLocalizations throws without the delegates below.
+  material_ui: ^1.1.0
 
   # For Splash Screen
   flutter_native_splash: ^2.4.6

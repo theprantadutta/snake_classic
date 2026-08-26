@@ -429,6 +429,50 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsSnakeTrailSubtitle => 'تفعيل أثر الجسيمات خلف الثعبان';
 
   @override
+  String get settingsSectionDisplay => 'العرض';
+
+  @override
+  String get settingsSmoothMotion => 'حركة سلسة';
+
+  @override
+  String get settingsSmoothMotionSubtitle =>
+      'استخدم أعلى معدل تحديث تدعمه هذه الشاشة';
+
+  @override
+  String get settingsDisplayHz => 'هرتز';
+
+  @override
+  String settingsDisplayUpTo(String rate) {
+    return 'حتى $rate هرتز';
+  }
+
+  @override
+  String get settingsDisplayReading => 'جارٍ قراءة شاشتك…';
+
+  @override
+  String get settingsDisplayCurrentCaption =>
+      'معدل تحديث شاشتك في الوقت الحالي.';
+
+  @override
+  String get settingsDisplayBatteryNote =>
+      'وضع توفير البطارية مفعّل، لذا قد تبقى شاشتك على المعدل القياسي حتى تُوقفه.';
+
+  @override
+  String get settingsDisplayThermalNote =>
+      'جهازك دافئ. قد يبقى على معدل أقل لبعض الوقت حتى يبرد، وهذا أمر طبيعي.';
+
+  @override
+  String get settingsDisplaySingleRateNote =>
+      'تعمل هذه الشاشة بمعدل تحديث واحد فقط، لذا لا يوجد ما يمكن تفعيله هنا. اللعبة سلسة بالفعل بأقصى ما يتيحه هذا الجهاز.';
+
+  @override
+  String get settingsDisplayFooter =>
+      'معدلات التحديث الأعلى تجعل الثعبان والقوائم أكثر سلاسة، وتستهلك قدرًا أكبر قليلًا من البطارية. يُبقي Snake Classic هذا الخيار مفعّلًا افتراضيًا ولا يتجاوز إعدادات توفير الطاقة في جهازك.';
+
+  @override
+  String get settingsDisplaySupportedTitle => 'هذه الشاشة';
+
+  @override
   String get settingsNotifDailyReminder => 'التذكير اليومي';
 
   @override

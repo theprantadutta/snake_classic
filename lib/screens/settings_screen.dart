@@ -13,6 +13,7 @@ import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/presentation/bloc/display/display_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -91,6 +92,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // After our initial cache-based paint, overlay the cubit's
       // authoritative state so the toggles reflect reality.
       _syncFromSettingsCubit(context.read<GameSettingsCubit>().state);
+      // Re-read the live refresh rate when the screen opens, so the number
+      // in the DISPLAY card is current rather than whatever we last saw at
+      // launch (battery saver may have kicked in since).
+      context.read<DisplayCubit>().refreshInfo();
     });
   }
 
@@ -438,6 +443,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             l10n.settingsSnakeTrailSubtitle,
                                       ),
                                     ], theme),
+
+                                    const SizedBox(height: 32),
+
+                                    // 5. Display Section (refresh rate)
+                                    _buildDisplaySection(theme),
 
                                     const SizedBox(height: 32),
 
@@ -798,6 +808,254 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ==================== Display / refresh rate ====================
+
+  /// `59.94` and `120` should both read like a refresh rate, not like a
+  /// float — panels report awkward real numbers and `120.0 Hz` looks broken.
+  String _formatHz(double hz) =>
+      hz % 1 == 0 ? '${hz.toInt()}' : hz.toStringAsFixed(1);
+
+  /// DISPLAY — how smoothly the game moves, and what the panel is actually
+  /// doing about it.
+  ///
+  /// Reads [DisplayCubit], which owns the device-local high-refresh-rate
+  /// opt-in. The preference is per handset by design (see [DevicePreferences]):
+  /// a 120 Hz phone and a 60 Hz tablet on the same account should be able to
+  /// disagree, so this one setting never syncs.
+  Widget _buildDisplaySection(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return BlocBuilder<DisplayCubit, DisplayState>(
+      builder: (context, display) {
+        return _buildSection(l10n.settingsSectionDisplay, [
+          _buildRefreshRateCard(display, theme),
+          const SizedBox(height: 20),
+          const Divider(height: 1),
+          const SizedBox(height: 20),
+          _buildAudioSwitch(
+            l10n.settingsSmoothMotion,
+            display.highRefreshRateEnabled,
+            (value) async {
+              await context
+                  .read<DisplayCubit>()
+                  .setHighRefreshRateEnabled(value);
+              _analytics.trackSettingChanged(
+                settingName: 'high_refresh_rate_enabled',
+                value: '$value',
+              );
+            },
+            theme,
+            description: l10n.settingsSmoothMotionSubtitle,
+            enabled: display.deviceSupportsHighRate,
+          ),
+
+          // The platform overrides us in both of these cases whatever the
+          // toggle says. Saying so beats looking broken.
+          if (display.throttledByBattery) ...[
+            const SizedBox(height: 12),
+            _buildDisplayNote(
+              Icons.battery_saver_rounded,
+              l10n.settingsDisplayBatteryNote,
+              theme,
+            ),
+          ],
+          if (display.throttledByHeat) ...[
+            const SizedBox(height: 12),
+            _buildDisplayNote(
+              Icons.thermostat_rounded,
+              l10n.settingsDisplayThermalNote,
+              theme,
+            ),
+          ],
+          // Only once we have actually read the panel — before that we would
+          // be telling a 120 Hz phone it is single-rate.
+          if (display.loaded &&
+              display.info != null &&
+              !display.deviceSupportsHighRate) ...[
+            const SizedBox(height: 12),
+            _buildDisplayNote(
+              Icons.info_outline_rounded,
+              l10n.settingsDisplaySingleRateNote,
+              theme,
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          Text(
+            l10n.settingsDisplayFooter,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
+
+          // Every mode the panel offers. Only worth showing when there is
+          // more than one — a lone chip is just the number above it again.
+          if ((display.info?.supportedRates.length ?? 0) > 1) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.settingsDisplaySupportedTitle,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: context.letterSpacing(1.2),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildSupportedRates(display, theme),
+          ],
+        ], theme);
+      },
+    );
+  }
+
+  /// The live readout: what the screen is refreshing at this second.
+  Widget _buildRefreshRateCard(DisplayState display, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    final info = display.info;
+    final current = info == null ? '—' : _formatHz(info.currentRate);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              current,
+              style: TextStyle(
+                // Accent only when the number is the result of our own
+                // request — otherwise it is just the platform default and
+                // colouring it would take credit for nothing.
+                color: display.isLive ? theme.accentColor : Colors.white,
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 3),
+              child: Text(
+                l10n.settingsDisplayHz,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (info != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(
+                  l10n.settingsDisplayUpTo(_formatHz(info.maxRate)),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          info == null
+              ? l10n.settingsDisplayReading
+              : l10n.settingsDisplayCurrentCaption,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.5),
+            fontSize: 12.5,
+            height: 1.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Pills for every rate the panel supports, lowest first. The one currently
+  /// in use is filled so the readout above has something to point at.
+  Widget _buildSupportedRates(DisplayState display, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    final info = display.info!;
+    final rates = [...info.supportedRates]..sort();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final rate in rates)
+          Builder(
+            builder: (context) {
+              // Panels report near-misses (59.94 vs 60), so match on
+              // proximity rather than equality or nothing ever highlights.
+              final isCurrent = (rate - info.currentRate).abs() < 0.5;
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isCurrent
+                      ? theme.accentColor.withValues(alpha: 0.18)
+                      : Colors.white.withValues(alpha: 0.05),
+                  border: Border.all(
+                    color: isCurrent
+                        ? theme.accentColor.withValues(alpha: 0.6)
+                        : Colors.white.withValues(alpha: 0.15),
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${_formatHz(rate)} ${l10n.settingsDisplayHz}',
+                  style: TextStyle(
+                    color: isCurrent
+                        ? theme.accentColor
+                        : Colors.white.withValues(alpha: 0.7),
+                    fontSize: 12.5,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  /// Inline advisory — the platform is doing something the toggle cannot
+  /// override, or there is nothing here to override in the first place.
+  Widget _buildDisplayNote(IconData icon, String text, GameTheme theme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.accentColor.withValues(alpha: 0.08),
+        border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 17, color: theme.accentColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildThemeSelector(ThemeState themeState, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
@@ -893,14 +1151,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// The label is white, not accent. When every label on the screen is the
   /// theme colour there is nothing left for the theme colour to mean, and the
   /// eyebrows and selected states stop standing out.
+  /// [enabled] false greys the row out and swallows taps — for a control the
+  /// hardware cannot honour (a single-rate panel has no refresh rate to
+  /// unlock), where hiding it entirely would just be confusing.
   Widget _buildAudioSwitch(
     String title,
     bool value,
     Function(bool) onChanged,
     GameTheme theme, {
     String? description,
+    bool enabled = true,
   }) {
-    return Padding(
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -935,11 +1199,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(width: 12),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: enabled ? onChanged : null,
             activeThumbColor: theme.accentColor,
             activeTrackColor: theme.accentColor.withValues(alpha: 0.3),
           ),
         ],
+      ),
       ),
     );
   }

@@ -38,6 +38,7 @@ import 'package:snake_classic/data/datasources/local/cache_datasource.dart';
 import 'package:snake_classic/data/datasources/remote/api_datasource.dart';
 
 // Cubits
+import 'package:snake_classic/presentation/bloc/display/display_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -130,6 +131,12 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton<ThemeCubit>(
     () => ThemeCubit(getIt<StorageService>(), getIt<AnalyticsFacade>()),
+  );
+
+  // Singleton, not a factory: it holds the app-wide refresh-rate opt-in and is
+  // re-applied from the lifecycle observer on every resume.
+  getIt.registerLazySingleton<DisplayCubit>(
+    () => DisplayCubit(getIt<StorageService>()),
   );
 
   getIt.registerFactory<AuthCubit>(
