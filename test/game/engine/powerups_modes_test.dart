@@ -176,6 +176,39 @@ void main() {
       expect(state.gameSpeed, 300);
     });
 
+    test('speed scales with snake length, not just level', () {
+      // The bug this pins: levels come off a triangular score curve, so
+      // between the 10th and 20th food the snake nearly doubles in length
+      // and stays on level 2 the whole time. Speed used to be identical
+      // across that span, which is exactly what "it does not get faster as
+      // it grows" describes.
+      int speedAt(int length) =>
+          makeState(snake: makeSnake(length: length), level: 2).gameSpeed;
+
+      final short = speedAt(13); // ~10 foods in
+      final long = speedAt(23); // ~20 foods in, same level
+
+      expect(
+        long,
+        lessThan(short),
+        reason: 'a longer snake at the same level must move faster',
+      );
+      // And the ramp is worth feeling, not a rounding difference.
+      expect((short - long) / short, greaterThan(0.05));
+    });
+
+    test('the length ramp is capped so a huge snake stays steerable', () {
+      // Past the cap, length stops contributing and only the level ramp
+      // continues — otherwise a hundred-segment snake would sit on the 50ms
+      // floor and be unplayable.
+      final atCap = makeState(snake: makeSnake(length: 53), level: 1).gameSpeed;
+      final wayPast =
+          makeState(snake: makeSnake(length: 150), level: 1).gameSpeed;
+
+      expect(atCap, wayPast, reason: 'length contribution is clamped');
+      expect(atCap, greaterThan(50), reason: 'never bottoms out on length');
+    });
+
     test('speed scales with level per mode', () {
       expect(makeState(snake: makeSnake(), level: 5).gameSpeed, 260);
       expect(

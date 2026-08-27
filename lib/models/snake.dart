@@ -26,6 +26,13 @@ class Snake {
   Position get tail => body.last;
   int get length => body.length;
 
+  /// Segments a run starts with.
+  ///
+  /// Named because gameSpeed measures growth against it. It was implicit in
+  /// the three positions below, which is fine until something else needs to
+  /// know the number.
+  static const int initialLength = 3;
+
   factory Snake.initial() {
     return Snake(
       body: [

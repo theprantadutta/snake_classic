@@ -162,6 +162,15 @@ class GameState {
   /// power-up expiry (which doesn't always trigger a new state emit) is
   /// reflected immediately. Called on the game-tick scheduling path, not the
   /// 60fps render path, so the cost is negligible.
+  /// How much faster each grown segment makes the snake, as a fraction of the
+  /// current tick. 0.8% a segment: about 11% by the tenth food, a third by
+  /// the thirtieth.
+  static const double _lengthSpeedRate = 0.008;
+
+  /// The most the length ramp alone may contribute — 40% faster, reached
+  /// around fifty segments of growth.
+  static const double _lengthSpeedFloor = 0.60;
+
   int get gameSpeed {
     // Speed increases with level (lower milliseconds = faster).
     // Base tick comes from the player's difficulty preset (Normal is the
@@ -175,6 +184,26 @@ class GameState {
     // clamped Easy's 380ms start straight back down to Normal, making the
     // whole preset a no-op.
     int speed = (baseSpeed - speedDecrease).clamp(50, baseSpeed);
+
+    // Then the snake itself. Level alone did not track what the player is
+    // actually steering: levels come off a triangular score curve (100, 300,
+    // 600, 1000...) so they arrive ever more slowly, while length grows one
+    // segment per food, forever. Between the 10th and 20th food the snake
+    // nearly doubles and the old speed did not change at all — both are
+    // level 2 — which is the whole of "it does not get faster as it grows".
+    //
+    // Multiplicative rather than a flat millisecond step per segment, so it
+    // stays proportionate across the difficulty presets: Hard starts at
+    // 220ms and a fixed step would drive it into the floor while Easy's 380
+    // barely moved.
+    //
+    // Capped at [_lengthSpeedFloor]: past roughly fifty segments the length
+    // ramp stops and the level ramp carries on alone, so a very long snake
+    // is fast but still steerable.
+    final grown = (snake.length - Snake.initialLength).clamp(0, 1 << 30);
+    final lengthFactor =
+        (1.0 - grown * _lengthSpeedRate).clamp(_lengthSpeedFloor, 1.0);
+    speed = (speed * lengthFactor).round().clamp(50, baseSpeed);
 
     final hasSpeedBoost = activePowerUps.any(
       (p) => _grantsEffect(p, PowerUpType.speedBoost),
