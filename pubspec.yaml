@@ -95,6 +95,9 @@ dependencies:
   # In-app purchases for monetization
   in_app_purchase: ^3.2.3
   in_app_purchase_android: ^0.5.0+2
+  # Direct (not transitive) so the free-trial length can be read off
+  # SKProduct.introductoryPrice — see PurchaseService.getFreeTrialDays.
+  in_app_purchase_storekit: ^0.4.11
 
   # Ads (AdMob). Bundles the UMP consent SDK. Pro/trial users never see ads.
   google_mobile_ads: ^9.0.0

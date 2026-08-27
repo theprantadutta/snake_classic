@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:get_it/get_it.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
@@ -802,6 +805,92 @@ class PurchaseService {
       if (recurring != null) return recurring.formattedPrice;
     }
     return null;
+  }
+
+  /// Length of the free trial a subscription actually offers, in days, or
+  /// null when the store reports none.
+  ///
+  /// Read from the store rather than hardcoded on purpose. The trial lives in
+  /// Play Console / App Store Connect, it differs per plan (3 days monthly, 7
+  /// days yearly), it can be changed without an app release, and it is not
+  /// offered to a user who has already used one. A hardcoded "3-day free
+  /// trial" in the UI would be wrong for anyone in that last group and would
+  /// silently drift the first time the offer is edited — and an advertised
+  /// trial that the store does not actually grant is the kind of mismatch that
+  /// gets a build rejected.
+  ///
+  /// Returns null on any platform or product where the store does not report
+  /// one, and the UI simply says nothing — which is the current behaviour, so
+  /// the failure mode is exactly today's.
+  int? getFreeTrialDays(String productId) {
+    final product = getProduct(productId);
+    if (product == null) return null;
+    return _androidFreeTrialDays(product) ?? _appStoreFreeTrialDays(product);
+  }
+
+  /// Google Play reports a free trial as a zero-priced pricing phase on one of
+  /// the subscription's offers — the same phase [_androidSubscriptionRecurringPrice]
+  /// skips over to find the real price. Its `billingPeriod` is the trial
+  /// length as an ISO-8601 duration ("P3D", "P1W").
+  int? _androidFreeTrialDays(ProductDetails product) {
+    if (product is! GooglePlayProductDetails) return null;
+    final offers = product.productDetails.subscriptionOfferDetails;
+    if (offers == null) return null;
+    for (final offer in offers) {
+      for (final phase in offer.pricingPhases) {
+        if (phase.priceAmountMicros != 0) continue;
+        // A zero-priced phase that recurs forever is a free base plan, not a
+        // trial. Only a bounded one is an offer with an end.
+        if (phase.recurrenceMode == RecurrenceMode.infiniteRecurring) continue;
+        final days = iso8601PeriodInDays(phase.billingPeriod);
+        if (days == null) continue;
+        final cycles = phase.billingCycleCount > 0 ? phase.billingCycleCount : 1;
+        return days * cycles;
+      }
+    }
+    return null;
+  }
+
+  /// StoreKit reports it as the product's introductory offer with a
+  /// free-trial payment mode.
+  ///
+  /// StoreKit 1 only: `SK2SubscriptionInfo` exposes `promotionalOffers` and no
+  /// introductory offer, so on StoreKit 2 the plugin cannot see a trial at all.
+  /// This app is on StoreKit 1; if that ever changes, this returns null and the
+  /// trial copy quietly disappears from iOS rather than going wrong.
+  int? _appStoreFreeTrialDays(ProductDetails product) {
+    if (product is! AppStoreProductDetails) return null;
+    final intro = product.skProduct.introductoryPrice;
+    if (intro == null) return null;
+    // `freeTrail` is a typo in the plugin's enum, not here. Do not "fix".
+    if (intro.paymentMode != SKProductDiscountPaymentMode.freeTrail) {
+      return null;
+    }
+    final period = intro.subscriptionPeriod;
+    final unitDays = switch (period.unit) {
+      SKSubscriptionPeriodUnit.day => 1,
+      SKSubscriptionPeriodUnit.week => 7,
+      SKSubscriptionPeriodUnit.month => 30,
+      SKSubscriptionPeriodUnit.year => 365,
+    };
+    final periods = intro.numberOfPeriods > 0 ? intro.numberOfPeriods : 1;
+    final days = period.numberOfUnits * unitDays * periods;
+    return days > 0 ? days : null;
+  }
+
+  /// Days in an ISO-8601 period such as "P3D", "P1W", "P1M" — the shape Google
+  /// Play reports a billing period in. Months and years are nominal (30/365);
+  /// trials are configured in days or weeks, so that approximation never
+  /// reaches the UI in practice.
+  @visibleForTesting
+  static int? iso8601PeriodInDays(String period) {
+    final match = RegExp(
+      r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$',
+    ).firstMatch(period);
+    if (match == null) return null;
+    int part(int group) => int.tryParse(match.group(group) ?? '') ?? 0;
+    final days = part(1) * 365 + part(2) * 30 + part(3) * 7 + part(4);
+    return days > 0 ? days : null;
   }
 
   /// Get the store-formatted price for a product (e.g. "$1.99").

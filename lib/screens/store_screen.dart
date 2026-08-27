@@ -596,6 +596,10 @@ class _StoreScreenState extends State<StoreScreen>
       fallbackPrice,
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
+    // Whatever Play / App Store Connect actually offers on THIS plan for THIS
+    // user — null when there is none, including for someone who has already
+    // used their trial. Never hardcoded; see PurchaseService.getFreeTrialDays.
+    final trialDays = PurchaseService().getFreeTrialDays(productId);
     final isPending = _pendingProductIds.contains(productId);
     // While a sibling plan card is mid-verify we disable BOTH plan cards so
     // the user can't kick off a second purchase before the first one's
@@ -686,6 +690,31 @@ class _StoreScreenState extends State<StoreScreen>
                 fontSize: 12,
               ),
             ),
+            if (trialDays != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: kRewardGold.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: kRewardGold.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Text(
+                  l10n.storeFreeTrialBadge(trialDays),
+                  maxLines: 2,
+                  style: TextStyle(
+                    color: kRewardGold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -739,7 +768,14 @@ class _StoreScreenState extends State<StoreScreen>
                         ],
                       )
                     : Text(
-                        l10n.storeSubscribe,
+                        // "Subscribe" is wrong when the first charge is days
+                        // away — and "Start free trial" is the wording the
+                        // stores expect next to a trial offer.
+                        trialDays != null
+                            ? l10n.storeStartFreeTrial
+                            : l10n.storeSubscribe,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,

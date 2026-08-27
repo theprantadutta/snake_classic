@@ -316,6 +316,8 @@
   "storePerMonth": "/мес",
   "storePerYear": "/год",
   "storeSave17": "Экономия 17%",
+  "storeFreeTrialBadge": "{days} дней бесплатно",
+  "storeStartFreeTrial": "Начать бесплатный период",
   "storePlanDisplayName": "план {title}",
   "storeVerifyingEllipsis": "Проверка…",
   "storeSubscribe": "Подписаться",

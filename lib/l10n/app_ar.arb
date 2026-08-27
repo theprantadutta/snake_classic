@@ -316,6 +316,8 @@
   "storePerMonth": "/شهر",
   "storePerYear": "/سنة",
   "storeSave17": "وفّر 17%",
+  "storeFreeTrialBadge": "تجربة مجانية لمدة {days} أيام",
+  "storeStartFreeTrial": "ابدأ التجربة المجانية",
   "storePlanDisplayName": "خطة {title}",
   "storeVerifyingEllipsis": "جارٍ التحقق…",
   "storeSubscribe": "اشترك",

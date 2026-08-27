@@ -307,6 +307,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               ProductIds.snakeClassicProMonthly, 4.99,
               localeTag: Localizations.localeOf(context).toLanguageTag()),
           period: l10n.storePerMonth,
+          trialDays: PurchaseService().getFreeTrialDays(
+            ProductIds.snakeClassicProMonthly,
+          ),
           badge: null,
           accentColor: Colors.blue,
           isPopular: false,
@@ -323,6 +326,14 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                   ProductIds.snakeClassicProMonthly, 4.99,
                   localeTag: Localizations.localeOf(context).toLanguageTag()),
           period: _isYearly ? l10n.storePerYear : l10n.storePerMonth,
+          // The card shows the monthly product when the toggle is off, so the
+          // trial has to follow the product actually on display — the two
+          // plans have different trial lengths.
+          trialDays: PurchaseService().getFreeTrialDays(
+            _isYearly
+                ? ProductIds.snakeClassicProYearly
+                : ProductIds.snakeClassicProMonthly,
+          ),
           badge: _isYearly ? l10n.pbSave33 : null,
           accentColor: Colors.green,
           isPopular: _isYearly,
@@ -340,6 +351,8 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     required Color accentColor,
     required bool isPopular,
     required GameTheme theme,
+    /// Free-trial length the store reports for this plan, or null for none.
+    int? trialDays,
   }) {
     return Container(
       width: double.infinity,
@@ -446,6 +459,48 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               ),
             ],
           ),
+          if (trialDays != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: kRewardGold.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: kRewardGold.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_clock_rounded,
+                      size: 14,
+                      color: kRewardGold,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.storeFreeTrialBadge(trialDays),
+                        style: TextStyle(
+                          color: kRewardGold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       )),
     );
@@ -654,6 +709,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
     final period = _isYearly ? l10n.storePerYear : l10n.storePerMonth;
+    final trialDays = PurchaseService().getFreeTrialDays(productId);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -701,7 +757,13 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    l10n.pbSubscribeCta(period, price),
+                    // "Subscribe — $4.99/month" misstates what the button does
+                    // when nothing is charged for another few days.
+                    trialDays != null
+                        ? l10n.storeStartFreeTrial
+                        : l10n.pbSubscribeCta(period, price),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

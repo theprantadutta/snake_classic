@@ -316,6 +316,8 @@
   "storePerMonth": "/mies.",
   "storePerYear": "/rok",
   "storeSave17": "Oszczędź 17%",
+  "storeFreeTrialBadge": "{days} dni bezpłatnego okresu próbnego",
+  "storeStartFreeTrial": "Rozpocznij bezpłatny okres próbny",
   "storePlanDisplayName": "plan {title}",
   "storeVerifyingEllipsis": "Weryfikacja…",
   "storeSubscribe": "Subskrybuj",

@@ -446,6 +446,8 @@
   "storePerMonth": "/month",
   "storePerYear": "/year",
   "storeSave17": "Save 17%",
+  "storeFreeTrialBadge": "{days}-day free trial",
+  "storeStartFreeTrial": "Start free trial",
   "storePlanDisplayName": "{title} plan",
   "storeVerifyingEllipsis": "Verifying…",
   "storeSubscribe": "Subscribe",

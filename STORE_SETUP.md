@@ -186,6 +186,14 @@ These exist in the app but are NOT listed in the Play Store catalog and have no 
 
 Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 
+> **The trial lengths below are the source of truth, and the app reads them at
+> runtime rather than hardcoding them.** `PurchaseService.getFreeTrialDays()`
+> takes the length off the store's own product data — Play's zero-priced
+> pricing phase, StoreKit's `introductoryPrice` — so editing an offer here
+> changes the app's copy with no release. Nothing in the UI states a trial the
+> store did not just report, which also means a user who has already used
+> their trial is not promised another one.
+
 #### Pro Monthly
 - **Product ID:** `com.pranta.snakeclassic.pro_monthly`
 - **Name:** Snake Classic Pro (Monthly)
@@ -194,7 +202,7 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Billing period:** Monthly
 - **Grace period:** 7 days
 - **Account hold:** 30 days
-- **Free trial:** None
+- **Free trial:** 3 days
 - **Resubscribe:** Allow
 
 #### Pro Yearly
@@ -205,7 +213,7 @@ Go to **Google Play Console > Your App > Monetize > Products > Subscriptions**.
 - **Billing period:** Yearly
 - **Grace period:** 14 days
 - **Account hold:** 30 days
-- **Free trial:** None
+- **Free trial:** 7 days
 - **Resubscribe:** Allow
 
 ### 2. Create In-App Products (One-Time)
@@ -306,6 +314,7 @@ In **App Store Connect > Your App > In-App Purchases > Manage**:
 - **Price:** $4.99 (Tier 5)
 - **Subscription Group:** Snake Classic Pro
 - **Level:** 1 (highest)
+- **Introductory Offer:** Free trial, 3 days
 
 #### Pro Yearly
 - **Product ID:** `com.pranta.snakeclassic.pro_yearly`
@@ -314,6 +323,7 @@ In **App Store Connect > Your App > In-App Purchases > Manage**:
 - **Price:** $49.99 (Tier 30)
 - **Subscription Group:** Snake Classic Pro
 - **Level:** 1 (same level — user chooses billing frequency)
+- **Introductory Offer:** Free trial, 7 days
 
 ### 2. Create In-App Purchase Products
 

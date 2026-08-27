@@ -1064,6 +1064,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get storeSave17 => 'Economize 17%';
 
   @override
+  String storeFreeTrialBadge(Object days) {
+    return '$days dias de teste grátis';
+  }
+
+  @override
+  String get storeStartFreeTrial => 'Iniciar teste grátis';
+
+  @override
   String storePlanDisplayName(Object title) {
     return 'plano $title';
   }

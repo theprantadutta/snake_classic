@@ -316,6 +316,8 @@
   "storePerMonth": "/mese",
   "storePerYear": "/anno",
   "storeSave17": "Risparmia il 17%",
+  "storeFreeTrialBadge": "{days} giorni di prova gratuita",
+  "storeStartFreeTrial": "Inizia la prova gratuita",
   "storePlanDisplayName": "piano {title}",
   "storeVerifyingEllipsis": "Verifica…",
   "storeSubscribe": "Abbonati",

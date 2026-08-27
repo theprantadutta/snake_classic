@@ -316,6 +316,8 @@
   "storePerMonth": "/माह",
   "storePerYear": "/वर्ष",
   "storeSave17": "17% बचाएँ",
+  "storeFreeTrialBadge": "{days} दिन का मुफ़्त ट्रायल",
+  "storeStartFreeTrial": "मुफ़्त ट्रायल शुरू करें",
   "storePlanDisplayName": "{title} प्लान",
   "storeVerifyingEllipsis": "सत्यापन हो रहा है…",
   "storeSubscribe": "सदस्यता लें",

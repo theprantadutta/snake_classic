@@ -1966,6 +1966,18 @@ abstract class AppLocalizations {
   /// **'Save 17%'**
   String get storeSave17;
 
+  /// No description provided for @storeFreeTrialBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day free trial'**
+  String storeFreeTrialBadge(Object days);
+
+  /// No description provided for @storeStartFreeTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'Start free trial'**
+  String get storeStartFreeTrial;
+
   /// No description provided for @storePlanDisplayName.
   ///
   /// In en, this message translates to:
