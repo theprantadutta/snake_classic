@@ -89,11 +89,16 @@ void main() {
   });
 
   group('power-up expiry', () {
-    test('an uncollected board power-up expires after 20s and is cleared', () {
+    test('an uncollected board power-up expires and is cleared', () {
+      // Offsets are derived from the durations rather than restated. These
+      // were literals — 25s against a 20s lifetime, 8s against a 7s boost —
+      // so raising either would have quietly turned "expired" into "still
+      // live" and left the test passing for the wrong reason.
       final stale = PowerUp(
         position: const Position(0, 0),
         type: PowerUpType.speedBoost,
-        createdAt: DateTime.now().subtract(const Duration(seconds: 25)),
+        createdAt: DateTime.now()
+            .subtract(PowerUp.boardLifetime + const Duration(seconds: 5)),
       );
       final result = sim.step(makeState(
         snake: makeSnake(),
@@ -107,8 +112,10 @@ void main() {
 
     test('expired active power-ups are dropped, fresh ones kept', () {
       final expiredBoost = ActivePowerUp(
-        type: PowerUpType.speedBoost, // 7s duration
-        activatedAt: DateTime.now().subtract(const Duration(seconds: 8)),
+        type: PowerUpType.speedBoost,
+        activatedAt: DateTime.now().subtract(
+          PowerUpType.speedBoost.duration + const Duration(seconds: 1),
+        ),
       );
       final freshMultiplier = ActivePowerUp(type: PowerUpType.scoreMultiplier);
       final result = sim.step(makeState(
@@ -160,7 +167,9 @@ void main() {
         activePowerUps: [
           ActivePowerUp(
             type: PowerUpType.speedBoost,
-            activatedAt: DateTime.now().subtract(const Duration(seconds: 8)),
+            activatedAt: DateTime.now().subtract(
+              PowerUpType.speedBoost.duration + const Duration(seconds: 1),
+            ),
           ),
         ],
       );
@@ -234,8 +243,10 @@ void main() {
         ),
         activePowerUps: [
           ActivePowerUp(
-            type: PowerUpType.invincibility, // 6s duration
-            activatedAt: DateTime.now().subtract(const Duration(seconds: 7)),
+            type: PowerUpType.invincibility,
+            activatedAt: DateTime.now().subtract(
+              PowerUpType.invincibility.duration + const Duration(seconds: 1),
+            ),
           ),
         ],
       ));

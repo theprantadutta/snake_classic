@@ -77,16 +77,22 @@ enum PowerUpType {
     }
   }
 
+  /// How long the effect lasts once collected.
+  ///
+  /// Raised roughly a third from 7/6/10/8. At the normal 300ms tick the old
+  /// invincibility was twenty ticks — long enough to notice it had started
+  /// and not much more. These are still short by design: they are the free
+  /// power-ups, and the premium ones in [PremiumPowerUpType] run 10-30s.
   Duration get duration {
     switch (this) {
       case PowerUpType.speedBoost:
-        return const Duration(seconds: 7);
+        return const Duration(seconds: 9);
       case PowerUpType.invincibility:
-        return const Duration(seconds: 6);
-      case PowerUpType.scoreMultiplier:
-        return const Duration(seconds: 10);
-      case PowerUpType.slowMotion:
         return const Duration(seconds: 8);
+      case PowerUpType.scoreMultiplier:
+        return const Duration(seconds: 13);
+      case PowerUpType.slowMotion:
+        return const Duration(seconds: 10);
     }
   }
 
@@ -187,15 +193,22 @@ class PowerUp {
     return PowerUp(position: position, type: PowerUpType.speedBoost);
   }
 
+  /// How long an uncollected power-up sits on the board before it vanishes.
+  ///
+  /// Was 20, and was written as a bare literal in two places that had to
+  /// agree — [isExpired] and [secondsRemaining] — which is one edit away from
+  /// a countdown that reaches zero while the pickup is still collectable.
+  static const Duration boardLifetime = Duration(seconds: 26);
+
   bool get isExpired {
-    // Power-ups expire after 20 seconds if not collected
-    return _effectiveNow.difference(createdAt).inSeconds > 20;
+    return _effectiveNow.difference(createdAt) > boardLifetime;
   }
 
   // Time remaining before expiration
   int get secondsRemaining {
     final elapsed = _effectiveNow.difference(createdAt).inSeconds;
-    return (20 - elapsed).clamp(0, 20);
+    return (boardLifetime.inSeconds - elapsed)
+        .clamp(0, boardLifetime.inSeconds);
   }
 
   // Returns true if power-up is about to expire (last 5 seconds)

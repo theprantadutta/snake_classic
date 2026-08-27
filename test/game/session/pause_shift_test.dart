@@ -15,7 +15,7 @@ void main() {
         snake: makeSnake(),
         activePowerUps: [
           ActivePowerUp(
-            type: PowerUpType.speedBoost, // 7s duration
+            type: PowerUpType.speedBoost,
             activatedAt: activatedAt,
           ),
         ],
@@ -27,12 +27,15 @@ void main() {
       final p = frozen.activePowerUps.single;
       expect(p.pausedAt, stamp);
       // remainingTime is computed against pausedAt, so it must not change
-      // however long real time passes: 7s - 2s elapsed = ~5s, exactly.
+      // however long real time passes: the type's duration minus whatever
+      // had already elapsed, exactly. Derived from the type rather than
+      // restated, so retuning the durations cannot make this assert the
+      // wrong number while still passing.
       expect(
         p.remainingTime,
         stamp.difference(activatedAt) > Duration.zero
-            ? const Duration(seconds: 7) - stamp.difference(activatedAt)
-            : const Duration(seconds: 7),
+            ? PowerUpType.speedBoost.duration - stamp.difference(activatedAt)
+            : PowerUpType.speedBoost.duration,
       );
       expect(frozen.pausedAt, stamp);
     });
@@ -89,7 +92,7 @@ void main() {
         snake: makeSnake(),
         activePowerUps: [
           ActivePowerUp(
-            type: PowerUpType.scoreMultiplier, // 10s duration
+            type: PowerUpType.scoreMultiplier,
             activatedAt: activatedAt,
           ),
         ],
@@ -110,7 +113,7 @@ void main() {
       // time — is unchanged. (Asserting remainingTime directly would need
       // the wall clock to actually advance, which a unit test can't do.)
       expect(p.activatedAt, activatedAt.add(pause));
-      expect(p.duration, const Duration(seconds: 10));
+      expect(p.duration, PowerUpType.scoreMultiplier.duration);
       expect(resumed.pausedAt, isNull);
     });
 
