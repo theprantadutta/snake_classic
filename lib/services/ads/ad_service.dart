@@ -290,12 +290,29 @@ class AdService {
         });
       }
 
-      // Brand safety for an all-ages arcade game: never serve creatives above
-      // PG (blocks gambling / mature ads). Applies to all builds — debug
-      // already uses Google's test ad UNIT ids, so no test-device config is
-      // needed here.
+      // Ceiling on ad content, matched to the audience we actually declared.
+      //
+      // Play Console -> App content -> Target audience: 13-15, 16-17, and 18+.
+      // No under-13 group, so this app is neither child-directed nor in
+      // Designed for Families, and the Families ad restrictions do not apply.
+      // T ("Teens") is the rating that maps to a 13+ audience, and the ratings
+      // are cumulative — T serves G, PG and T.
+      //
+      // This was PG, which is the setting for an audience that includes
+      // children. That was a guess, and an expensive one: AdMob's own account
+      // ceiling is MA with nothing blocked, so PG here was the ONLY thing
+      // narrowing the eligible pool, against a 32.84% match rate — two of
+      // every three requests coming back empty.
+      //
+      // Deliberately NOT MA. MA permits alcohol, weapons and sexual content,
+      // and 13-15 year olds are inside the declared audience. Legality is not
+      // the point; those creatives do not belong next to a snake game.
+      //
+      // Revisit if the target audience declaration ever changes — this
+      // constant and that declaration have to agree, and Play's is the one
+      // that binds.
       await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
+        RequestConfiguration(maxAdContentRating: MaxAdContentRating.t),
       );
 
       // Start the SDK IN PARALLEL with consent rather than after it. Consent
