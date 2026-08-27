@@ -19,6 +19,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// Reward-Showcase battle pass — the hero is **what you're about to earn**,
 /// not the tier ladder. Layout (top → bottom):
@@ -114,28 +115,13 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
       if (ok) {
         HapticService().mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Text(reward.icon, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    l10n.bpClaimedToast(
-                      localizedBattlePassRewardName(reward.name, l10n),
-                    ),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+          arcadeSnackBar(
+            context,
+            message: l10n.bpClaimedToast(
+              localizedBattlePassRewardName(reward.name, l10n),
             ),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            tone: ArcadeSnackTone.success,
             duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
           ),
         );
       }
@@ -238,38 +224,11 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                                     bp.bufferXP(50, source: 'ad_boost');
                                     bp.flushXP();
                                     messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.bolt,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              l10n.bpXpEarned,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        backgroundColor: Colors.white
-                                            .withValues(alpha: 0.5),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: const EdgeInsets.fromLTRB(
-                                          16,
-                                          0,
-                                          16,
-                                          16,
-                                        ),
+                                      arcadeSnackBar(
+                                        context,
+                                        message: l10n.bpXpEarned,
+                                        icon: Icons.bolt,
                                         duration: const Duration(seconds: 2),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
                                       ),
                                     );
                                   },

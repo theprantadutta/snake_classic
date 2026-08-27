@@ -135,19 +135,36 @@ class DailyBonusPopup extends StatefulWidget {
             // home in that window could re-trigger the popup because
             // the Drift gate hadn't been flipped yet.
             await onClaim();
-            if (dialogContext.mounted) dialogContext.pop();
+            // canPop as well as mounted. `mounted` says the element is still
+            // in the tree; it says nothing about whether this route is still
+            // on the navigator stack. The doubled claim below awaits a
+            // rewarded ad, and by the time that returns the dialog can already
+            // be gone — dismissed by a tap outside, by the back button, or by
+            // this very path. GoRouter throws "GoError: There is nothing to
+            // pop" for that, which Crashlytics reported as a fatal crash on
+            // the way out of collecting a daily bonus.
+            if (dialogContext.mounted && dialogContext.canPop()) {
+              dialogContext.pop();
+            }
           },
           onClaimDoubled: onClaimDoubled == null
               ? null
               : () async {
                   await onClaimDoubled();
-                  if (dialogContext.mounted) dialogContext.pop();
+                  if (dialogContext.mounted && dialogContext.canPop()) {
+                    dialogContext.pop();
+                  }
                 },
-          onClose: () => dialogContext.pop(),
+          onClose: () {
+            if (dialogContext.mounted && dialogContext.canPop()) {
+              dialogContext.pop();
+            }
+          },
         );
       },
     );
   }
+
 
   @override
   State<DailyBonusPopup> createState() => _DailyBonusPopupState();

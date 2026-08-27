@@ -11,6 +11,7 @@ import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/subscription_legal_footer.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class PremiumBenefitsScreen extends StatefulWidget {
   const PremiumBenefitsScreen({super.key});
@@ -49,8 +50,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
               appBar: AppBar(
                 title: Text(
                   AppLocalizations.of(context)!.settingsProTitle,
-                  style:
-                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
                 ),
                 backgroundColor: Colors.transparent,
                 elevation: 0,
@@ -127,42 +130,43 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         color: kRewardGold,
         inset: 9,
         child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.green, Colors.teal]),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.verified, color: Colors.white, size: 32),
             ),
-            child: const Icon(Icons.verified, color: Colors.white, size: 32),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.pbActive,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+            Text(
+              l10n.pbActive,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.pbActiveSub,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 16,
+            const SizedBox(height: 8),
+            Text(
+              l10n.pbActiveSub,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -197,44 +201,45 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         color: kRewardGold,
         inset: 9,
         child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple.shade400, Colors.indigo.shade400],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.purple.shade400.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple.shade400, Colors.indigo.shade400],
                 ),
-              ],
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.purple.shade400.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.diamond, color: Colors.white, size: 32),
             ),
-            child: const Icon(Icons.diamond, color: Colors.white, size: 32),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.settingsProTitle,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 16),
+            Text(
+              l10n.settingsProTitle,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.pbHeaderSub,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 16,
+            const SizedBox(height: 8),
+            Text(
+              l10n.pbHeaderSub,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -304,8 +309,10 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         _buildPricingCard(
           title: l10n.pbMonthlyPlan,
           price: PurchaseService().getStorePriceOrDefault(
-              ProductIds.snakeClassicProMonthly, 4.99,
-              localeTag: Localizations.localeOf(context).toLanguageTag()),
+            ProductIds.snakeClassicProMonthly,
+            4.99,
+            localeTag: Localizations.localeOf(context).toLanguageTag(),
+          ),
           period: l10n.storePerMonth,
           trialDays: PurchaseService().getFreeTrialDays(
             ProductIds.snakeClassicProMonthly,
@@ -320,11 +327,15 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
           title: l10n.pbYearlyPlan,
           price: _isYearly
               ? PurchaseService().getStorePriceOrDefault(
-                  ProductIds.snakeClassicProYearly, 39.99,
-                  localeTag: Localizations.localeOf(context).toLanguageTag())
+                  ProductIds.snakeClassicProYearly,
+                  39.99,
+                  localeTag: Localizations.localeOf(context).toLanguageTag(),
+                )
               : PurchaseService().getStorePriceOrDefault(
-                  ProductIds.snakeClassicProMonthly, 4.99,
-                  localeTag: Localizations.localeOf(context).toLanguageTag()),
+                  ProductIds.snakeClassicProMonthly,
+                  4.99,
+                  localeTag: Localizations.localeOf(context).toLanguageTag(),
+                ),
           period: _isYearly ? l10n.storePerYear : l10n.storePerMonth,
           // The card shows the monthly product when the toggle is off, so the
           // trial has to follow the product actually on display — the two
@@ -351,6 +362,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     required Color accentColor,
     required bool isPopular,
     required GameTheme theme,
+
     /// Free-trial length the store reports for this plan, or null for none.
     int? trialDays,
   }) {
@@ -383,126 +395,129 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         color: kRewardGold,
         inset: 9,
         child: Column(
-        children: [
-          if (isPopular)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    shadeFill(Colors.amber, 0.86),
-                    shadeFill(Colors.orange, 0.78),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                AppLocalizations.of(context)!.pbMostPopular,
-                style: TextStyle(
-                  color: inkOn(
-                    shadeFill(Colors.amber, 0.86),
-                    shadeFill(Colors.orange, 0.78),
-                  ),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          if (isPopular) const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (badge != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        badge,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    price,
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    period,
-                    style: TextStyle(
-                      color: accentColor.withValues(alpha: 0.7),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (trialDays != null) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
+          children: [
+            if (isPopular)
+              Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
+                  horizontal: 12,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: kRewardGold.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: kRewardGold.withValues(alpha: 0.45),
+                  gradient: LinearGradient(
+                    colors: [
+                      shadeFill(Colors.amber, 0.86),
+                      shadeFill(Colors.orange, 0.78),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.pbMostPopular,
+                  style: TextStyle(
+                    color: inkOn(
+                      shadeFill(Colors.amber, 0.86),
+                      shadeFill(Colors.orange, 0.78),
+                    ),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock_clock_rounded,
-                      size: 14,
-                      color: kRewardGold,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.storeFreeTrialBadge(trialDays),
+              ),
+            if (isPopular) const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
                         style: TextStyle(
-                          color: kRewardGold,
-                          fontSize: 12,
+                          color: theme.accentColor,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          badge,
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.7),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      price,
+                      style: TextStyle(
+                        color: accentColor,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      period,
+                      style: TextStyle(
+                        color: accentColor.withValues(alpha: 0.7),
+                        fontSize: 16,
                       ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
+            if (trialDays != null) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kRewardGold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: kRewardGold.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lock_clock_rounded,
+                        size: 14,
+                        color: kRewardGold,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          AppLocalizations.of(context)!
+                              .storeFreeTrialBadge(trialDays),
+                          style: TextStyle(
+                            color: kRewardGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
-      )),
+        ),
+      ),
     );
   }
 
@@ -520,31 +535,11 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         l10n.pbFeatExtraLifeDesc,
         highlighted: true,
       ),
-      _FeatureItem(
-        Icons.block,
-        l10n.pbFeatNoAds,
-        l10n.pbFeatNoAdsDesc,
-      ),
-      _FeatureItem(
-        Icons.palette,
-        l10n.pbFeatThemes,
-        l10n.pbFeatThemesDesc,
-      ),
-      _FeatureItem(
-        Icons.pets,
-        l10n.pbFeatSkins,
-        l10n.pbFeatSkinsDesc,
-      ),
-      _FeatureItem(
-        Icons.gradient,
-        l10n.pbFeatTrails,
-        l10n.pbFeatTrailsDesc,
-      ),
-      _FeatureItem(
-        Icons.grid_on,
-        l10n.pbFeatBoards,
-        l10n.pbFeatBoardsDesc,
-      ),
+      _FeatureItem(Icons.block, l10n.pbFeatNoAds, l10n.pbFeatNoAdsDesc),
+      _FeatureItem(Icons.palette, l10n.pbFeatThemes, l10n.pbFeatThemesDesc),
+      _FeatureItem(Icons.pets, l10n.pbFeatSkins, l10n.pbFeatSkinsDesc),
+      _FeatureItem(Icons.gradient, l10n.pbFeatTrails, l10n.pbFeatTrailsDesc),
+      _FeatureItem(Icons.grid_on, l10n.pbFeatBoards, l10n.pbFeatBoardsDesc),
       _FeatureItem(
         Icons.monetization_on,
         l10n.pbFeatCoins,
@@ -553,21 +548,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       // In-game spawn boosts implemented in food.dart (Food.generateRandom
       // isPremium param) and game_cubit.dart (_trySpawnPowerUp). Backed by
       // the snapshot of PremiumCubit.hasPremium at game start.
-      _FeatureItem(
-        Icons.auto_awesome,
-        l10n.pbFeatLucky,
-        l10n.pbFeatLuckyDesc,
-      ),
-      _FeatureItem(
-        Icons.bolt,
-        l10n.pbFeatPowerUps,
-        l10n.pbFeatPowerUpsDesc,
-      ),
-      _FeatureItem(
-        Icons.flash_on,
-        l10n.pbFeatBundle,
-        l10n.pbFeatBundleDesc,
-      ),
+      _FeatureItem(Icons.auto_awesome, l10n.pbFeatLucky, l10n.pbFeatLuckyDesc),
+      _FeatureItem(Icons.bolt, l10n.pbFeatPowerUps, l10n.pbFeatPowerUpsDesc),
+      _FeatureItem(Icons.flash_on, l10n.pbFeatBundle, l10n.pbFeatBundleDesc),
       _FeatureItem(
         Icons.emoji_events,
         l10n.pbFeatTournament,
@@ -624,77 +607,80 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         color: theme.accentColor,
         inset: 8,
         child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: hl ? 0.18 : 0.1),
-              borderRadius: BorderRadius.circular(12),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: hl ? 0.18 : 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(feature.icon, color: accent, size: 20),
             ),
-            child: Icon(feature.icon, color: accent, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        feature.title,
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: hl ? 17 : 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (hl) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              shadeFill(Colors.amber, 0.86),
-                              shadeFill(Colors.orange, 0.78),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
                         child: Text(
-                          AppLocalizations.of(context)!.pbProPerk,
+                          feature.title,
                           style: TextStyle(
-                            color: inkOn(
-                              shadeFill(Colors.amber, 0.86),
-                              shadeFill(Colors.orange, 0.78),
-                            ),
-                            fontSize: 10,
+                            color: accent,
+                            fontSize: hl ? 17 : 16,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: context.letterSpacing(0.5),
                           ),
                         ),
                       ),
+                      if (hl) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                shadeFill(Colors.amber, 0.86),
+                                shadeFill(Colors.orange, 0.78),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.pbProPerk,
+                            style: TextStyle(
+                              color: inkOn(
+                                shadeFill(Colors.amber, 0.86),
+                                shadeFill(Colors.orange, 0.78),
+                              ),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: context.letterSpacing(0.5),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  feature.description,
-                  style: TextStyle(
-                    color: hl
-                        ? Colors.amber.withValues(alpha: 0.85)
-                        : theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 14,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    feature.description,
+                    style: TextStyle(
+                      color: hl
+                          ? Colors.amber.withValues(alpha: 0.85)
+                          : theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -801,24 +787,29 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       purchaseService.buyProduct(product);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.pbNotAvailable),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: AppLocalizations.of(context)!.pbNotAvailable,
+          tone: ArcadeSnackTone.error,
         ),
       );
     }
   }
-
 }
 
 class _FeatureItem {
   final IconData icon;
   final String title;
   final String description;
+
   /// Emphasize this row (amber border/glow + "PRO PERK" badge). Used to make
   /// the always-free revive stand out from the rest of the list.
   final bool highlighted;
 
-  _FeatureItem(this.icon, this.title, this.description,
-      {this.highlighted = false});
+  _FeatureItem(
+    this.icon,
+    this.title,
+    this.description, {
+    this.highlighted = false,
+  });
 }

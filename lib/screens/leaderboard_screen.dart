@@ -51,6 +51,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   void _calculateUserRank() {
+    // Every caller can reach here after this State is gone: the initState
+    // post-frame callback fires a frame later, and _loadGlobalLeaderboard
+    // resumes after an await that the user can leave the screen during.
+    //
+    // Crashlytics caught the second one — pull to refresh, then navigate away
+    // before it lands. `context` on a disposed State is `_element!`, so the
+    // crash surfaced as a bare "Null check operator used on a null value"
+    // inside the framework with no hint that a dead widget was the cause.
+    if (!mounted) return;
     final authState = context.read<AuthCubit>().state;
     if (!authState.isSignedIn || authState.userId == null) return;
     ref

@@ -3,11 +3,20 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
-/// The app's single audio service: SoLoud for preloaded low-latency SFX,
-/// one audioplayers instance for the looping background track.
+/// The app's single audio service. One engine: SoLoud, for both the preloaded
+/// low-latency SFX and the looping background track.
+///
+/// The music used to run on a second engine (audioplayers) for one asset in
+/// one method. Two native audio stacks meant two output streams open on the
+/// same device, and Play Console vitals showed failures on both sides of that
+/// split — a SoLoud mixer segfault, an `AudioTrack::setVolume` crash, and an
+/// `audioplayers UrlSource.setForMediaPlayer` ANR. Cheap Android audio HALs
+/// are exactly where two clients contending for one device goes wrong.
+///
+/// SoLoud does looping and streaming natively, so the second engine bought
+/// nothing.
 ///
 /// There used to be a second SFX engine (EnhancedAudioService, an
 /// audioplayers pool with NO preloading) and the same game routed sounds
@@ -17,7 +26,6 @@ import 'package:snake_classic/services/storage_service.dart';
 /// game_cubit). Everything now goes through here.
 class AudioService {
   static AudioService? _instance;
-  AudioPlayer? _musicPlayer;
   final StorageService _storageService = StorageService();
 
   // SoLoud for low-latency game sound effects
@@ -117,6 +125,25 @@ class AudioService {
   void _playAtRate(AudioSource source, double volume, double rate) {
     try {
       final handle = _soloud.play(source, volume: volume);
+      // play() does NOT throw when the engine runs out of voices. SoLoud
+      // treats maxActiveVoiceCountReached as a warning and hands back a
+      // ZEROED handle instead (see _checkPlaybackResult in the plugin) —
+      // "the sound did not play, but this is a warning, not a failure".
+      //
+      // setRelativePlaySpeed validates only that the engine is initialized
+      // and then passes the handle straight to native FFI, so a zeroed
+      // handle reached the C++ engine and corrupted voice state while the
+      // mixer thread was running. The crash surfaced later and elsewhere:
+      // on the AAudio callback thread, deep inside SoLoud's mix loop, at an
+      // address belonging to no library.
+      //
+      // Voice exhaustion is not exotic here. This path is the rate-shifted
+      // game_over cue, which fires at the exact moment the crash and
+      // particle sounds are already playing.
+      //
+      // Checking the handle is the plugin's own idiom for this — see how it
+      // guards stop(): "we should check if it is still valid".
+      if (!_soloud.getIsValidVoiceHandle(handle)) return;
       _soloud.setRelativePlaySpeed(handle, rate);
     } catch (e) {
       debugPrint('Rate-shifted play failed: $e');
@@ -147,6 +174,31 @@ class AudioService {
   // playback immediately instead of waiting for the next game.
   bool _musicSessionActive = false;
 
+  /// The streamed background track, loaded once and reused.
+  AudioSource? _musicSource;
+  SoundHandle? _musicHandle;
+
+  /// Volume of the background loop. Sits under the SFX so cues stay audible.
+  static const double _musicVolume = 0.4;
+
+  /// The music voice, or null if it is gone.
+  ///
+  /// Everything that touches the handle goes through here, because SoLoud
+  /// recycles voices and NONE of setPause / setVolume / getPause validate the
+  /// handle they are given — they check that the engine is initialized and
+  /// then hand it straight to native FFI. That is the same door the
+  /// setRelativePlaySpeed crash came through, so the music path is written to
+  /// never open it.
+  SoundHandle? get _liveMusicHandle {
+    final handle = _musicHandle;
+    if (handle == null) return null;
+    if (!_soloud.getIsValidVoiceHandle(handle)) {
+      _musicHandle = null;
+      return null;
+    }
+    return handle;
+  }
+
   /// Start the looping background track for a game run. No-ops (but still
   /// marks the session active) when music is disabled, so enabling the
   /// setting mid-run picks the track up.
@@ -154,12 +206,26 @@ class AudioService {
     _musicSessionActive = true;
     if (!_initialized || !_musicEnabled) return;
 
-    _musicPlayer ??= AudioPlayer();
-
     try {
-      await _musicPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _musicPlayer!.setVolume(0.4);
-      await _musicPlayer!.play(AssetSource('audio/background_music.mp3'));
+      // LoadMode.disk streams the file instead of decompressing the whole
+      // track into RAM. Right trade for a multi-minute loop; the SFX stay in
+      // memory, where their latency matters.
+      _musicSource ??= await _soloud.loadAsset(
+        'assets/audio/background_music.mp3',
+        mode: LoadMode.disk,
+      );
+
+      // Already running — don't stack a second voice on top of it.
+      if (_liveMusicHandle != null) return;
+
+      final handle = _soloud.play(
+        _musicSource!,
+        volume: _musicVolume,
+        looping: true,
+      );
+      // play() returns a zeroed handle rather than throwing when the engine
+      // is out of voices, so this is not paranoia.
+      _musicHandle = _soloud.getIsValidVoiceHandle(handle) ? handle : null;
     } catch (e) {
       debugPrint('Background music not available: $e');
     }
@@ -167,8 +233,10 @@ class AudioService {
 
   /// Freeze music with the game (pause overlay up, app backgrounded).
   Future<void> pauseGameplayMusic() async {
+    final handle = _liveMusicHandle;
+    if (handle == null) return;
     try {
-      await _musicPlayer?.pause();
+      _soloud.setPause(handle, true);
     } catch (e) {
       debugPrint('Error pausing music: $e');
     }
@@ -179,23 +247,33 @@ class AudioService {
   /// of a run that began with it disabled.
   Future<void> resumeGameplayMusic() async {
     if (!_musicSessionActive || !_musicEnabled) return;
-    try {
-      final player = _musicPlayer;
-      if (player != null && player.state == PlayerState.paused) {
-        await player.resume();
-      } else if (player == null || player.state != PlayerState.playing) {
-        await startGameplayMusic();
+    final handle = _liveMusicHandle;
+    if (handle != null) {
+      try {
+        _soloud.setPause(handle, false);
+        return;
+      } catch (e) {
+        debugPrint('Error resuming music: $e');
       }
-    } catch (e) {
-      debugPrint('Error resuming music: $e');
     }
+    // No voice to resume: the run started with music off, or the voice was
+    // reclaimed. Start a fresh one.
+    await startGameplayMusic();
   }
 
   /// End-of-run stop (game over, quit to home). Closes the music session.
   Future<void> stopGameplayMusic() async {
     _musicSessionActive = false;
+    await _stopMusicVoice();
+  }
+
+  /// Stops the music voice, if there is one, and forgets it.
+  Future<void> _stopMusicVoice() async {
+    final handle = _liveMusicHandle;
+    _musicHandle = null;
+    if (handle == null) return;
     try {
-      await _musicPlayer?.stop();
+      await _soloud.stop(handle);
     } catch (e) {
       debugPrint('Error stopping music: $e');
     }
@@ -213,11 +291,7 @@ class AudioService {
     if (!enabled) {
       // Silence immediately, but keep the session flag so re-enabling
       // during the same run brings the music back.
-      try {
-        await _musicPlayer?.stop();
-      } catch (e) {
-        debugPrint('Error stopping music: $e');
-      }
+      await _stopMusicVoice();
     } else if (_musicSessionActive) {
       await startGameplayMusic();
     }
@@ -227,15 +301,16 @@ class AudioService {
   bool get isMusicEnabled => _musicEnabled;
 
   void dispose() {
-    // Dispose all loaded sounds
-    for (final source in _loadedSounds.values) {
-      _soloud.disposeSource(source);
-    }
-    _loadedSounds.clear();
-
+    // deinit() first, and no disposeSource loop. Freeing sources while the
+    // engine is still mixing is a use-after-free on the audio thread, and the
+    // loop was redundant anyway: deinit() "stops the engine and disposes of
+    // all resources, including sounds".
+    //
+    // Nothing calls this today, which is the only reason it never fired.
     _soloud.deinit();
-    _musicPlayer?.dispose();
-    _musicPlayer = null;
+    _loadedSounds.clear();
+    _musicSource = null;
+    _musicHandle = null;
     _initialized = false;
   }
 }

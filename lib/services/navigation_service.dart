@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/router/app_router.dart';
 import 'package:snake_classic/router/routes.dart';
+
 import '../utils/logger.dart';
+
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class NavigationService {
   static final NavigationService _instance = NavigationService._internal();
@@ -262,9 +265,10 @@ class NavigationService {
     final context = _routerContext;
     if (context != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : null,
+        arcadeSnackBar(
+          context,
+          message: message,
+          tone: isError ? ArcadeSnackTone.error : ArcadeSnackTone.info,
           duration: const Duration(seconds: 3),
         ),
       );

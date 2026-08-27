@@ -5,6 +5,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// Gentle, recurring re-ask for users whose notifications are OFF.
 ///
@@ -94,9 +95,7 @@ class NotificationPermissionPrimer {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               l10n.npMaybeLater,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-              ),
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(
@@ -116,24 +115,12 @@ class NotificationPermissionPrimer {
               final granted = await service.requestNotificationsPermission();
               if (granted) {
                 messenger.showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.notifications_active,
-                            color: Colors.white, size: 20),
-                        const SizedBox(width: 10),
-                        Text(l10n.npAllSet,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    backgroundColor: Colors.green.shade700,
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  arcadeSnackBarFor(
+                    theme,
+                    message: l10n.npAllSet,
+                    tone: ArcadeSnackTone.success,
+                    icon: Icons.notifications_active,
                     duration: const Duration(seconds: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 );
               } else {

@@ -5,6 +5,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// First-run pre-permission "soft ask" for notifications.
 ///
@@ -37,10 +38,9 @@ class NotificationPermissionSoftAsk {
       // that kept the permission) and skip straight to marking it done. iOS
       // reports enabled==true unconditionally here, so it always sees the
       // soft-ask once (the flag then prevents repeats).
-      final alreadyEnabled =
-          await NotificationService().areNotificationsEnabled();
-      if (alreadyEnabled &&
-          defaultTargetPlatform == TargetPlatform.android) {
+      final alreadyEnabled = await NotificationService()
+          .areNotificationsEnabled();
+      if (alreadyEnabled && defaultTargetPlatform == TargetPlatform.android) {
         await prefs.setBool(_shownKey, true);
         return;
       }
@@ -53,28 +53,18 @@ class NotificationPermissionSoftAsk {
 
       if (wantsEnable != true) return;
 
-      final messenger =
-          context.mounted ? ScaffoldMessenger.maybeOf(context) : null;
+      final messenger = context.mounted
+          ? ScaffoldMessenger.maybeOf(context)
+          : null;
       final granted = await NotificationService().requestPermissionFlow();
       if (granted) {
         messenger?.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.notifications_active,
-                    color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Text(l10n.npAllSet,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          arcadeSnackBarFor(
+            theme,
+            message: l10n.npAllSet,
+            tone: ArcadeSnackTone.success,
+            icon: Icons.notifications_active,
             duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
           ),
         );
       }
@@ -121,9 +111,7 @@ class NotificationPermissionSoftAsk {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               l10n.npNotNow,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-              ),
+              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(

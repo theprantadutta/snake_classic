@@ -23,6 +23,7 @@ import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class TournamentDetailScreen extends StatefulWidget {
   /// The tournament ID for deep link support.
@@ -144,14 +145,13 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
       // Detect "real failure" vs "actually empty": if the tournament
       // says it has participants but we got an empty list back, the
       // fetch must have failed silently in the service layer.
-      final isLegitimatelyEmpty = result.entries.isEmpty &&
-          _tournament!.currentParticipants == 0;
+      final isLegitimatelyEmpty =
+          result.entries.isEmpty && _tournament!.currentParticipants == 0;
       setState(() {
         _leaderboard = result.entries;
         _serverUserRank = result.userRank;
         _isLoading = false;
-        _leaderboardLoadFailed =
-            result.entries.isEmpty && !isLegitimatelyEmpty;
+        _leaderboardLoadFailed = result.entries.isEmpty && !isLegitimatelyEmpty;
       });
     } catch (e) {
       setState(() {
@@ -194,9 +194,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                 ],
               ),
             ),
-            child: SafeArea(
-              child: _buildContent(theme),
-            ),
+            child: SafeArea(child: _buildContent(theme)),
           ),
         );
       },
@@ -332,204 +330,207 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: theme.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getTournamentStatusColor(
-            tournament.status,
-          ).withValues(alpha: 0.3),
+          color: _getTournamentStatusColor(tournament.status)
+              .withValues(alpha: 0.3),
         ),
       ),
       child: HudCorners(
         color: theme.accentColor,
         inset: 8,
         child: Column(
-        children: [
-          Row(
-            children: [
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getTournamentTypeColor(tournament.type)
+                        .withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    tournament.type.emoji,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getTournamentStatusColor(
+                                tournament.status,
+                              ).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              tournament.status.localizedName(l10n),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _getTournamentStatusColor(
+                                  tournament.status,
+                                ),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  tournament.gameMode.emoji,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  tournament.gameMode.localizedName(l10n),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 16,
+                            color: theme.accentColor.withValues(alpha: 0.7),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            tournament.timeRemainingFormatted,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.accentColor.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            size: 16,
+                            color: theme.accentColor.withValues(alpha: 0.7),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            l10n.tnPlayersCount(
+                              tournament.currentParticipants,
+                              tournament.maxParticipants,
+                            ),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.accentColor.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (tournament.hasJoined) ...[
+              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _getTournamentTypeColor(
-                    tournament.type,
-                  ).withValues(alpha: 0.2),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.green.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: Text(
-                  tournament.type.emoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getTournamentStatusColor(
-                              tournament.status,
-                            ).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            tournament.status.localizedName(l10n),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _getTournamentStatusColor(
-                                tournament.status,
-                              ),
+                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.tnParticipating,
+                            style: const TextStyle(
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                tournament.gameMode.emoji,
-                                style: const TextStyle(fontSize: 12),
+                          if (tournament.userBestScore != null &&
+                              tournament.userAttempts != null)
+                            Text(
+                              l10n.tnBestAttempts(
+                                tournament.userAttempts!,
+                                tournament.userBestScore!,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                tournament.gameMode.localizedName(l10n),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green.withValues(alpha: 0.8),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule,
-                          size: 16,
-                          color: theme.accentColor.withValues(alpha: 0.7),
+                    // Prefer the server-authoritative rank when we have it;
+                    // fall back to the local heuristic only as a degraded
+                    // mode (e.g. leaderboard wasn't loaded yet).
+                    if ((_serverUserRank ?? 0) > 0 || tournament.userRank > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          tournament.timeRemainingFormatted,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.accentColor.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          l10n.tnRankChip(
+                            _serverUserRank ?? tournament.userRank,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.people,
-                          size: 16,
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          l10n.tnPlayersCount(
-                            tournament.currentParticipants,
-                            tournament.maxParticipants,
-                          ),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.accentColor.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
                   ],
                 ),
               ),
             ],
-          ),
-          if (tournament.hasJoined) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.tnParticipating,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        if (tournament.userBestScore != null &&
-                            tournament.userAttempts != null)
-                          Text(
-                            l10n.tnBestAttempts(
-                              tournament.userAttempts!,
-                              tournament.userBestScore!,
-                            ),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green.withValues(alpha: 0.8),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Prefer the server-authoritative rank when we have it;
-                  // fall back to the local heuristic only as a degraded
-                  // mode (e.g. leaderboard wasn't loaded yet).
-                  if ((_serverUserRank ?? 0) > 0 || tournament.userRank > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.tnRankChip(_serverUserRank ?? tournament.userRank),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.amber,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ],
-        ],
-      )),
+        ),
+      ),
     );
   }
 
@@ -713,54 +714,55 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: theme.accentColor,
         inset: 8,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, color: theme.accentColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.tnDescription,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.accentColor,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.info_outline, color: theme.accentColor, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.tnDescription,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: theme.accentColor,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            tournament.localizedDescription(AppLocalizations.of(context)!),
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              height: 1.5,
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: theme.accentColor.withValues(alpha: 0.7),
+            const SizedBox(height: 12),
+            Text(
+              tournament.localizedDescription(AppLocalizations.of(context)!),
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.accentColor.withValues(alpha: 0.8),
+                height: 1.5,
               ),
-              const SizedBox(width: 8),
-              Text(
-                context.formatDateRange(
-                  tournament.startDate,
-                  tournament.endDate,
-                ),
-                style: TextStyle(
-                  fontSize: 14,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
                   color: theme.accentColor.withValues(alpha: 0.7),
                 ),
-              ),
-            ],
-          ),
-        ],
-      )),
+                const SizedBox(width: 8),
+                Text(
+                  context.formatDateRange(
+                    tournament.startDate,
+                    tournament.endDate,
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.accentColor.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -780,79 +782,80 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: kRewardGold,
         inset: 8,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.emoji_events, color: Colors.amber, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                l10n.tnRewards,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.tnRewards,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...tournament.rewards.entries.map((entry) {
-            final rank = entry.key;
-            final reward = entry.value;
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...tournament.rewards.entries.map((entry) {
+              final rank = entry.key;
+              final reward = entry.value;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: _getRankColor(rank).withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        l10n.frRankBadge(rank),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: _getRankColor(rank),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _getRankColor(rank).withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          l10n.frRankBadge(rank),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _getRankColor(rank),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          localizedTournamentRewardName(reward.name, l10n),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: theme.accentColor,
-                          ),
-                        ),
-                        if (reward.coins > 0)
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            l10n.mpCoinReward(reward.coins),
+                            localizedTournamentRewardName(reward.name, l10n),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.amber.withValues(alpha: 0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: theme.accentColor,
                             ),
                           ),
-                      ],
+                          if (reward.coins > 0)
+                            Text(
+                              l10n.mpCoinReward(reward.coins),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.amber.withValues(alpha: 0.8),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      )),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 
@@ -870,36 +873,37 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: theme.accentColor,
         inset: 8,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                tournament.gameMode.emoji,
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                tournament.gameMode.localizedName(l10n),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  tournament.gameMode.emoji,
+                  style: const TextStyle(fontSize: 20),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            tournament.gameMode.localizedDescription(l10n),
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              height: 1.4,
+                const SizedBox(width: 8),
+                Text(
+                  tournament.gameMode.localizedName(l10n),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      )),
+            const SizedBox(height: 8),
+            Text(
+              tournament.gameMode.localizedDescription(l10n),
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.accentColor.withValues(alpha: 0.8),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -957,7 +961,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             backgroundImage: participant.photoUrl != null
                 ? NetworkImage(participant.photoUrl!)
                 : null,
-            onBackgroundImageError: participant.photoUrl != null ? (e, s) {} : null,
+            onBackgroundImageError: participant.photoUrl != null
+                ? (e, s) {}
+                : null,
             child: participant.photoUrl == null
                 ? Text(
                     participant.displayName.isNotEmpty
@@ -1020,56 +1026,57 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: theme.accentColor,
         inset: 8,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.rule, color: theme.accentColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                l10n.tnRulesHeader,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.accentColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ..._getTournamentRules(l10n).map(
-            (rule) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 4,
-                    // Directional: in Arabic the Row reverses, so the gap
-                    // between the bullet and its rule text has to follow.
-                    margin: const EdgeInsetsDirectional.only(top: 8, end: 8),
-                    decoration: BoxDecoration(
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                      shape: BoxShape.circle,
-                    ),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.rule, color: theme.accentColor, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.tnRulesHeader,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: theme.accentColor,
                   ),
-                  Expanded(
-                    child: Text(
-                      rule,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                        height: 1.4,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ..._getTournamentRules(l10n).map(
+              (rule) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 4,
+                      // Directional: in Arabic the Row reverses, so the gap
+                      // between the bullet and its rule text has to follow.
+                      margin: const EdgeInsetsDirectional.only(top: 8, end: 8),
+                      decoration: BoxDecoration(
+                        color: theme.accentColor.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Text(
+                        rule,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.accentColor.withValues(alpha: 0.8),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1086,33 +1093,34 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         color: theme.accentColor,
         inset: 8,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.calculate, color: Colors.amber, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                l10n.tnScoringSystem,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calculate, color: Colors.amber, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.tnScoringSystem,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.tnScoringBody,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              height: 1.4,
+              ],
             ),
-          ),
-        ],
-      )),
+            const SizedBox(height: 12),
+            Text(
+              l10n.tnScoringBody,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.accentColor.withValues(alpha: 0.8),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1249,12 +1257,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
   List<String> _getTournamentRules(AppLocalizations l10n) {
     final tournament = _tournament!;
-    final baseRules = [
-      l10n.tnRule1,
-      l10n.tnRule2,
-      l10n.tnRule3,
-      l10n.tnRule4,
-    ];
+    final baseRules = [l10n.tnRule1, l10n.tnRule2, l10n.tnRule3, l10n.tnRule4];
 
     // Add game mode specific rules
     switch (tournament.gameMode) {
@@ -1341,8 +1344,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
 
       // Premium users bypass entry requirement
       if (!premiumCubit.state.hasPremium) {
-        final availableEntries =
-            premiumCubit.state.getTournamentEntryCount(tier);
+        final availableEntries = premiumCubit.state.getTournamentEntryCount(
+          tier,
+        );
         if (availableEntries < entryCost) {
           _showNoEntryDialog(tier);
           return;
@@ -1385,20 +1389,17 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         // refresh — no more brittle ProviderScope.containerOf dance.
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.tnJoinSuccess)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(arcadeSnackBar(context, message: l10n.tnJoinSuccess));
         await _refreshTournament();
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.tnJoinFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(arcadeSnackBar(context, message: l10n.tnJoinFailed));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.tnJoinError)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(arcadeSnackBar(context, message: l10n.tnJoinError));
       }
     }
 
@@ -1504,7 +1505,9 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 l10n.commonCancel,
-                style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                ),
               ),
             ),
             // Free Bronze entry via rewarded ad (free users only, bronze tier
@@ -1532,10 +1535,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                     },
                   );
                 },
-                icon: const Icon(Icons.play_circle_fill,
-                    color: Colors.amber, size: 18),
-                label: Text(l10n.tnFreeEntryAd,
-                    style: TextStyle(color: theme.accentColor)),
+                icon: const Icon(
+                  Icons.play_circle_fill,
+                  color: Colors.amber,
+                  size: 18,
+                ),
+                label: Text(
+                  l10n.tnFreeEntryAd,
+                  style: TextStyle(color: theme.accentColor),
+                ),
               ),
             // Paid entry IAP — Silver and Gold only (bronze has no productId).
             if (productId != null)

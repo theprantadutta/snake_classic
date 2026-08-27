@@ -22,6 +22,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class MultiplayerLobbyScreen extends StatefulWidget {
   final String? gameId;
@@ -109,7 +110,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     if (friends.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.mpLobbyNoFriends)));
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.mpLobbyNoFriends));
       return;
     }
     showModalBottomSheet<void>(
@@ -183,13 +184,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         if (!mounted) return;
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              sent
-                  ? l10n.mpLobbyInviteSent(friend.displayName)
-                  : (message ?? l10n.mpLobbyInviteFailed),
-            ),
-            backgroundColor: sent ? Colors.green.shade700 : Colors.red.shade700,
+          arcadeSnackBar(
+            context,
+            message: sent
+                ? l10n.mpLobbyInviteSent(friend.displayName)
+                : (message ?? l10n.mpLobbyInviteFailed),
+            tone: sent ? ArcadeSnackTone.success : ArcadeSnackTone.error,
           ),
         );
       },
@@ -203,21 +203,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   void _showOfflineMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.cloud_off, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context)!.mpLobbyOffline,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.grey.shade700,
-        behavior: SnackBarBehavior.floating,
+      arcadeSnackBar(
+        context,
+        message: AppLocalizations.of(context)!.mpLobbyOffline,
+        icon: Icons.cloud_off,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -235,35 +224,22 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           listener: (context, state) {
             // Show error snackbar
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        state.errorCode!.localizedMessage(
-                          AppLocalizations.of(context)!,
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
+              arcadeSnackBar(
+                context,
+                message: state.errorCode!.localizedMessage(
+                  AppLocalizations.of(context)!,
                 ),
-                backgroundColor: Colors.red.shade700,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 4),
-                action: SnackBarAction(
-                  label: AppLocalizations.of(context)!.mpLobbyDismiss,
-                  textColor: Colors.white,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  },
-                ),
+                tone: ArcadeSnackTone.error,
+                // No dismiss button any more. It existed only to close the
+                // snack bar, which swiping and the timeout already do, and it
+                // was the source of a crash: the callback reached through the
+                // lobby's context, and an app-level snack bar outlives the
+                // screen that showed it — this one replaces itself with the
+                // game screen the moment a match starts. 40 crashes, 27 users.
+                //
+                // arcadeSnackBar's own action resolves the messenger from a
+                // context inside the snack bar, so an action here would be
+                // safe. There just is not one worth showing.
               ),
             );
             context.read<MultiplayerCubit>().clearError();
@@ -575,11 +551,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             borderRadius: BorderRadius.circular(16),
             borderColor: theme.accentColor.withValues(alpha: 0.32),
           ),
-          child: HudCorners(
-            color: theme.accentColor,
-            inset: 10,
-            child: child,
-          ),
+          child: HudCorners(color: theme.accentColor, inset: 10, child: child),
         ),
       ],
     );
@@ -682,8 +654,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               onTap: () {
                 Clipboard.setData(ClipboardData(text: game.roomCode!));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.mpLobbyRoomCodeCopied),
+                  arcadeSnackBar(
+                    context,
+                    message: l10n.mpLobbyRoomCodeCopied,
                     duration: const Duration(seconds: 2),
                   ),
                 );
@@ -810,109 +783,112 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     color: theme.accentColor,
                     inset: 8,
                     child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 108,
-                            height: 108,
-                            child: CircularProgressIndicator(
-                              value: progress,
-                              strokeWidth: 3,
-                              backgroundColor: theme.accentColor.withValues(
-                                alpha: 0.15,
-                              ),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.accentColor,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 108,
+                              height: 108,
+                              child: CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 3,
+                                backgroundColor: theme.accentColor.withValues(
+                                  alpha: 0.15,
+                                ),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  theme.accentColor,
+                                ),
                               ),
                             ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$elapsed',
+                                  style: const TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  l10n.mpLobbySeconds.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    letterSpacing: context.letterSpacing(1.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        Text(
+                          l10n.mpLobbySearching,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.accentColor,
+                            letterSpacing: context.letterSpacing(1.5),
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '$elapsed',
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                l10n.mpLobbySeconds.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  letterSpacing: context.letterSpacing(1.5),
-                                ),
-                              ),
-                            ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          l10n.mpLobbyModePlayers(
+                            multiplayerState.matchmakingPlayerCount ?? 2,
+                            multiplayerState.matchmakingMode?.localizedName(
+                                  l10n,
+                                ) ??
+                                l10n.mpModeClassicBattle,
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+
+                        if (multiplayerState.matchmakingQueuePosition > 0) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.mpLobbyQueuePosition(
+                              multiplayerState.matchmakingQueuePosition,
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
                           ),
                         ],
-                      ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      Text(
-                        l10n.mpLobbySearching,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: theme.accentColor,
-                          letterSpacing: context.letterSpacing(1.5),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        l10n.mpLobbyModePlayers(
-                          multiplayerState.matchmakingPlayerCount ?? 2,
-                          multiplayerState.matchmakingMode?.localizedName(
-                                l10n,
-                              ) ??
-                              l10n.mpModeClassicBattle,
-                        ),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-
-                      if (multiplayerState.matchmakingQueuePosition > 0) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          l10n.mpLobbyQueuePosition(
-                            multiplayerState.matchmakingQueuePosition,
-                          ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
+                        GradientButton(
+                          onPressed: () {
+                            context
+                                .read<MultiplayerCubit>()
+                                .cancelMatchmaking();
+                          },
+                          text: l10n.mpLobbyCancelUpper,
+                          primaryColor: theme.accentColor,
+                          secondaryColor: theme.foodColor,
+                          icon: Icons.close_rounded,
+                          width: double.infinity,
+                          height: 48,
+                          outlined: true,
                         ),
                       ],
-
-                      const SizedBox(height: 24),
-
-                      GradientButton(
-                        onPressed: () {
-                          context.read<MultiplayerCubit>().cancelMatchmaking();
-                        },
-                        text: l10n.mpLobbyCancelUpper,
-                        primaryColor: theme.accentColor,
-                        secondaryColor: theme.foodColor,
-                        icon: Icons.close_rounded,
-                        width: double.infinity,
-                        height: 48,
-                        outlined: true,
-                      ),
-                    ],
-                  )),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -953,83 +929,84 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     color: theme.accentColor,
                     inset: 8,
                     child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Empty queue is an outcome, not a failure — so no
-                      // orange alarm disc, just the same quiet hairline
-                      // treatment the rest of the screen uses.
-                      Icon(
-                        Icons.hourglass_empty_rounded,
-                        size: 36,
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Text(
-                        l10n.mpLobbyUnreachableTitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: theme.accentColor,
-                          letterSpacing: context.letterSpacing(1.5),
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Empty queue is an outcome, not a failure — so no
+                        // orange alarm disc, just the same quiet hairline
+                        // treatment the rest of the screen uses.
+                        Icon(
+                          Icons.hourglass_empty_rounded,
+                          size: 36,
+                          color: theme.accentColor.withValues(alpha: 0.8),
                         ),
-                      ),
 
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 20),
 
-                      Text(
-                        l10n.mpLobbyUnreachableBody,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: Colors.white.withValues(alpha: 0.7),
-                          height: 1.35,
+                        Text(
+                          l10n.mpLobbyUnreachableTitle,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.accentColor,
+                            letterSpacing: context.letterSpacing(1.5),
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 8),
 
-                      GradientButton(
-                        onPressed: () {
-                          context
-                              .read<MultiplayerCubit>()
-                              .clearMatchmakingTimeout();
-                          context.read<MultiplayerCubit>().quickMatch(
-                            multiplayerState.matchmakingMode ??
-                                MultiplayerGameMode.classic,
-                            playerCount:
-                                multiplayerState.matchmakingPlayerCount ?? 2,
-                          );
-                        },
-                        text: l10n.mpLobbyTryAgain,
-                        primaryColor: theme.accentColor,
-                        secondaryColor: theme.foodColor,
-                        icon: Icons.refresh_rounded,
-                        width: double.infinity,
-                        height: 48,
-                      ),
+                        Text(
+                          l10n.mpLobbyUnreachableBody,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            height: 1.35,
+                          ),
+                        ),
 
-                      const SizedBox(height: 10),
+                        const SizedBox(height: 24),
 
-                      GradientButton(
-                        onPressed: () {
-                          context
-                              .read<MultiplayerCubit>()
-                              .clearMatchmakingTimeout();
-                        },
-                        text: l10n.mpLobbyGoBack,
-                        primaryColor: theme.accentColor,
-                        secondaryColor: theme.foodColor,
-                        icon: Icons.arrow_back_rounded,
-                        width: double.infinity,
-                        height: 48,
-                        outlined: true,
-                      ),
-                    ],
-                  )),
+                        GradientButton(
+                          onPressed: () {
+                            context
+                                .read<MultiplayerCubit>()
+                                .clearMatchmakingTimeout();
+                            context.read<MultiplayerCubit>().quickMatch(
+                              multiplayerState.matchmakingMode ??
+                                  MultiplayerGameMode.classic,
+                              playerCount:
+                                  multiplayerState.matchmakingPlayerCount ?? 2,
+                            );
+                          },
+                          text: l10n.mpLobbyTryAgain,
+                          primaryColor: theme.accentColor,
+                          secondaryColor: theme.foodColor,
+                          icon: Icons.refresh_rounded,
+                          width: double.infinity,
+                          height: 48,
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        GradientButton(
+                          onPressed: () {
+                            context
+                                .read<MultiplayerCubit>()
+                                .clearMatchmakingTimeout();
+                          },
+                          text: l10n.mpLobbyGoBack,
+                          primaryColor: theme.accentColor,
+                          secondaryColor: theme.foodColor,
+                          icon: Icons.arrow_back_rounded,
+                          width: double.infinity,
+                          height: 48,
+                          outlined: true,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1138,17 +1115,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         color: theme.accentColor,
         inset: 7,
         child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          cell(l10n.mpLobbyWinsLabel, valueOf('wins')),
-          cell(l10n.mpLobbyLossesLabel, valueOf('losses')),
-          // Draws used to appear only when there were any, which moved the
-          // other three columns sideways the moment a draw was recorded.
-          // Four columns, always.
-          cell(l10n.mpLobbyDrawsLabel, valueOf('draws')),
-          cell(l10n.mpLobbyRatingLabel, valueOf('rating', fallback: 1000)),
-        ],
-      )),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            cell(l10n.mpLobbyWinsLabel, valueOf('wins')),
+            cell(l10n.mpLobbyLossesLabel, valueOf('losses')),
+            // Draws used to appear only when there were any, which moved the
+            // other three columns sideways the moment a draw was recorded.
+            // Four columns, always.
+            cell(l10n.mpLobbyDrawsLabel, valueOf('draws')),
+            cell(l10n.mpLobbyRatingLabel, valueOf('rating', fallback: 1000)),
+          ],
+        ),
+      ),
     ).gameEntrance(delay: 50.ms);
   }
 
@@ -1291,46 +1269,50 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         color: theme.accentColor,
         inset: 7,
         child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(game.modeEmoji, style: const TextStyle(fontSize: 24)),
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  game.mode.localizedName(l10n),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: theme.accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  game.modeEmoji,
+                  style: const TextStyle(fontSize: 24),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _getGameModeDescription(game.mode),
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Colors.white.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
-      )),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    game.mode.localizedName(l10n),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _getGameModeDescription(game.mode),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1342,9 +1324,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     final players = game.players.toList();
     return _mpSection(
       theme: theme,
-      title: AppLocalizations.of(
-        context,
-      )!.mpLobbyPlayersHeader(players.length, game.maxPlayers),
+      title: AppLocalizations.of(context)!
+          .mpLobbyPlayersHeader(players.length, game.maxPlayers),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -8,6 +8,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// Email/password sign-in, account-creation, and anonymous-account link
 /// screen. Tab switcher between Sign In and Create Account.
@@ -109,8 +110,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor:
-                          Colors.white.withValues(alpha: 0.7),
+                      unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
                       labelStyle: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -286,8 +286,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       fillColor: Colors.white.withValues(alpha: 0.08),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -360,10 +359,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             password: password,
             confirmAccountSwitch: () => confirmAccountSwitch(context),
           )
-        : await cubit.signInWithEmailPassword(
-            email: email,
-            password: password,
-          );
+        : await cubit.signInWithEmailPassword(email: email, password: password);
     if (!mounted) return;
     setState(() => _busy = false);
 
@@ -477,20 +473,14 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade700,
-      ),
+      arcadeSnackBar(context, message: message, tone: ArcadeSnackTone.error),
     );
   }
 
   void _showInfo(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.shade700,
-      ),
+      arcadeSnackBar(context, message: message, tone: ArcadeSnackTone.success),
     );
   }
 }

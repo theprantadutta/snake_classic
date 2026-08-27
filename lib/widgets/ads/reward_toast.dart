@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 
 /// Shared "you got your reward" snackbar for every rewarded-ad placement,
 /// styled to match the battle-pass XP toast (the one placement that already
@@ -12,24 +15,16 @@ void showRewardToast(
   IconData icon = Icons.celebration,
 }) {
   messenger.showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.green.shade700,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    arcadeSnackBarFor(
+      // No BuildContext here on purpose — see the note above. ThemeCubit is a
+      // get_it singleton and is already read this way from off the widget tree
+      // (see PremiumCubit), so the toast can still be painted in the player's
+      // theme.
+      getIt<ThemeCubit>().state.currentTheme,
+      message: message,
+      tone: ArcadeSnackTone.success,
+      icon: icon,
       duration: const Duration(seconds: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
 }

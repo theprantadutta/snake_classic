@@ -38,6 +38,7 @@ import 'package:snake_classic/widgets/arcade_controls.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/settings_category_rail.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// The sections of this screen, in the order they appear.
 ///
@@ -282,7 +283,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         extendBodyBehindAppBar: true,
                         // The shared bar, so this screen tracks the design
                         // language instead of carrying its own copy of it.
-                        appBar: appScreenBar(context, theme, l10n.settingsTitle),
+                        appBar: appScreenBar(
+                          context,
+                          theme,
+                          l10n.settingsTitle,
+                        ),
                         body: AppBackground(
                           theme: theme,
                           child: SafeArea(
@@ -320,401 +325,462 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         bottom: 24,
                                       ),
                                       child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // 1. Controls Section (most frequently adjusted during gameplay)
-                                    _buildSection(_SettingsSection.controls, l10n.settingsSectionControls, [
-                                      _buildAudioSwitch(
-                                        l10n.settingsDPadControls,
-                                        _dPadEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _dPadEnabled = value;
-                                          });
-                                          await context
-                                              .read<GameSettingsCubit>()
-                                              .updateDPadEnabled(value);
-                                          _analytics.trackSettingChanged(
-                                            settingName: 'dpad_enabled',
-                                            value: '$value',
-                                          );
-                                        },
-                                        theme,
-                                        description: l10n.settingsDPadSubtitle,
-                                      ),
-                                      // D-Pad Position Selector (only show when D-Pad is enabled)
-                                      if (_dPadEnabled) ...[
-                                        const SizedBox(height: 16),
-                                        _buildDPadPositionSelector(
-                                          gameState,
-                                          theme,
-                                        ),
-                                      ],
-                                      const SizedBox(height: 16),
-                                      _buildControlInfo(theme),
-                                    ], theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // 2. Gameplay Section (mode + board size + crash feedback + effects)
-                                    _buildSection(_SettingsSection.gameplay, 
-                                      l10n.settingsSectionGameplay,
-                                      [
-                                        _buildGameModeSelector(
-                                          gameState,
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 24),
-                                        _buildDifficultySelector(
-                                          gameState,
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 24),
-                                        _buildBoardSizeSelector(
-                                          gameState,
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 24),
-                                        _buildCrashFeedbackDurationSelector(
-                                          gameState,
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 24),
-                                        _buildAudioSwitch(
-                                          l10n.settingsScreenShake,
-                                          _screenShakeEnabled,
-                                          (value) async {
-                                            setState(() {
-                                              _screenShakeEnabled = value;
-                                            });
-                                            await context
-                                                .read<GameSettingsCubit>()
-                                                .setScreenShakeEnabled(value);
-                                            _analytics.trackSettingChanged(
-                                              settingName: 'screen_shake',
-                                              value: '$value',
-                                            );
-                                          },
-                                          theme,
-                                          description:
-                                              l10n.settingsScreenShakeSubtitle,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 24),
-                                        _buildAudioSwitch(
-                                          l10n.settingsVibration,
-                                          _hapticsEnabled,
-                                          (value) async {
-                                            setState(() {
-                                              _hapticsEnabled = value;
-                                            });
-                                            await context
-                                                .read<GameSettingsCubit>()
-                                                .setHapticsEnabled(value);
-                                            _analytics.trackSettingChanged(
-                                              settingName: 'haptics_enabled',
-                                              value: '$value',
-                                            );
-                                          },
-                                          theme,
-                                          description:
-                                              l10n.settingsVibrationSubtitle,
-                                        ),
-                                      ],
-                                      theme,
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // 3. Audio Section
-                                    _buildSection(_SettingsSection.audio, l10n.settingsSectionAudio, [
-                                      _buildAudioSwitch(
-                                        l10n.settingsSoundEffects,
-                                        _soundEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _soundEnabled = value;
-                                          });
-                                          await _audioService.setSoundEnabled(
-                                            value,
-                                          );
-                                          _analytics.trackSettingChanged(
-                                            settingName: 'sound_effects',
-                                            value: '$value',
-                                          );
-                                        },
-                                        theme,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _buildAudioSwitch(
-                                        l10n.settingsBackgroundMusic,
-                                        _musicEnabled,
-                                        (value) async {
-                                          setState(() {
-                                            _musicEnabled = value;
-                                          });
-                                          await _audioService.setMusicEnabled(
-                                            value,
-                                          );
-                                          _analytics.trackSettingChanged(
-                                            settingName: 'background_music',
-                                            value: '$value',
-                                          );
-                                        },
-                                        theme,
-                                      ),
-                                    ], theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // 4. Visual Section (theme + trail effects)
-                                    _buildSection(_SettingsSection.visual, l10n.settingsSectionVisual, [
-                                      _buildThemeSelector(themeState, theme),
-                                      const SizedBox(height: 24),
-                                      const Divider(height: 1),
-                                      const SizedBox(height: 24),
-                                      _buildAudioSwitch(
-                                        l10n.settingsSnakeTrail,
-                                        themeState.isTrailSystemEnabled,
-                                        (value) async {
-                                          await context
-                                              .read<ThemeCubit>()
-                                              .setTrailSystemEnabled(value);
-                                        },
-                                        theme,
-                                        description:
-                                            l10n.settingsSnakeTrailSubtitle,
-                                      ),
-                                    ], theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // 5. Display Section (refresh rate)
-                                    _buildDisplaySection(theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // App language picker. Section title comes
-                                    // from the ARB (the picker itself is the
-                                    // first localized surface in the app).
-                                    _buildSection(_SettingsSection.language, 
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.settingsSectionLanguage,
-                                      [_buildLanguagePicker(theme)],
-                                      theme,
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // 5. User Profile Section
-                                    _buildSection(_SettingsSection.notifications, 
-                                      l10n.settingsSectionNotifications,
-                                      [
-                                        _buildAudioSwitch(
-                                          l10n.settingsNotifDailyReminder,
-                                          _notifDailyReminder,
-                                          (v) => _toggleNotification(
-                                            NotificationType.dailyReminder,
-                                            v,
-                                            (val) => _notifDailyReminder = val,
-                                          ),
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildAudioSwitch(
-                                          l10n.settingsNotifTournament,
-                                          _notifTournament,
-                                          (v) => _toggleNotification(
-                                            NotificationType.tournament,
-                                            v,
-                                            (val) => _notifTournament = val,
-                                          ),
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildAudioSwitch(
-                                          l10n.settingsNotifAchievement,
-                                          _notifAchievement,
-                                          (v) => _toggleNotification(
-                                            NotificationType.achievement,
-                                            v,
-                                            (val) => _notifAchievement = val,
-                                          ),
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildAudioSwitch(
-                                          l10n.settingsNotifSocial,
-                                          _notifSocial,
-                                          (v) => _toggleNotification(
-                                            NotificationType.social,
-                                            v,
-                                            (val) => _notifSocial = val,
-                                          ),
-                                          theme,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildAudioSwitch(
-                                          l10n.settingsNotifSpecialEvents,
-                                          _notifSpecialEvent,
-                                          (v) => _toggleNotification(
-                                            NotificationType.specialEvent,
-                                            v,
-                                            (val) => _notifSpecialEvent = val,
-                                          ),
-                                          theme,
-                                        ),
-                                      ],
-                                      theme,
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // Diagnostic buttons that isolate each layer
-                                    // of the notification pipeline. Gated behind
-                                    // kDebugMode so production builds never see
-                                    // it — these are developer-facing controls
-                                    // for triage during development + Play Store
-                                    // internal testing, not user features. See
-                                    // NOTIFICATIONS_TESTING.md for triage guide.
-                                    if (kDebugMode) ...[
-                                      _buildSection(_SettingsSection.testNotifications, 'TEST NOTIFICATIONS', [
-                                        _buildNotificationTestPanel(theme),
-                                      ], theme),
-                                      const SizedBox(height: 32),
-                                    ],
-
-                                    _buildSection(_SettingsSection.profile, 
-                                      l10n.settingsSectionUserProfile,
-                                      [
-                                        _buildUserProfileSettings(
-                                          authState,
-                                          theme,
-                                        ),
-                                      ],
-                                      theme,
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // 5b. Your game — statistics and replays.
-                                    // Both used to be circular buttons flanking
-                                    // the home screen's high-score bar, where
-                                    // they cost the home screen a whole row to
-                                    // offer two things a player looks at
-                                    // occasionally. They live here now, where
-                                    // the rest of "about your game" already is.
-                                    _buildSection(_SettingsSection.yourGame, 
-                                      l10n.settingsSectionYourGame,
-                                      [
-                                        _buildLinkButton(
-                                          theme,
-                                          icon: Icons.analytics,
-                                          label: l10n.pfStatistics,
-                                          subtitle:
-                                              l10n.settingsStatisticsSubtitle,
-                                          onPressed: () => context.push(
-                                            AppRoutes.statistics,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildLinkButton(
-                                          theme,
-                                          icon: Icons.video_library,
-                                          label: l10n.pfReplays,
-                                          subtitle:
-                                              l10n.settingsReplaysSubtitle,
-                                          onPressed: () =>
-                                              context.push(AppRoutes.replays),
-                                        ),
-                                      ],
-                                      theme,
-                                    ),
-
-                                    const SizedBox(height: 32),
-
-                                    // 6. Help & Tutorial Section
-                                    _buildSection(_SettingsSection.help, l10n.settingsSectionHelp, [
-                                      _buildReplayTutorialButton(theme),
-                                      const SizedBox(height: 16),
-                                      _buildCreditsButton(theme),
-                                      _buildRateUsButton(theme),
-                                      _buildPrivacyChoicesButton(theme),
-                                    ], theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // 6b. Legal Section
-                                    _buildSection(_SettingsSection.legal, l10n.settingsSectionLegal, [
-                                      _buildPrivacyPolicyButton(theme),
-                                      const SizedBox(height: 12),
-                                      _buildTermsButton(theme),
-                                    ], theme),
-
-                                    const SizedBox(height: 32),
-
-                                    // 7. Premium Section (if available)
-                                    if (premiumState.isInitialized)
-                                      _buildSection(_SettingsSection.premium, 
-                                        l10n.settingsSectionPremium,
-                                        [
-                                          _buildPremiumStatusCard(
-                                            premiumState,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // 1. Controls Section (most frequently adjusted during gameplay)
+                                          _buildSection(
+                                            _SettingsSection.controls,
+                                            l10n.settingsSectionControls,
+                                            [
+                                              _buildAudioSwitch(
+                                                l10n.settingsDPadControls,
+                                                _dPadEnabled,
+                                                (value) async {
+                                                  setState(() {
+                                                    _dPadEnabled = value;
+                                                  });
+                                                  await context
+                                                      .read<GameSettingsCubit>()
+                                                      .updateDPadEnabled(value);
+                                                  _analytics
+                                                      .trackSettingChanged(
+                                                        settingName:
+                                                            'dpad_enabled',
+                                                        value: '$value',
+                                                      );
+                                                },
+                                                theme,
+                                                description:
+                                                    l10n.settingsDPadSubtitle,
+                                              ),
+                                              // D-Pad Position Selector (only show when D-Pad is enabled)
+                                              if (_dPadEnabled) ...[
+                                                const SizedBox(height: 16),
+                                                _buildDPadPositionSelector(
+                                                  gameState,
+                                                  theme,
+                                                ),
+                                              ],
+                                              const SizedBox(height: 16),
+                                              _buildControlInfo(theme),
+                                            ],
                                             theme,
                                           ),
-                                          if (!premiumState.hasPremium)
-                                            _buildUpgradeButton(
-                                              premiumState,
-                                              theme,
-                                            ),
-                                          _buildRestorePurchasesButton(
-                                            premiumState,
+
+                                          const SizedBox(height: 32),
+
+                                          // 2. Gameplay Section (mode + board size + crash feedback + effects)
+                                          _buildSection(
+                                            _SettingsSection.gameplay,
+                                            l10n.settingsSectionGameplay,
+                                            [
+                                              _buildGameModeSelector(
+                                                gameState,
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildDifficultySelector(
+                                                gameState,
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildBoardSizeSelector(
+                                                gameState,
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildCrashFeedbackDurationSelector(
+                                                gameState,
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildAudioSwitch(
+                                                l10n.settingsScreenShake,
+                                                _screenShakeEnabled,
+                                                (value) async {
+                                                  setState(() {
+                                                    _screenShakeEnabled = value;
+                                                  });
+                                                  await context
+                                                      .read<GameSettingsCubit>()
+                                                      .setScreenShakeEnabled(
+                                                        value,
+                                                      );
+                                                  _analytics
+                                                      .trackSettingChanged(
+                                                        settingName:
+                                                            'screen_shake',
+                                                        value: '$value',
+                                                      );
+                                                },
+                                                theme,
+                                                description: l10n
+                                                    .settingsScreenShakeSubtitle,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildAudioSwitch(
+                                                l10n.settingsVibration,
+                                                _hapticsEnabled,
+                                                (value) async {
+                                                  setState(() {
+                                                    _hapticsEnabled = value;
+                                                  });
+                                                  await context
+                                                      .read<GameSettingsCubit>()
+                                                      .setHapticsEnabled(value);
+                                                  _analytics
+                                                      .trackSettingChanged(
+                                                        settingName:
+                                                            'haptics_enabled',
+                                                        value: '$value',
+                                                      );
+                                                },
+                                                theme,
+                                                description: l10n
+                                                    .settingsVibrationSubtitle,
+                                              ),
+                                            ],
                                             theme,
                                           ),
-                                          _buildPurchaseHistoryButton(
-                                            premiumState,
+
+                                          const SizedBox(height: 32),
+
+                                          // 3. Audio Section
+                                          _buildSection(
+                                            _SettingsSection.audio,
+                                            l10n.settingsSectionAudio,
+                                            [
+                                              _buildAudioSwitch(
+                                                l10n.settingsSoundEffects,
+                                                _soundEnabled,
+                                                (value) async {
+                                                  setState(() {
+                                                    _soundEnabled = value;
+                                                  });
+                                                  await _audioService
+                                                      .setSoundEnabled(value);
+                                                  _analytics
+                                                      .trackSettingChanged(
+                                                        settingName:
+                                                            'sound_effects',
+                                                        value: '$value',
+                                                      );
+                                                },
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildAudioSwitch(
+                                                l10n.settingsBackgroundMusic,
+                                                _musicEnabled,
+                                                (value) async {
+                                                  setState(() {
+                                                    _musicEnabled = value;
+                                                  });
+                                                  await _audioService
+                                                      .setMusicEnabled(value);
+                                                  _analytics
+                                                      .trackSettingChanged(
+                                                        settingName:
+                                                            'background_music',
+                                                        value: '$value',
+                                                      );
+                                                },
+                                                theme,
+                                              ),
+                                            ],
                                             theme,
                                           ),
-                                          if (premiumState.hasPremium ||
-                                              premiumState
-                                                  .ownedSkins
-                                                  .isNotEmpty)
-                                            _buildCosmeticsButton(
-                                              premiumState,
+
+                                          const SizedBox(height: 32),
+
+                                          // 4. Visual Section (theme + trail effects)
+                                          _buildSection(
+                                            _SettingsSection.visual,
+                                            l10n.settingsSectionVisual,
+                                            [
+                                              _buildThemeSelector(
+                                                themeState,
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 24),
+                                              _buildAudioSwitch(
+                                                l10n.settingsSnakeTrail,
+                                                themeState.isTrailSystemEnabled,
+                                                (value) async {
+                                                  await context
+                                                      .read<ThemeCubit>()
+                                                      .setTrailSystemEnabled(
+                                                        value,
+                                                      );
+                                                },
+                                                theme,
+                                                description: l10n
+                                                    .settingsSnakeTrailSubtitle,
+                                              ),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 5. Display Section (refresh rate)
+                                          _buildDisplaySection(theme),
+
+                                          const SizedBox(height: 32),
+
+                                          // App language picker. Section title comes
+                                          // from the ARB (the picker itself is the
+                                          // first localized surface in the app).
+                                          _buildSection(
+                                            _SettingsSection.language,
+                                            AppLocalizations.of(context)!
+                                                .settingsSectionLanguage,
+                                            [_buildLanguagePicker(theme)],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 5. User Profile Section
+                                          _buildSection(
+                                            _SettingsSection.notifications,
+                                            l10n.settingsSectionNotifications,
+                                            [
+                                              _buildAudioSwitch(
+                                                l10n.settingsNotifDailyReminder,
+                                                _notifDailyReminder,
+                                                (v) => _toggleNotification(
+                                                  NotificationType
+                                                      .dailyReminder,
+                                                  v,
+                                                  (val) =>
+                                                      _notifDailyReminder = val,
+                                                ),
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildAudioSwitch(
+                                                l10n.settingsNotifTournament,
+                                                _notifTournament,
+                                                (v) => _toggleNotification(
+                                                  NotificationType.tournament,
+                                                  v,
+                                                  (val) =>
+                                                      _notifTournament = val,
+                                                ),
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildAudioSwitch(
+                                                l10n.settingsNotifAchievement,
+                                                _notifAchievement,
+                                                (v) => _toggleNotification(
+                                                  NotificationType.achievement,
+                                                  v,
+                                                  (val) =>
+                                                      _notifAchievement = val,
+                                                ),
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildAudioSwitch(
+                                                l10n.settingsNotifSocial,
+                                                _notifSocial,
+                                                (v) => _toggleNotification(
+                                                  NotificationType.social,
+                                                  v,
+                                                  (val) => _notifSocial = val,
+                                                ),
+                                                theme,
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildAudioSwitch(
+                                                l10n.settingsNotifSpecialEvents,
+                                                _notifSpecialEvent,
+                                                (v) => _toggleNotification(
+                                                  NotificationType.specialEvent,
+                                                  v,
+                                                  (val) =>
+                                                      _notifSpecialEvent = val,
+                                                ),
+                                                theme,
+                                              ),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // Diagnostic buttons that isolate each layer
+                                          // of the notification pipeline. Gated behind
+                                          // kDebugMode so production builds never see
+                                          // it — these are developer-facing controls
+                                          // for triage during development + Play Store
+                                          // internal testing, not user features. See
+                                          // NOTIFICATIONS_TESTING.md for triage guide.
+                                          if (kDebugMode) ...[
+                                            _buildSection(
+                                              _SettingsSection
+                                                  .testNotifications,
+                                              'TEST NOTIFICATIONS',
+                                              [
+                                                _buildNotificationTestPanel(
+                                                  theme,
+                                                ),
+                                              ],
                                               theme,
                                             ),
-                                          if (premiumState.hasBattlePass)
-                                            _buildBattlePassButton(
-                                              premiumState,
+                                            const SizedBox(height: 32),
+                                          ],
+
+                                          _buildSection(
+                                            _SettingsSection.profile,
+                                            l10n.settingsSectionUserProfile,
+                                            [
+                                              _buildUserProfileSettings(
+                                                authState,
+                                                theme,
+                                              ),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 5b. Your game — statistics and replays.
+                                          // Both used to be circular buttons flanking
+                                          // the home screen's high-score bar, where
+                                          // they cost the home screen a whole row to
+                                          // offer two things a player looks at
+                                          // occasionally. They live here now, where
+                                          // the rest of "about your game" already is.
+                                          _buildSection(
+                                            _SettingsSection.yourGame,
+                                            l10n.settingsSectionYourGame,
+                                            [
+                                              _buildLinkButton(
+                                                theme,
+                                                icon: Icons.analytics,
+                                                label: l10n.pfStatistics,
+                                                subtitle: l10n
+                                                    .settingsStatisticsSubtitle,
+                                                onPressed: () => context.push(
+                                                  AppRoutes.statistics,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              _buildLinkButton(
+                                                theme,
+                                                icon: Icons.video_library,
+                                                label: l10n.pfReplays,
+                                                subtitle: l10n
+                                                    .settingsReplaysSubtitle,
+                                                onPressed: () => context.push(
+                                                  AppRoutes.replays,
+                                                ),
+                                              ),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 6. Help & Tutorial Section
+                                          _buildSection(
+                                            _SettingsSection.help,
+                                            l10n.settingsSectionHelp,
+                                            [
+                                              _buildReplayTutorialButton(theme),
+                                              const SizedBox(height: 16),
+                                              _buildCreditsButton(theme),
+                                              _buildRateUsButton(theme),
+                                              _buildPrivacyChoicesButton(theme),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 6b. Legal Section
+                                          _buildSection(
+                                            _SettingsSection.legal,
+                                            l10n.settingsSectionLegal,
+                                            [
+                                              _buildPrivacyPolicyButton(theme),
+                                              const SizedBox(height: 12),
+                                              _buildTermsButton(theme),
+                                            ],
+                                            theme,
+                                          ),
+
+                                          const SizedBox(height: 32),
+
+                                          // 7. Premium Section (if available)
+                                          if (premiumState.isInitialized)
+                                            _buildSection(
+                                              _SettingsSection.premium,
+                                              l10n.settingsSectionPremium,
+                                              [
+                                                _buildPremiumStatusCard(
+                                                  premiumState,
+                                                  theme,
+                                                ),
+                                                if (!premiumState.hasPremium)
+                                                  _buildUpgradeButton(
+                                                    premiumState,
+                                                    theme,
+                                                  ),
+                                                _buildRestorePurchasesButton(
+                                                  premiumState,
+                                                  theme,
+                                                ),
+                                                _buildPurchaseHistoryButton(
+                                                  premiumState,
+                                                  theme,
+                                                ),
+                                                if (premiumState.hasPremium ||
+                                                    premiumState
+                                                        .ownedSkins
+                                                        .isNotEmpty)
+                                                  _buildCosmeticsButton(
+                                                    premiumState,
+                                                    theme,
+                                                  ),
+                                                if (premiumState.hasBattlePass)
+                                                  _buildBattlePassButton(
+                                                    premiumState,
+                                                    theme,
+                                                  ),
+                                              ],
                                               theme,
                                             ),
+
+                                          const SizedBox(height: 16),
+
+                                          // Back Button — full width
+                                          GradientButton(
+                                            onPressed: () => context.pop(),
+                                            text: l10n.settingsBackToGame,
+                                            primaryColor: theme.accentColor,
+                                            secondaryColor: theme.foodColor,
+                                            icon: Icons.arrow_back,
+                                            width: double.infinity,
+                                          ),
                                         ],
-                                        theme,
                                       ),
-
-                                    const SizedBox(height: 16),
-
-                                    // Back Button — full width
-                                    GradientButton(
-                                      onPressed: () => context.pop(),
-                                      text: l10n.settingsBackToGame,
-                                      primaryColor: theme.accentColor,
-                                      secondaryColor: theme.foodColor,
-                                      icon: Icons.arrow_back,
-                                      width: double.infinity,
-                                    ),
-                                  ],
-                                ),
                                     ),
                                   ),
                                 ],
@@ -911,86 +977,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return BlocBuilder<DisplayCubit, DisplayState>(
       builder: (context, display) {
-        return _buildSection(_SettingsSection.display, l10n.settingsSectionDisplay, [
-          _buildRefreshRateCard(display, theme),
-          const SizedBox(height: 20),
-          const Divider(height: 1),
-          const SizedBox(height: 20),
-          _buildAudioSwitch(
-            l10n.settingsSmoothMotion,
-            display.highRefreshRateEnabled,
-            (value) async {
-              await context
-                  .read<DisplayCubit>()
-                  .setHighRefreshRateEnabled(value);
-              _analytics.trackSettingChanged(
-                settingName: 'high_refresh_rate_enabled',
-                value: '$value',
-              );
-            },
-            theme,
-            description: l10n.settingsSmoothMotionSubtitle,
-            enabled: display.deviceSupportsHighRate,
-          ),
-
-          // The platform overrides us in both of these cases whatever the
-          // toggle says. Saying so beats looking broken.
-          if (display.throttledByBattery) ...[
-            const SizedBox(height: 12),
-            _buildDisplayNote(
-              Icons.battery_saver_rounded,
-              l10n.settingsDisplayBatteryNote,
-              theme,
-            ),
-          ],
-          if (display.throttledByHeat) ...[
-            const SizedBox(height: 12),
-            _buildDisplayNote(
-              Icons.thermostat_rounded,
-              l10n.settingsDisplayThermalNote,
-              theme,
-            ),
-          ],
-          // Only once we have actually read the panel — before that we would
-          // be telling a 120 Hz phone it is single-rate.
-          if (display.loaded &&
-              display.info != null &&
-              !display.deviceSupportsHighRate) ...[
-            const SizedBox(height: 12),
-            _buildDisplayNote(
-              Icons.info_outline_rounded,
-              l10n.settingsDisplaySingleRateNote,
-              theme,
-            ),
-          ],
-
-          const SizedBox(height: 16),
-          Text(
-            l10n.settingsDisplayFooter,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12.5,
-              height: 1.4,
-            ),
-          ),
-
-          // Every mode the panel offers. Only worth showing when there is
-          // more than one — a lone chip is just the number above it again.
-          if ((display.info?.supportedRates.length ?? 0) > 1) ...[
+        return _buildSection(
+          _SettingsSection.display,
+          l10n.settingsSectionDisplay,
+          [
+            _buildRefreshRateCard(display, theme),
             const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 20),
+            _buildAudioSwitch(
+              l10n.settingsSmoothMotion,
+              display.highRefreshRateEnabled,
+              (value) async {
+                await context.read<DisplayCubit>().setHighRefreshRateEnabled(
+                  value,
+                );
+                _analytics.trackSettingChanged(
+                  settingName: 'high_refresh_rate_enabled',
+                  value: '$value',
+                );
+              },
+              theme,
+              description: l10n.settingsSmoothMotionSubtitle,
+              enabled: display.deviceSupportsHighRate,
+            ),
+
+            // The platform overrides us in both of these cases whatever the
+            // toggle says. Saying so beats looking broken.
+            if (display.throttledByBattery) ...[
+              const SizedBox(height: 12),
+              _buildDisplayNote(
+                Icons.battery_saver_rounded,
+                l10n.settingsDisplayBatteryNote,
+                theme,
+              ),
+            ],
+            if (display.throttledByHeat) ...[
+              const SizedBox(height: 12),
+              _buildDisplayNote(
+                Icons.thermostat_rounded,
+                l10n.settingsDisplayThermalNote,
+                theme,
+              ),
+            ],
+            // Only once we have actually read the panel — before that we would
+            // be telling a 120 Hz phone it is single-rate.
+            if (display.loaded &&
+                display.info != null &&
+                !display.deviceSupportsHighRate) ...[
+              const SizedBox(height: 12),
+              _buildDisplayNote(
+                Icons.info_outline_rounded,
+                l10n.settingsDisplaySingleRateNote,
+                theme,
+              ),
+            ],
+
+            const SizedBox(height: 16),
             Text(
-              l10n.settingsDisplaySupportedTitle,
+              l10n.settingsDisplayFooter,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.45),
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(1.2),
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 12.5,
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 10),
-            _buildSupportedRates(display, theme),
+
+            // Every mode the panel offers. Only worth showing when there is
+            // more than one — a lone chip is just the number above it again.
+            if ((display.info?.supportedRates.length ?? 0) > 1) ...[
+              const SizedBox(height: 20),
+              Text(
+                l10n.settingsDisplaySupportedTitle,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: context.letterSpacing(1.2),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildSupportedRates(display, theme),
+            ],
           ],
-        ], theme);
+          theme,
+        );
       },
     );
   }
@@ -2389,8 +2460,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _notificationService.sendTestLocalNotification();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Local test fired — check your notification tray.'),
+      arcadeSnackBar(
+        context,
+        message: 'Local test fired — check your notification tray.',
         duration: Duration(seconds: 3),
       ),
     );
@@ -2400,12 +2472,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await _notificationService.sendTestNotificationViaBackend();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? 'Backend accepted the push. Should arrive within ~5s.'
-              : 'Backend rejected. Check API logs (FCM token registered?).',
-        ),
+      arcadeSnackBar(
+        context,
+        message: ok
+            ? 'Backend accepted the push. Should arrive within ~5s.'
+            : 'Backend rejected. Check API logs (FCM token registered?).',
         duration: const Duration(seconds: 4),
       ),
     );
@@ -2417,8 +2488,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await Clipboard.setData(ClipboardData(text: token));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('FCM token copied. Paste into Firebase Console.'),
+      arcadeSnackBar(
+        context,
+        message: 'FCM token copied. Paste into Firebase Console.',
         duration: Duration(seconds: 3),
       ),
     );
@@ -2455,8 +2527,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!fireAt.isAfter(DateTime.now())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pick a future date + time'),
+        arcadeSnackBar(
+          context,
+          message: 'Pick a future date + time',
           duration: Duration(seconds: 3),
         ),
       );
@@ -2466,12 +2539,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await _notificationService.scheduleTestNotificationAt(fireAt);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? 'Scheduled via backend for ${_formatScheduledTime(fireAt)}'
-              : 'Backend rejected the schedule. Check the API logs.',
-        ),
+      arcadeSnackBar(
+        context,
+        message: ok
+            ? 'Scheduled via backend for ${_formatScheduledTime(fireAt)}'
+            : 'Backend rejected the schedule. Check the API logs.',
         duration: const Duration(seconds: 4),
       ),
     );
@@ -2481,12 +2553,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await _notificationService.cancelScheduledTestNotification();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? 'Scheduled test cancelled (backend job deleted)'
-              : 'Cancel returned non-200 — local handle cleared anyway',
-        ),
+      arcadeSnackBar(
+        context,
+        message: ok
+            ? 'Scheduled test cancelled (backend job deleted)'
+            : 'Cancel returned non-200 — local handle cleared anyway',
         duration: const Duration(seconds: 3),
       ),
     );
@@ -2503,7 +2574,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? 'No variant applied (no streak / no challenge / no high score yet, or no FCM token registered).'
         : 'Preview fired via backend (variant: $variant). Check your tray.';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+      arcadeSnackBar(
+        context,
+        message: message,
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
@@ -2532,10 +2607,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         GradientButton(
           onPressed: () async {
             final messenger = ScaffoldMessenger.of(context);
+            final snackTheme = context.read<ThemeCubit>().state.currentTheme;
             final shown = await ads.showPrivacyOptions();
             if (!shown) {
               messenger.showSnackBar(
-                SnackBar(content: Text(l10n.settingsAdPrivacyUnavailable)),
+                arcadeSnackBarFor(
+                  snackTheme,
+                  message: l10n.settingsAdPrivacyUnavailable,
+                ),
               );
             }
           },
@@ -2977,6 +3056,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           final scaffoldMessenger = ScaffoldMessenger.of(
                             context,
                           );
+                          final snackTheme = context
+                              .read<ThemeCubit>()
+                              .state
+                              .currentTheme;
 
                           if (authState.isGuestUser) {
                             success = await authCubit.updateGuestUsername(
@@ -3015,11 +3098,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (success && dialogContext.mounted) {
                             Navigator.of(dialogContext).pop();
                             scaffoldMessenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  l10n.settingsUsernameUpdated(newUsername),
+                              arcadeSnackBarFor(
+                                snackTheme,
+                                message: l10n.settingsUsernameUpdated(
+                                  newUsername,
                                 ),
-                                backgroundColor: Colors.green,
+                                tone: ArcadeSnackTone.success,
                               ),
                             );
                           }
@@ -3409,30 +3493,29 @@ extension _SettingsPremium on _SettingsScreenState {
   void _restorePurchases() async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.settingsRestoring),
-          backgroundColor: Colors.blue,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
 
       final purchaseService = PurchaseService();
       await purchaseService.restorePurchases();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.settingsRestored),
-            backgroundColor: Colors.green,
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsRestored,
+            tone: ArcadeSnackTone.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.settingsRestoreFailed),
-            backgroundColor: Colors.red,
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsRestoreFailed,
+            tone: ArcadeSnackTone.error,
           ),
         );
       }
@@ -3538,9 +3621,10 @@ extension _SettingsPremium on _SettingsScreenState {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.settingsHistoryLoadFailed),
-            backgroundColor: Colors.red,
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsHistoryLoadFailed,
+            tone: ArcadeSnackTone.error,
           ),
         );
       }

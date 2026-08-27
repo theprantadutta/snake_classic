@@ -23,6 +23,7 @@ import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class DailyChallengesScreen extends ConsumerStatefulWidget {
   const DailyChallengesScreen({super.key});
@@ -54,19 +55,12 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       _audioService.playSound('coin_collect');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.monetization_on, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(
-                    context,
-                  )!.dchClaimedReward(challenge.coinReward, challenge.xpReward),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
+          arcadeSnackBar(
+            context,
+            message: AppLocalizations.of(context)!
+                .dchClaimedReward(challenge.coinReward, challenge.xpReward),
+            tone: ArcadeSnackTone.success,
+            icon: Icons.monetization_on,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -93,37 +87,31 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         // gap where reading context is unsafe.
         final messenger = ScaffoldMessenger.of(context);
         final l10n = AppLocalizations.of(context)!;
+        final snackTheme = context.read<ThemeCubit>().state.currentTheme;
         messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.celebration, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text(l10n.dchClaimedCoins(totalClaimed)),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
+          arcadeSnackBarFor(
+            snackTheme,
+            message: l10n.dchClaimedCoins(totalClaimed),
+            tone: ArcadeSnackTone.success,
+            icon: Icons.celebration,
             duration: Duration(seconds: canDouble ? 6 : 2),
-            action: canDouble
-                ? SnackBarAction(
-                    label: l10n.dchWatchTo2x,
-                    textColor: Colors.amber,
-                    onPressed: () => ads.showRewarded(
-                      placement: 'challenge_2x',
-                      onReward: () {
-                        coins.earnCoins(
-                          CoinEarningSource.dailyChallenge,
-                          customAmount: totalClaimed,
-                          itemName: 'Daily Challenges 2x',
-                          metadata: const {'doubled': true},
-                        );
-                        showRewardToast(
-                          messenger,
-                          l10n.dchDoubledBonus(totalClaimed),
-                          icon: Icons.monetization_on,
-                        );
-                      },
-                    ),
+            actionLabel: canDouble ? l10n.dchWatchTo2x : null,
+            onAction: canDouble
+                ? () => ads.showRewarded(
+                    placement: 'challenge_2x',
+                    onReward: () {
+                      coins.earnCoins(
+                        CoinEarningSource.dailyChallenge,
+                        customAmount: totalClaimed,
+                        itemName: 'Daily Challenges 2x',
+                        metadata: const {'doubled': true},
+                      );
+                      showRewardToast(
+                        messenger,
+                        l10n.dchDoubledBonus(totalClaimed),
+                        icon: Icons.monetization_on,
+                      );
+                    },
                   )
                 : null,
           ),
@@ -328,14 +316,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     Widget child, {
     IconData? icon,
     int? index,
-  }) => screenSection(
-    context,
-    theme,
-    title,
-    child,
-    icon: icon,
-    index: index,
-  );
+  }) => screenSection(context, theme, title, child, icon: icon, index: index);
 
   /// A progress bar in the theme's accent. One shape for every bar on the
   /// screen, so a full one and a half-full one are the same object.

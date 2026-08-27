@@ -15,6 +15,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class ReplaysScreen extends StatefulWidget {
   const ReplaysScreen({super.key});
@@ -117,8 +118,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
             if (!_isLoading && _replays.isNotEmpty) ...[
               const SizedBox(width: 10),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: theme.accentColor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
@@ -166,11 +166,7 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                 controller: _tabController,
                 children: [
                   _buildReplayList(_recentReplays, l10n.rpNoRecent, theme),
-                  _buildReplayList(
-                    _highScoreReplays,
-                    l10n.rpNoBest,
-                    theme,
-                  ),
+                  _buildReplayList(_highScoreReplays, l10n.rpNoBest, theme),
                   _buildReplayList(_crashReplays, l10n.rpNoCrashes, theme),
                 ],
               ),
@@ -369,7 +365,10 @@ class _ReplaysScreenState extends State<ReplaysScreen>
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => context.push(AppRoutes.replayViewerPath(replay.id), extra: replay),
+                      onPressed: () => context.push(
+                        AppRoutes.replayViewerPath(replay.id),
+                        extra: replay,
+                      ),
                       icon: const Icon(Icons.play_arrow, size: 16),
                       label: Text(l10n.rpWatch),
                       style: ElevatedButton.styleFrom(
@@ -481,15 +480,14 @@ class _ReplaysScreenState extends State<ReplaysScreen>
         // Drift watch re-emits automatically — no manual reload.
         await _storageService.deleteReplay(replay.id);
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.rpDeleted)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(arcadeSnackBar(context, message: l10n.rpDeleted));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.rpDeleteFailed)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(arcadeSnackBar(context, message: l10n.rpDeleteFailed));
         }
       }
     }

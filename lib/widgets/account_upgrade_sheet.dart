@@ -6,6 +6,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/widgets/account_switch_confirmation.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// Bottom sheet shown when an anonymous (guest) user tries to make a
 /// purchase. Offers two ways to upgrade the account in place — keeping
@@ -120,6 +121,10 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   final navigator = Navigator.of(context);
                   final messenger = ScaffoldMessenger.of(context);
                   final l10n = AppLocalizations.of(context)!;
+                  final snackTheme = context
+                      .read<ThemeCubit>()
+                      .state
+                      .currentTheme;
                   setState(() => _busy = true);
                   // Branches to link-vs-sign-in internally. Offline guests
                   // have no Firebase user to link against and used to fail
@@ -132,18 +137,20 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                   if (ok) {
                     navigator.pop(true);
                     messenger.showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.green.shade700,
-                        content: Text(l10n.auLinked),
+                      arcadeSnackBarFor(
+                        snackTheme,
+                        message: l10n.auLinked,
+                        tone: ArcadeSnackTone.success,
                       ),
                     );
                   } else {
                     final code = cubit.state.errorMessage ?? '';
                     if (code.isNotEmpty && code != 'link failed') {
                       messenger.showSnackBar(
-                        SnackBar(
-                          backgroundColor: Colors.red.shade700,
-                          content: Text(_linkError(l10n, code)),
+                        arcadeSnackBarFor(
+                          snackTheme,
+                          message: _linkError(l10n, code),
+                          tone: ArcadeSnackTone.error,
                         ),
                       );
                     }
@@ -164,12 +171,12 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+                onPressed: _busy
+                    ? null
+                    : () => Navigator.of(context).pop(false),
                 child: Text(
                   l10n.auNotNow,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                 ),
               ),
             ],
