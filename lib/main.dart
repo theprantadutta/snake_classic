@@ -666,9 +666,24 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         state == AppLifecycleState.inactive) {
       unawaited(getIt<SyncEngine>().syncNow());
       DataSyncService().forceSyncNow();
-      // Mark the background trip and warm up an App Open ad for the next resume.
-      getIt<AdService>().markBackgrounded();
+      // Warm up an App Open ad for the next resume. Safe on either state.
       getIt<AdService>().preloadAppOpen();
+    }
+
+    // Mark the background trip on `paused` ONLY -- never on `inactive`.
+    //
+    // Returning to the foreground fires `inactive` immediately BEFORE
+    // `resumed`, so marking on `inactive` restarted the away-clock on the very
+    // transition that was supposed to end it. maybeShowAppOpenOnResume then
+    // measured ~0ms away, failed its three-minute gate, and returned. Every
+    // time. AdMob showed the result plainly: App Open, 0 impressions, $0.00,
+    // -100% -- an entire ad format that had never once served.
+    //
+    // `paused` is the only state that means the app actually went away, and it
+    // does not occur on the way back in. A notification shade pulled down over
+    // the app raises `inactive` alone, which correctly still does not count.
+    if (state == AppLifecycleState.paused) {
+      getIt<AdService>().markBackgrounded();
     }
   }
 

@@ -654,6 +654,14 @@ class AdService {
   /// (those don't represent the user actually leaving the app).
   void markBackgrounded() {
     if (_fullScreenAdShowing) return;
+    // Idempotent: while a background trip is already in progress, do NOT
+    // restart the clock. The trip ends when maybeShowAppOpenOnResume consumes
+    // the flag, so a second lifecycle event before that is the same trip.
+    //
+    // Belt and braces with the caller only passing `paused` now. Anything that
+    // re-marks mid-trip resets _backgroundedAtMs, and since the away-gate
+    // measures from it, a reset silently means no App Open ad ever shows.
+    if (_wasInBackground) return;
     _wasInBackground = true;
     _backgroundedAtMs = DateTime.now().millisecondsSinceEpoch;
   }
