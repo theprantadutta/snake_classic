@@ -117,6 +117,25 @@ class AudioService {
   void _playAtRate(AudioSource source, double volume, double rate) {
     try {
       final handle = _soloud.play(source, volume: volume);
+      // play() does NOT throw when the engine runs out of voices. SoLoud
+      // treats maxActiveVoiceCountReached as a warning and hands back a
+      // ZEROED handle instead (see _checkPlaybackResult in the plugin) —
+      // "the sound did not play, but this is a warning, not a failure".
+      //
+      // setRelativePlaySpeed validates only that the engine is initialized
+      // and then passes the handle straight to native FFI, so a zeroed
+      // handle reached the C++ engine and corrupted voice state while the
+      // mixer thread was running. The crash surfaced later and elsewhere:
+      // on the AAudio callback thread, deep inside SoLoud's mix loop, at an
+      // address belonging to no library.
+      //
+      // Voice exhaustion is not exotic here. This path is the rate-shifted
+      // game_over cue, which fires at the exact moment the crash and
+      // particle sounds are already playing.
+      //
+      // Checking the handle is the plugin's own idiom for this — see how it
+      // guards stop(): "we should check if it is still valid".
+      if (!_soloud.getIsValidVoiceHandle(handle)) return;
       _soloud.setRelativePlaySpeed(handle, rate);
     } catch (e) {
       debugPrint('Rate-shifted play failed: $e');
@@ -227,13 +246,14 @@ class AudioService {
   bool get isMusicEnabled => _musicEnabled;
 
   void dispose() {
-    // Dispose all loaded sounds
-    for (final source in _loadedSounds.values) {
-      _soloud.disposeSource(source);
-    }
-    _loadedSounds.clear();
-
+    // deinit() first, and no disposeSource loop. Freeing sources while the
+    // engine is still mixing is a use-after-free on the audio thread, and the
+    // loop was redundant anyway: deinit() "stops the engine and disposes of
+    // all resources, including sounds".
+    //
+    // Nothing calls this today, which is the only reason it never fired.
     _soloud.deinit();
+    _loadedSounds.clear();
     _musicPlayer?.dispose();
     _musicPlayer = null;
     _initialized = false;
