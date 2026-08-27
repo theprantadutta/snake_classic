@@ -6,7 +6,8 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:snake_classic/models/daily_challenge.dart' show ChallengeDifficulty;
+import 'package:snake_classic/models/daily_challenge.dart'
+    show ChallengeDifficulty;
 import 'package:snake_classic/models/weekly_quest.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/audio_service.dart';
@@ -14,6 +15,7 @@ import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class WeeklyQuestsScreen extends StatefulWidget {
   const WeeklyQuestsScreen({super.key});
@@ -46,15 +48,11 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
     HapticService().mediumImpact();
     _audioService.playSound('coin_collect');
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.green.shade700,
-        content: Row(
-          children: [
-            const Icon(Icons.monetization_on, color: Colors.amber),
-            const SizedBox(width: 8),
-            Text(l10n.wqClaimToast(quest.coinReward, quest.battlePassXpReward)),
-          ],
-        ),
+      arcadeSnackBar(
+        context,
+        message: l10n.wqClaimToast(quest.coinReward, quest.battlePassXpReward),
+        tone: ArcadeSnackTone.success,
+        icon: Icons.monetization_on,
       ),
     );
   }
@@ -87,15 +85,17 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
                                           AppLocalizations.of(context)!
                                               .wqNoQuests,
                                           style: TextStyle(
-                                              color: theme.accentColor
-                                                  .withValues(alpha: 0.7)),
+                                            color: theme.accentColor.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                          ),
                                         ),
                                       )
                                     : ListView.builder(
                                         padding: EdgeInsets.symmetric(
-                                            horizontal:
-                                                12 + context.sideInset(),
-                                            vertical: 8),
+                                          horizontal: 12 + context.sideInset(),
+                                          vertical: 8,
+                                        ),
                                         itemCount: _service.quests.length,
                                         itemBuilder: (context, i) {
                                           final quest = _service.quests[i];
@@ -128,13 +128,18 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-          horizontal: 12 + context.sideInset(), vertical: 8),
+        horizontal: 12 + context.sideInset(),
+        vertical: 8,
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
-                color: theme.accentColor, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: theme.accentColor,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 4),
           Text(
@@ -166,7 +171,9 @@ class _SummaryStrip extends StatelessWidget {
     final total = service.quests.length;
     return Container(
       margin: EdgeInsets.symmetric(
-          horizontal: 16 + context.sideInset(), vertical: 4),
+        horizontal: 16 + context.sideInset(),
+        vertical: 4,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: theme.accentColor.withValues(alpha: 0.08),
@@ -180,7 +187,9 @@ class _SummaryStrip extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.wqProgressSummary(completed, total) +
-                  (claimable > 0 ? '   •   ${l10n.wqClaimable(claimable)}' : ''),
+                  (claimable > 0
+                      ? '   •   ${l10n.wqClaimable(claimable)}'
+                      : ''),
               style: TextStyle(
                 color: theme.accentColor,
                 fontSize: 13,
@@ -198,8 +207,11 @@ class _QuestCard extends StatelessWidget {
   final WeeklyQuest quest;
   final GameTheme theme;
   final VoidCallback onClaim;
-  const _QuestCard(
-      {required this.quest, required this.theme, required this.onClaim});
+  const _QuestCard({
+    required this.quest,
+    required this.theme,
+    required this.onClaim,
+  });
 
   Color _difficultyColor() {
     switch (quest.difficulty) {
@@ -234,7 +246,8 @@ class _QuestCard extends StatelessWidget {
                   color: _difficultyColor().withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: _difficultyColor().withValues(alpha: 0.6)),
+                    color: _difficultyColor().withValues(alpha: 0.6),
+                  ),
                 ),
                 child: Text(
                   quest.difficulty.localizedName(AppLocalizations.of(context)!),
@@ -272,8 +285,7 @@ class _QuestCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor:
-                  theme.accentColor.withValues(alpha: 0.12),
+              backgroundColor: theme.accentColor.withValues(alpha: 0.12),
               valueColor: AlwaysStoppedAnimation(_difficultyColor()),
             ),
           ),
@@ -289,8 +301,7 @@ class _QuestCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.monetization_on,
-                  color: Colors.amber, size: 14),
+              const Icon(Icons.monetization_on, color: Colors.amber, size: 14),
               const SizedBox(width: 4),
               Text(
                 '${quest.coinReward}',
@@ -334,8 +345,7 @@ class _QuestCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle,
-                      color: Colors.green, size: 14),
+                  const Icon(Icons.check_circle, color: Colors.green, size: 14),
                   const SizedBox(width: 6),
                   Text(
                     AppLocalizations.of(context)!.dchClaimed,

@@ -15,6 +15,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
@@ -605,9 +606,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.frGamesCount(user.totalGamesPlayed),
+                        AppLocalizations.of(context)!
+                            .frGamesCount(user.totalGamesPlayed),
                         style: TextStyle(
                           fontSize: 14,
                           color: theme.accentColor.withValues(alpha: 0.6),
@@ -944,13 +944,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     if (!mounted) return;
     final signedIn = ApiService().isAuthenticated;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          signedIn
-              ? failureMessage
-              : AppLocalizations.of(context)!.frSignInSocial,
-        ),
-        backgroundColor: Colors.red.shade700,
+      arcadeSnackBar(
+        context,
+        message: signedIn
+            ? failureMessage
+            : AppLocalizations.of(context)!.frSignInSocial,
+        tone: ArcadeSnackTone.error,
       ),
     );
   }
@@ -963,9 +962,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     if (!mounted) return;
     if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.frRequestSent)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(arcadeSnackBar(context, message: l10n.frRequestSent));
     } else {
       _showMutationError(l10n.frSendRequestFailed);
     }
@@ -981,7 +979,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
       getIt<AnalyticsFacade>().trackFriendAdded();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.frRequestAccepted)));
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestAccepted));
     } else {
       _showMutationError(l10n.frAcceptFailed);
     }
@@ -996,7 +994,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     if (success) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.frRequestRejected)));
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestRejected));
     } else {
       _showMutationError(l10n.frRejectFailed);
     }
@@ -1029,7 +1027,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     if (success) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.frRequestCancelled)));
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestCancelled));
     } else {
       _showMutationError(l10n.frCancelFailed);
     }
@@ -1045,13 +1043,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         .pingFriendForMatch(friend.uid);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          sent
-              ? l10n.frChallengeSent(friend.displayName)
-              : (message ?? l10n.frChallengeFailed),
-        ),
-        backgroundColor: sent ? Colors.green.shade700 : Colors.red.shade700,
+      arcadeSnackBar(
+        context,
+        message: sent
+            ? l10n.frChallengeSent(friend.displayName)
+            : (message ?? l10n.frChallengeFailed),
+        tone: sent ? ArcadeSnackTone.success : ArcadeSnackTone.error,
       ),
     );
   }
@@ -1077,7 +1074,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               if (!mounted) return;
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.frBlocked(friend.displayName))),
+                  arcadeSnackBar(
+                    context,
+                    message: l10n.frBlocked(friend.displayName),
+                  ),
                 );
               } else {
                 _showMutationError(l10n.frBlockFailed);
@@ -1138,12 +1138,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                               .unblockUser(user.uid);
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                ok
-                                    ? l10n.frUnblocked(user.displayName)
-                                    : l10n.frUnblockFailed,
-                              ),
+                            arcadeSnackBar(
+                              context,
+                              message: ok
+                                  ? l10n.frUnblocked(user.displayName)
+                                  : l10n.frUnblockFailed,
                             ),
                           );
                         },
@@ -1262,7 +1261,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
               }
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
-                  SnackBar(content: Text(l10n.frRemoved(friend.displayName))),
+                  arcadeSnackBar(
+                    context,
+                    message: l10n.frRemoved(friend.displayName),
+                  ),
                 );
               }
             },

@@ -48,6 +48,7 @@ import 'package:snake_classic/widgets/home/home_arcade_bar.dart';
 import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -415,6 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           // context afterwards is unsafe.
           final messenger = ScaffoldMessenger.of(context);
           final claimL10n = AppLocalizations.of(context)!;
+          final snackTheme = context.read<ThemeCubit>().state.currentTheme;
           final success = await context.read<CoinsCubit>().collectDailyBonus();
           if (success) {
             getIt<AnalyticsFacade>().trackDailyBonusCollected();
@@ -424,8 +426,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             // either way, so without this the refusal was invisible and a
             // failed claim was indistinguishable from a paid one.
             messenger.showSnackBar(
-              SnackBar(
-                content: Text(claimL10n.dbAlreadyClaimed),
+              arcadeSnackBarFor(
+                snackTheme,
+                message: claimL10n.dbAlreadyClaimed,
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -1265,11 +1268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // No ad loaded → explain why, don't just do nothing.
     if (!ads.canShowCapped(AdService.capFreePowerUp)) {
       messenger.showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          content: Text(l10n.homeNoAdReady),
-        ),
+        arcadeSnackBar(context, message: l10n.homeNoAdReady),
       );
       return;
     }
@@ -1332,11 +1331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     } else {
       messenger.showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          content: Text(l10n.homeAdNotFinished),
-        ),
+        arcadeSnackBarFor(theme, message: l10n.homeAdNotFinished),
       );
     }
   }

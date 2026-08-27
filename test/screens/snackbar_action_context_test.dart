@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// A snack bar outlives the screen that showed it, and its action must cope.
 ///
@@ -123,5 +125,116 @@ void main() {
       isNotNull,
       reason: 'reaching through the dead context is the crash',
     );
+  });
+
+  group('the shared arcade snack bar', () {
+    /// Same trap as above, aimed at the replacement: arcadeSnackBar renders its
+    /// action inside its own panel rather than using SnackBarAction, so the
+    /// framework is no longer the thing keeping it safe. It resolves the
+    /// messenger through a Builder placed inside the snack bar; this proves
+    /// that context stays alive after the screen that showed it is gone.
+    Future<void> show(WidgetTester tester, {required bool withAction}) async {
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      arcadeSnackBarFor(
+                        GameTheme.classic,
+                        message: 'connection lost',
+                        tone: ArcadeSnackTone.error,
+                        actionLabel: withAction ? 'RETRY' : null,
+                        onAction: withAction ? () {} : null,
+                      ),
+                    );
+                  },
+                  child: const Text('show'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('show'));
+      await tester.pump();
+
+      nav.currentState!.pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Center(child: Text('game'))),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('renders its message', (tester) async {
+      await show(tester, withAction: false);
+
+      expect(find.text('connection lost'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('its action survives the screen being replaced', (
+      tester,
+    ) async {
+      await show(tester, withAction: true);
+      expect(find.text('RETRY'), findsOneWidget);
+
+      await tester.tap(find.text('RETRY'));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('its action dismisses', (tester) async {
+      await show(tester, withAction: true);
+
+      await tester.tap(find.text('RETRY'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('connection lost'), findsNothing);
+    });
+
+    testWidgets('onAction runs', (tester) async {
+      // Dismissing must not swallow the caller's callback — the "Watch to 2x"
+      // action on the daily-challenge toast is real money.
+      var ran = false;
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () =>
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        arcadeSnackBarFor(
+                          GameTheme.classic,
+                          message: 'claimed',
+                          actionLabel: 'DOUBLE',
+                          onAction: () => ran = true,
+                        ),
+                      ),
+                  child: const Text('show'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('show'));
+      // Settle: one pump leaves the snack bar mid-entrance and the tap lands
+      // where the button is going to be, not where it is.
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DOUBLE'));
+      await tester.pump();
+
+      expect(ran, isTrue);
+    });
   });
 }

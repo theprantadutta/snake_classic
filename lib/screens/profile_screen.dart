@@ -22,6 +22,7 @@ import 'package:snake_classic/widgets/account_switch_confirmation.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/not_backed_up_notice.dart';
 import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,7 +55,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Convenience getters using cached data
   Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
-  List<Achievement> get _recentAchievements => _appCache.recentAchievements ?? [];
+  List<Achievement> get _recentAchievements =>
+      _appCache.recentAchievements ?? [];
   // Gated on the LOCAL group only — this panel renders statistics that come
   // straight from Drift. isFullyLoaded also requires the network group, which
   // is skipped on a first-run preload, so using it here left the spinner up
@@ -108,49 +110,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListenableBuilder(
         listenable: _appCache,
         builder: (context, _) => BlocBuilder<AuthCubit, AuthState>(
-        builder: (context, authState) {
-          return Scaffold(
-            bottomNavigationBar: const SnakeBannerAd(),
-            extendBodyBehindAppBar: true,
-            // Was a hand-copied match of SettingsScreen's bar, with a comment
-            // saying so. Both come from the shared bar now, so "matches
-            // Settings exactly" is enforced rather than asserted.
-            appBar: appScreenBar(
-              context,
-              theme,
-              AppLocalizations.of(context)!.pfTitle,
-              leading: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.backgroundColor.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.3),
+          builder: (context, authState) {
+            return Scaffold(
+              bottomNavigationBar: const SnakeBannerAd(),
+              extendBodyBehindAppBar: true,
+              // Was a hand-copied match of SettingsScreen's bar, with a comment
+              // saying so. Both come from the shared bar now, so "matches
+              // Settings exactly" is enforced rather than asserted.
+              appBar: appScreenBar(
+                context,
+                theme,
+                AppLocalizations.of(context)!.pfTitle,
+                leading: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.backgroundColor.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.accentColor.withValues(alpha: 0.3),
+                    ),
                   ),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    color: theme.primaryColor,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: theme.primaryColor,
+                    ),
+                    onPressed: () => context.pop(),
                   ),
-                  onPressed: () => context.pop(),
                 ),
               ),
-            ),
-            body: AnimatedAppBackground(
-              theme: theme,
-              child: SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.0 + context.sideInset(),
+              body: AnimatedAppBackground(
+                theme: theme,
+                child: SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.0 + context.sideInset(),
+                    ),
+                    child: _buildBody(context, authState, themeState),
                   ),
-                  child: _buildBody(context, authState, themeState),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -253,7 +255,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: _isLoading
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: ThemedLoading(theme: theme, label: l10n.pfLoadingStats),
+                    child: ThemedLoading(
+                      theme: theme,
+                      label: l10n.pfLoadingStats,
+                    ),
                   )
                 : _buildStatGrid(l10n, theme),
           ),
@@ -279,8 +284,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSection(
             theme: theme,
             title: l10n.pfReplays,
-            onViewAll:
-                replayKeys.isEmpty ? null : () => _navigateToReplays(context),
+            onViewAll: replayKeys.isEmpty
+                ? null
+                : () => _navigateToReplays(context),
             child: replayKeys.isEmpty
                 ? _buildEmptyLine(l10n.pfNoReplays)
                 : Row(
@@ -383,10 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: onViewAll,
               behavior: HitTestBehavior.opaque,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -448,22 +451,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       value: fraction,
                       strokeWidth: 3,
                       strokeCap: StrokeCap.round,
-                      backgroundColor:
-                          theme.accentColor.withValues(alpha: 0.15),
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(theme.accentColor),
+                      backgroundColor: theme.accentColor.withValues(
+                        alpha: 0.15,
+                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.accentColor,
+                      ),
                     ),
                   ),
                   CircleAvatar(
                     radius: ring / 2 - 10,
-                    backgroundColor: theme.backgroundColor.withValues(alpha: 0.6),
+                    backgroundColor: theme.backgroundColor.withValues(
+                      alpha: 0.6,
+                    ),
                     backgroundImage: authState.photoURL != null
                         ? NetworkImage(authState.photoURL!)
                         : null,
                     // Avatars fail to load on flaky connections constantly;
                     // swallow it and keep the fallback icon.
-                    onBackgroundImageError:
-                        authState.photoURL != null ? (e, s) {} : null,
+                    onBackgroundImageError: authState.photoURL != null
+                        ? (e, s) {}
+                        : null,
                     child: authState.photoURL == null
                         ? Icon(
                             Icons.person_rounded,
@@ -498,7 +506,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isGuest ? Icons.person_outline_rounded : Icons.verified_rounded,
+                    isGuest
+                        ? Icons.person_outline_rounded
+                        : Icons.verified_rounded,
                     size: context.scaled(14),
                     color: stateColor,
                   ),
@@ -546,7 +556,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (_displayStats['totalPlayTime'] as num?)?.toInt() ?? 0,
         ),
       ),
-      _Stat(l10n.pfAverageScore, _displayStats['averageScore']?.toString() ?? '0'),
+      _Stat(
+        l10n.pfAverageScore,
+        _displayStats['averageScore']?.toString() ?? '0',
+      ),
       _Stat(l10n.pfFoodConsumed, _displayStats['totalFood']?.toString() ?? '0'),
       _Stat(l10n.pfPowerUps, _displayStats['totalPowerUps']?.toString() ?? '0'),
     ];
@@ -661,14 +674,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 18),
-        _buildBenefitRow(theme, Icons.cloud_done_rounded, l10n.pfBenefitSync,
-            l10n.pfBenefitSyncSub),
+        _buildBenefitRow(
+          theme,
+          Icons.cloud_done_rounded,
+          l10n.pfBenefitSync,
+          l10n.pfBenefitSyncSub,
+        ),
         const SizedBox(height: 12),
-        _buildBenefitRow(theme, Icons.leaderboard_rounded,
-            l10n.pfBenefitLeaderboards, l10n.pfBenefitLeaderboardsSub),
+        _buildBenefitRow(
+          theme,
+          Icons.leaderboard_rounded,
+          l10n.pfBenefitLeaderboards,
+          l10n.pfBenefitLeaderboardsSub,
+        ),
         const SizedBox(height: 12),
-        _buildBenefitRow(theme, Icons.people_alt_rounded, l10n.pfBenefitSocial,
-            l10n.pfBenefitSocialSub),
+        _buildBenefitRow(
+          theme,
+          Icons.people_alt_rounded,
+          l10n.pfBenefitSocial,
+          l10n.pfBenefitSocialSub,
+        ),
         const SizedBox(height: 20),
         _buildSignInButton(
           theme: theme,
@@ -828,21 +853,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _hairline(GameTheme theme) => Divider(
-        height: 1,
-        thickness: 1,
-        color: theme.accentColor.withValues(alpha: 0.15),
-      );
+    height: 1,
+    thickness: 1,
+    color: theme.accentColor.withValues(alpha: 0.15),
+  );
 
   Widget _buildEmptyLine(String message) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(
-          message,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.55),
-            fontSize: 14,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Text(
+      message,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.55),
+        fontSize: 14,
+      ),
+    ),
+  );
 
   void _navigateToStatistics(BuildContext context) {
     context.push(AppRoutes.statistics);
@@ -856,34 +881,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.push(AppRoutes.replays);
   }
 
+  /// This screen's own snack bar helper, from before there was a shared one.
+  ///
+  /// Kept as a thin shim so the nine call sites here do not all have to change
+  /// shape; the colour they pass is translated to the tone that now decides
+  /// the whole appearance. New code should call [arcadeSnackBar] directly.
   void _showStyledSnackBar(
     BuildContext context,
     String message,
     Color color,
     GameTheme theme,
   ) {
+    final tone = switch (color) {
+      Colors.red => ArcadeSnackTone.error,
+      Colors.green => ArcadeSnackTone.success,
+      _ => ArcadeSnackTone.info,
+    };
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-      ),
+      arcadeSnackBarFor(theme, message: message, tone: tone),
     );
   }
 
@@ -909,8 +924,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           theme,
         );
       } else if (context.mounted) {
-        final isInUse = authCubit.state.errorMessage ==
-            'credential-already-in-use';
+        final isInUse =
+            authCubit.state.errorMessage == 'credential-already-in-use';
         _showStyledSnackBar(
           context,
           isInUse ? l10n.pfAppleIdInUse : l10n.pfUpgradeFailed,
@@ -920,12 +935,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        _showStyledSnackBar(
-          context,
-          l10n.pfUpgradeError,
-          Colors.red,
-          theme,
-        );
+        _showStyledSnackBar(context, l10n.pfUpgradeError, Colors.red, theme);
       }
     }
   }
@@ -956,21 +966,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           theme,
         );
       } else if (context.mounted) {
-        _showStyledSnackBar(
-          context,
-          l10n.pfUpgradeFailed,
-          Colors.red,
-          theme,
-        );
+        _showStyledSnackBar(context, l10n.pfUpgradeFailed, Colors.red, theme);
       }
     } catch (e) {
       if (context.mounted) {
-        _showStyledSnackBar(
-          context,
-          l10n.pfUpgradeError,
-          Colors.red,
-          theme,
-        );
+        _showStyledSnackBar(context, l10n.pfUpgradeError, Colors.red, theme);
       }
     }
   }
@@ -987,7 +987,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           l10n.pfDeleteAccountTitle,
-          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
           l10n.pfDeleteAccountBody(
@@ -1033,7 +1036,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: Text(
               l10n.pfDeleteForever,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

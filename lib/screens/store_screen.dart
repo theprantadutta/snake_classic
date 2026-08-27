@@ -28,6 +28,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// The store's filled gold.
 ///
@@ -122,9 +123,10 @@ class _StoreScreenState extends State<StoreScreen>
     // should quietly return the card to its "Buy" state.
     if (failed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.storePurchaseFailed),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: AppLocalizations.of(context)!.storePurchaseFailed,
+          tone: ArcadeSnackTone.error,
         ),
       );
     }
@@ -293,75 +295,83 @@ class _StoreScreenState extends State<StoreScreen>
           color: kRewardGold,
           inset: 8,
           child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.scaled(8)),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: kRewardGold.withValues(alpha: 0.28),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.monetization_on,
-                color: Colors.white,
-                size: context.scaled(20),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.storeYourCoins,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '${coinsState.balance.total}',
-                    style: const TextStyle(
-                      color: _goldFill,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (coinsState.hasPremiumBonus)
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.all(context.scaled(8)),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [_goldFill, _goldFill],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: kRewardGold.withValues(alpha: 0.28),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  l10n.storeBonusMultiplier('${coinsState.earningMultiplier}'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Icon(
+                  Icons.monetization_on,
+                  color: Colors.white,
+                  size: context.scaled(20),
                 ),
               ),
-            // Compact "watch ad → +25 coins" pill (replaces the COINS
-            // button that used to live on the home action row). Self-hides
-            // for Pro / when ads are unavailable.
-            const SizedBox(width: 8),
-            const RewardedCoinsPill(),
-          ],
-        )),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.storeYourCoins,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${coinsState.balance.total}',
+                      style: const TextStyle(
+                        color: _goldFill,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (coinsState.hasPremiumBonus)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_goldFill, _goldFill],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    l10n.storeBonusMultiplier(
+                      '${coinsState.earningMultiplier}',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              // Compact "watch ad → +25 coins" pill (replaces the COINS
+              // button that used to live on the home action row). Self-hides
+              // for Pro / when ads are unavailable.
+              const SizedBox(width: 8),
+              const RewardedCoinsPill(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -545,39 +555,40 @@ class _StoreScreenState extends State<StoreScreen>
         color: kRewardGold,
         inset: 9,
         child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(context.scaled(14)),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
-              shape: BoxShape.circle,
+          children: [
+            Container(
+              padding: EdgeInsets.all(context.scaled(14)),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.diamond,
+                color: Colors.white,
+                size: context.scaled(32),
+              ),
             ),
-            child: Icon(
-              Icons.diamond,
-              color: Colors.white,
-              size: context.scaled(32),
+            const SizedBox(height: 14),
+            Text(
+              l10n.settingsProTitle,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            l10n.settingsProTitle,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 6),
+            Text(
+              l10n.storeProHeroSubtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.accentColor.withValues(alpha: 0.75),
+                fontSize: 13,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.storeProHeroSubtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.75),
-              fontSize: 13,
-            ),
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -638,153 +649,153 @@ class _StoreScreenState extends State<StoreScreen>
           color: kRewardGold,
           inset: 8,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                if (savingsLabel != null) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _goldFill,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      savingsLabel,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  if (savingsLabel != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _goldFill,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        savingsLabel,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                price,
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                cadence,
+                style: TextStyle(
+                  color: theme.accentColor.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
+              ),
+              if (trialDays != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kRewardGold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: kRewardGold.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.storeFreeTrialBadge(trialDays),
+                    maxLines: 2,
+                    style: TextStyle(
+                      color: kRewardGold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              price,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Text(
-              cadence,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-                fontSize: 12,
-              ),
-            ),
-            if (trialDays != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: kRewardGold.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: kRewardGold.withValues(alpha: 0.45),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: anyProPending
+                      ? null
+                      : () => _purchaseSubscription(
+                          productId,
+                          l10n.storePlanDisplayName(title),
+                        ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: highlight
+                        ? kRewardGold
+                        : theme.primaryColor.withValues(alpha: 0.9),
+                    foregroundColor: highlight ? Colors.black : Colors.white,
+                    disabledBackgroundColor:
+                        (highlight ? kRewardGold : theme.primaryColor)
+                            .withValues(alpha: 0.45),
+                    disabledForegroundColor: highlight
+                        ? Colors.black.withValues(alpha: 0.7)
+                        : Colors.white.withValues(alpha: 0.85),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
                   ),
-                ),
-                child: Text(
-                  l10n.storeFreeTrialBadge(trialDays),
-                  maxLines: 2,
-                  style: TextStyle(
-                    color: kRewardGold,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  child: isPending
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  highlight ? Colors.black : Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.storeVerifyingEllipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          // "Subscribe" is wrong when the first charge is days
+                          // away — and "Start free trial" is the wording the
+                          // stores expect next to a trial offer.
+                          trialDays != null
+                              ? l10n.storeStartFreeTrial
+                              : l10n.storeSubscribe,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: anyProPending
-                    ? null
-                    : () => _purchaseSubscription(
-                        productId,
-                        l10n.storePlanDisplayName(title),
-                      ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: highlight
-                      ? kRewardGold
-                      : theme.primaryColor.withValues(alpha: 0.9),
-                  foregroundColor: highlight ? Colors.black : Colors.white,
-                  disabledBackgroundColor:
-                      (highlight ? kRewardGold : theme.primaryColor).withValues(
-                        alpha: 0.45,
-                      ),
-                  disabledForegroundColor: highlight
-                      ? Colors.black.withValues(alpha: 0.7)
-                      : Colors.white.withValues(alpha: 0.85),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: isPending
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
-                                highlight ? Colors.black : Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            l10n.storeVerifyingEllipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        // "Subscribe" is wrong when the first charge is days
-                        // away — and "Start free trial" is the wording the
-                        // stores expect next to a trial offer.
-                        trialDays != null
-                            ? l10n.storeStartFreeTrial
-                            : l10n.storeSubscribe,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        )),
+          ),
+        ),
       ),
     );
   }
@@ -831,106 +842,107 @@ class _StoreScreenState extends State<StoreScreen>
         color: kRewardGold,
         inset: 9,
         child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(10)),
-                decoration: BoxDecoration(
-                  gradient: iconGradient,
-                  shape: BoxShape.circle,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.scaled(10)),
+                  decoration: BoxDecoration(
+                    gradient: iconGradient,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: context.scaled(24),
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: context.scaled(24),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              color: theme.accentColor,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                color: theme.accentColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (isPromo) ...[
+                            const SizedBox(width: 8),
+                            _buildPromoBadge(),
+                          ],
+                        ],
+                      ),
+                      if (expiryLabel != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          expiryLabel,
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.78),
+                            fontSize: 12,
+                            fontWeight: isPromo
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
-                        if (isPromo) ...[
-                          const SizedBox(width: 8),
-                          _buildPromoBadge(),
-                        ],
                       ],
-                    ),
-                    if (expiryLabel != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        expiryLabel,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.78),
-                          fontSize: 12,
-                          fontWeight: isPromo
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
+                ),
+              ],
+            ),
+            if (isPromo) ...[
+              const SizedBox(height: 14),
+              // Convert CTA — single tap straight into the plan picker. The
+              // tab swap happens in-screen so the user doesn't lose context.
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Tap inside the Pro tab — toggle the promo-active
+                    // state away so the plan cards become visible (the Pro
+                    // tab's active-banner branch hides the plan cards).
+                    // Simplest: scroll the user's attention by showing a
+                    // dialog explaining their conversion options, OR just
+                    // route through the existing Pro plan purchase via the
+                    // monthly default. We'll fire the monthly purchase to
+                    // keep the path consistent with the Subscribe button.
+                    _purchaseSubscription(
+                      ProductIds.snakeClassicProMonthly,
+                      l10n.storeProMonthly,
+                    );
+                  },
+                  icon: const Icon(Icons.workspace_premium, size: 18),
+                  label: Text(
+                    l10n.storeKeepPro,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _goldFill,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
                 ),
               ),
             ],
-          ),
-          if (isPromo) ...[
-            const SizedBox(height: 14),
-            // Convert CTA — single tap straight into the plan picker. The
-            // tab swap happens in-screen so the user doesn't lose context.
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // Tap inside the Pro tab — toggle the promo-active
-                  // state away so the plan cards become visible (the Pro
-                  // tab's active-banner branch hides the plan cards).
-                  // Simplest: scroll the user's attention by showing a
-                  // dialog explaining their conversion options, OR just
-                  // route through the existing Pro plan purchase via the
-                  // monthly default. We'll fire the monthly purchase to
-                  // keep the path consistent with the Subscribe button.
-                  _purchaseSubscription(
-                    ProductIds.snakeClassicProMonthly,
-                    l10n.storeProMonthly,
-                  );
-                },
-                icon: const Icon(Icons.workspace_premium, size: 18),
-                label: Text(
-                  l10n.storeKeepPro,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _goldFill,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
           ],
-        ],
-      )),
+        ),
+      ),
     );
   }
 
@@ -1074,14 +1086,16 @@ class _StoreScreenState extends State<StoreScreen>
     // by _reconcilePendingPurchases when hasPremium flips true, or by the
     // 45s safety timeout in _markPending if the webhook is genuinely lost.
     _markPending(productId);
-    final accent = context.read<ThemeCubit>().state.currentTheme.accentColor;
+    // Captured with scaffoldMessenger above, for the same reason: both are
+    // used on the far side of the purchase await.
+    final snackTheme = context.read<ThemeCubit>().state.currentTheme;
     try {
       await PurchaseService().purchaseProduct(productId);
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.storeInitiatingPurchase(displayName)),
-            backgroundColor: accent,
+          arcadeSnackBarFor(
+            snackTheme,
+            message: l10n.storeInitiatingPurchase(displayName),
           ),
         );
       }
@@ -1091,9 +1105,10 @@ class _StoreScreenState extends State<StoreScreen>
       if (mounted) {
         setState(() => _pendingProductIds.remove(productId));
         scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.storeSubNotAvailable),
-            backgroundColor: Colors.red,
+          arcadeSnackBarFor(
+            snackTheme,
+            message: l10n.storeSubNotAvailable,
+            tone: ArcadeSnackTone.error,
           ),
         );
       }
@@ -1199,20 +1214,21 @@ class _StoreScreenState extends State<StoreScreen>
                 );
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n.storeInitiatingFor(option.localizedName(l10n)),
+                    arcadeSnackBar(
+                      context,
+                      message: l10n.storeInitiatingFor(
+                        option.localizedName(l10n),
                       ),
-                      backgroundColor: theme.accentColor,
                     ),
                   );
                 }
               } catch (e) {
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.storeProductNotAvailable),
-                      backgroundColor: Colors.red,
+                    arcadeSnackBar(
+                      context,
+                      message: l10n.storeProductNotAvailable,
+                      tone: ArcadeSnackTone.error,
                     ),
                   );
                 }
@@ -1254,82 +1270,83 @@ class _StoreScreenState extends State<StoreScreen>
           color: kRewardGold,
           inset: 8,
           child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.scaled(8)),
-              decoration: const BoxDecoration(
-                color: _goldFill,
-                shape: BoxShape.circle,
+            children: [
+              Container(
+                padding: EdgeInsets.all(context.scaled(8)),
+                decoration: const BoxDecoration(
+                  color: _goldFill,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.monetization_on,
+                  color: Colors.white,
+                  size: context.scaled(20),
+                ),
               ),
-              child: Icon(
-                Icons.monetization_on,
-                color: Colors.white,
-                size: context.scaled(20),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        option.localizedName(l10n),
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          option.localizedName(l10n),
+                          style: TextStyle(
+                            color: theme.accentColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      if (option.isPopular) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            AppLocalizations.of(context)!.storePopularBadge,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                        if (option.isPopular) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.storePopularBadge,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    option.localizedDisplayCoins(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      option.localizedDisplayCoins(l10n),
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              PurchaseService().getStorePriceOrDefault(
-                ProductIds.withPrefix(option.id),
-                option.price,
-                localeTag: Localizations.localeOf(context).toLanguageTag(),
+              Text(
+                PurchaseService().getStorePriceOrDefault(
+                  ProductIds.withPrefix(option.id),
+                  option.price,
+                  localeTag: Localizations.localeOf(context).toLanguageTag(),
+                ),
+                style: const TextStyle(
+                  color: kRewardGold,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              style: const TextStyle(
-                color: kRewardGold,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1353,40 +1370,41 @@ class _StoreScreenState extends State<StoreScreen>
         color: theme.accentColor,
         inset: 7,
         child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(context.scaled(8)),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: theme.accentColor,
-              size: context.scaled(20),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
+          children: [
+            Container(
+              padding: EdgeInsets.all(context.scaled(8)),
+              decoration: BoxDecoration(
+                color: theme.accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
                 color: theme.accentColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                size: context.scaled(20),
               ),
             ),
-          ),
-          Text(
-            reward,
-            style: const TextStyle(
-              color: kRewardGold,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: theme.accentColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-          ),
-        ],
-      )),
+            Text(
+              reward,
+              style: const TextStyle(
+                color: kRewardGold,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1425,48 +1443,49 @@ class _StoreScreenState extends State<StoreScreen>
           color: kRewardGold,
           inset: 7,
           child: Row(
-          children: [
-            Icon(
-              isPro ? Icons.check_circle : Icons.diamond,
-              color: kRewardGold,
-              size: context.scaled(22),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    isPro
-                        ? l10n.storeUnlockedWithPro
-                        : l10n.storeIncludedWithPro,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isPro ? ownedBody : upsellBody,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!isPro)
+            children: [
               Icon(
-                Icons.chevron_right,
-                color: Colors.white.withValues(alpha: 0.7),
-                size: context.scaled(20),
+                isPro ? Icons.check_circle : Icons.diamond,
+                color: kRewardGold,
+                size: context.scaled(22),
               ),
-          ],
-        )),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isPro
+                          ? l10n.storeUnlockedWithPro
+                          : l10n.storeIncludedWithPro,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isPro ? ownedBody : upsellBody,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isPro)
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  size: context.scaled(20),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1646,51 +1665,54 @@ class _StoreScreenState extends State<StoreScreen>
           color: theme.accentColor,
           inset: 8,
           child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.scaled(12)),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.card_giftcard,
-                color: Colors.white,
-                size: context.scaled(24),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.storeAllThemesBundle,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+            children: [
+              Container(
+                padding: EdgeInsets.all(context.scaled(12)),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_goldFill, _goldFill],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.storeAllThemesBundleSubtitle,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.card_giftcard,
+                  color: Colors.white,
+                  size: context.scaled(24),
+                ),
               ),
-            ),
-            _buildBundleStatusPill(
-              theme: theme,
-              isOwned: bundleOwned,
-              isPending: isPending,
-              priceLabel: price,
-            ),
-          ],
-        )),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.storeAllThemesBundle,
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.storeAllThemesBundleSubtitle,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildBundleStatusPill(
+                theme: theme,
+                isOwned: bundleOwned,
+                isPending: isPending,
+                priceLabel: price,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1793,57 +1815,58 @@ class _StoreScreenState extends State<StoreScreen>
           color: currentTheme.accentColor,
           inset: 7,
           child: Row(
-          children: [
-            // Preview swatch — fixed height row makes this a small
-            // landscape rectangle, plenty of pixels for the painter
-            // without a tall card.
-            SizedBox(
-              width: context.scaled(84),
-              height: context.scaled(56),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _ThemePreview(theme: target),
+            children: [
+              // Preview swatch — fixed height row makes this a small
+              // landscape rectangle, plenty of pixels for the painter
+              // without a tall card.
+              SizedBox(
+                width: context.scaled(84),
+                height: context.scaled(56),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _ThemePreview(theme: target),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    target.name,
-                    style: TextStyle(
-                      color: currentTheme.accentColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      target.name,
+                      style: TextStyle(
+                        color: currentTheme.accentColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _shortThemeDescription(target),
-                    style: TextStyle(
-                      color: currentTheme.accentColor.withValues(alpha: 0.65),
-                      fontSize: 11,
+                    const SizedBox(height: 2),
+                    Text(
+                      _shortThemeDescription(target),
+                      style: TextStyle(
+                        color: currentTheme.accentColor.withValues(alpha: 0.65),
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            _buildStatusPill(
-              currentTheme: currentTheme,
-              isActive: isActive,
-              isOwned: isOwned,
-              isPending: isPending,
-              fallbackPriceLabel: price,
-            ),
-          ],
-        )),
+              const SizedBox(width: 10),
+              _buildStatusPill(
+                currentTheme: currentTheme,
+                isActive: isActive,
+                isOwned: isOwned,
+                isPending: isPending,
+                fallbackPriceLabel: price,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2027,17 +2050,18 @@ class _StoreScreenState extends State<StoreScreen>
       if (!mounted) return;
       _markPending(productId);
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storeVerifyingPurchase(displayName)),
-          backgroundColor: theme.accentColor,
+        arcadeSnackBar(
+          context,
+          message: l10n.storeVerifyingPurchase(displayName),
         ),
       );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.storeThemeNotAvailable),
-            backgroundColor: Colors.red,
+          arcadeSnackBar(
+            context,
+            message: l10n.storeThemeNotAvailable,
+            tone: ArcadeSnackTone.error,
           ),
         );
       }
@@ -2105,9 +2129,8 @@ class _StoreScreenState extends State<StoreScreen>
                     ? PurchaseService().getStorePriceOrDefault(
                         productId,
                         skin.price,
-                        localeTag: Localizations.localeOf(
-                          context,
-                        ).toLanguageTag(),
+                        localeTag: Localizations.localeOf(context)
+                            .toLanguageTag(),
                       )
                     : l10n.storePillFree,
                 theme: theme,
@@ -2115,11 +2138,12 @@ class _StoreScreenState extends State<StoreScreen>
                   if (isUnlocked) {
                     context.read<PremiumCubit>().selectSkin(skin.id);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.storeEquippedToast(skin.localizedName(l10n)),
+                      arcadeSnackBar(
+                        context,
+                        message: l10n.storeEquippedToast(
+                          skin.localizedName(l10n),
                         ),
-                        backgroundColor: Colors.green,
+                        tone: ArcadeSnackTone.success,
                         duration: const Duration(seconds: 1),
                       ),
                     );
@@ -2191,121 +2215,123 @@ class _StoreScreenState extends State<StoreScreen>
           color: theme.accentColor,
           inset: 8,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Preview band — painted snake silhouette with the skin's
-            // own colors + a stylized signature so each skin reads
-            // instantly distinct from its grid neighbors.
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [headerStart, headerEnd],
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Preview band — painted snake silhouette with the skin's
+              // own colors + a stylized signature so each skin reads
+              // instantly distinct from its grid neighbors.
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [headerStart, headerEnd],
+                    ),
                   ),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(-0.6, -0.6),
-                          radius: 1.0,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.18),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    CustomPaint(
-                      painter: _SkinPreviewPainter(
-                        skin: skin,
-                        accentColor: theme.accentColor,
-                      ),
-                    ),
-                    if (!isUnlocked && skin.isPremium)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.lock,
-                                color: Colors.white,
-                                size: 11,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                AppLocalizations.of(context)!.settingsProBadge,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: context.letterSpacing(0.8),
-                                ),
-                              ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.6, -0.6),
+                            radius: 1.0,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.18),
+                              Colors.transparent,
                             ],
                           ),
                         ),
                       ),
+                      CustomPaint(
+                        painter: _SkinPreviewPainter(
+                          skin: skin,
+                          accentColor: theme.accentColor,
+                        ),
+                      ),
+                      if (!isUnlocked && skin.isPremium)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.lock,
+                                  color: Colors.white,
+                                  size: 11,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  AppLocalizations.of(context)!
+                                      .settingsProBadge,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: context.letterSpacing(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      skin.localizedName(l10n),
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: context.letterSpacing(0.2),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      skin.localizedDescription(l10n),
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.65),
+                        fontSize: 10,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCosmeticStatusPill(
+                      theme: theme,
+                      isSelected: isSelected,
+                      isUnlocked: isUnlocked,
+                      isPending: isPending,
+                      priceLabel: price,
+                    ),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    skin.localizedName(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: context.letterSpacing(0.2),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    skin.localizedDescription(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.65),
-                      fontSize: 10,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCosmeticStatusPill(
-                    theme: theme,
-                    isSelected: isSelected,
-                    isUnlocked: isUnlocked,
-                    isPending: isPending,
-                    priceLabel: price,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2357,9 +2383,8 @@ class _StoreScreenState extends State<StoreScreen>
                     ? PurchaseService().getStorePriceOrDefault(
                         productId,
                         trail.price,
-                        localeTag: Localizations.localeOf(
-                          context,
-                        ).toLanguageTag(),
+                        localeTag: Localizations.localeOf(context)
+                            .toLanguageTag(),
                       )
                     : l10n.storePillFree,
                 theme: theme,
@@ -2367,11 +2392,12 @@ class _StoreScreenState extends State<StoreScreen>
                   if (isUnlocked) {
                     context.read<PremiumCubit>().selectTrail(trail.id);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.storeEquippedToast(trail.localizedName(l10n)),
+                      arcadeSnackBar(
+                        context,
+                        message: l10n.storeEquippedToast(
+                          trail.localizedName(l10n),
                         ),
-                        backgroundColor: Colors.green,
+                        tone: ArcadeSnackTone.success,
                         duration: const Duration(seconds: 1),
                       ),
                     );
@@ -2452,124 +2478,126 @@ class _StoreScreenState extends State<StoreScreen>
           color: theme.accentColor,
           inset: 8,
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Preview band — custom-painted trail signature on a
-            // gradient backdrop pulled from the trail's color palette.
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [headerStart, headerEnd],
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Preview band — custom-painted trail signature on a
+              // gradient backdrop pulled from the trail's color palette.
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [headerStart, headerEnd],
+                    ),
                   ),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Faint radial highlight that gives every card a
-                    // shared "lit from upper-left" feel and prevents
-                    // dark palettes (shadow) from looking flat.
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(-0.6, -0.6),
-                          radius: 1.0,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.18),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    CustomPaint(
-                      painter: _TrailPreviewPainter(
-                        trail: trail,
-                        accentColor: theme.accentColor,
-                      ),
-                    ),
-                    if (!isUnlocked && trail.isPremium)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.lock,
-                                color: Colors.white,
-                                size: 11,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                AppLocalizations.of(context)!.settingsProBadge,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: context.letterSpacing(0.8),
-                                ),
-                              ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Faint radial highlight that gives every card a
+                      // shared "lit from upper-left" feel and prevents
+                      // dark palettes (shadow) from looking flat.
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.6, -0.6),
+                            radius: 1.0,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.18),
+                              Colors.transparent,
                             ],
                           ),
                         ),
                       ),
+                      CustomPaint(
+                        painter: _TrailPreviewPainter(
+                          trail: trail,
+                          accentColor: theme.accentColor,
+                        ),
+                      ),
+                      if (!isUnlocked && trail.isPremium)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.lock,
+                                  color: Colors.white,
+                                  size: 11,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  AppLocalizations.of(context)!
+                                      .settingsProBadge,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: context.letterSpacing(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // Info plate underneath — name, one-line description, status pill.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      trail.localizedName(l10n),
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: context.letterSpacing(0.2),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      trail.localizedDescription(l10n),
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.65),
+                        fontSize: 10,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCosmeticStatusPill(
+                      theme: theme,
+                      isSelected: isSelected,
+                      isUnlocked: isUnlocked,
+                      isPending: isPending,
+                      priceLabel: price,
+                    ),
                   ],
                 ),
               ),
-            ),
-            // Info plate underneath — name, one-line description, status pill.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    trail.localizedName(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: context.letterSpacing(0.2),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    trail.localizedDescription(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.65),
-                      fontSize: 10,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCosmeticStatusPill(
-                    theme: theme,
-                    isSelected: isSelected,
-                    isUnlocked: isUnlocked,
-                    isPending: isPending,
-                    priceLabel: price,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2693,17 +2721,18 @@ class _StoreScreenState extends State<StoreScreen>
       if (!mounted) return;
       _markPending(productId);
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storeVerifyingPurchase(displayName)),
-          backgroundColor: theme.accentColor,
+        arcadeSnackBar(
+          context,
+          message: l10n.storeVerifyingPurchase(displayName),
         ),
       );
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.storeItemNotAvailable),
-            backgroundColor: Colors.red,
+          arcadeSnackBar(
+            context,
+            message: l10n.storeItemNotAvailable,
+            tone: ArcadeSnackTone.error,
           ),
         );
       }
@@ -2768,45 +2797,46 @@ class _StoreScreenState extends State<StoreScreen>
             color: theme.accentColor,
             inset: 8,
             child: Row(
-            children: [
-              Icon(
-                Icons.play_circle_fill,
-                color: theme.accentColor,
-                size: context.scaled(28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.storeWatchAdTitle,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      ready
-                          ? l10n.storeWatchAdReady
-                          : l10n.storeWatchAdNotReady,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+              children: [
+                Icon(
+                  Icons.play_circle_fill,
+                  color: theme.accentColor,
+                  size: context.scaled(28),
                 ),
-              ),
-              Icon(
-                Icons.bolt,
-                color: theme.accentColor.withValues(alpha: 0.9),
-                size: context.scaled(22),
-              ),
-            ],
-          )),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.storeWatchAdTitle,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        ready
+                            ? l10n.storeWatchAdReady
+                            : l10n.storeWatchAdNotReady,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.65),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.bolt,
+                  color: theme.accentColor.withValues(alpha: 0.9),
+                  size: context.scaled(22),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -2875,25 +2905,26 @@ class _StoreScreenState extends State<StoreScreen>
                   color: theme.accentColor,
                   inset: 7,
                   child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: theme.accentColor,
-                      size: context.scaled(18),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        l10n.storePowerUpsInfo,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          height: 1.3,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: theme.accentColor,
+                        size: context.scaled(18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.storePowerUpsInfo,
+                          style: TextStyle(
+                            color: theme.accentColor.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                )),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
@@ -2962,100 +2993,109 @@ class _StoreScreenState extends State<StoreScreen>
         color: theme.accentColor,
         inset: 7,
         child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(10)),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.scaled(10)),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    color: theme.accentColor,
+                    size: context.scaled(22),
+                  ),
                 ),
-                child: Icon(
-                  item.icon,
-                  color: theme.accentColor,
-                  size: context.scaled(22),
-                ),
-              ),
-              if (owned > 0)
-                Positioned(
-                  top: -6,
-                  right: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.storeOwnedCountBadge(owned),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                if (owned > 0)
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context)!
+                            .storeOwnedCountBadge(owned),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
               ],
             ),
-          ),
-          ElevatedButton(
-            onPressed: () => _purchasePowerUpWithCoins(item, theme),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor.withValues(alpha: 0.85),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      color: theme.accentColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.description,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              elevation: 0,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.monetization_on, size: 14, color: kRewardGold),
-                const SizedBox(width: 4),
-                Text(
-                  '${item.coinCost}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+            ElevatedButton(
+              onPressed: () => _purchasePowerUpWithCoins(item, theme),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor.withValues(alpha: 0.85),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-              ],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    size: 14,
+                    color: kRewardGold,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${item.coinCost}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -3069,12 +3109,14 @@ class _StoreScreenState extends State<StoreScreen>
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final coinsCubit = context.read<CoinsCubit>();
     final powerUpCubit = context.read<PowerUpCubit>();
+    final snackTheme = context.read<ThemeCubit>().state.currentTheme;
     final coinsBalance = coinsCubit.state.balance.total;
     if (coinsBalance < item.coinCost) {
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storeInsufficientCoins),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: l10n.storeInsufficientCoins,
+          tone: ArcadeSnackTone.error,
         ),
       );
       return;
@@ -3117,9 +3159,10 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storePurchaseFailedRetry),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: l10n.storePurchaseFailedRetry,
+          tone: ArcadeSnackTone.error,
         ),
       );
       return;
@@ -3128,9 +3171,10 @@ class _StoreScreenState extends State<StoreScreen>
     // CoinsCubit and any other UI stays in sync without an extra round-trip.
     await coinsCubit.setServerBalance(newBalance);
     scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(l10n.storeAddedToLoadout(item.name)),
-        backgroundColor: Colors.green,
+      arcadeSnackBarFor(
+        snackTheme,
+        message: l10n.storeAddedToLoadout(item.name),
+        tone: ArcadeSnackTone.success,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -3168,126 +3212,130 @@ class _StoreScreenState extends State<StoreScreen>
         color: kRewardGold,
         inset: 7,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(10)),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_goldFill, _goldFill],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.scaled(10)),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_goldFill, _goldFill],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  child: Text(
+                    bundle.icon,
+                    style: const TextStyle(fontSize: 22),
+                  ),
                 ),
-                child: Text(bundle.icon, style: const TextStyle(fontSize: 22)),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bundle.localizedName(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bundle.localizedName(l10n),
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      bundle.localizedDescription(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 12,
+                      const SizedBox(height: 2),
+                      Text(
+                        bundle.localizedDescription(l10n),
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: bundle.powerUps
-                .map(
-                  (p) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kRewardGold.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${p.icon} ${p.localizedName(l10n)}',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: bundle.powerUps
+                  .map(
+                    (p) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
                       ),
+                      decoration: BoxDecoration(
+                        color: kRewardGold.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${p.icon} ${p.localizedName(l10n)}',
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (bundle.originalPrice > bundle.bundlePrice)
+                  Text(
+                    l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.5),
+                      fontSize: 12,
+                      decoration: TextDecoration.lineThrough,
                     ),
                   ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (bundle.originalPrice > bundle.bundlePrice)
+                const SizedBox(width: 8),
                 Text(
-                  l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    fontSize: 12,
-                    decoration: TextDecoration.lineThrough,
+                  l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
+                  style: const TextStyle(
+                    color: kRewardGold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
-                style: const TextStyle(
-                  color: kRewardGold,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: isOwned
-                    ? null
-                    : () => _purchaseCoinBundle(bundle, canAfford),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isOwned
-                      ? Colors.green
-                      : canAfford
-                      ? theme.primaryColor
-                      : Colors.grey.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: isOwned
+                      ? null
+                      : () => _purchaseCoinBundle(bundle, canAfford),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isOwned
+                        ? Colors.green
+                        : canAfford
+                        ? theme.primaryColor
+                        : Colors.grey.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                  child: Text(
+                    isOwned
+                        ? l10n.storePillOwned
+                        : canAfford
+                        ? l10n.storeBuyUpper
+                        : l10n.storeNeedCoins,
                   ),
                 ),
-                child: Text(
-                  isOwned
-                      ? l10n.storePillOwned
-                      : canAfford
-                      ? l10n.storeBuyUpper
-                      : l10n.storeNeedCoins,
-                ),
-              ),
-            ],
-          ),
-        ],
-      )),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -3298,9 +3346,10 @@ class _StoreScreenState extends State<StoreScreen>
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     if (!canAfford) {
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storeInsufficientCoins),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: l10n.storeInsufficientCoins,
+          tone: ArcadeSnackTone.error,
         ),
       );
       return;
@@ -3314,9 +3363,10 @@ class _StoreScreenState extends State<StoreScreen>
     if (!mounted) return;
     if (newBalance == null) {
       scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.storePurchaseFailedRetry),
-          backgroundColor: Colors.red,
+        arcadeSnackBar(
+          context,
+          message: l10n.storePurchaseFailedRetry,
+          tone: ArcadeSnackTone.error,
         ),
       );
       return;
@@ -3328,9 +3378,10 @@ class _StoreScreenState extends State<StoreScreen>
     await coinsCubit.setServerBalance(newBalance);
     if (!mounted) return;
     scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(l10n.storeBundleUnlocked(bundle.localizedName(l10n))),
-        backgroundColor: Colors.green,
+      arcadeSnackBar(
+        context,
+        message: l10n.storeBundleUnlocked(bundle.localizedName(l10n)),
+        tone: ArcadeSnackTone.success,
       ),
     );
   }
@@ -3609,9 +3660,8 @@ class _TrailPreviewPainter extends CustomPainter {
       path.lineTo(centers[i].dx, centers[i].dy);
     }
     final paint = Paint()
-      ..shader = LinearGradient(
-        colors: palette,
-      ).createShader(Rect.fromPoints(centers.first, centers.last))
+      ..shader = LinearGradient(colors: palette)
+          .createShader(Rect.fromPoints(centers.first, centers.last))
       ..strokeWidth = r * 1.8
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke

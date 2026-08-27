@@ -24,6 +24,7 @@ import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 /// The live 1v1 match screen. Server-authoritative: everything on screen
 /// (both snakes, food, scores, deaths, the final result) renders from the
@@ -243,23 +244,24 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 color: titleColor,
                 inset: 9,
                 child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _resultScoreColumn(theme, l10n.mpYou, me?.score ?? 0),
-                  Text(
-                    l10n.mpVs,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.bold,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _resultScoreColumn(theme, l10n.mpYou, me?.score ?? 0),
+                    Text(
+                      l10n.mpVs,
+                      style: TextStyle(
+                        color: theme.accentColor.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  _resultScoreColumn(
-                    theme,
-                    opponent?.username ?? l10n.mpOpponent,
-                    opponent?.score ?? 0,
-                  ),
-                ],
-              )),
+                    _resultScoreColumn(
+                      theme,
+                      opponent?.username ?? l10n.mpOpponent,
+                      opponent?.score ?? 0,
+                    ),
+                  ],
+                ),
+              ),
             ),
             // The reward is whatever the SERVER settled, not a number read
             // off the broadcast. Until the settlement lands this says so,
@@ -499,9 +501,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               final errorCode = state.errorCode;
               if (errorCode != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      errorCode.localizedMessage(AppLocalizations.of(context)!),
+                  arcadeSnackBar(
+                    context,
+                    message: errorCode.localizedMessage(
+                      AppLocalizations.of(context)!,
                     ),
                   ),
                 );

@@ -42,6 +42,7 @@ import 'package:snake_classic/widgets/deferred_sign_in_prompt.dart';
 import 'package:snake_classic/widgets/level_up_popup.dart';
 import 'package:snake_classic/widgets/tomorrow_reward_card.dart';
 import 'package:snake_classic/widgets/particle_effect.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class GameOverScreen extends ConsumerStatefulWidget {
   const GameOverScreen({super.key});
@@ -200,9 +201,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           if (!ads.isRewardedReady) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.goNoAdAvailable),
-                ),
+                arcadeSnackBar(context, message: l10n.goNoAdAvailable),
               );
             }
             return;
@@ -232,10 +231,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [
-              Colors.amber.withValues(alpha: 0.20),
-              Colors.orange.withValues(alpha: 0.12),
-            ]),
+            gradient: LinearGradient(
+              colors: [
+                Colors.amber.withValues(alpha: 0.20),
+                Colors.orange.withValues(alpha: 0.12),
+              ],
+            ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
           ),
@@ -269,8 +270,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
       setState(() => _achievementsLoaded = true);
 
-      if (_recentAchievements.isNotEmpty ||
-          _progressAchievements.isNotEmpty) {
+      if (_recentAchievements.isNotEmpty || _progressAchievements.isNotEmpty) {
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) _achievementController.forward();
         });
@@ -290,8 +290,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   final Set<String> _revealedIds = <String>{};
 
   void _showUnlockToasts(List<Achievement> unlocks) {
-    final fresh =
-        unlocks.where((a) => !_revealedIds.contains(a.id)).toList();
+    final fresh = unlocks.where((a) => !_revealedIds.contains(a.id)).toList();
     if (fresh.isEmpty) return;
     _revealedIds.addAll(fresh.map((a) => a.id));
     // Wait until the game-over hero + score have landed before stealing
@@ -357,26 +356,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 
   void _showClaimSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.monetization_on, color: Colors.amber),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green.shade700,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      arcadeSnackBar(
+        context,
+        message: message,
+        tone: ArcadeSnackTone.success,
+        icon: Icons.monetization_on,
         duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
       ),
     );
   }
@@ -404,8 +389,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
               return Scaffold(
                 body: Center(
                   child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(theme.accentColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.accentColor,
+                    ),
                   ),
                 ),
               );
@@ -441,8 +427,9 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
             final challenges = ref.watch(
               dailyChallengesProvider.select((s) => s.challenges),
             );
-            final claimable =
-                challenges.where((c) => c.canClaim).toList(growable: false);
+            final claimable = challenges
+                .where((c) => c.canClaim)
+                .toList(growable: false);
 
             return Scaffold(
               bottomNavigationBar: const SnakeBannerAd(),
@@ -463,8 +450,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                             children: [
                               Expanded(
                                 child: SingleChildScrollView(
-                                  physics:
-                                      const BouncingScrollPhysics(),
+                                  physics: const BouncingScrollPhysics(),
                                   // Cap the content to a centered column on
                                   // tablets so the score/rewards/achievement
                                   // cards don't stretch edge-to-edge.
@@ -504,23 +490,26 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                         _OutcomeRibbon(
                                           // Keyed so the ribbon re-animates
                                           // when the submission resolves.
-                                          key: ValueKey(gameCubitState
-                                              .tournamentScoreSubmission),
+                                          key: ValueKey(
+                                            gameCubitState
+                                                .tournamentScoreSubmission,
+                                          ),
                                           icon: null,
                                           emoji: gameCubitState
-                                              .tournamentMode!.emoji,
+                                              .tournamentMode!
+                                              .emoji,
                                           label: switch (gameCubitState
                                               .tournamentScoreSubmission) {
                                             TournamentScoreSubmission
-                                                  .submitted =>
+                                                .submitted =>
                                               l10n.goRibbonTournamentSubmitted,
-                                            TournamentScoreSubmission
-                                                  .failed =>
+                                            TournamentScoreSubmission.failed =>
                                               l10n.goRibbonTournamentFailed,
                                             _ =>
                                               l10n.goRibbonTournamentSubmitting,
                                           },
-                                          colors: gameCubitState
+                                          colors:
+                                              gameCubitState
                                                       .tournamentScoreSubmission ==
                                                   TournamentScoreSubmission
                                                       .failed
@@ -542,8 +531,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                         gameState: gameState,
                                         theme: theme,
                                         displayHighScore: displayHighScore,
-                                        coinsEarned: gameCubitState
-                                            .coinsEarnedThisGame,
+                                        coinsEarned:
+                                            gameCubitState.coinsEarnedThisGame,
                                         scoreController: _scoreController,
                                         compact: compact,
                                       ),
@@ -646,10 +635,7 @@ class _HeroHeader extends StatelessWidget {
               ],
               stops: const [0.0, 0.6, 1.0],
             ),
-            border: Border.all(
-              color: color.withValues(alpha: 0.6),
-              width: 2,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.6), width: 2),
             boxShadow: [
               BoxShadow(
                 color: color.withValues(alpha: 0.45),
@@ -715,48 +701,49 @@ class _OutcomeRibbon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 14 : 18,
-              vertical: compact ? 7 : 10,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: colors),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: colors.first.withValues(alpha: 0.5),
-                  blurRadius: 10,
-                  spreadRadius: 1,
+      child:
+          Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 14 : 18,
+                  vertical: compact ? 7 : 10,
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null)
-                  Icon(icon, color: Colors.white, size: compact ? 16 : 18)
-                else if (emoji != null)
-                  Text(
-                    emoji!,
-                    style: TextStyle(fontSize: compact ? 14 : 16),
-                  ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: compact ? 11 : 13,
-                    letterSpacing: context.letterSpacing(0.8),
-                  ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: colors),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.first.withValues(alpha: 0.5),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
-          .gamePop(delay: Duration(milliseconds: delayMs))
-          .animate()
-          .shimmer(delay: Duration(milliseconds: shimmerDelayMs)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null)
+                      Icon(icon, color: Colors.white, size: compact ? 16 : 18)
+                    else if (emoji != null)
+                      Text(
+                        emoji!,
+                        style: TextStyle(fontSize: compact ? 14 : 16),
+                      ),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: compact ? 11 : 13,
+                        letterSpacing: context.letterSpacing(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              .gamePop(delay: Duration(milliseconds: delayMs))
+              .animate()
+              .shimmer(delay: Duration(milliseconds: shimmerDelayMs)),
     );
   }
 }
@@ -808,93 +795,95 @@ class _ScoreCard extends StatelessWidget {
             spreadRadius: 2,
           ),
         ],
-      ),child: HudCorners(
-  // The mark, not the material: this card keeps its own gradient,
-  // because gold means a reward and accent means progress here and
-  // the shared surface would flatten both into the same thing.
-  color: theme.accentColor,
-  inset: compact ? 6 : 8,
-  child: Column(
-        children: [
-          // Score row — label left, big animated number right.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                l10n.goFinalScore,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.75),
-                  fontSize: compact ? 12 : 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: context.letterSpacing(1.4),
+      ),
+      child: HudCorners(
+        // The mark, not the material: this card keeps its own gradient,
+        // because gold means a reward and accent means progress here and
+        // the shared surface would flatten both into the same thing.
+        color: theme.accentColor,
+        inset: compact ? 6 : 8,
+        child: Column(
+          children: [
+            // Score row — label left, big animated number right.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  l10n.goFinalScore,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.75),
+                    fontSize: compact ? 12 : 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: context.letterSpacing(1.4),
+                  ),
                 ),
-              ),
-              AnimatedBuilder(
-                animation: scoreController,
-                builder: (context, _) {
-                  final animatedScore =
-                      (gameState.score * scoreController.value).round();
-                  return Text(
-                    '$animatedScore',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: compact ? 34 : 42,
-                      fontWeight: FontWeight.w900,
-                      height: 1.0,
-                      shadows: [
-                        Shadow(
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                          blurRadius: 14,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          SizedBox(height: compact ? 14 : 18),
+                AnimatedBuilder(
+                  animation: scoreController,
+                  builder: (context, _) {
+                    final animatedScore =
+                        (gameState.score * scoreController.value).round();
+                    return Text(
+                      '$animatedScore',
+                      style: TextStyle(
+                        color: theme.accentColor,
+                        fontSize: compact ? 34 : 42,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        shadows: [
+                          Shadow(
+                            color: theme.accentColor.withValues(alpha: 0.6),
+                            blurRadius: 14,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: compact ? 14 : 18),
 
-          // Stat strip — length, level, high score with subtle separators.
-          Row(
-            children: [
-              _StatTile(
-                label: l10n.mpLength,
-                value: gameState.snake.length,
-                icon: Icons.straighten,
-                theme: theme,
-                delayMs: 150,
-                compact: compact,
-              ),
-              _StatDivider(theme: theme),
-              _StatTile(
-                label: l10n.goLevel,
-                value: gameState.level,
-                icon: Icons.trending_up,
-                theme: theme,
-                delayMs: 300,
-                compact: compact,
-              ),
-              _StatDivider(theme: theme),
-              _StatTile(
-                label: l10n.goBest,
-                value: displayHighScore,
-                icon: Icons.emoji_events,
-                theme: theme,
-                delayMs: 450,
-                compact: compact,
-                highlight: true,
-              ),
-            ],
-          ),
+            // Stat strip — length, level, high score with subtle separators.
+            Row(
+              children: [
+                _StatTile(
+                  label: l10n.mpLength,
+                  value: gameState.snake.length,
+                  icon: Icons.straighten,
+                  theme: theme,
+                  delayMs: 150,
+                  compact: compact,
+                ),
+                _StatDivider(theme: theme),
+                _StatTile(
+                  label: l10n.goLevel,
+                  value: gameState.level,
+                  icon: Icons.trending_up,
+                  theme: theme,
+                  delayMs: 300,
+                  compact: compact,
+                ),
+                _StatDivider(theme: theme),
+                _StatTile(
+                  label: l10n.goBest,
+                  value: displayHighScore,
+                  icon: Icons.emoji_events,
+                  theme: theme,
+                  delayMs: 450,
+                  compact: compact,
+                  highlight: true,
+                ),
+              ],
+            ),
 
-          if (coinsEarned > 0) ...[
-            SizedBox(height: compact ? 12 : 14),
-            _CoinsEarnedRow(coinsEarned: coinsEarned, theme: theme),
+            if (coinsEarned > 0) ...[
+              SizedBox(height: compact ? 12 : 14),
+              _CoinsEarnedRow(coinsEarned: coinsEarned, theme: theme),
+            ],
           ],
-        ],
-      )),
+        ),
+      ),
     ).gameEntrance(delay: 400.ms);
   }
 }
@@ -1003,8 +992,7 @@ class _CoinsEarnedRow extends StatelessWidget {
           final shown = (coinsEarned * t).round();
           return Row(
             children: [
-              const Icon(Icons.monetization_on,
-                  color: Colors.amber, size: 22),
+              const Icon(Icons.monetization_on, color: Colors.amber, size: 22),
               const SizedBox(width: 10),
               Text(
                 AppLocalizations.of(context)!.goCoinsEarned,
@@ -1084,84 +1072,86 @@ class _DailyRewardsCard extends StatelessWidget {
             spreadRadius: 1,
           ),
         ],
-      ),child: HudCorners(
-  // The mark, not the material: this card keeps its own gradient,
-  // because gold means a reward and accent means progress here and
-  // the shared surface would flatten both into the same thing.
-  color: Colors.amber,
-  inset: compact ? 5 : 6,
-  child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header — title, total rewards, claim-all CTA.
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.22),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.redeem,
-                    color: Colors.amber, size: 18),
-              ).gameBreathe(intensity: 1.08),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.goDailyRewardsReady,
-                      style: TextStyle(
-                        color: Colors.amber.shade300,
-                        fontSize: compact ? 12 : 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: context.letterSpacing(1.2),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.goRewardsSummary(
-                        totalCoins,
-                        claimable.length,
-                        totalXp,
-                      ),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              if (claimable.length > 1)
-                _ClaimAllPill(
-                  busy: claimingAll,
-                  onTap: onClaimAll,
-                ),
-            ],
-          ),
-          SizedBox(height: compact ? 10 : 12),
-
-          // Per-challenge rows.
-          ...claimable.asMap().entries.map(
-                (e) => Padding(
-                  padding: EdgeInsets.only(
-                    bottom: e.key == claimable.length - 1 ? 0 : 8,
+      ),
+      child: HudCorners(
+        // The mark, not the material: this card keeps its own gradient,
+        // because gold means a reward and accent means progress here and
+        // the shared surface would flatten both into the same thing.
+        color: Colors.amber,
+        inset: compact ? 5 : 6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header — title, total rewards, claim-all CTA.
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.22),
+                    shape: BoxShape.circle,
                   ),
-                  child: _ClaimableRow(
-                    challenge: e.value,
-                    theme: theme,
-                    busy: claimingIds.contains(e.value.id) || claimingAll,
-                    onClaim: () => onClaim(e.value),
-                  ).gameListItem(e.key),
+                  child: const Icon(
+                    Icons.redeem,
+                    color: Colors.amber,
+                    size: 18,
+                  ),
+                ).gameBreathe(intensity: 1.08),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.goDailyRewardsReady,
+                        style: TextStyle(
+                          color: Colors.amber.shade300,
+                          fontSize: compact ? 12 : 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: context.letterSpacing(1.2),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.goRewardsSummary(
+                          totalCoins,
+                          claimable.length,
+                          totalXp,
+                        ),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
+                if (claimable.length > 1)
+                  _ClaimAllPill(busy: claimingAll, onTap: onClaimAll),
+              ],
+            ),
+            SizedBox(height: compact ? 10 : 12),
+
+            // Per-challenge rows.
+            ...claimable.asMap().entries.map(
+              (e) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: e.key == claimable.length - 1 ? 0 : 8,
+                ),
+                child: _ClaimableRow(
+                  challenge: e.value,
+                  theme: theme,
+                  busy: claimingIds.contains(e.value.id) || claimingAll,
+                  onClaim: () => onClaim(e.value),
+                ).gameListItem(e.key),
               ),
-        ],
-      )),
+            ),
+          ],
+        ),
+      ),
     ).gameZoomIn(delay: 500.ms);
   }
 }
@@ -1174,65 +1164,65 @@ class _ClaimAllPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: busy ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              shadeFill(Colors.amber, 0.86),
-              shadeFill(Colors.orange, 0.78),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.28),
-              blurRadius: 8,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: busy
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.bolt,
-                    size: 14,
-                    color: inkOn(
-                      shadeFill(Colors.amber, 0.86),
-                      shadeFill(Colors.orange, 0.78),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    AppLocalizations.of(context)!.goClaimAll,
-                    style: TextStyle(
-                      color: inkOn(
-                        shadeFill(Colors.amber, 0.86),
-                        shadeFill(Colors.orange, 0.78),
-                      ),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: context.letterSpacing(0.8),
-                    ),
-                  ),
+          onTap: busy ? null : onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  shadeFill(Colors.amber, 0.86),
+                  shadeFill(Colors.orange, 0.78),
                 ],
               ),
-      ),
-    ).animate(onPlay: (c) => c.repeat()).shimmer(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.amber.withValues(alpha: 0.28),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: busy
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt,
+                        size: 14,
+                        color: inkOn(
+                          shadeFill(Colors.amber, 0.86),
+                          shadeFill(Colors.orange, 0.78),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppLocalizations.of(context)!.goClaimAll,
+                        style: TextStyle(
+                          color: inkOn(
+                            shadeFill(Colors.amber, 0.86),
+                            shadeFill(Colors.orange, 0.78),
+                          ),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: context.letterSpacing(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat())
+        .shimmer(
           duration: 1800.ms,
           delay: 600.ms,
           color: Colors.white.withValues(alpha: 0.45),
@@ -1291,9 +1281,7 @@ class _ClaimableRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
           decoration: BoxDecoration(
             color: Colors.green.withValues(alpha: 0.12),
-            border: Border.all(
-              color: Colors.green.withValues(alpha: 0.45),
-            ),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.45)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1304,11 +1292,9 @@ class _ClaimableRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: _difficultyColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: _difficultyColor, width: 1.5),
+                  border: Border.all(color: _difficultyColor, width: 1.5),
                 ),
-                child: Icon(_typeIcon,
-                    color: _difficultyColor, size: 16),
+                child: Icon(_typeIcon, color: _difficultyColor, size: 16),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1331,8 +1317,11 @@ class _ClaimableRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.monetization_on,
-                            color: Colors.amber, size: 12),
+                        const Icon(
+                          Icons.monetization_on,
+                          color: Colors.amber,
+                          size: 12,
+                        ),
                         const SizedBox(width: 3),
                         Text(
                           '${challenge.coinReward}',
@@ -1343,8 +1332,11 @@ class _ClaimableRow extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Icon(Icons.star,
-                            color: Colors.purpleAccent, size: 12),
+                        const Icon(
+                          Icons.star,
+                          color: Colors.purpleAccent,
+                          size: 12,
+                        ),
                         const SizedBox(width: 3),
                         Text(
                           l10n.goXpAmount(challenge.xpReward),
@@ -1367,13 +1359,13 @@ class _ClaimableRow extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        Colors.amber.withValues(alpha: 0.5),
+                    disabledBackgroundColor: Colors.amber.withValues(
+                      alpha: 0.5,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     elevation: 0,
                   ),
                   child: busy
@@ -1382,9 +1374,9 @@ class _ClaimableRow extends StatelessWidget {
                           height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(
-                                    Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Row(
@@ -1463,62 +1455,67 @@ class _AchievementSection extends StatelessWidget {
                   offset: const Offset(0, 4),
                 ),
               ],
-            ),child: HudCorners(
-  // The mark, not the material: this card keeps its own gradient,
-  // because gold means a reward and accent means progress here and
-  // the shared surface would flatten both into the same thing.
-  color: theme.accentColor,
-  inset: compact ? 5 : 6,
-  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // The shared eyebrow rather than an icon beside a label, so
-                // this section is headed the same way one in Settings or on
-                // the profile is.
-                screenEyebrow(
-                  context,
-                  theme,
-                  l10n.goAchievements,
-                  icon: Icons.emoji_events,
-                ),
-                SizedBox(height: compact ? 0 : 2),
-                if (recent.isNotEmpty) ...[
-                  _SubsectionLabel(
-                    text: l10n.goRecentlyUnlocked,
-                    color: Colors.green,
-                    compact: compact,
+            ),
+            child: HudCorners(
+              // The mark, not the material: this card keeps its own gradient,
+              // because gold means a reward and accent means progress here and
+              // the shared surface would flatten both into the same thing.
+              color: theme.accentColor,
+              inset: compact ? 5 : 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // The shared eyebrow rather than an icon beside a label, so
+                  // this section is headed the same way one in Settings or on
+                  // the profile is.
+                  screenEyebrow(
+                    context,
+                    theme,
+                    l10n.goAchievements,
+                    icon: Icons.emoji_events,
                   ),
-                  SizedBox(height: compact ? 4 : 6),
-                  ...recent.take(compact ? 1 : 2).map(
-                        (a) => _AchievementTile(
-                          achievement: a,
-                          theme: theme,
-                          isUnlocked: true,
-                          compact: compact,
+                  SizedBox(height: compact ? 0 : 2),
+                  if (recent.isNotEmpty) ...[
+                    _SubsectionLabel(
+                      text: l10n.goRecentlyUnlocked,
+                      color: Colors.green,
+                      compact: compact,
+                    ),
+                    SizedBox(height: compact ? 4 : 6),
+                    ...recent
+                        .take(compact ? 1 : 2)
+                        .map(
+                          (a) => _AchievementTile(
+                            achievement: a,
+                            theme: theme,
+                            isUnlocked: true,
+                            compact: compact,
+                          ),
                         ),
-                      ),
-                  if (progress.isNotEmpty)
-                    SizedBox(height: compact ? 8 : 10),
-                ],
-                if (progress.isNotEmpty) ...[
-                  _SubsectionLabel(
-                    text: l10n.goInProgress,
-                    color: Colors.orange,
-                    compact: compact,
-                  ),
-                  SizedBox(height: compact ? 4 : 6),
-                  ...progress.take(compact ? 1 : 2).map(
-                        (a) => _AchievementTile(
-                          achievement: a,
-                          theme: theme,
-                          isUnlocked: false,
-                          compact: compact,
+                    if (progress.isNotEmpty) SizedBox(height: compact ? 8 : 10),
+                  ],
+                  if (progress.isNotEmpty) ...[
+                    _SubsectionLabel(
+                      text: l10n.goInProgress,
+                      color: Colors.orange,
+                      compact: compact,
+                    ),
+                    SizedBox(height: compact ? 4 : 6),
+                    ...progress
+                        .take(compact ? 1 : 2)
+                        .map(
+                          (a) => _AchievementTile(
+                            achievement: a,
+                            theme: theme,
+                            isUnlocked: false,
+                            compact: compact,
+                          ),
                         ),
-                      ),
+                  ],
                 ],
-              ],
-            )),
+              ),
+            ),
           ),
         ),
       ),
@@ -1603,7 +1600,8 @@ class _AchievementTile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         achievement.localizedTitle(
-                            AppLocalizations.of(context)!),
+                          AppLocalizations.of(context)!,
+                        ),
                         style: TextStyle(
                           color: theme.accentColor,
                           fontSize: compact ? 11 : 12,
@@ -1614,8 +1612,11 @@ class _AchievementTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     if (isUnlocked)
-                      const Icon(Icons.check_circle,
-                          color: Colors.green, size: 14)
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 14,
+                      )
                     else
                       Text(
                         '${(achievement.progressPercentage * 100).toInt()}%',
@@ -1633,10 +1634,12 @@ class _AchievementTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: achievement.progressPercentage,
-                      backgroundColor:
-                          theme.backgroundColor.withValues(alpha: 0.3),
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(Colors.orange),
+                      backgroundColor: theme.backgroundColor.withValues(
+                        alpha: 0.3,
+                      ),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.orange,
+                      ),
                       minHeight: 3,
                     ),
                   ),
@@ -1644,7 +1647,8 @@ class _AchievementTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     achievement.localizedDescription(
-                        AppLocalizations.of(context)!),
+                      AppLocalizations.of(context)!,
+                    ),
                     style: TextStyle(
                       color: theme.accentColor.withValues(alpha: 0.7),
                       fontSize: 10,

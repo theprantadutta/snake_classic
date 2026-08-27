@@ -16,6 +16,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
 class FirstTimeAuthScreen extends StatefulWidget {
   const FirstTimeAuthScreen({super.key});
@@ -61,10 +62,12 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
       if (mounted) setState(() => _termsContent = content);
     } catch (e) {
       if (mounted) {
-        setState(() => _termsContent =
-            'Our Terms of Use are available at '
-            'https://legal.pranta.dev/terms?projectName=snake_classic. '
-            'By continuing you agree to those terms.');
+        setState(
+          () => _termsContent =
+              'Our Terms of Use are available at '
+              'https://legal.pranta.dev/terms?projectName=snake_classic. '
+              'By continuing you agree to those terms.',
+        );
       }
     }
   }
@@ -169,36 +172,34 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                         SizedBox(height: isSmallScreen ? 20 : 40),
                         // Welcome Header
                         Container(
-                              padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    theme.accentColor.withValues(alpha: 0.3),
-                                    theme.accentColor.withValues(alpha: 0.1),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.accentColor.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    blurRadius: isSmallScreen ? 30 : 40,
-                                    spreadRadius: isSmallScreen ? 5 : 10,
-                                  ),
-                                ],
+                          padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                theme.accentColor.withValues(alpha: 0.3),
+                                theme.accentColor.withValues(alpha: 0.1),
+                                Colors.transparent,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.accentColor.withValues(alpha: 0.4),
+                                blurRadius: isSmallScreen ? 30 : 40,
+                                spreadRadius: isSmallScreen ? 5 : 10,
                               ),
-                              child: Icon(
-                                Icons.videogame_asset_rounded,
-                                size: (isSmallScreen
-                                        ? sizingHeight * 0.08
-                                        : sizingHeight * 0.12) *
-                                    context.uiScale,
-                                color: theme.primaryColor,
-                              ),
-                            )
-                            .gamePop(),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.videogame_asset_rounded,
+                            size:
+                                (isSmallScreen
+                                    ? sizingHeight * 0.08
+                                    : sizingHeight * 0.12) *
+                                context.uiScale,
+                            color: theme.primaryColor,
+                          ),
+                        ).gamePop(),
 
                         SizedBox(
                           height: isSmallScreen
@@ -208,93 +209,84 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
 
                         // Welcome Text Container
                         Container(
-                              padding: EdgeInsets.all(
-                                isSmallScreen
-                                    ? sizingHeight * 0.02
-                                    : sizingHeight * 0.035,
+                          padding: EdgeInsets.all(
+                            isSmallScreen
+                                ? sizingHeight * 0.02
+                                : sizingHeight * 0.035,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                theme.backgroundColor.withValues(alpha: 0.4),
+                                theme.backgroundColor.withValues(alpha: 0.2),
+                                theme.accentColor.withValues(alpha: 0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: theme.accentColor.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // Title with gradient effect
+                              ShaderMask(
+                                shaderCallback: (bounds) => LinearGradient(
                                   colors: [
-                                    theme.backgroundColor.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    theme.backgroundColor.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    theme.accentColor.withValues(alpha: 0.1),
+                                    theme.primaryColor,
+                                    theme.accentColor,
                                   ],
-                                ),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: theme.accentColor.withValues(
-                                    alpha: 0.3,
+                                ).createShader(bounds),
+                                child: Text(
+                                  l10n.faWelcome,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen
+                                        ? sizingHeight * 0.03
+                                        : sizingHeight * 0.04,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.2,
                                   ),
-                                  width: 1.5,
+                                  textAlign: TextAlign.center,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
                               ),
-                              child: Column(
-                                children: [
-                                  // Title with gradient effect
-                                  ShaderMask(
-                                    shaderCallback: (bounds) => LinearGradient(
-                                      colors: [
-                                        theme.primaryColor,
-                                        theme.accentColor,
-                                      ],
-                                    ).createShader(bounds),
-                                    child: Text(
-                                      l10n.faWelcome,
-                                      style: TextStyle(
-                                        fontSize: isSmallScreen
-                                            ? sizingHeight * 0.03
-                                            : sizingHeight * 0.04,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        height: 1.2,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: isSmallScreen
-                                        ? sizingHeight * 0.015
-                                        : sizingHeight * 0.025,
-                                  ),
+                              SizedBox(
+                                height: isSmallScreen
+                                    ? sizingHeight * 0.015
+                                    : sizingHeight * 0.025,
+                              ),
 
-                                  // Feature highlights
-                                  Text(
-                                    l10n.faChooseHow,
-                                    style: TextStyle(
-                                      fontSize: isSmallScreen
-                                          ? sizingHeight * 0.018
-                                          : sizingHeight * 0.022,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      height: 1.4,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  // Feature list removed — the three auth
-                                  // buttons below already convey the same
-                                  // choices, and freeing the vertical space
-                                  // lets all three buttons + the guest
-                                  // subtitle fit on standard phones without
-                                  // scrolling.
-                                ],
+                              // Feature highlights
+                              Text(
+                                l10n.faChooseHow,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen
+                                      ? sizingHeight * 0.018
+                                      : sizingHeight * 0.022,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                            )
-                            .gameEntrance(delay: 200.ms),
+                              // Feature list removed — the three auth
+                              // buttons below already convey the same
+                              // choices, and freeing the vertical space
+                              // lets all three buttons + the guest
+                              // subtitle fit on standard phones without
+                              // scrolling.
+                            ],
+                          ),
+                        ).gameEntrance(delay: 200.ms),
 
                         SizedBox(
                           height: isSmallScreen
@@ -329,8 +321,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                     l10n.faSigningIn,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       fontSize: 16,
                                     ),
                                   ),
@@ -345,61 +338,54 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               // platforms: Guideline 4.8 requires it next to
                               // third-party logins, and the HIG asks for
                               // equal-or-greater prominence than the others.
-                              if (defaultTargetPlatform ==
-                                      TargetPlatform.iOS ||
+                              if (defaultTargetPlatform == TargetPlatform.iOS ||
                                   defaultTargetPlatform ==
                                       TargetPlatform.macOS) ...[
                                 _buildAuthButton(
-                                      context,
-                                      l10n.pfSignInApple,
-                                      const FaIcon(
-                                        FontAwesomeIcons.apple,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                      [
-                                        Colors.black,
-                                        Colors.grey.shade900,
-                                      ],
-                                      () => _handleAppleSignIn(authCubit),
-                                    )
-                                    .gameZoomIn(delay: 250.ms),
+                                  context,
+                                  l10n.pfSignInApple,
+                                  const FaIcon(
+                                    FontAwesomeIcons.apple,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  [Colors.black, Colors.grey.shade900],
+                                  () => _handleAppleSignIn(authCubit),
+                                ).gameZoomIn(delay: 250.ms),
 
                                 const SizedBox(height: 16),
                               ],
 
                               // Google Sign-In Button
                               _buildAuthButton(
-                                    context,
-                                    l10n.pfSignInGoogle,
-                                    const FaIcon(
-                                      FontAwesomeIcons.google,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    [Colors.red.shade600, Colors.red.shade700],
-                                    () => _handleGoogleSignIn(authCubit),
-                                  )
-                                  .gameZoomIn(delay: 300.ms),
+                                context,
+                                l10n.pfSignInGoogle,
+                                const FaIcon(
+                                  FontAwesomeIcons.google,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                [Colors.red.shade600, Colors.red.shade700],
+                                () => _handleGoogleSignIn(authCubit),
+                              ).gameZoomIn(delay: 300.ms),
 
                               const SizedBox(height: 16),
 
                               // Email Sign-In Button
                               _buildAuthButton(
-                                    context,
-                                    l10n.faSignInEmail,
-                                    const Icon(
-                                      Icons.email_outlined,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    [
-                                      theme.accentColor.withValues(alpha: 0.85),
-                                      theme.accentColor,
-                                    ],
-                                    () => context.push(AppRoutes.emailAuth),
-                                  )
-                                  .gameZoomIn(delay: 350.ms),
+                                context,
+                                l10n.faSignInEmail,
+                                const Icon(
+                                  Icons.email_outlined,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                [
+                                  theme.accentColor.withValues(alpha: 0.85),
+                                  theme.accentColor,
+                                ],
+                                () => context.push(AppRoutes.emailAuth),
+                              ).gameZoomIn(delay: 350.ms),
 
                               const SizedBox(height: 16),
 
@@ -416,20 +402,19 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                               // Profile offers the upgrade whenever they want
                               // it.
                               _buildAuthButton(
-                                    context,
-                                    l10n.faContinueGuest,
-                                    const Icon(
-                                      Icons.person_outline_rounded,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    [
-                                      theme.primaryColor.withValues(alpha: 0.8),
-                                      theme.primaryColor,
-                                    ],
-                                    () => _handleGuestLogin(authCubit),
-                                  )
-                                  .gameZoomIn(delay: 400.ms),
+                                context,
+                                l10n.faContinueGuest,
+                                const Icon(
+                                  Icons.person_outline_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                [
+                                  theme.primaryColor.withValues(alpha: 0.8),
+                                  theme.primaryColor,
+                                ],
+                                () => _handleGuestLogin(authCubit),
+                              ).gameZoomIn(delay: 400.ms),
 
                               const SizedBox(height: 8),
                               Padding(
@@ -440,8 +425,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   l10n.faGuestNote,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.65),
+                                    color: Colors.white.withValues(alpha: 0.65),
                                     fontSize: 12,
                                     height: 1.4,
                                   ),
@@ -495,246 +479,242 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         children: [
           // Header
           Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.accentColor.withValues(alpha: 0.2),
-                      theme.accentColor.withValues(alpha: 0.1),
+            width: double.infinity,
+            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.2),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.privacy_tip_outlined,
+                    color: theme.accentColor,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.faPrivacyTerms,
+                        style: TextStyle(
+                          color: theme.accentColor,
+                          fontSize: isSmallScreen ? 20 : 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        l10n.faReviewNote,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.7),
+                          fontSize: isSmallScreen ? 12 : 14,
+                        ),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: theme.accentColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.privacy_tip_outlined,
-                        color: theme.accentColor,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.faPrivacyTerms,
-                            style: TextStyle(
-                              color: theme.accentColor,
-                              fontSize: isSmallScreen ? 20 : 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            l10n.faReviewNote,
-                            style: TextStyle(
-                              color: theme.accentColor.withValues(alpha: 0.7),
-                              fontSize: isSmallScreen ? 12 : 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              .gameEntrance(),
+              ],
+            ),
+          ).gameEntrance(),
 
           const SizedBox(height: 16),
 
           // Privacy Policy + Terms of Use — swipeable tabs.
           Expanded(
-            child:
-                DefaultTabController(
-                      length: 2,
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              theme.backgroundColor.withValues(alpha: 0.4),
-                              theme.backgroundColor.withValues(alpha: 0.2),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: theme.accentColor.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            TabBar(
-                              labelColor: theme.accentColor,
-                              unselectedLabelColor:
-                                  Colors.white.withValues(alpha: 0.6),
-                              indicatorColor: theme.accentColor,
-                              labelStyle: TextStyle(
-                                fontSize: isSmallScreen ? 13 : 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              tabs: [
-                                Tab(text: l10n.settingsPrivacyPolicyTitle),
-                                Tab(text: l10n.settingsTermsTitle),
-                              ],
-                            ),
-                            Expanded(
-                              child: TabBarView(
-                                children: [
-                                  _buildLegalScroll(
-                                      _privacyPolicyContent, isSmallScreen),
-                                  _buildLegalScroll(
-                                      _termsContent, isSmallScreen),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+            child: DefaultTabController(
+              length: 2,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      theme.backgroundColor.withValues(alpha: 0.4),
+                      theme.backgroundColor.withValues(alpha: 0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.accentColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    TabBar(
+                      labelColor: theme.accentColor,
+                      unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+                      indicatorColor: theme.accentColor,
+                      labelStyle: TextStyle(
+                        fontSize: isSmallScreen ? 13 : 15,
+                        fontWeight: FontWeight.bold,
                       ),
-                    )
-                    .gameZoomIn(delay: 200.ms),
+                      tabs: [
+                        Tab(text: l10n.settingsPrivacyPolicyTitle),
+                        Tab(text: l10n.settingsTermsTitle),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildLegalScroll(
+                            _privacyPolicyContent,
+                            isSmallScreen,
+                          ),
+                          _buildLegalScroll(_termsContent, isSmallScreen),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).gameZoomIn(delay: 200.ms),
           ),
 
           const SizedBox(height: 16),
 
           // Acceptance Checkbox
           Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.accentColor.withValues(alpha: 0.15),
-                      theme.accentColor.withValues(alpha: 0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: HudCorners(
-                  color: theme.accentColor,
-                  inset: 8,
-                  child: Row(
-                  children: [
-                    Transform.scale(
-                      scale: 1.2,
-                      child: Checkbox(
-                        value: _privacyAccepted,
-                        onChanged: (value) async {
-                          setState(() {
-                            _privacyAccepted = value ?? false;
-                          });
-                          // Save privacy acceptance (by version) when checked.
-                          if (_privacyAccepted) {
-                            await LegalAcceptance.recordAccepted();
-                          }
-                        },
-                        activeColor: theme.accentColor,
-                        checkColor: Colors.white,
-                        side: BorderSide(
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                          width: 2,
-                        ),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.accentColor.withValues(alpha: 0.15),
+                  theme.accentColor.withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.accentColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: HudCorners(
+              color: theme.accentColor,
+              inset: 8,
+              child: Row(
+                children: [
+                  Transform.scale(
+                    scale: 1.2,
+                    child: Checkbox(
+                      value: _privacyAccepted,
+                      onChanged: (value) async {
+                        setState(() {
+                          _privacyAccepted = value ?? false;
+                        });
+                        // Save privacy acceptance (by version) when checked.
+                        if (_privacyAccepted) {
+                          await LegalAcceptance.recordAccepted();
+                        }
+                      },
+                      activeColor: theme.accentColor,
+                      checkColor: Colors.white,
+                      side: BorderSide(
+                        color: theme.accentColor.withValues(alpha: 0.6),
+                        width: 2,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        l10n.faAgreeCheckbox,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: isSmallScreen ? 14 : 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l10n.faAgreeCheckbox,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
-                )),
-              )
-              .gameZoomIn(delay: 300.ms),
+                  ),
+                ],
+              ),
+            ),
+          ).gameZoomIn(delay: 300.ms),
 
           const SizedBox(height: 20),
 
           // Continue Button
           Container(
-                width: double.infinity,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _privacyAccepted
-                        ? [theme.primaryColor, theme.accentColor]
-                        : [Colors.grey.shade600, Colors.grey.shade700],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: _privacyAccepted
-                      ? [
-                          BoxShadow(
-                            color: theme.accentColor.withValues(alpha: 0.4),
-                            blurRadius: 15,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 6),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: _privacyAccepted
-                        ? () {
-                            setState(() {
-                              _showPrivacyPolicy = false;
-                            });
-                          }
-                        : null,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          color: _privacyAccepted
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.5),
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          l10n.faContinueToSignIn,
-                          style: TextStyle(
-                            color: _privacyAccepted
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.5),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+            width: double.infinity,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _privacyAccepted
+                    ? [theme.primaryColor, theme.accentColor]
+                    : [Colors.grey.shade600, Colors.grey.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: _privacyAccepted
+                  ? [
+                      BoxShadow(
+                        color: theme.accentColor.withValues(alpha: 0.4),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: _privacyAccepted
+                    ? () {
+                        setState(() {
+                          _showPrivacyPolicy = false;
+                        });
+                      }
+                    : null,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: _privacyAccepted
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.5),
+                      size: 24,
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Text(
+                      l10n.faContinueToSignIn,
+                      style: TextStyle(
+                        color: _privacyAccepted
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.5),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              )
-              .gameZoomIn(delay: 400.ms),
+              ),
+            ),
+          ).gameZoomIn(delay: 400.ms),
 
           const SizedBox(height: 20),
         ],
@@ -806,12 +786,10 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         // Same routing as Google: new accounts divert through
         // username-setup unless a username is already on file.
         if (mounted) {
-          final existingUsername =
-              authCubit.state.user?.username.trim() ?? '';
-          final showSetup = authCubit.state.needsUsernameSetup &&
-              existingUsername.isEmpty;
-          final route =
-              showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
+          final existingUsername = authCubit.state.user?.username.trim() ?? '';
+          final showSetup =
+              authCubit.state.needsUsernameSetup && existingUsername.isEmpty;
+          final route = showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
           context.go(route);
         }
       } else if (mounted) {
@@ -853,12 +831,10 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         // with an established name (e.g. a stale flag from a prior
         // session), we don't make them re-pick a name they already have.
         if (mounted) {
-          final existingUsername =
-              authCubit.state.user?.username.trim() ?? '';
-          final showSetup = authCubit.state.needsUsernameSetup &&
-              existingUsername.isEmpty;
-          final route =
-              showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
+          final existingUsername = authCubit.state.user?.username.trim() ?? '';
+          final showSetup =
+              authCubit.state.needsUsernameSetup && existingUsername.isEmpty;
+          final route = showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
           context.go(route);
         }
       } else if (mounted) {
@@ -890,10 +866,9 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
         // anonymous users get a generated username server-side too and
         // benefit from picking their own. Same second-gate as the Google
         // path: never show setup to someone with an established username.
-        final existingUsername =
-            authCubit.state.user?.username.trim() ?? '';
-        final showSetup = authCubit.state.needsUsernameSetup &&
-            existingUsername.isEmpty;
+        final existingUsername = authCubit.state.user?.username.trim() ?? '';
+        final showSetup =
+            authCubit.state.needsUsernameSetup && existingUsername.isEmpty;
         final route = showSetup ? AppRoutes.usernameSetup : AppRoutes.home;
         context.go(route);
       }
@@ -912,21 +887,7 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-      ),
+      arcadeSnackBar(context, message: message, tone: ArcadeSnackTone.error),
     );
   }
 }
