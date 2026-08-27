@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/game_state.dart';
+import 'package:snake_classic/models/position.dart';
+import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/snake.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/dpad_controls.dart';
@@ -47,6 +51,68 @@ void main() {
       ),
     );
   }
+
+  /// Every chip the secondary row can hold, all at once.
+  ///
+  /// The row lays out its non-flex chips first — time, lives, food — and
+  /// splits what is left between the level card and the power-ups card. The
+  /// matrix below never built this state: playingState() has no time limit,
+  /// no food and no power-ups, so the row always had room and the squeeze
+  /// never appeared in a test.
+  GameState crowdedState() => GameState(
+        snake: Snake(
+          body: [for (var i = 0; i < 3; i++) Position(4 - i, 10)],
+          currentDirection: Direction.right,
+        ),
+        status: GameStatus.playing,
+        gameMode: GameMode.timeAttack,
+        food: Food(position: const Position(9, 9), type: FoodType.normal),
+        activePowerUps: [
+          ActivePowerUp(type: PowerUpType.speedBoost),
+          ActivePowerUp(type: PowerUpType.scoreMultiplier),
+        ],
+        score: 240,
+        level: 3,
+      );
+
+  group('the secondary row survives being full', () {
+    // A 32px overflow, from the level card being squeezed to 7.8 logical
+    // pixels and its "points in level" ratio wrapping to six lines inside a
+    // row whose entire purpose is a fixed height.
+    const screens = <String, Size>{
+      'small phone': Size(320, 568),
+      'common phone': Size(360, 640),
+      'tall phone': Size(393, 852),
+      'tablet portrait': Size(834, 1112),
+    };
+
+    for (final entry in screens.entries) {
+      for (final scale in [1.0, 1.3, 2.0]) {
+        testWidgets('${entry.key} at text scale $scale with every chip shown',
+            (tester) async {
+          await useScreen(tester, entry.value);
+          await tester.pumpWidget(
+            harness(
+              SizedBox(
+                width: entry.value.width,
+                child: GameHUD(
+                  gameState: crowdedState(),
+                  theme: GameTheme.classic,
+                  onPause: () {},
+                  onHome: () {},
+                  isSmallScreen: entry.value.width < 360,
+                ),
+              ),
+              size: entry.value,
+              textScale: scale,
+            ),
+          );
+
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  });
 
   group('HUD controls announce themselves', () {
     testWidgets('home and pause are labelled buttons', (tester) async {

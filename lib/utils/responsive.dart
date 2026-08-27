@@ -55,6 +55,37 @@ extension ResponsiveContext on BuildContext {
   /// Scale an arbitrary pixel dimension for the current device class.
   double scaled(double value) => value * uiScale;
 
+  /// Type/icon scale for dense glanceable readouts — the gameplay HUD.
+  ///
+  /// This is the one helper here that varies *within* the phone class, and it
+  /// exists because [uiScale] deliberately does not. The gameplay HUD used to
+  /// pick its font sizes from a `screenHeight < 700` flag, which is the wrong
+  /// axis twice over:
+  ///
+  ///  * That height is the play area measured *after* the safe area and the
+  ///    banner ad, so it lands around 678 on a 360x800 Android and around 721
+  ///    on a 393x852 one. The threshold sits between the two most common phone
+  ///    sizes and the ad's height decides which side you fall on — a *wider*
+  ///    phone could end up with *smaller* type.
+  ///  * Legibility is a function of width and viewing distance, not of how
+  ///    much vertical room is left over.
+  ///
+  /// So: derived from the width, ramping from `1.0` at 360dp to `1.15` at
+  /// 430dp, then handed to [uiScale] above the phone class. The invariant in
+  /// this file's header still holds in the direction that matters — this is
+  /// exactly `1.0` on the narrowest phones and only ever grows from there, so
+  /// no existing phone layout shrinks.
+  double get readoutScale {
+    if (isTablet) return uiScale;
+    final shortestSide = MediaQuery.of(this).size.shortestSide;
+    final t = ((shortestSide - 360) / 70).clamp(0.0, 1.0);
+    return 1.0 + 0.15 * t;
+  }
+
+  /// [readoutScale] applied to a base size, rounded to a half pixel so text
+  /// does not land on awkward fractional font sizes.
+  double readout(double value) => (value * readoutScale * 2).roundToDouble() / 2;
+
   /// Pick a value per device class. The [phone] value is always required and is
   /// used as the fallback for any tier not explicitly provided.
   T responsive<T>({required T phone, T? tablet, T? largeTablet}) {

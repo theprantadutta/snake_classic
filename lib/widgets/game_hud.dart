@@ -9,6 +9,8 @@ import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/level_progress_rail.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
@@ -200,6 +202,20 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   /// Scale a fixed structural dimension for the current device (tablet-aware).
   double _s(double value) => value * widget.uiScale;
 
+  /// Scale a *readout* dimension — anything the player has to read at a glance
+  /// mid-run: the score, the chip type, the icons, and the heights that have
+  /// to hold them.
+  ///
+  /// Distinct from [_s] because [_s] is `1.0` on every phone by design, so it
+  /// cannot tell a 320dp handset from a 430dp one. Type sizes here used to key
+  /// off `isSmallScreen` instead, which measures the leftover *height* below
+  /// the banner ad — see [ResponsiveContext.readoutScale] for why that put the
+  /// smallest score on some of the largest phones.
+  ///
+  /// `isSmallScreen` still governs the vertical budget (paddings, row heights),
+  /// which is the thing it actually measures.
+  double _t(double value) => context.readout(value);
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -303,15 +319,18 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: isPrimary
-              ? [
-                  color.withValues(alpha: 0.22),
-                  color.withValues(alpha: 0.10),
-                ]
+              ? [color.withValues(alpha: 0.22), color.withValues(alpha: 0.10)]
               : [
-                  Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
-                      .withValues(alpha: 0.55),
-                  Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
-                      .withValues(alpha: 0.37),
+                  Color.lerp(
+                    theme.backgroundColor,
+                    Colors.black,
+                    0.25,
+                  )!.withValues(alpha: 0.55),
+                  Color.lerp(
+                    theme.backgroundColor,
+                    Colors.black,
+                    0.25,
+                  )!.withValues(alpha: 0.37),
                 ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -337,8 +356,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: _s(isSmallScreen ? 16 : 24),
-        vertical: _s(isSmallScreen ? 8 : 10),
+        horizontal: _s(isSmallScreen ? 14 : 20),
+        vertical: _s(isSmallScreen ? 7 : 9),
       ),
       // The chrome around the board is made of the same material as a
       // settings panel now. It sits outside the play area, so it can carry
@@ -349,62 +368,105 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
         borderColor: theme.accentColor.withValues(alpha: 0.28),
         baseAlpha: 0.42,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Score
-          Column(
-            mainAxisSize: MainAxisSize.min,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                l10n.hudScoreUpper,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  fontSize: isSmallScreen ? 9 : 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: context.letterSpacing(1.5),
-                ),
-              ),
-              const SizedBox(height: 2),
-              TweenAnimationBuilder<int>(
-                tween: IntTween(begin: _displayedScore, end: gameState.score),
-                duration: const Duration(milliseconds: 300),
-                onEnd: () => _displayedScore = gameState.score,
-                builder: (context, value, child) {
-                  return Semantics(
-                    label: l10n.hudScoreSemantics(value),
-                    child: Text(
-                      '$value',
-                      // Use the theme's primary color so the score blends with
-                      // the rest of the HUD instead of standing out as the lone
-                      // white element. The dark drop shadow below keeps it
-                      // legible over the subtle accent-tinted background on
-                      // every theme (incl. neon / pastel palettes).
-                      style: TextStyle(
-                        color: theme.primaryColor,
-                        fontSize: isSmallScreen ? 26 : 32,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            offset: const Offset(0.5, 1),
-                            blurRadius: 3,
-                          ),
-                        ],
+              // Score
+              //
+              // Flexible + scaleDown on the number below, because the score is
+              // the one readout with no upper bound on its width. Six digits
+              // on a narrow phone, or three digits at an accessibility text
+              // scale, are both wider than the panel: "240" measured 186.8px
+              // against 140px of inner width at a 2.0 scale. It renders at
+              // full size in every ordinary case and only gives ground when
+              // the alternative is painting outside the box.
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        l10n.hudScoreUpper,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          color: theme.accentColor.withValues(alpha: 0.6),
+                          fontSize: _t(10),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: context.letterSpacing(1.5),
+                        ),
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 2),
+                    TweenAnimationBuilder<int>(
+                      tween: IntTween(
+                        begin: _displayedScore,
+                        end: gameState.score,
+                      ),
+                      duration: const Duration(milliseconds: 300),
+                      onEnd: () => _displayedScore = gameState.score,
+                      builder: (context, value, child) {
+                        return Semantics(
+                          label: l10n.hudScoreSemantics(value),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '$value',
+                              maxLines: 1,
+                              softWrap: false,
+                              // Use the theme's primary color so the score blends with
+                              // the rest of the HUD instead of standing out as the lone
+                              // white element. The dark drop shadow below keeps it
+                              // legible over the subtle accent-tinted background on
+                              // every theme (incl. neon / pastel palettes).
+                              style: TextStyle(
+                                color: theme.primaryColor,
+                                // One base size for every phone, grown by width rather
+                                // than shrunk by leftover height. The old 26 on the
+                                // `isSmallScreen` branch was the reported "I couldn't
+                                // see the score" — and it was landing on wide phones.
+                                fontSize: _t(31),
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    offset: const Offset(0.5, 1),
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
+
+              // Combo indicator (if active)
+              if (gameState.currentCombo >= 3) ...[
+                const SizedBox(width: 16),
+                _buildComboChip(),
+              ],
             ],
           ),
 
-          // Combo indicator (if active)
-          if (gameState.currentCombo >= 3) ...[
-            const SizedBox(width: 16),
-            _buildComboChip(),
-          ],
+          // Level progress, spanning the full width of the panel.
+          //
+          // This used to be a fourth card down in the secondary row, boxed into
+          // whatever width the chips left over — measured at 7.8 logical pixels
+          // in the crowded case, which is where the overflow came from and why
+          // the gauge never read as progress. Up here it gets the whole panel,
+          // it sits directly under the number it is counting toward, and the
+          // secondary row is freed for transient state only.
+          SizedBox(height: _t(6)),
+          _buildLevelRail(),
         ],
       ),
     );
@@ -419,7 +481,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // (food / lives / time / level) AND the slightly taller power-up
     // progress-ring indicator — chosen to match so both render
     // identically when present.
-    final rowHeight = _s(isSmallScreen ? 32.0 : 38.0);
+    final rowHeight = _t(isSmallScreen ? 34.0 : 37.0);
     // The fixed height is the point of this row — it exists so that a
     // power-up card appearing mid-run cannot shove the board up or down. That
     // makes it the one place large accessibility text has nowhere to go, and
@@ -431,37 +493,58 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
       maxScaleFactor: 1.3,
       child: SizedBox(
         height: rowHeight,
+        // Transient state only, now that level progress lives up in the score
+        // panel: the countdown, the lives you have left, what is on the board,
+        // and what is currently running. Three things at most, so each can be
+        // read at a size worth reading instead of four peers splitting a strip
+        // between them.
+        //
+        // Every child is Flexible: the chips size to their own text, which
+        // grows with the text scaler while this row's width does not. At an
+        // accessibility scale on a narrow phone they can still outgrow the
+        // row, and scaleDown keeps them whole rather than clipped — a
+        // half-drawn countdown is worse than a small one. In normal use there
+        // is slack now and nothing scales at all.
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Level progress
-            Expanded(flex: 2, child: _buildLevelCard()),
-
-            const SizedBox(width: 8),
-
             // TimeAttack countdown
-            if (hasTimeLimit) ...[
-              _buildTimeAttackChip(),
-              const SizedBox(width: 8),
-            ],
+            if (hasTimeLimit)
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildTimeAttackChip(),
+                ),
+              ),
 
             // Lives indicator (survival mode)
-            if (hasMultipleLives) ...[
-              _buildLivesChip(),
-              const SizedBox(width: 8),
-            ],
+            if (hasMultipleLives)
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildLivesChip(),
+                ),
+              ),
 
             // Food indicator
-            if (gameState.food != null) ...[
-              _buildFoodChip(gameState.food!),
-              const SizedBox(width: 8),
-            ],
+            if (gameState.food != null)
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildFoodChip(gameState.food!),
+                ),
+              ),
 
-            // Power-ups — clipped to the row's fixed height so the
-            // indicator doesn't push past the chip line. The card sizes
-            // to its children but the SizedBox above bounds it.
+            // Power-ups — bounded by the SizedBox above so an indicator can
+            // never push past the chip line.
             if (gameState.activePowerUps.isNotEmpty)
-              Expanded(flex: 2, child: _buildPowerUpsCard()),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildPowerUpsCard(),
+                ),
+              ),
           ],
         ),
       ),
@@ -480,8 +563,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
   Widget _buildLivesChip() {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: _s(isSmallScreen ? 8 : 10),
-        vertical: _s(isSmallScreen ? 6 : 8),
+        horizontal: _t(10),
+        vertical: _t(isSmallScreen ? 6 : 7),
       ),
       decoration: arcadeSurface(
         theme,
@@ -502,7 +585,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
             ),
             child: Icon(
               isAlive ? Icons.favorite : Icons.favorite_border,
-              size: _s(isSmallScreen ? 14 : 16),
+              size: _t(16),
               color: isAlive
                   ? Colors.redAccent
                   : Colors.redAccent.withValues(alpha: 0.35),
@@ -513,156 +596,137 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLevelCard() {
-    // Use the new triangular progression getters from GameState
+  /// Level progress, drawn across the bottom of the score panel.
+  ///
+  /// `[LV 3]  <snake crawling toward an apple>  40/300` — the badge names the
+  /// level, the rail shows how far through it you are, the ratio is there for
+  /// anyone who wants the exact number. See [LevelProgressRail] for why the
+  /// bar is a snake.
+  Widget _buildLevelRail() {
     final progress = gameState.levelProgress;
     final pointsInLevel = gameState.pointsInCurrentLevel;
     final pointsNeeded = gameState.pointsForCurrentLevel;
-    final isNearLevelUp = progress >= 0.8;
+    final isNearLevelUp = progress >= LevelProgressRail.nearThreshold;
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: _s(isSmallScreen ? 10 : 12),
-        vertical: _s(isSmallScreen ? 6 : 8),
-      ),
-      decoration: arcadeSurface(
-        theme,
-        tint: isNearLevelUp ? Colors.amber : theme.accentColor,
-        borderRadius: BorderRadius.circular(12),
-        borderColor: isNearLevelUp
-            ? Colors.amber.withValues(alpha: 0.5)
-            : theme.accentColor.withValues(alpha: 0.22),
-        baseAlpha: 0.42,
-      ),
+    // Clamped for the same reason the secondary row is: the score above scales
+    // without limit, but this line is a fixed-height readout inside a panel
+    // whose height decides where the board starts. Past 1.3 the badge and the
+    // ratio would rather hold their size than push the board out from under
+    // the player's thumb.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Level badge with animation — wrapped in a Stack so the level-up
-          // particle burst can fan out from behind the badge without
-          // displacing the row layout.
-          AnimatedBuilder(
-            animation: _levelUpController,
-            builder: (context, child) {
-              return Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  if (_showLevelUpEffect)
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _LevelUpBurstPainter(
-                          progress: _levelUpController.value,
-                          color: Colors.amber,
-                        ),
-                      ),
-                    ),
-                  Transform.scale(
-                    scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isSmallScreen ? 6 : 8,
-                        vertical: isSmallScreen ? 2 : 3,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: _showLevelUpEffect
-                              ? [Colors.amber, Colors.orange]
-                              : isNearLevelUp
-                              ? [Colors.amber, Colors.orange]
-                              : [theme.snakeColor, theme.accentColor],
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: _showLevelUpEffect
-                            ? [
-                                BoxShadow(
-                                  color: Colors.amber.withValues(
-                                    alpha: _levelUpGlow.value * 0.8,
-                                  ),
-                                  blurRadius: 12 * _levelUpGlow.value,
-                                  spreadRadius: 4 * _levelUpGlow.value,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_showLevelUpEffect) ...[
-                            Text(
-                              '⬆️',
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 8 : 10,
-                              ),
-                            ),
-                            const SizedBox(width: 2),
-                          ],
-                          Text(
-                            AppLocalizations.of(
-                              context,
-                            )!.hudLevelBadge(gameState.level),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isSmallScreen ? 10 : 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          if (_showLevelUpEffect) ...[
-                            const SizedBox(width: 2),
-                            Text(
-                              '⬆️',
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 8 : 10,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          // Progress bar
+          _buildLevelBadge(isNearLevelUp),
+          SizedBox(width: _t(8)),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                HudGauge(
-                  value: progress,
-                  fill: isNearLevelUp ? Colors.amber : theme.snakeColor,
-                  track: theme.accentColor,
-                  // 5/6 against the old 4/5, with the gap below cut from 2
-                  // to 1 to pay for it — net zero against the slot this row
-                  // reserves. 6/7 was the first attempt and it overflowed by
-                  // exactly 1px on tall phones and tablets at text scale 1.3
-                  // and up: the slot had a single pixel of slack and a
-                  // two-pixel bar spent it twice. gameplay_accessibility_test
-                  // caught it, which is the whole reason that matrix exists.
-                  height: isSmallScreen ? 5 : 6,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  '$pointsInLevel/$pointsNeeded',
-                  // height:1.0 strips the inherent line-height padding
-                  // (default ~1.5) so the text occupies exactly fontSize
-                  // pixels. Without this, fontSize 9 actually renders at
-                  // ~14px tall and combined with the progress bar +
-                  // 2px gap exceeds the 20px content slot the secondary
-                  // row reserves on small screens, producing a 1px
-                  // overflow warning.
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    fontSize: isSmallScreen ? 8 : 9,
-                    height: 1.0,
+            child: LevelProgressRail(
+              value: progress,
+              snakeColor: theme.snakeColor,
+              foodColor: theme.foodColor,
+              trackColor: theme.accentColor,
+              height: _t(isSmallScreen ? 9 : 10),
+            ),
+          ),
+          SizedBox(width: _t(7)),
+          // Flexible + scaleDown so the exact points give ground before the rail
+          // does. The bar already carries the meaning; the numbers are a detail
+          // nobody reads mid-run.
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '$pointsInLevel/$pointsNeeded',
+                // Single line, always. An unbounded Text beside an Expanded is one
+                // narrow layout away from wrapping, and this sits in a panel whose
+                // height the board depends on.
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.clip,
+                style: TextStyle(
+                  color: theme.accentColor.withValues(
+                    alpha: isNearLevelUp ? 0.85 : 0.55,
                   ),
+                  fontSize: _t(9.5),
+                  fontWeight: FontWeight.w600,
+                  // Tabular figures so the rail does not twitch narrower every time
+                  // a digit changes under it.
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  // height:1.0 strips the inherent line-height padding so the text
+                  // occupies exactly fontSize pixels.
+                  height: 1.0,
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// The `LV n` badge, and the anchor for the level-up burst.
+  Widget _buildLevelBadge(bool isNearLevelUp) {
+    return AnimatedBuilder(
+      animation: _levelUpController,
+      builder: (context, child) {
+        return Stack(
+          // Clip.none so the burst can fan out past the badge without
+          // displacing the row around it.
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            if (_showLevelUpEffect)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _LevelUpBurstPainter(
+                    progress: _levelUpController.value,
+                    color: Colors.amber,
+                  ),
+                ),
+              ),
+            Transform.scale(
+              scale: _showLevelUpEffect ? _levelUpScale.value : 1.0,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: _t(7),
+                  vertical: _t(3),
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _showLevelUpEffect || isNearLevelUp
+                        ? [Colors.amber, Colors.orange]
+                        : [theme.snakeColor, theme.accentColor],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: _showLevelUpEffect
+                      ? [
+                          BoxShadow(
+                            color: Colors.amber.withValues(
+                              alpha: _levelUpGlow.value * 0.8,
+                            ),
+                            blurRadius: 12 * _levelUpGlow.value,
+                            spreadRadius: 4 * _levelUpGlow.value,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  AppLocalizations.of(context)!.hudLevelBadge(gameState.level),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: _t(11),
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -681,7 +745,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     //
     // Heights chosen to match the neighbouring Lives/TimeAttack chips
     // (icon 14/16 + vertical padding 6/8 ≈ 26/32).
-    final chipHeight = _s(isSmallScreen ? 26.0 : 32.0);
+    final chipHeight = _t(isSmallScreen ? 29.0 : 32.0);
 
     return SizedBox(
       height: chipHeight,
@@ -696,7 +760,7 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           return Transform.scale(scale: scale, child: child);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 10),
+          padding: EdgeInsets.symmetric(horizontal: _t(10)),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
@@ -709,13 +773,13 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
               // sitting on the playfield (fixed square, no font-metric
               // height variance). _s() keeps tablet parity: the emoji this
               // replaced grew via the root textScaler, images don't.
-              PickupIcon.food(food.type, size: _s(isSmallScreen ? 14 : 16)),
-              const SizedBox(width: 4),
+              PickupIcon.food(food.type, size: _t(18)),
+              SizedBox(width: _t(5)),
               Text(
                 '+${food.type.points}',
                 style: TextStyle(
                   color: color,
-                  fontSize: isSmallScreen ? 11 : 12,
+                  fontSize: _t(12.5),
                   fontWeight: FontWeight.w700,
                   height: 1.0,
                 ),
@@ -780,9 +844,8 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
                 Text('🔥', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
                 const SizedBox(width: 4),
                 Text(
-                  AppLocalizations.of(
-                    context,
-                  )!.hudComboMultiplier(multiplier.toStringAsFixed(1)),
+                  AppLocalizations.of(context)!
+                      .hudComboMultiplier(multiplier.toStringAsFixed(1)),
                   style: TextStyle(
                     color: color,
                     fontSize: isSmallScreen ? 12 : 14,
@@ -827,16 +890,22 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
     // tight horizontal-only; the SizedBox-bounded parent provides the
     // vertical room.
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 8),
+      padding: EdgeInsets.symmetric(horizontal: _t(7)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
-                .withValues(alpha: 0.42),
-            Color.lerp(theme.backgroundColor, Colors.black, 0.25)!
-                .withValues(alpha: 0.24),
+            Color.lerp(
+              theme.backgroundColor,
+              Colors.black,
+              0.25,
+            )!.withValues(alpha: 0.42),
+            Color.lerp(
+              theme.backgroundColor,
+              Colors.black,
+              0.25,
+            )!.withValues(alpha: 0.24),
           ],
         ),
         borderRadius: BorderRadius.circular(10),
@@ -845,18 +914,26 @@ class _GameHUDState extends State<GameHUD> with TickerProviderStateMixin {
           width: 1,
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: activePowerUps
-            .map((powerUp) => _buildPowerUpIndicator(powerUp))
-            .toList(),
+      // scaleDown, because the rings are fixed sizes in a card whose width
+      // is whatever the row has left. Two power-ups plus a countdown plus a
+      // food chip is more than a 360dp phone can give, and the rings would
+      // rather be small than clipped — every one of them is a timer the
+      // player is reading.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: activePowerUps
+              .map((powerUp) => _buildPowerUpIndicator(powerUp))
+              .toList(),
+        ),
       ),
     );
   }
 
   Widget _buildPowerUpIndicator(ActivePowerUp powerUp) {
-    final size = _s(isSmallScreen ? 22.0 : 28.0);
+    final size = _t(isSmallScreen ? 25.0 : 27.0);
     return _PowerUpRing(
       key: ValueKey(
         '${powerUp.type.name}-${powerUp.activatedAt.microsecondsSinceEpoch}',
@@ -1140,8 +1217,8 @@ class _TimeAttackChipState extends State<_TimeAttackChip>
           scale: scale,
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: _s(isSmallScreen ? 8 : 10),
-              vertical: _s(isSmallScreen ? 6 : 8),
+              horizontal: _s(10),
+              vertical: _s(isSmallScreen ? 6 : 7),
             ),
             decoration: BoxDecoration(
               color: theme.backgroundColor.withValues(alpha: 0.5),
@@ -1154,17 +1231,13 @@ class _TimeAttackChipState extends State<_TimeAttackChip>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.timer_outlined,
-                  size: _s(isSmallScreen ? 14 : 16),
-                  color: accent,
-                ),
+                Icon(Icons.timer_outlined, size: _s(17), color: accent),
                 const SizedBox(width: 4),
                 Text(
                   '$mm:$ss',
                   style: TextStyle(
                     color: accent,
-                    fontSize: isSmallScreen ? 12 : 13,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.bold,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
