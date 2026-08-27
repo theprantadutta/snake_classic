@@ -260,9 +260,22 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 action: SnackBarAction(
                   label: AppLocalizations.of(context)!.mpLobbyDismiss,
                   textColor: Colors.white,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  },
+                  // Deliberately empty. SnackBarAction._handlePressed already
+                  // calls hideCurrentSnackBar() after invoking this, using the
+                  // action's OWN context — which lives inside the messenger's
+                  // tree and is therefore always alive. So the button still
+                  // dismisses; this callback has nothing left to do.
+                  //
+                  // It used to call ScaffoldMessenger.of(context) on the
+                  // context captured here, which belongs to the lobby screen.
+                  // The messenger is app-level, so a 4-second snack bar
+                  // happily outlives the screen that showed it — and this
+                  // screen replaces itself with the game screen the moment a
+                  // match starts (see the pushReplacement below). Tap Dismiss
+                  // on a snack bar still floating over the game and the lookup
+                  // walked a defunct element, found no messenger, and the `!`
+                  // inside ScaffoldMessenger.of threw. 40 crashes, 27 users.
+                  onPressed: () {},
                 ),
               ),
             );
