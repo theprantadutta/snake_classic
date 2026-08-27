@@ -87,7 +87,16 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     });
 
     try {
-      final tournament = await _tournamentService.getTournament(
+      // Cache first, so a deep link opened from inside the app paints
+      // instantly. Then the network on a miss — a deep link is precisely the
+      // case where the cache is cold. A notification tap can be the first
+      // tournament screen of the session, and the list that fills the cache
+      // was never opened; reading only the cache reported "Tournament not
+      // found" for a tournament that exists and is running right now.
+      var tournament = await _tournamentService.getTournament(
+        widget.tournamentId,
+      );
+      tournament ??= await _tournamentService.refreshTournament(
         widget.tournamentId,
       );
       if (mounted) {
