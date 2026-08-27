@@ -64,19 +64,19 @@ class Snake {
     int? boardHeight,
     bool wrapAround = false,
   }) {
-    // Commit the current direction for the next tick's validation
+    // Commit the direction we are about to travel in.
     _lastCommittedDirection = currentDirection;
 
-    // Promote the second-buffered turn (if any) so it applies on the
-    // NEXT tick; otherwise open the queue for fresh input.
-    if (_pendingDirection != null) {
-      currentDirection = _pendingDirection!;
-      _pendingDirection = null;
-      _hasQueuedDirection = true;
-    } else {
-      _hasQueuedDirection = false;
-    }
-
+    // Move FIRST, promote after. The promotion used to sit here, above this
+    // line, which meant a second buffered turn overwrote the first before the
+    // first had moved — so of two accepted turns only the second ever
+    // happened. Its own comment said "so it applies on the NEXT tick"; it was
+    // applying to this one.
+    //
+    // The player-visible half is that a swipe goes missing when you corner
+    // faster than one tick. The dangerous half is that right-then-up-then-
+    // left sent the head straight back down its own neck: two individually
+    // legal turns, both accepted, instant self-collision.
     Position newHead = head.move(currentDirection);
 
     // Handle wrap-around for Zen mode
@@ -105,6 +105,17 @@ class Snake {
 
     if (!ateFood) {
       body.removeLast();
+    }
+
+    // Now promote the second-buffered turn, so it applies on the next tick
+    // and this tick's input slots reopen correctly: with a promoted turn
+    // occupying slot one, fresh input goes to slot two.
+    if (_pendingDirection != null) {
+      currentDirection = _pendingDirection!;
+      _pendingDirection = null;
+      _hasQueuedDirection = true;
+    } else {
+      _hasQueuedDirection = false;
     }
   }
 
