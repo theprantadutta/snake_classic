@@ -11,6 +11,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -44,6 +45,48 @@ class MainActivity : FlutterActivity() {
     // than androidx.activity.enableEdgeToEdge() because the latter is an
     // extension on ComponentActivity — FlutterActivity inherits from plain
     // Activity, so the extension doesn't apply.
+    // Android 10 renders with Skia, not Impeller.
+    //
+    // Play Console vitals, v6.1.0+47: SIGSEGV inside the GPU vendor drivers --
+    // libIMGegl.so IMGeglMakeCurrent (4 users), libGLESv2_mtk.so,
+    // libGLESv2_POWERVR_ROGUE.so, plus an "Unresponsive GPU" ANR. The largest
+    // of those was 100% Android 10 (SDK 29) across four different budget
+    // handsets: positivo S518, Infinix X680B, Lenovo 8505F, Redmi angelica.
+    //
+    // SDK 29 is not an arbitrary line. It is exactly
+    // kMinimumAndroidApiLevelForImpeller in the engine
+    // (shell/platform/android/flutter_main.cc), the floor at which Flutter
+    // starts handing devices to Impeller at all. One API level lower and these
+    // same phones would get kSkiaOpenGLES and never see this crash. They are
+    // sitting on the boundary, running the least-exercised renderer on the
+    // oldest drivers.
+    //
+    // This costs no Vulkan. Impeller's autoselect already tries Vulkan first
+    // and already rejects Huawei, MediaTek below vendor SDK 32, known-bad
+    // SOCs, and anything that fails a real context validation
+    // (android_context_dynamic_impeller.cc). These devices had ALREADY failed
+    // that and fallen through to Impeller's OpenGL ES path -- which is why the
+    // crashes are in GLES drivers. So the phones moved to Skia here are
+    // precisely the ones that were never getting Vulkan in the first place.
+    // Every device that can run Vulkan keeps Impeller and keeps Vulkan.
+    //
+    // Done through shell args rather than the manifest because the manifest
+    // meta-data is static and would disable Impeller for everyone.
+    // EnableImpeller is explicitly "settable via the command line and
+    // manifest" and allowedInRelease=true (FlutterEngineFlags.java), and these
+    // args reach the engine via getFlutterShellArgs().toArray().
+    //
+    // Note: the ImpellerBackend manifest key is NOT an alternative here. Its
+    // handling in flutter_main.cc sits inside `#ifndef FLUTTER_RELEASE`, so it
+    // does nothing in a production build despite what its javadoc implies.
+    override fun getFlutterShellArgs(): FlutterShellArgs {
+        val args = super.getFlutterShellArgs()
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+            args.add(FlutterShellArgs.ARG_DISABLE_IMPELLER)
+        }
+        return args
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
