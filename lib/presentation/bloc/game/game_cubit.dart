@@ -251,11 +251,31 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Start a new game
-  /// Coin cost of an offline / no-ad revive. Also the rewarded-ad alternative.
+  /// Coin cost of the FIRST revive in a run. Each further revive costs a
+  /// multiple of this — see [reviveCoinCostFor].
   static const int reviveCoinCost = 1500;
 
+  /// How many times a single run can be revived.
+  ///
+  /// Was effectively one. A second is offered because the player who just
+  /// watched an ad to save a run is the most willing person in the app to
+  /// watch another, and refusing them was leaving the most-wanted moment on
+  /// the table. It stops at two on purpose: a run that can be revived
+  /// indefinitely is not a run, and the high score stops meaning anything.
+  static const int maxRevivesPerGame = 2;
+
+  /// Coin price of the revive after [used] revives, escalating so the second
+  /// one is a real decision rather than a formality.
+  static int reviveCoinCostFor(int used) => reviveCoinCost * (used + 1);
+
+  /// Coin price of the revive currently on offer.
+  int get currentReviveCoinCost => reviveCoinCostFor(_revivesThisGame);
+
+  /// Revives already spent in this run, 0-based.
+  int get revivesUsedThisGame => _revivesThisGame;
+
   /// One revive per run — flips true on [revive], reset on [startGame].
-  bool _revivedThisGame = false;
+  int _revivesThisGame = 0;
 
   /// Time-Attack rewarded "+30s" extension: how many seconds each ad grants,
   /// and how many extensions a single run may earn (kept low so it can't beat
@@ -354,7 +374,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _currentGameCoinsEarned = 0;
     _pendingLevelUpCoinLevels.clear();
     _lastRunSummary = null;
-    _revivedThisGame = false;
+    _revivesThisGame = 0;
     _timeBonusesUsed = 0;
     // Snapshot Pro status once at game start — sticky for the session.
     // (PremiumCubit is injected, so registration is guaranteed.)
@@ -1141,7 +1161,8 @@ class GameCubit extends Cubit<GameCubitState> {
       // Kick a (re)load so the ad can become ready during the offer countdown
       // — the overlay re-checks readiness live and enables the button then.
       if (adsPossible) _adService.preloadRewarded();
-      final canAfford = _coinsCubit.state.balance.total >= reviveCoinCost;
+      final canAfford =
+          _coinsCubit.state.balance.total >= currentReviveCoinCost;
       // Pro users never see ads, so the watch-ad path is off for them — but
       // their revive is FREE: always offer it (the overlay shows a free-life
       // button instead of watch-ad/coins). Without this, a Pro user short on
@@ -1273,7 +1294,7 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Revive eligibility: once per run, and not in Time Attack (a fresh game
   /// loop there would hand back a full timer, which would be exploitable).
   bool _canOfferRevive() {
-    if (_revivedThisGame) return false;
+    if (_revivesThisGame >= maxRevivesPerGame) return false;
     final gs = state.gameState;
     if (gs == null) return false;
     if (gs.gameMode == GameMode.timeAttack) return false;
@@ -1297,8 +1318,8 @@ class GameCubit extends Cubit<GameCubitState> {
   /// owns the ad/coin side, this just resumes play.
   void revive() {
     final current = state.gameState;
-    if (current == null || _revivedThisGame) return;
-    _revivedThisGame = true;
+    if (current == null || _revivesThisGame >= maxRevivesPerGame) return;
+    _revivesThisGame++;
 
     // The run continues — pick the music back up from where the crash
     // paused it (see _handleCrash).

@@ -211,15 +211,15 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                               theme: theme,
                               icon: Icons.bolt,
                               label: l10n.bpWatchAdXp,
-                              capKey: AdService.capBattlePassXp,
+                              placement: AdService.placementBattlePassXp,
                               onWatch: () async {
                                 final bp = context.read<BattlePassCubit>();
                                 // Capture the messenger up front — onReward fires
                                 // after the ad is dismissed (an async gap), so we
                                 // can't safely read context then.
                                 final messenger = ScaffoldMessenger.of(context);
-                                await getIt<AdService>().showRewardedCapped(
-                                  capKey: AdService.capBattlePassXp,
+                                await getIt<AdService>().showRewardedFor(
+                                  placement: AdService.placementBattlePassXp,
                                   onReward: () {
                                     bp.bufferXP(50, source: 'ad_boost');
                                     bp.flushXP();

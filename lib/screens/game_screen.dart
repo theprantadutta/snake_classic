@@ -950,10 +950,15 @@ class _GameScreenState extends State<GameScreen>
                                   // while the cubit is awaiting a revive decision.
                                   // Outside SwipeDetector so the buttons receive taps.
                                   if (gameCubitState.offeringRevive)
+                                    // The price rises with each revive in the
+                                    // run, so read it from the cubit rather
+                                    // than the base constant.
                                     ReviveOverlay(
                                       theme: theme,
                                       seconds: 10,
-                                      coinCost: GameCubit.reviveCoinCost,
+                                      coinCost: context
+                                          .read<GameCubit>()
+                                          .currentReviveCoinCost,
                                       isPro: context
                                           .read<GameCubit>()
                                           .isProSession,
@@ -967,7 +972,9 @@ class _GameScreenState extends State<GameScreen>
                                               .state
                                               .balance
                                               .total >=
-                                          GameCubit.reviveCoinCost,
+                                          context
+                                              .read<GameCubit>()
+                                              .currentReviveCoinCost,
                                       onWatchAd: () {
                                         final gc = context.read<GameCubit>();
                                         getIt<AdService>().showRewarded(
@@ -980,7 +987,7 @@ class _GameScreenState extends State<GameScreen>
                                         final ok = await context
                                             .read<CoinsCubit>()
                                             .spendCoins(
-                                              GameCubit.reviveCoinCost,
+                                              gc.currentReviveCoinCost,
                                               CoinSpendingCategory.extraLives,
                                               itemName: 'Revive',
                                             );

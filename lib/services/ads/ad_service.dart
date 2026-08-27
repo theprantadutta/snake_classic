@@ -931,27 +931,26 @@ class AdService {
   // naturally bounded by gameplay — revive/time-bonus once per run, game-over
   // 2× once per screen, daily-bonus/challenge claims once per day.)
 
-  /// Placement identifiers, passed through to [showRewardedCapped] so callers
-  /// keep their existing call shape. They no longer impose a cap.
-  static const String capFreeCoins = 'free_coins';
-  static const String capFreePowerUp = 'free_powerup';
-  static const String capBattlePassXp = 'bp_xp';
-  static const String capTournamentEntry = 'tournament_entry';
+  /// Placement identifiers. Analytics labels, nothing more — they used to key
+  /// the daily caps described above, which is where the old `cap*` naming came
+  /// from. The caps went; the names outlived them and read as though a limit
+  /// is being consulted when none is.
+  static const String placementFreeCoins = 'free_coins';
+  static const String placementFreePowerUp = 'free_powerup';
+  static const String placementBattlePassXp = 'bp_xp';
+  static const String placementTournamentEntry = 'tournament_entry';
 
   /// Coins granted per "watch for coins" ad.
   static const int freeCoinsPerAd = 25;
 
-  /// True when a rewarded ad can be shown now (loaded). No daily cap.
-  bool canShowCapped(String capKey) => isRewardedReady;
-
   /// Show a rewarded ad for an opt-in placement. [onReward] fires (on ad
-  /// dismiss, via [showRewarded]) only if the user earned it. The [capKey]
-  /// doubles as the analytics placement id.
-  Future<bool> showRewardedCapped({
-    required String capKey,
+  /// dismiss, via [showRewarded]) only if the user earned it. [placement] is
+  /// the analytics label.
+  Future<bool> showRewardedFor({
+    required String placement,
     required VoidCallback onReward,
   }) =>
-      showRewarded(onReward: onReward, placement: capKey);
+      showRewarded(onReward: onReward, placement: placement);
 
   /// Convenience wrapper for the free-coins placement.
   Future<bool> showRewardedForCoins({
@@ -959,7 +958,7 @@ class AdService {
   }) =>
       showRewarded(
         onReward: () => onCoins(freeCoinsPerAd),
-        placement: capFreeCoins,
+        placement: placementFreeCoins,
       );
 
   // Back-compat getter used by RewardedCoinsButton.

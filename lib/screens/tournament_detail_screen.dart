@@ -1516,15 +1516,15 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
             if (tier == 'bronze' &&
                 getIt.isRegistered<AdService>() &&
                 getIt<AdService>().adsEnabled &&
-                getIt<AdService>().canShowCapped(AdService.capTournamentEntry))
+                getIt<AdService>().isRewardedReady)
               TextButton.icon(
                 onPressed: () {
                   // Capture before the pop + ad — onReward fires after the
                   // ad is dismissed, when this dialog's context is gone.
                   final messenger = ScaffoldMessenger.of(context);
                   Navigator.of(context).pop();
-                  getIt<AdService>().showRewardedCapped(
-                    capKey: AdService.capTournamentEntry,
+                  getIt<AdService>().showRewardedFor(
+                    placement: AdService.placementTournamentEntry,
                     onReward: () {
                       premiumCubit.addTournamentEntry('bronze');
                       showRewardToast(

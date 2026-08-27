@@ -1266,7 +1266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final l10n = AppLocalizations.of(context)!;
 
     // No ad loaded → explain why, don't just do nothing.
-    if (!ads.canShowCapped(AdService.capFreePowerUp)) {
+    if (!ads.isRewardedReady) {
       messenger.showSnackBar(
         arcadeSnackBar(context, message: l10n.homeNoAdReady),
       );
@@ -1315,8 +1315,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
     if (confirmed != true) return;
 
-    final granted = await ads.showRewardedCapped(
-      capKey: AdService.capFreePowerUp,
+    final granted = await ads.showRewardedFor(
+      placement: AdService.placementFreePowerUp,
       onReward: powerUps.grantFreePowerUp,
     );
 
@@ -1573,14 +1573,14 @@ class _LoadoutBottomSheet extends StatelessWidget {
                   theme: theme,
                   icon: Icons.bolt,
                   label: l10n.homeWatchAdFreeSpeedBoost,
-                  capKey: AdService.capFreePowerUp,
+                  placement: AdService.placementFreePowerUp,
                   onWatch: () async {
                     final powerUps = context.read<PowerUpCubit>();
                     // Capture before the ad — onReward fires after dismissal,
                     // an async gap where reading context is unsafe.
                     final messenger = ScaffoldMessenger.of(context);
-                    await getIt<AdService>().showRewardedCapped(
-                      capKey: AdService.capFreePowerUp,
+                    await getIt<AdService>().showRewardedFor(
+                      placement: AdService.placementFreePowerUp,
                       onReward: () {
                         powerUps.grantFreePowerUp();
                         showRewardToast(

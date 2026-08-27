@@ -16,15 +16,15 @@ import 'package:snake_classic/utils/constants.dart';
 /// is whether an ad is loaded.
 ///
 /// [onWatch] performs the actual ad show + grant (typically
-/// `AdService.showRewardedCapped(...)`); the button just handles gating + UI.
+/// `AdService.showRewardedFor(...)`); the button just handles gating + UI.
 class RewardedActionButton extends StatefulWidget {
   final GameTheme theme;
   final IconData icon;
   final String label;
 
-  /// AdService placement id (e.g. [AdService.capFreePowerUp]). Identifies the
+  /// AdService placement id (e.g. [AdService.placementFreePowerUp]). Identifies the
   /// placement; gating is purely on a loaded ad either way.
-  final String? capKey;
+  final String? placement;
 
   /// Does the ad + grant. Should call AdService.showRewarded(Capped). Awaited so
   /// the button can refresh its state after.
@@ -36,7 +36,7 @@ class RewardedActionButton extends StatefulWidget {
     required this.icon,
     required this.label,
     required this.onWatch,
-    this.capKey,
+    this.placement,
   });
 
   @override
@@ -67,8 +67,8 @@ class _RewardedActionButtonState extends State<RewardedActionButton> {
     super.dispose();
   }
 
-  bool _enabled(AdService ads) => widget.capKey != null
-      ? ads.canShowCapped(widget.capKey!)
+  bool _enabled(AdService ads) => widget.placement != null
+      ? ads.isRewardedReady
       : ads.isRewardedReady;
 
   Future<void> _onTap() async {

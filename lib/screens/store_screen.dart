@@ -2757,7 +2757,7 @@ class _StoreScreenState extends State<StoreScreen>
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
     // Opt-in placement, uncapped by design (the daily caps were removed) —
     // the only gate is whether a rewarded ad is loaded.
-    final ready = ads.canShowCapped(AdService.capFreePowerUp);
+    final ready = ads.isRewardedReady;
     return Opacity(
       opacity: ready ? 1 : 0.5,
       child: GestureDetector(
@@ -2767,8 +2767,8 @@ class _StoreScreenState extends State<StoreScreen>
                 // Capture before the ad — onReward fires after dismissal,
                 // an async gap where reading context is unsafe.
                 final messenger = ScaffoldMessenger.of(context);
-                ads.showRewardedCapped(
-                  capKey: AdService.capFreePowerUp,
+                ads.showRewardedFor(
+                  placement: AdService.placementFreePowerUp,
                   onReward: () {
                     powerUps.grantFreePowerUp();
                     showRewardToast(
