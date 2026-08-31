@@ -405,6 +405,7 @@
   "mpStatusDisconnected": "Disconnected",
   "goNoAdAvailable": "No ad available right now, try again shortly",
   "goCoinsDoubled": "🎉 Coins doubled — +{count} bonus coins!",
+  "goAdBonusCoins": "🎉 +{count} bonus coins for watching!",
   "goWatchToDouble": "Watch to double your {count} coins",
   "goRewardClaimLine": "+{coins} coins  •  +{xp} XP",
   "goClaimedTotal": "Claimed {count} coins from daily challenges!",
@@ -1796,6 +1797,7 @@
   },
   "rvoGetLifePro": "Get Life · Free for Pro",
   "rvoWatchAd": "Watch ad to revive",
+  "rvoLoadingAd": "Loading ad…",
   "rvoUseCoins": "Use {coins} coins",
   "@rvoUseCoins": {
     "placeholders": {

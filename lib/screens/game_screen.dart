@@ -964,8 +964,6 @@ class _GameScreenState extends State<GameScreen>
                                           .isProSession,
                                       onProRevive: () =>
                                           context.read<GameCubit>().revive(),
-                                      isAdReady: () =>
-                                          getIt<AdService>().isRewardedReady,
                                       canAffordCoins:
                                           context
                                               .read<CoinsCubit>()
@@ -975,12 +973,16 @@ class _GameScreenState extends State<GameScreen>
                                           context
                                               .read<GameCubit>()
                                               .currentReviveCoinCost,
-                                      onWatchAd: () {
+                                      onWatchAd: () async {
                                         final gc = context.read<GameCubit>();
-                                        getIt<AdService>().showRewarded(
+                                        final outcome =
+                                            await getIt<AdService>()
+                                                .showRewardedOrWait(
                                           onReward: gc.revive,
                                           placement: 'revive',
                                         );
+                                        return outcome !=
+                                            RewardedOutcome.unavailable;
                                       },
                                       onUseCoins: () async {
                                         final gc = context.read<GameCubit>();
@@ -1005,14 +1007,16 @@ class _GameScreenState extends State<GameScreen>
                                     TimeBonusOverlay(
                                       theme: theme,
                                       bonusSeconds: GameCubit.timeBonusSeconds,
-                                      isAdReady: () =>
-                                          getIt<AdService>().isRewardedReady,
-                                      onWatchAd: () {
+                                      onWatchAd: () async {
                                         final gc = context.read<GameCubit>();
-                                        getIt<AdService>().showRewarded(
+                                        final outcome =
+                                            await getIt<AdService>()
+                                                .showRewardedOrWait(
                                           onReward: gc.grantTimeBonus,
                                           placement: 'time_bonus',
                                         );
+                                        return outcome !=
+                                            RewardedOutcome.unavailable;
                                       },
                                       onDecline: () => context
                                           .read<GameCubit>()

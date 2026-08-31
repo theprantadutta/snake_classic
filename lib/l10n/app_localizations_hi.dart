@@ -914,6 +914,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String goAdBonusCoins(Object count) {
+    return '🎉 देखने के लिए +$count बोनस सिक्के!';
+  }
+
+  @override
   String goWatchToDouble(Object count) {
     return 'अपने $count सिक्के दोगुने करने के लिए विज्ञापन देखें';
   }
@@ -5193,6 +5198,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get rvoWatchAd => 'रिवाइव के लिए विज्ञापन देखें';
+
+  @override
+  String get rvoLoadingAd => 'विज्ञापन लोड हो रहा है…';
 
   @override
   String rvoUseCoins(Object coins) {

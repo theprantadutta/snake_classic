@@ -15,10 +15,14 @@ class TimeBonusOverlay extends StatefulWidget {
   final GameTheme theme;
   final int bonusSeconds;
 
-  /// Live readiness check — evaluated on every (re)build including the 1s
-  /// countdown ticks, so the button enables the moment the ad finishes loading.
-  final bool Function() isAdReady;
-  final VoidCallback onWatchAd;
+  /// Runs the rewarded watch. Resolves true if an ad was actually displayed
+  /// (whether or not the player sat through it), false if none could be shown.
+  ///
+  /// Replaces an `isAdReady` predicate that disabled this button whenever the
+  /// rewarded pool was empty — which, at real fill rates, hid the app's
+  /// highest-eCPM offer a large share of the time and never let the tap kick a
+  /// load. The button is always live now; the load happens on demand.
+  final Future<bool> Function() onWatchAd;
   final VoidCallback onDecline;
   final int seconds;
 
@@ -26,7 +30,6 @@ class TimeBonusOverlay extends StatefulWidget {
     super.key,
     required this.theme,
     required this.bonusSeconds,
-    required this.isAdReady,
     required this.onWatchAd,
     required this.onDecline,
     this.seconds = 6,
@@ -40,10 +43,19 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
   late int _remaining = widget.seconds;
   Timer? _timer;
   bool _resolved = false;
+  bool _loadingAd = false;
+  bool _adUnavailable = false;
 
   @override
   void initState() {
     super.initState();
+    _startCountdown();
+  }
+
+  /// (Re)start the auto-decline countdown. Restartable because a failed ad
+  /// attempt hands the offer back to the player — see [_onWatchAd].
+  void _startCountdown() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return;
       setState(() => _remaining--);
@@ -62,10 +74,25 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
   /// can't fire mid-ad) and trigger the ad. If the reward is earned the run
   /// resumes and this overlay unmounts; if the ad is skipped/abandoned the
   /// overlay stays interactive so the player can still decline.
-  void _onWatchAd() {
-    if (_resolved) return;
+  /// The ad may have to load first, which means it can fail. On failure the
+  /// countdown restarts — cancelling it and never restoring it would strand
+  /// the player on a frozen board with no auto-decline.
+  Future<void> _onWatchAd() async {
+    if (_resolved || _loadingAd) return;
     _timer?.cancel();
-    widget.onWatchAd();
+    setState(() {
+      _loadingAd = true;
+      _adUnavailable = false;
+    });
+
+    final shown = await widget.onWatchAd();
+
+    if (!mounted || _resolved) return;
+    setState(() {
+      _loadingAd = false;
+      _adUnavailable = !shown;
+    });
+    if (!shown) _startCountdown();
   }
 
   @override
@@ -159,9 +186,9 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
 
               // Watch ad — the only way to extend.
               Opacity(
-                opacity: widget.isAdReady() ? 1 : 0.4,
+                opacity: _loadingAd ? 0.6 : 1,
                 child: GestureDetector(
-                  onTap: widget.isAdReady() ? _onWatchAd : null,
+                  onTap: _loadingAd ? null : _onWatchAd,
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 13),
@@ -177,11 +204,18 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.play_circle_fill,
-                            color: Colors.white, size: 20),
+                        Icon(
+                          _loadingAd
+                              ? Icons.hourglass_top
+                              : Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
-                          l10n.tbWatchAd(widget.bonusSeconds),
+                          _loadingAd
+                              ? l10n.rvoLoadingAd
+                              : l10n.tbWatchAd(widget.bonusSeconds),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -193,6 +227,17 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                   ),
                 ),
               ),
+              if (_adUnavailable) ...[
+                const SizedBox(height: 6),
+                Text(
+                  l10n.goNoAdAvailable,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.75),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
               const SizedBox(height: 6),
               TextButton(
                 onPressed: () => _resolve(widget.onDecline),

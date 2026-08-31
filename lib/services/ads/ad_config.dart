@@ -27,6 +27,10 @@ class AdConfig {
   static const _testRewardedIos = 'ca-app-pub-3940256099942544/1712485313';
   static const _testAppOpenAndroid = 'ca-app-pub-3940256099942544/9257395921';
   static const _testAppOpenIos = 'ca-app-pub-3940256099942544/5575463023';
+  static const _testRewardedInterstitialAndroid =
+      'ca-app-pub-3940256099942544/5354046379';
+  static const _testRewardedInterstitialIos =
+      'ca-app-pub-3940256099942544/6978759866';
 
   // ---- Real PRODUCTION ad unit ids (from admob_ad_list.md) ----
   static const _bannerAndroid = 'ca-app-pub-9242904787767394/3016639636';
@@ -40,6 +44,16 @@ class AdConfig {
   // admob_ad_list.md).
   static const _appOpenAndroid = 'ca-app-pub-9242904787767394/2112367445';
   static const _appOpenIos = 'ca-app-pub-9242904787767394/9799285770';
+
+  // Rewarded interstitial: a full-screen ad that appears WITHOUT an opt-in tap
+  // but still grants a reward. The SDK renders the mandatory intro screen with
+  // its opt-out itself — we don't build that UI. Used at game-over in place of
+  // the plain interstitial when one is loaded (it earns rewarded-tier eCPM and
+  // hands the player coins, so the same interruption pays more and stings less).
+  static const _rewardedInterstitialAndroid =
+      'ca-app-pub-9242904787767394/8753884101';
+  static const _rewardedInterstitialIos =
+      'ca-app-pub-9242904787767394/3391193437';
 
   static String get bannerUnitId => kDebugMode
       ? (_isIos ? _testBannerIos : _testBannerAndroid)
@@ -56,4 +70,8 @@ class AdConfig {
   static String get appOpenUnitId => kDebugMode
       ? (_isIos ? _testAppOpenIos : _testAppOpenAndroid)
       : (_isIos ? _appOpenIos : _appOpenAndroid);
+
+  static String get rewardedInterstitialUnitId => kDebugMode
+      ? (_isIos ? _testRewardedInterstitialIos : _testRewardedInterstitialAndroid)
+      : (_isIos ? _rewardedInterstitialIos : _rewardedInterstitialAndroid);
 }

@@ -15,12 +15,17 @@ import 'package:snake_classic/utils/typography.dart';
 class ReviveOverlay extends StatefulWidget {
   final GameTheme theme;
   final int coinCost;
-  /// Live readiness check — evaluated on every (re)build, including the 1s
-  /// countdown ticks, so the button enables the moment the rewarded ad finishes
-  /// (re)loading instead of being frozen on a stale snapshot.
-  final bool Function() isAdReady;
   final bool canAffordCoins;
-  final VoidCallback onWatchAd;
+  /// Runs the rewarded watch. Resolves true if an ad was actually displayed
+  /// (whether or not the player sat through it), false if none could be shown.
+  ///
+  /// This used to be paired with an `isAdReady` predicate that disabled the
+  /// button whenever the rewarded pool was empty. That was costing impressions
+  /// of the app's highest-eCPM format: at real fill rates the pool is empty
+  /// often, so the button greyed out precisely when the ad was worth the most,
+  /// and the tap that would have kicked a load never happened. The button is
+  /// now always live and the load happens on demand.
+  final Future<bool> Function() onWatchAd;
   final VoidCallback onUseCoins;
   final VoidCallback onDecline;
   /// Pro perk: revive instantly, free, no ad and no coins. When [isPro] is true
@@ -34,7 +39,6 @@ class ReviveOverlay extends StatefulWidget {
     super.key,
     required this.theme,
     required this.coinCost,
-    required this.isAdReady,
     required this.canAffordCoins,
     required this.onWatchAd,
     required this.onUseCoins,
@@ -52,10 +56,23 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
   late int _remaining = widget.seconds;
   Timer? _timer;
   bool _resolved = false;
+  // True while an on-demand rewarded load is in flight, so the button shows
+  // progress instead of looking unresponsive.
+  bool _loadingAd = false;
+  // Set when a watch attempt found no ad, so the player is told why nothing
+  // happened rather than being left staring at a button that did nothing.
+  bool _adUnavailable = false;
 
   @override
   void initState() {
     super.initState();
+    _startCountdown();
+  }
+
+  /// (Re)start the auto-decline countdown. Restartable because a failed ad
+  /// attempt hands the offer back to the player — see [_onWatchAd].
+  void _startCountdown() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return;
       setState(() => _remaining--);
@@ -74,10 +91,29 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
   /// can't fire mid-ad) and trigger the ad. If the player earns the reward the
   /// game revives and this overlay unmounts; if they skip/abandon the ad, the
   /// overlay stays interactive so they can still use coins or decline.
-  void _onWatchAd() {
-    if (_resolved) return;
+  ///
+  /// The ad may now have to load first, which means it can also fail. When it
+  /// does we restart the countdown rather than leaving the overlay frozen —
+  /// cancelling the timer and never restoring it would strand the player on a
+  /// dead board with no auto-decline.
+  Future<void> _onWatchAd() async {
+    if (_resolved || _loadingAd) return;
     _timer?.cancel();
-    widget.onWatchAd();
+    setState(() {
+      _loadingAd = true;
+      _adUnavailable = false;
+    });
+
+    final shown = await widget.onWatchAd();
+
+    if (!mounted || _resolved) return;
+    setState(() {
+      _loadingAd = false;
+      _adUnavailable = !shown;
+    });
+    // Nothing was displayed, so the offer is still open — give the player the
+    // rest of their countdown back to choose coins or decline.
+    if (!shown) _startCountdown();
   }
 
   @override
@@ -187,12 +223,25 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                 // Watch ad — primary when available.
                 _ActionButton(
                   theme: theme,
-                  icon: Icons.play_circle_fill,
-                  label: l10n.rvoWatchAd,
-                  enabled: widget.isAdReady(),
+                  icon: _loadingAd
+                      ? Icons.hourglass_top
+                      : Icons.play_circle_fill,
+                  label: _loadingAd ? l10n.rvoLoadingAd : l10n.rvoWatchAd,
+                  enabled: !_loadingAd,
                   filled: true,
                   onTap: _onWatchAd,
                 ),
+                if (_adUnavailable) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.goNoAdAvailable,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: theme.accentColor.withValues(alpha: 0.75),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 // Coin alternative (works offline).
                 _ActionButton(

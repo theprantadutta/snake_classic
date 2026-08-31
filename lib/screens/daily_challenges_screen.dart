@@ -81,7 +81,13 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       if (mounted) {
         // Offer a rewarded "2×" on the claimed total when an ad is available.
         final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
-        final canDouble = ads != null && ads.adsEnabled && ads.isRewardedReady;
+        // Deliberately NOT gated on isRewardedReady. Rewarded is the
+        // highest-eCPM format in the app and the pool is empty a large share
+        // of the time, so requiring a loaded ad meant the "2×" offer silently
+        // vanished exactly when it was worth the most — and the tap that would
+        // have triggered the load never happened. showRewardedOrWait waits out
+        // a short load window and reports failure to the user instead.
+        final canDouble = ads != null && ads.adsEnabled;
         final coins = context.read<CoinsCubit>();
         // Capture before the ad — onReward fires after dismissal, an async
         // gap where reading context is unsafe.
@@ -97,22 +103,33 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
             duration: Duration(seconds: canDouble ? 6 : 2),
             actionLabel: canDouble ? l10n.dchWatchTo2x : null,
             onAction: canDouble
-                ? () => ads.showRewarded(
-                    placement: 'challenge_2x',
-                    onReward: () {
-                      coins.earnCoins(
-                        CoinEarningSource.dailyChallenge,
-                        customAmount: totalClaimed,
-                        itemName: 'Daily Challenges 2x',
-                        metadata: const {'doubled': true},
+                ? () async {
+                    final outcome = await ads.showRewardedOrWait(
+                      placement: 'challenge_2x',
+                      onReward: () {
+                        coins.earnCoins(
+                          CoinEarningSource.dailyChallenge,
+                          customAmount: totalClaimed,
+                          itemName: 'Daily Challenges 2x',
+                          metadata: const {'doubled': true},
+                        );
+                        showRewardToast(
+                          messenger,
+                          l10n.dchDoubledBonus(totalClaimed),
+                          icon: Icons.monetization_on,
+                        );
+                      },
+                    );
+                    if (outcome == RewardedOutcome.unavailable) {
+                      messenger.showSnackBar(
+                        arcadeSnackBarFor(
+                          snackTheme,
+                          message: l10n.goNoAdAvailable,
+                          icon: Icons.hourglass_empty,
+                        ),
                       );
-                      showRewardToast(
-                        messenger,
-                        l10n.dchDoubledBonus(totalClaimed),
-                        icon: Icons.monetization_on,
-                      );
-                    },
-                  )
+                    }
+                  }
                 : null,
           ),
         );

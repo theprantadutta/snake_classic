@@ -297,7 +297,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // window to recover instead of being found empty at the moment of use.
     final ads = _adService;
     if (ads != null && ads.adsEnabled) {
-      ads.preloadInterstitial();
+      ads.preloadGameOverAd();
       ads.preloadRewarded();
     }
 

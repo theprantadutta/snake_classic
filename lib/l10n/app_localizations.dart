@@ -1720,6 +1720,12 @@ abstract class AppLocalizations {
   /// **'🎉 Coins doubled — +{count} bonus coins!'**
   String goCoinsDoubled(Object count);
 
+  /// No description provided for @goAdBonusCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 +{count} bonus coins for watching!'**
+  String goAdBonusCoins(Object count);
+
   /// No description provided for @goWatchToDouble.
   ///
   /// In en, this message translates to:
@@ -9459,6 +9465,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch ad to revive'**
   String get rvoWatchAd;
+
+  /// No description provided for @rvoLoadingAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading ad…'**
+  String get rvoLoadingAd;
 
   /// No description provided for @rvoUseCoins.
   ///

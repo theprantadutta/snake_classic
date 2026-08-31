@@ -15,11 +15,9 @@ import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -29,6 +27,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
@@ -228,59 +227,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await NotificationPermissionPrimer.maybeShow(context, theme);
   }
 
-  /// Shows the first-launch game-mode picker if it hasn't been shown
-  /// before. Returns once the sheet is dismissed (or immediately if the
-  /// user has already seen it). Triggered from the Play button so it
-  /// only appears in the path where the choice actually matters.
+  /// Fallback entry point for the mode picker.
+  ///
+  /// The picker's real home is the first game-over (see
+  /// [maybeShowGameModePicker]) — that reaches every player who finishes a
+  /// game, not just the minority who return for a second one. This call keeps
+  /// the Play button as a safety net for anyone who somehow gets past a game
+  /// without passing through game-over. It is a no-op once the picker has been
+  /// shown, so the two paths cannot double-prompt.
   Future<void> _maybeShowGameModePrompt() async {
     if (!mounted) return;
-    final settingsCubit = context.read<GameSettingsCubit>();
-
-    // Read the flag with a short hydration window. If the cubit is
-    // already ready (overwhelmingly the case by the time the user taps
-    // Play), this returns immediately. Falls back to direct storage on
-    // a timeout so we never nag a user who already chose.
-    bool alreadyPrompted;
-    if (settingsCubit.state.isReady) {
-      alreadyPrompted = settingsCubit.state.gameModeFirstLaunchPrompted;
-    } else {
-      try {
-        final ready = await settingsCubit.stream
-            .firstWhere((s) => s.isReady)
-            .timeout(const Duration(seconds: 2));
-        alreadyPrompted = ready.gameModeFirstLaunchPrompted;
-      } catch (_) {
-        alreadyPrompted = await getIt<StorageService>()
-            .hasGameModeBeenPrompted();
-      }
-    }
-
-    if (!mounted) return;
-    if (alreadyPrompted) return;
-
-    final selected = await showModalBottomSheet<GameMode>(
-      context: context,
-      // Dismissible: a player who taps Play wants to play, and trapping them
-      // in a modal until they commit to a mode they have not tried yet is
-      // friction with no upside. Dismissing keeps their current mode (the
-      // `selected == null` path below) and still marks the picker as shown,
-      // so it asks once and never nags.
-      isDismissible: true,
-      enableDrag: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      // Cap width so the sheet centers on tablets instead of spanning the
-      // full width (no-op on phones narrower than 640).
-      constraints: const BoxConstraints(maxWidth: 640),
-      builder: (sheetContext) =>
-          _GameModeFirstLaunchSheet(initialMode: settingsCubit.state.gameMode),
-    );
-
-    if (!mounted) return;
-    if (selected != null) {
-      await settingsCubit.setGameMode(selected);
-    }
-    await settingsCubit.markGameModePrompted();
+    await maybeShowGameModePicker(context);
   }
 
   /// Check if home walkthrough should be shown. Resolves once the
@@ -1339,160 +1296,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   int? _getDailyChallengesBadge() {
     final count = ref.watch(unclaimedRewardsCountProvider);
     return count > 0 ? count : null;
-  }
-}
-
-class _GameModeFirstLaunchSheet extends StatefulWidget {
-  const _GameModeFirstLaunchSheet({required this.initialMode});
-
-  final GameMode initialMode;
-
-  @override
-  State<_GameModeFirstLaunchSheet> createState() =>
-      _GameModeFirstLaunchSheetState();
-}
-
-class _GameModeFirstLaunchSheetState extends State<_GameModeFirstLaunchSheet> {
-  late GameMode _selected = widget.initialMode;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
-    final l10n = AppLocalizations.of(context)!;
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.98),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.4),
-            width: 2,
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text(
-              l10n.homePickGameMode,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(1.5),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.homePickGameModeSubtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...GameMode.values.map((mode) {
-              final isSelected = _selected == mode;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => setState(() => _selected = mode),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.accentColor.withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.04),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.accentColor
-                            : Colors.white.withValues(alpha: 0.1),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(mode.icon, style: const TextStyle(fontSize: 24)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                mode.localizedName(l10n),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                mode.localizedDescription(l10n),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isSelected)
-                          Icon(
-                            Icons.check_circle,
-                            color: theme.accentColor,
-                            size: 22,
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.accentColor,
-                  foregroundColor: theme.backgroundColor,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => Navigator.of(context).pop(_selected),
-                child: Text(
-                  l10n.homeStartPlaying,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: context.letterSpacing(1.5),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

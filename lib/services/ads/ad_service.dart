@@ -11,6 +11,20 @@ import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Result of an on-demand rewarded watch — see [AdService.showRewardedOrWait].
+enum RewardedOutcome {
+  /// Watched through; [onReward] has fired.
+  rewarded,
+
+  /// An ad was shown but closed before the reward was earned. The player made
+  /// that choice — do not apologise to them for it.
+  dismissedEarly,
+
+  /// Nothing could be shown (no fill within the wait window, or ads are off).
+  /// This is the only outcome that warrants a "try again shortly" message.
+  unavailable,
+}
+
 /// Central AdMob wrapper: owns the SDK init + consent, preloads interstitial /
 /// rewarded ads, enforces the **Pro gate** (Pro users never see ads),
 /// the **connectivity gate**, and an interstitial **frequency cap**.
@@ -19,25 +33,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// code (placement-specific), not here — see the rewarded placements.
 class AdService {
   // ---- tunables ----
-  // Show on every 4th game-over. The min-gap below is the real UX guard — it
-  // stops rapid-fire ads during a hot streak — and counting 4 games keeps the
-  // interstitial a rare interruption rather than a constant one.
-  static const int _interstitialEveryNGames = 4;
-  static const Duration _interstitialMinGap = Duration(minutes: 5);
+  // Show on every 2nd game-over. This was 4, which — with the first-game-over
+  // exemption below — meant a player needed FIVE lifetime games before the
+  // first interstitial could ever fire. Only ~22% of players reach a fifth
+  // game, so the format was switched off for roughly four in five installs.
+  // At 2 the first one lands on game three and the cadence reaches ~half the
+  // base instead of a fifth of it.
+  static const int _interstitialEveryNGames = 2;
+  static const Duration _interstitialMinGap = Duration(seconds: 90);
 
   // Minimum spacing between ANY two full-screen ads (interstitial / rewarded /
   // app-open), so an opt-in rewarded watch can't be chased by an interstitial
   // seconds later — that combination is policy-fine but *feels* like an ad
   // ambush. Tracked in-memory only; a restart resetting it is acceptable.
-  static const Duration _fullScreenAdMinGap = Duration(minutes: 5);
+  //
+  // This is the constant that actually binds. A revive is offered on nearly
+  // every crash, so at 5 minutes a single rewarded watch blocked the next
+  // interstitial for the rest of a typical session no matter what
+  // [_interstitialMinGap] said — lowering that alone would have changed
+  // nothing. 2 minutes still prevents the back-to-back ambush this guard
+  // exists for, without silently cancelling the cadence above.
+  static const Duration _fullScreenAdMinGap = Duration(minutes: 2);
 
   // App Open ads expire 4h after load (Google's documented limit). We only show
   // one on a genuine return after the user has been AWAY for [_appOpenMinAway]
   // — so a quick app-switch (checking a message, a share sheet) never pops an
   // ad — and never more than once per [_appOpenMinGap].
+  //
+  // These were 15min / 3min, which combined with the guards below produced 25
+  // impressions a WEEK across the whole user base — the format was effectively
+  // off. 4min / 45s still skips the app-switch case (a share sheet or a glance
+  // at a message is back well inside 45 seconds) while letting a genuine return
+  // actually count.
   static const Duration _appOpenExpiry = Duration(hours: 4);
-  static const Duration _appOpenMinGap = Duration(minutes: 15);
-  static const Duration _appOpenMinAway = Duration(minutes: 3);
+  static const Duration _appOpenMinGap = Duration(minutes: 4);
+  static const Duration _appOpenMinAway = Duration(seconds: 45);
 
   // Backoff for a failed load. AdMob no-fill is routine — especially without
   // mediation — and until this existed a single failure left that format empty
@@ -61,9 +91,15 @@ class AdService {
   // ads go stale; a spare older than this is dropped rather than shown.
   static const Duration _warmBannerMaxAge = Duration(minutes: 30);
 
+  // How long a "watch an ad" button waits for a load before telling the user
+  // nothing is available. Long enough for a normal fill on mobile data, short
+  // enough that the button never feels stuck.
+  static const Duration _rewardedOnDemandWait = Duration(seconds: 4);
+
   // Retry bucket keys.
   static const String _kLoadInterstitial = 'interstitial';
   static const String _kLoadRewarded = 'rewarded';
+  static const String _kLoadRewardedInterstitial = 'rewarded_interstitial';
   static const String _kLoadAppOpen = 'app_open';
   static const String _kLoadBanner = 'banner';
 
@@ -90,6 +126,16 @@ class AdService {
 
   InterstitialAd? _interstitial;
   bool _interstitialLoading = false;
+
+  // Preferred over the plain interstitial in the game-over slot — same
+  // interruption, rewarded-tier eCPM, and the player walks away with coins.
+  RewardedInterstitialAd? _rewardedInterstitial;
+  bool _rewardedInterstitialLoading = false;
+
+  // Completers waiting on an on-demand rewarded load — see
+  // [showRewardedOrWait]. Resolved by the load callbacks so a waiting button
+  // reacts the instant an ad arrives instead of polling.
+  final List<Completer<void>> _rewardedWaiters = [];
 
   // A small buffer rather than a single ad — see [_rewardedBufferTarget].
   final List<RewardedAd> _rewardedPool = [];
@@ -197,8 +243,15 @@ class AdService {
   /// the ad is genuinely ready — and burns a periodic rebuild forever.
   final ValueNotifier<bool> _rewardedReadyNotifier = ValueNotifier(false);
   ValueListenable<bool> get rewardedReadyListenable => _rewardedReadyNotifier;
-  void _notifyRewardedReady() =>
-      _rewardedReadyNotifier.value = isRewardedReady;
+  void _notifyRewardedReady() {
+    _rewardedReadyNotifier.value = isRewardedReady;
+    if (!isRewardedReady) return;
+    // Wake anything blocked in [showRewardedOrWait] the moment fill arrives.
+    for (final waiter in _rewardedWaiters) {
+      if (!waiter.isCompleted) waiter.complete();
+    }
+    _rewardedWaiters.clear();
+  }
 
   // ==================== Load retry ====================
 
@@ -229,6 +282,7 @@ class AdService {
     }
     _retryTimers.clear();
     _loadInterstitial();
+    _loadRewardedInterstitial();
     _loadRewarded();
     _loadAppOpen();
     _loadWarmBanner();
@@ -329,6 +383,7 @@ class AdService {
       AppLogger.success('AdService initialized (ads ${adsEnabled ? 'on' : 'off'})');
       if (adsEnabled) {
         _loadInterstitial();
+        _loadRewardedInterstitial();
         _loadRewarded();
         _loadAppOpen();
         _loadWarmBanner();
@@ -459,15 +514,132 @@ class AdService {
     );
   }
 
+  // ==================== Rewarded interstitial ====================
+
+  /// A rewarded interstitial is loaded and ready to show right now.
+  bool get isRewardedInterstitialReady =>
+      adsEnabled && _rewardedInterstitial != null;
+
+  void _loadRewardedInterstitial() {
+    if (!adsEnabled || !_hasInternet) return;
+    if (_rewardedInterstitial != null || _rewardedInterstitialLoading) return;
+    _rewardedInterstitialLoading = true;
+    RewardedInterstitialAd.load(
+      adUnitId: AdConfig.rewardedInterstitialUnitId,
+      request: const AdRequest(),
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.onPaidEvent = (ad, valueMicros, precision, currencyCode) {
+            _analytics?.trackAdRevenue(
+              format: 'rewarded_interstitial',
+              valueMicros: valueMicros,
+              currencyCode: currencyCode,
+              precision: precision.name,
+            );
+          };
+          _rewardedInterstitial = ad;
+          _rewardedInterstitialLoading = false;
+          _clearRetry(_kLoadRewardedInterstitial);
+        },
+        onAdFailedToLoad: (error) {
+          _rewardedInterstitial = null;
+          _rewardedInterstitialLoading = false;
+          AppLogger.warning(
+              'Rewarded interstitial failed to load: ${error.message}');
+          _scheduleRetry(
+              _kLoadRewardedInterstitial, _loadRewardedInterstitial);
+        },
+      ),
+    );
+  }
+
+  /// Show the loaded rewarded interstitial. Returns true if it was displayed.
+  ///
+  /// [onReward] fires on dismiss, only when the watch was completed — same
+  /// contract (and the same plugin event race) as [showRewarded], so the
+  /// handling here mirrors it.
+  Future<bool> _showRewardedInterstitial({
+    required VoidCallback onReward,
+    required String placement,
+  }) async {
+    final ad = _rewardedInterstitial;
+    if (ad == null) return false;
+    _rewardedInterstitial = null;
+
+    var earned = false;
+    var dismissed = false;
+    var granted = false;
+    final done = Completer<bool>();
+
+    void grantOnce() {
+      if (granted) return;
+      granted = true;
+      _analytics?.trackRewardedCompleted(placement);
+      try {
+        onReward();
+      } catch (e) {
+        AppLogger.error('Rewarded interstitial onReward callback threw', e);
+      }
+    }
+
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        _fullScreenAdShowing = false;
+        _lastFullScreenAdMs = DateTime.now().millisecondsSinceEpoch;
+        dismissed = true;
+        ad.dispose();
+        _loadRewardedInterstitial();
+        if (earned) grantOnce();
+        // Grace window for an earn event that lands after dismissal.
+        Future<void>.delayed(const Duration(milliseconds: 800), () {
+          if (!granted) _analytics?.trackRewardedAbandoned(placement);
+          if (!done.isCompleted) done.complete(true);
+        });
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        _fullScreenAdShowing = false;
+        ad.dispose();
+        _loadRewardedInterstitial();
+        AppLogger.warning(
+            'Rewarded interstitial failed to show: ${error.message}');
+        if (!done.isCompleted) done.complete(false);
+      },
+    );
+
+    _fullScreenAdShowing = true;
+    _analytics?.trackAdImpression(
+        format: 'rewarded_interstitial', placement: placement);
+    await ad.show(
+      onUserEarnedReward: (_, _) {
+        earned = true;
+        if (dismissed) grantOnce();
+      },
+    );
+    return done.future;
+  }
+
   /// Warm an interstitial ahead of the moment it might show. Called when a
   /// game STARTS: that buys a minute or two of load time before the game-over
   /// where the ad is actually offered, so a cold or failed startup load has
   /// recovered by then instead of being discovered empty at show time.
-  void preloadInterstitial() => _loadInterstitial();
+  void preloadGameOverAd() {
+    _loadRewardedInterstitial();
+    _loadInterstitial();
+  }
 
-  /// Show an interstitial if the frequency cap allows. Call this on game-over.
-  /// Returns true if an ad was shown. Counts the game regardless.
-  Future<bool> maybeShowInterstitialOnGameOver() async {
+  /// Show the game-over ad if the frequency cap allows. Returns true if one
+  /// was shown. Counts the game regardless.
+  ///
+  /// Two formats compete for this one slot. A **rewarded interstitial** is
+  /// preferred whenever one is loaded: it is the same single interruption, but
+  /// it earns rewarded-tier eCPM instead of interstitial-tier and hands the
+  /// player coins on the way out, so it reads as a bonus rather than a toll.
+  /// The plain interstitial is the fallback when the rewarded one hasn't
+  /// filled — which, at current fill rates, is often.
+  ///
+  /// [onReward] is only invoked on the rewarded-interstitial path, and only
+  /// when the player actually watched it through.
+  Future<bool> maybeShowGameOverAd({VoidCallback? onReward}) async {
     if (!adsEnabled) return false;
     final prefs = _prefs;
     if (prefs == null) return false;
@@ -485,11 +657,34 @@ class AdService {
     // ad (rewarded / app-open) — no back-to-back full-screen ads, ever.
     final gapOk = now - lastMs >= _interstitialMinGap.inMilliseconds &&
         now - _lastFullScreenAdMs >= _fullScreenAdMinGap.inMilliseconds;
+    final haveAd = _rewardedInterstitial != null || _interstitial != null;
 
-    if (games < _interstitialEveryNGames || !gapOk || _interstitial == null) {
+    if (games < _interstitialEveryNGames || !gapOk || !haveAd) {
       await prefs.setInt(_kGamesSinceInterstitial, games);
       _loadInterstitial();
+      _loadRewardedInterstitial();
       return false;
+    }
+
+    // Preferred path: rewarded interstitial. Resets the same counter and gap
+    // as the plain one, so the slot fires at one cadence regardless of which
+    // format filled it.
+    if (_rewardedInterstitial != null) {
+      final shown = await _showRewardedInterstitial(
+        placement: 'game_over',
+        onReward: onReward ?? () {},
+      );
+      if (shown) {
+        await prefs.setInt(_kGamesSinceInterstitial, 0);
+        await prefs.setInt(
+            _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
+        return true;
+      }
+      // Failed to show — fall through to the plain interstitial if we have one.
+      if (_interstitial == null) {
+        await prefs.setInt(_kGamesSinceInterstitial, games);
+        return false;
+      }
     }
 
     final ad = _interstitial!;
@@ -655,6 +850,49 @@ class AdService {
       },
     );
     return done.future;
+  }
+
+  /// Show a rewarded ad, waiting briefly for a load if the pool is empty.
+  ///
+  /// Every "watch an ad" button in the app should call THIS rather than
+  /// [showRewarded] directly, and should stay tappable regardless of
+  /// [isRewardedReady].
+  ///
+  /// Gating the buttons on `isRewardedReady` was quietly costing real money:
+  /// rewarded is the highest-eCPM format in the app by a wide margin, and at
+  /// the fill rates we actually see the pool is empty a lot of the time. So the
+  /// button greyed out (or vanished) exactly when the ad was worth the most,
+  /// the user never got to ask for it, and the request that would have filled a
+  /// second later was never made. Letting the tap through both surfaces the
+  /// offer and *triggers* the load.
+  ///
+  /// The outcome is three-way on purpose. "No ad could be shown" and "the user
+  /// watched and closed it early" both leave the reward ungranted, but only the
+  /// first one should tell the player to try again later — showing that message
+  /// to someone who deliberately skipped the ad reads as a bug.
+  Future<RewardedOutcome> showRewardedOrWait({
+    required VoidCallback onReward,
+    String placement = 'unspecified',
+    VoidCallback? onWaitStart,
+  }) async {
+    if (!adsEnabled) return RewardedOutcome.unavailable;
+
+    if (_rewardedPool.isEmpty) {
+      onWaitStart?.call();
+      _loadRewarded();
+      final waiter = Completer<void>();
+      _rewardedWaiters.add(waiter);
+      await waiter.future
+          .timeout(_rewardedOnDemandWait, onTimeout: () {})
+          .catchError((_) {});
+      _rewardedWaiters.remove(waiter);
+      if (_rewardedPool.isEmpty) return RewardedOutcome.unavailable;
+    }
+
+    final granted = await showRewarded(onReward: onReward, placement: placement);
+    return granted
+        ? RewardedOutcome.rewarded
+        : RewardedOutcome.dismissedEarly;
   }
 
   // ==================== App Open ====================
@@ -972,6 +1210,7 @@ class AdService {
     }
     _retryTimers.clear();
     _interstitial?.dispose();
+    _rewardedInterstitial?.dispose();
     for (final ad in _rewardedPool) {
       ad.dispose();
     }
@@ -979,8 +1218,15 @@ class AdService {
     _appOpenAd?.dispose();
     _warmBanner?.dispose();
     _interstitial = null;
+    _rewardedInterstitial = null;
     _appOpenAd = null;
     _warmBanner = null;
+    // Release anything blocked in showRewardedOrWait — the pool is gone, so
+    // these can never be woken by a load callback now.
+    for (final waiter in _rewardedWaiters) {
+      if (!waiter.isCompleted) waiter.complete();
+    }
+    _rewardedWaiters.clear();
     _notifyRewardedReady();
   }
 }

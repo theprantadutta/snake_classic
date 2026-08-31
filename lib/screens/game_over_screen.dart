@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -1691,6 +1692,34 @@ class _BottomActionBar extends StatelessWidget {
   final bool compact;
   const _BottomActionBar({required this.theme, required this.compact});
 
+  /// Run the game-over ad slot. AdService picks the format: a rewarded
+  /// interstitial when one is loaded (the player earns coins for sitting
+  /// through it), otherwise the plain interstitial, otherwise nothing.
+  ///
+  /// Everything the reward callback touches is captured BEFORE the await —
+  /// onReward fires after the ad is dismissed, across an async gap where this
+  /// context may already be gone.
+  Future<void> _showGameOverAd(BuildContext context) async {
+    final coins = context.read<CoinsCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    await getIt<AdService>().maybeShowGameOverAd(
+      onReward: () {
+        coins.earnCoins(
+          CoinEarningSource.watchedAd,
+          customAmount: AdService.freeCoinsPerAd,
+          itemName: 'Game over bonus',
+        );
+        showRewardToast(
+          messenger,
+          l10n.goAdBonusCoins(AdService.freeCoinsPerAd),
+          icon: Icons.monetization_on,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1720,8 +1749,15 @@ class _BottomActionBar extends StatelessWidget {
               height: compact ? 50 : 56,
               onPressed: () async {
                 // Frequency-capped + Pro/connectivity-gated inside AdService;
-                // a no-op when an ad shouldn't show.
-                await getIt<AdService>().maybeShowInterstitialOnGameOver();
+                // a no-op when an ad shouldn't show. May be a rewarded
+                // interstitial, in which case watching it through pays coins.
+                await _showGameOverAd(context);
+                if (!context.mounted) return;
+                // Strictly AFTER the ad — the picker is a modal sheet and
+                // would otherwise be raced by (or buried under) a full-screen
+                // ad. This is the moment mode choice actually means something:
+                // the player has now seen the board and is about to play again.
+                await maybeShowGameModePicker(context);
                 if (!context.mounted) return;
                 context.read<GameCubit>().resetGame();
                 context.go(AppRoutes.game);
@@ -1738,7 +1774,13 @@ class _BottomActionBar extends StatelessWidget {
               width: double.infinity,
               height: compact ? 50 : 56,
               onPressed: () async {
-                await getIt<AdService>().maybeShowInterstitialOnGameOver();
+                await _showGameOverAd(context);
+                if (!context.mounted) return;
+                // Offered on this path too: a player heading back to the menu
+                // after one game is exactly the churn-risk cohort this picker
+                // exists to reach, and it is the last chance to show them the
+                // game has modes beyond Classic.
+                await maybeShowGameModePicker(context);
                 if (!context.mounted) return;
                 context.read<GameCubit>().backToMenu();
                 context.go(AppRoutes.home);

@@ -925,6 +925,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String goAdBonusCoins(Object count) {
+    return '🎉 +$count pièces bonus pour le visionnage !';
+  }
+
+  @override
   String goWatchToDouble(Object count) {
     return 'Regardez une pub pour doubler vos $count pièces';
   }
@@ -5274,6 +5279,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get rvoWatchAd => 'Regarder une pub pour revivre';
+
+  @override
+  String get rvoLoadingAd => 'Chargement de la pub…';
 
   @override
   String rvoUseCoins(Object coins) {
