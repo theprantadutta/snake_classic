@@ -183,7 +183,12 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Future<void> resetSettings() async {
     await transaction(() async {
       await delete(gameSettings).go();
-      await into(gameSettings).insert(GameSettingsCompanion.insert());
+      // EXPLICIT id 1. `id` is PRIMARY KEY AUTOINCREMENT, so SQLite hands a
+      // fresh id after the delete above rather than reusing 1 — and every
+      // read/write in this DAO targets `id = 1`. Without this, resetting your
+      // settings quietly made every later settings change a no-op.
+      await into(gameSettings)
+          .insert(GameSettingsCompanion.insert(id: const Value(1)));
       await attachedDatabase.enqueueSyncOutbox(
         dataType: SyncDataType.settings,
         entityKey: 'settings:1',

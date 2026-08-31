@@ -1335,12 +1335,70 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Initialize default data if tables are empty
+  /// The tables that hold exactly one row, pinned at `id = 1`.
+  ///
+  /// Every read and write for these in the DAOs targets the literal `id = 1`
+  /// (`where id.equals(1)`, `insertOnConflictUpdate(id: Value(1))`), so the id
+  /// is load-bearing, not incidental.
+  static const _singletonTables = <String>[
+    'game_settings',
+    'device_preferences',
+    'statistics',
+    'coins',
+    'premium_status',
+    'player_progress_table',
+  ];
+
+  /// Collapse a singleton table to exactly one row, pinned at `id = 1`.
+  ///
+  /// These tables are singletons by convention only: `id` is
+  /// `PRIMARY KEY AUTOINCREMENT`, and SQLite never reuses an autoincrement id
+  /// after a delete. So the first logout — [clearAllData] deletes the row, then
+  /// [initializeDefaults] re-seeds it — handed the replacement `id = 2`. From
+  /// that moment every `where id = 1` read returned null and every such write
+  /// updated ZERO rows, silently: coins read as empty, settings changes were
+  /// dropped on the floor, statistics stopped accumulating.
+  ///
+  /// It then turned fatal. The cloud-restore paths (`applySettingsSnapshot`,
+  /// `applyCoinBalanceSnapshot`, `applyPremiumStatusSnapshot`) upsert an
+  /// explicit `id = 1`, which finds no conflict against the id-2 row and
+  /// INSERTS A SECOND ROW. `watchSingleOrNull` throws on two rows, so the next
+  /// launch died in `ThemeCubit.initialize` with "Bad state: Expected exactly
+  /// one element, but got 2" before any UI rendered.
+  ///
+  /// Runs on every launch, not just once, because installs are already on disk
+  /// in the broken state — a fix that only prevented new duplicates would leave
+  /// those players in a crash loop they could not clear without reinstalling.
+  ///
+  /// Keeps the most recently updated row: after the logout/restore sequence the
+  /// id-1 row holds the freshly restored cloud data and the id-2 row holds bare
+  /// defaults, so "highest id wins" would discard exactly the data worth
+  /// keeping.
+  Future<void> _pinSingletonToId1(String table) async {
+    // Empty table: the subquery is NULL, `id <> NULL` is NULL, nothing is
+    // deleted. Single correct row: it is its own winner and the UPDATE is a
+    // no-op.
+    await customStatement(
+      'DELETE FROM $table WHERE id <> ('
+      'SELECT id FROM $table ORDER BY updated_at DESC, id DESC LIMIT 1)',
+    );
+    await customStatement('UPDATE $table SET id = 1 WHERE id <> 1');
+  }
+
+  /// Repair the singleton tables, then seed any that are empty.
+  ///
+  /// Every seed inserts an EXPLICIT `id = 1` rather than letting autoincrement
+  /// choose — see [_pinSingletonToId1] for what letting it choose cost.
   Future<void> initializeDefaults() async {
+    for (final table in _singletonTables) {
+      await _pinSingletonToId1(table);
+    }
+
     // Initialize game settings if not exists
     final existingSettings = await select(gameSettings).getSingleOrNull();
     if (existingSettings == null) {
-      await into(gameSettings).insert(GameSettingsCompanion.insert());
+      await into(gameSettings)
+          .insert(GameSettingsCompanion.insert(id: const Value(1)));
     }
 
     // Initialize device preferences if not exists. Device-scoped, so unlike
@@ -1349,25 +1407,28 @@ class AppDatabase extends _$AppDatabase {
     final existingDevicePrefs =
         await select(devicePreferences).getSingleOrNull();
     if (existingDevicePrefs == null) {
-      await into(devicePreferences).insert(DevicePreferencesCompanion.insert());
+      await into(devicePreferences)
+          .insert(DevicePreferencesCompanion.insert(id: const Value(1)));
     }
 
     // Initialize statistics if not exists
     final existingStats = await select(statistics).getSingleOrNull();
     if (existingStats == null) {
-      await into(statistics).insert(StatisticsCompanion.insert());
+      await into(statistics)
+          .insert(StatisticsCompanion.insert(id: const Value(1)));
     }
 
     // Initialize coins if not exists
     final existingCoins = await select(coins).getSingleOrNull();
     if (existingCoins == null) {
-      await into(coins).insert(CoinsCompanion.insert());
+      await into(coins).insert(CoinsCompanion.insert(id: const Value(1)));
     }
 
     // Initialize premium status if not exists
     final existingPremium = await select(premiumStatus).getSingleOrNull();
     if (existingPremium == null) {
-      await into(premiumStatus).insert(PremiumStatusCompanion.insert());
+      await into(premiumStatus)
+          .insert(PremiumStatusCompanion.insert(id: const Value(1)));
     }
 
     // Initialize player progress if not exists. Re-seeding the singleton
@@ -1377,7 +1438,8 @@ class AppDatabase extends _$AppDatabase {
     // previous account's value until the next app restart.
     final existingProgress = await select(playerProgressTable).getSingleOrNull();
     if (existingProgress == null) {
-      await into(playerProgressTable).insert(PlayerProgressTableCompanion.insert());
+      await into(playerProgressTable)
+          .insert(PlayerProgressTableCompanion.insert(id: const Value(1)));
     }
   }
 
