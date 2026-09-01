@@ -4798,6 +4798,90 @@ abstract class AppLocalizations {
   /// **'You have access to all premium features'**
   String get pbActiveSub;
 
+  /// No description provided for @pbYourPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan'**
+  String get pbYourPlan;
+
+  /// No description provided for @pbPlanMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get pbPlanMonthly;
+
+  /// No description provided for @pbPlanYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get pbPlanYearly;
+
+  /// No description provided for @pbRenewsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews {date}'**
+  String pbRenewsOn(Object date);
+
+  /// No description provided for @pbSwitchToYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to yearly'**
+  String get pbSwitchToYearly;
+
+  /// No description provided for @pbSwitchToMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to monthly'**
+  String get pbSwitchToMonthly;
+
+  /// No description provided for @pbSwitchToYearlyBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts today. The rest of this month is credited, and you save 33% a year.'**
+  String get pbSwitchToYearlyBlurb;
+
+  /// No description provided for @pbSwitchToMonthlyBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts when your paid year ends. Nothing is charged today.'**
+  String get pbSwitchToMonthlyBlurb;
+
+  /// No description provided for @pbManageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage subscription'**
+  String get pbManageSubscription;
+
+  /// No description provided for @pbManageBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel or update payment in the store'**
+  String get pbManageBlurb;
+
+  /// No description provided for @pbSwitchedToYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to yearly'**
+  String get pbSwitchedToYearly;
+
+  /// No description provided for @pbSwitchedToMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly starts when this period ends'**
+  String get pbSwitchedToMonthly;
+
+  /// No description provided for @pbAllUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything below is yours'**
+  String get pbAllUnlocked;
+
+  /// No description provided for @pbKeepProCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Pro'**
+  String get pbKeepProCta;
+
   /// No description provided for @pbHeaderSub.
   ///
   /// In en, this message translates to:

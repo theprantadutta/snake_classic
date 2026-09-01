@@ -2723,6 +2723,52 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pbActiveSub => 'आपके पास सभी प्रीमियम सुविधाओं की पहुँच है';
 
   @override
+  String get pbYourPlan => 'आपका प्लान';
+
+  @override
+  String get pbPlanMonthly => 'मासिक';
+
+  @override
+  String get pbPlanYearly => 'वार्षिक';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return '$date को नवीनीकरण';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'वार्षिक पर जाएँ';
+
+  @override
+  String get pbSwitchToMonthly => 'मासिक पर जाएँ';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'आज से लागू। बचा हुआ महीना समायोजित होगा और आप साल में 33% बचाते हैं।';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'भुगतान किया वर्ष समाप्त होने पर शुरू। आज कोई शुल्क नहीं।';
+
+  @override
+  String get pbManageSubscription => 'सदस्यता प्रबंधित करें';
+
+  @override
+  String get pbManageBlurb => 'स्टोर में रद्द करें या भुगतान बदलें';
+
+  @override
+  String get pbSwitchedToYearly => 'वार्षिक पर बदल गया';
+
+  @override
+  String get pbSwitchedToMonthly => 'इस अवधि के बाद मासिक शुरू होगा';
+
+  @override
+  String get pbAllUnlocked => 'यह सब आपका है';
+
+  @override
+  String get pbKeepProCta => 'Pro बनाए रखें';
+
+  @override
   String get pbHeaderSub => 'गेम की हर चीज़ अनलॉक करें';
 
   @override

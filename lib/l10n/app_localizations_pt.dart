@@ -2743,6 +2743,53 @@ class AppLocalizationsPt extends AppLocalizations {
   String get pbActiveSub => 'Você tem acesso a todos os recursos premium';
 
   @override
+  String get pbYourPlan => 'Seu plano';
+
+  @override
+  String get pbPlanMonthly => 'Mensal';
+
+  @override
+  String get pbPlanYearly => 'Anual';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return 'Renova em $date';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'Mudar para anual';
+
+  @override
+  String get pbSwitchToMonthly => 'Mudar para mensal';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'Comeca hoje. O restante do mes e creditado e voce economiza 33% por ano.';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'Comeca quando seu ano pago terminar. Nada e cobrado hoje.';
+
+  @override
+  String get pbManageSubscription => 'Gerenciar assinatura';
+
+  @override
+  String get pbManageBlurb => 'Cancele ou atualize o pagamento na loja';
+
+  @override
+  String get pbSwitchedToYearly => 'Mudou para anual';
+
+  @override
+  String get pbSwitchedToMonthly =>
+      'O mensal comeca quando este periodo terminar';
+
+  @override
+  String get pbAllUnlocked => 'Tudo isto e seu';
+
+  @override
+  String get pbKeepProCta => 'Manter Pro';
+
+  @override
   String get pbHeaderSub => 'Desbloqueie tudo o que o jogo oferece';
 
   @override

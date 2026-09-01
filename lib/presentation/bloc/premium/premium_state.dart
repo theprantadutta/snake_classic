@@ -1,9 +1,22 @@
 import 'package:equatable/equatable.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/services/purchase_service.dart' show ProductIds;
 import 'package:snake_classic/utils/constants.dart';
 
 /// Premium subscription tier
 enum PremiumTier { free, pro }
+
+/// Which Pro plan the account is actually on.
+///
+/// [PremiumTier] answers "is this user Pro"; this answers "on what". The two
+/// are separate because a promo grant makes someone Pro with no plan at all,
+/// and the premium screen has to tell those cases apart to know what to offer.
+enum PremiumPlan {
+  /// No paid subscription — a free user, or one on a server-side promo.
+  none,
+  monthly,
+  yearly,
+}
 
 /// Status of the premium cubit
 enum PremiumStatus { initial, loading, ready, error }
@@ -29,6 +42,11 @@ class PremiumState extends Equatable {
   final PremiumStatus status;
   final PremiumTier tier;
   final DateTime? subscriptionExpiry;
+
+  /// Store product id of the active subscription, or null when there is no
+  /// paid plan (free, or Pro via promo). Sourced from the Play/StoreKit
+  /// purchase the store reports as owned — the client never guesses it.
+  final String? activeSubscriptionId;
   final Set<GameTheme> ownedThemes;
   final Set<String> ownedSkins;
   final Set<String> ownedTrails;
@@ -58,6 +76,7 @@ class PremiumState extends Equatable {
     this.status = PremiumStatus.initial,
     this.tier = PremiumTier.free,
     this.subscriptionExpiry,
+    this.activeSubscriptionId,
     this.ownedThemes = const {},
     this.ownedSkins = const {},
     this.ownedTrails = const {},
@@ -84,6 +103,8 @@ class PremiumState extends Equatable {
     PremiumStatus? status,
     PremiumTier? tier,
     DateTime? subscriptionExpiry,
+    String? activeSubscriptionId,
+    bool clearActiveSubscriptionId = false,
     Set<GameTheme>? ownedThemes,
     Set<String>? ownedSkins,
     Set<String>? ownedTrails,
@@ -107,6 +128,9 @@ class PremiumState extends Equatable {
       status: status ?? this.status,
       tier: tier ?? this.tier,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      activeSubscriptionId: clearActiveSubscriptionId
+          ? null
+          : (activeSubscriptionId ?? this.activeSubscriptionId),
       ownedThemes: ownedThemes ?? this.ownedThemes,
       ownedSkins: ownedSkins ?? this.ownedSkins,
       ownedTrails: ownedTrails ?? this.ownedTrails,
@@ -137,6 +161,41 @@ class PremiumState extends Equatable {
   bool get hasPremium {
     return tier == PremiumTier.pro && !isSubscriptionExpired;
   }
+
+  /// Which paid plan is active. [PremiumPlan.none] for free users AND for Pro
+  /// granted by promo — a promo has nothing to switch away from.
+  PremiumPlan get plan {
+    switch (activeSubscriptionId) {
+      case ProductIds.snakeClassicProMonthly:
+        return PremiumPlan.monthly;
+      case ProductIds.snakeClassicProYearly:
+        return PremiumPlan.yearly;
+      default:
+        return PremiumPlan.none;
+    }
+  }
+
+  /// True when the user pays for Pro (as opposed to holding it on a promo).
+  /// Only a paying subscriber can switch plans.
+  bool get hasPaidSubscription => hasPremium && plan != PremiumPlan.none;
+
+  /// The plan a switch would move to, or null when switching is not offered.
+  PremiumPlan? get switchTarget {
+    switch (plan) {
+      case PremiumPlan.monthly:
+        return PremiumPlan.yearly;
+      case PremiumPlan.yearly:
+        return PremiumPlan.monthly;
+      case PremiumPlan.none:
+        return null;
+    }
+  }
+
+  /// Switching to yearly is an upgrade: it takes effect immediately and the
+  /// unused month is credited. Switching to monthly is a downgrade and waits
+  /// for the paid period to end. The premium screen says which, so the user
+  /// knows before tapping whether money moves today.
+  bool get switchTakesEffectImmediately => switchTarget == PremiumPlan.yearly;
 
   /// Whether subscription is expired
   bool get isSubscriptionExpired {
@@ -210,6 +269,7 @@ class PremiumState extends Equatable {
     status,
     tier,
     subscriptionExpiry,
+    activeSubscriptionId,
     ownedThemes,
     ownedSkins,
     ownedTrails,

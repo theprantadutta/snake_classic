@@ -312,7 +312,16 @@ class PremiumCubit extends Cubit<PremiumState> {
         ? const Duration(days: 365)
         : const Duration(days: 30);
     final expiry = DateTime.now().add(duration);
-    emit(state.copyWith(tier: PremiumTier.pro, subscriptionExpiry: expiry));
+    emit(state.copyWith(
+      tier: PremiumTier.pro,
+      subscriptionExpiry: expiry,
+      // Record WHICH plan, not just that Pro is on. The premium screen needs
+      // this to show the right plan and offer the right switch — and a promo
+      // grant deliberately leaves it null, because there is nothing to switch.
+      activeSubscriptionId: isYearly
+          ? ProductIds.snakeClassicProYearly
+          : ProductIds.snakeClassicProMonthly,
+    ));
     _storageService.setPremiumActive(true);
     _storageService.setPremiumExpirationDate(expiry.toIso8601String());
     _coinsCubit?.updatePremiumMultiplier(true, state.hasBattlePass);
@@ -344,6 +353,49 @@ class PremiumCubit extends Cubit<PremiumState> {
       return false;
     }
   }
+
+  /// Move an existing subscription to the other billing period.
+  ///
+  /// This is a REPLACEMENT, not a purchase: Play rejects buying the yearly SKU
+  /// while monthly is active unless the old purchase is named. PurchaseService
+  /// picks the replacement mode by direction — upgrading to yearly bills now
+  /// with the unused month credited, downgrading to monthly waits for the paid
+  /// period to run out. See [PurchaseService.switchSubscription].
+  ///
+  /// The result lands asynchronously on the purchase stream, same as any buy.
+  Future<bool> switchPlan(String targetProductId) async {
+    try {
+      return await _purchaseService.switchSubscription(targetProductId);
+    } catch (e) {
+      emit(state.copyWith(errorMessage: 'Could not change plan: $e'));
+      return false;
+    }
+  }
+
+  /// Ask the store which subscription this account actually holds and record
+  /// it. Cheap no-op when the store already told us on the purchase stream.
+  ///
+  /// Needed on a cold start: the stream is silent until something happens, so
+  /// a long-standing subscriber opens the premium screen with no plan known
+  /// and would otherwise be shown the free-user paywall.
+  Future<void> refreshActivePlan() async {
+    try {
+      final owned = await _purchaseService.currentSubscription();
+      if (owned == null) return;
+      if (owned.productID == state.activeSubscriptionId) return;
+      emit(state.copyWith(activeSubscriptionId: owned.productID));
+    } catch (e) {
+      AppLogger.warning('Could not refresh the active plan: $e');
+    }
+  }
+
+  /// Open the store's own subscription management page (cancel, payment
+  /// method, restore). Play and the App Store both require that these live
+  /// with them, not in the app.
+  Future<void> openManageSubscription() =>
+      _purchaseService.openManageSubscription(
+        productId: state.activeSubscriptionId,
+      );
 
   /// Restore purchases
   Future<void> restorePurchases() async {

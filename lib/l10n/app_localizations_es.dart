@@ -2745,6 +2745,53 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pbActiveSub => 'Tienes acceso a todas las funciones premium';
 
   @override
+  String get pbYourPlan => 'Tu plan';
+
+  @override
+  String get pbPlanMonthly => 'Mensual';
+
+  @override
+  String get pbPlanYearly => 'Anual';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return 'Se renueva el $date';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'Cambiar a anual';
+
+  @override
+  String get pbSwitchToMonthly => 'Cambiar a mensual';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'Empieza hoy. Se acredita el resto del mes y ahorras un 33% al ano.';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'Empieza cuando termine tu ano pagado. Hoy no se cobra nada.';
+
+  @override
+  String get pbManageSubscription => 'Gestionar suscripcion';
+
+  @override
+  String get pbManageBlurb => 'Cancela o actualiza el pago en la tienda';
+
+  @override
+  String get pbSwitchedToYearly => 'Cambiado a anual';
+
+  @override
+  String get pbSwitchedToMonthly =>
+      'El plan mensual empieza al terminar este periodo';
+
+  @override
+  String get pbAllUnlocked => 'Todo esto es tuyo';
+
+  @override
+  String get pbKeepProCta => 'Mantener Pro';
+
+  @override
   String get pbHeaderSub => 'Desbloquea todo lo que ofrece el juego';
 
   @override

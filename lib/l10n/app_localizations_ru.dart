@@ -2739,6 +2739,52 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pbActiveSub => 'Вам доступны все премиум-функции';
 
   @override
+  String get pbYourPlan => 'Ваш план';
+
+  @override
+  String get pbPlanMonthly => 'Ежемесячно';
+
+  @override
+  String get pbPlanYearly => 'Ежегодно';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return 'Продлится $date';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'Перейти на годовой';
+
+  @override
+  String get pbSwitchToMonthly => 'Перейти на месячный';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'Начнётся сегодня. Остаток месяца засчитается, и вы сэкономите 33% в год.';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'Начнётся после окончания оплаченного года. Сегодня ничего не спишется.';
+
+  @override
+  String get pbManageSubscription => 'Управление подпиской';
+
+  @override
+  String get pbManageBlurb => 'Отмена и способ оплаты — в магазине';
+
+  @override
+  String get pbSwitchedToYearly => 'Переключено на годовой';
+
+  @override
+  String get pbSwitchedToMonthly => 'Месячный начнётся после этого периода';
+
+  @override
+  String get pbAllUnlocked => 'Всё это уже ваше';
+
+  @override
+  String get pbKeepProCta => 'Оставить Pro';
+
+  @override
   String get pbHeaderSub => 'Откройте всё, что есть в игре';
 
   @override

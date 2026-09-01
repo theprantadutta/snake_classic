@@ -2752,6 +2752,54 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous avez accès à toutes les fonctionnalités premium';
 
   @override
+  String get pbYourPlan => 'Votre formule';
+
+  @override
+  String get pbPlanMonthly => 'Mensuel';
+
+  @override
+  String get pbPlanYearly => 'Annuel';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return 'Renouvellement le $date';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'Passer a l annuel';
+
+  @override
+  String get pbSwitchToMonthly => 'Passer au mensuel';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'Effectif aujourd hui. Le reste du mois est credite et vous economisez 33 % par an.';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'Effectif a la fin de votre annee payee. Rien n est debite aujourd hui.';
+
+  @override
+  String get pbManageSubscription => 'Gerer l abonnement';
+
+  @override
+  String get pbManageBlurb =>
+      'Annulez ou modifiez le paiement dans la boutique';
+
+  @override
+  String get pbSwitchedToYearly => 'Passe a l annuel';
+
+  @override
+  String get pbSwitchedToMonthly =>
+      'Le mensuel demarrera a la fin de cette periode';
+
+  @override
+  String get pbAllUnlocked => 'Tout ceci est a vous';
+
+  @override
+  String get pbKeepProCta => 'Garder Pro';
+
+  @override
   String get pbHeaderSub => 'Débloquez tout ce que le jeu peut offrir';
 
   @override

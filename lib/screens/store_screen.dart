@@ -387,13 +387,20 @@ class _StoreScreenState extends State<StoreScreen>
     // backend's VerifyPurchase response lands.
     _reconcilePendingPurchases(premiumState);
 
-    // Paid Pro user — banner + feature grid only, no need to show plans.
+    // Paid Pro user — status, then the one action they might actually want
+    // here: moving between billing periods. The plan CARDS stay hidden (they
+    // are a buy surface, and this user has already bought), but a subscriber
+    // who wants yearly should not have to hunt for it.
     if (premiumState.hasPremium && !premiumState.isOnPromo) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _buildProActiveBanner(theme, premiumState),
+            if (premiumState.hasPaidSubscription) ...[
+              const SizedBox(height: 16),
+              _buildProPlanSwitchRow(theme, premiumState),
+            ],
             const SizedBox(height: 16),
             _buildProFeatureGrid(theme),
           ],
@@ -798,6 +805,121 @@ class _StoreScreenState extends State<StoreScreen>
         ),
       ),
     );
+  }
+
+  /// Compact "move to the other billing period" row for an existing
+  /// subscriber.
+  ///
+  /// Deliberately terser than the premium screen's version: the store is a
+  /// browsing surface, so this states the offer and the money consequence in
+  /// one line each and sends the decision to the store sheet. The full
+  /// explanation lives on the Pro screen.
+  Widget _buildProPlanSwitchRow(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
+    final target = premiumState.switchTarget;
+    if (target == null) return const SizedBox.shrink();
+
+    final toYearly = target == PremiumPlan.yearly;
+    final productId = toYearly
+        ? ProductIds.snakeClassicProYearly
+        : ProductIds.snakeClassicProMonthly;
+    final accent = toYearly ? kRewardGold : theme.accentColor;
+    final busy = _pendingProductIds.contains(productId);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            toYearly ? Icons.trending_up : Icons.trending_down,
+            color: accent,
+            size: context.scaled(22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  toYearly ? l10n.pbSwitchToYearly : l10n.pbSwitchToMonthly,
+                  style: TextStyle(
+                    color: theme.accentColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  toYearly
+                      ? l10n.pbSwitchToYearlyBlurb
+                      : l10n.pbSwitchToMonthlyBlurb,
+                  style: TextStyle(
+                    color: theme.accentColor.withValues(alpha: 0.65),
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          busy
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(accent),
+                  ),
+                )
+              : TextButton(
+                  onPressed: () => _switchPlan(productId),
+                  style: TextButton.styleFrom(foregroundColor: accent),
+                  child: Text(
+                    toYearly ? l10n.storeYearly : l10n.storeMonthly,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  /// Hand a plan change to the store.
+  ///
+  /// Routed through PremiumCubit.switchPlan rather than a plain buy: Play
+  /// rejects purchasing the other subscription while one is active unless the
+  /// existing purchase is named as the one being replaced.
+  Future<void> _switchPlan(String productId) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+    final cubit = context.read<PremiumCubit>();
+    final toYearly = productId == ProductIds.snakeClassicProYearly;
+
+    setState(() => _pendingProductIds.add(productId));
+    try {
+      final launched = await cubit.switchPlan(productId);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        arcadeSnackBarFor(
+          snackTheme,
+          message: !launched
+              ? l10n.storeSubNotAvailable
+              : toYearly
+                  ? l10n.pbSwitchedToYearly
+                  : l10n.pbSwitchedToMonthly,
+          tone: launched ? ArcadeSnackTone.success : ArcadeSnackTone.warning,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _pendingProductIds.remove(productId));
+    }
   }
 
   Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {

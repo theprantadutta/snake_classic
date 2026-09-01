@@ -10,6 +10,7 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/logger.dart';
 import 'ads/ad_service.dart';
 import 'analytics/analytics_facade.dart';
@@ -288,7 +289,18 @@ class PurchaseService {
     }
   }
 
-  Future<bool> buyProduct(ProductDetails productDetails) async {
+  /// Buy [productDetails].
+  ///
+  /// Pass [replacing] to SWITCH an existing subscription rather than start a
+  /// new one. Play treats a plan change as a replacement, not a purchase: buy
+  /// the yearly SKU while the monthly one is active without naming the old
+  /// purchase and the store rejects it as "already owned". [replacementMode]
+  /// decides the money — see [switchSubscription].
+  Future<bool> buyProduct(
+    ProductDetails productDetails, {
+    GooglePlayPurchaseDetails? replacing,
+    ReplacementMode? replacementMode,
+  }) async {
     if (!_isAvailable) {
       _purchaseStatusController.add('In-app purchases not available');
       return false;
@@ -318,10 +330,21 @@ class PurchaseService {
       // this maps to obfuscatedAccountId; on iOS to appAccountToken. Null when
       // unauthenticated — the purchase still works, just without webhook-side
       // recovery (the client re-verifies on the next purchased event).
-      final PurchaseParam purchaseParam = PurchaseParam(
-        productDetails: productDetails,
-        applicationUserName: _userIdGetter?.call(),
-      );
+      // A plan switch needs the purchase being replaced attached to the flow;
+      // anything else is an ordinary buy.
+      final PurchaseParam purchaseParam = replacing == null
+          ? PurchaseParam(
+              productDetails: productDetails,
+              applicationUserName: _userIdGetter?.call(),
+            )
+          : GooglePlayPurchaseParam(
+              productDetails: productDetails,
+              applicationUserName: _userIdGetter?.call(),
+              changeSubscriptionParam: ChangeSubscriptionParam(
+                oldPurchaseDetails: replacing,
+                replacementMode: replacementMode,
+              ),
+            );
 
       bool success;
       if (ProductIds.consumableIds.contains(productDetails.id)) {
@@ -443,6 +466,11 @@ class PurchaseService {
           } else {
             // Verify purchase with backend (via ApiService with JWT auth)
             bool valid = await _verifyWithBackend(purchaseDetails);
+            // Cache the Play purchase object for subscriptions regardless of
+            // backend verdict — a plan switch needs it, and a transient
+            // verification failure should not cost the user the ability to
+            // change plans.
+            _rememberSubscription(purchaseDetails);
             if (valid) {
               _purchases.add(purchaseDetails);
               // Broadcast for PremiumCubit to handle content delivery
@@ -918,6 +946,119 @@ class PurchaseService {
       throw Exception('Product $productId not found');
     }
     return await buyProduct(product);
+  }
+
+  // ==================== Subscription plan switching ====================
+
+  /// The live subscription purchase, as last seen on the purchase stream.
+  ///
+  /// Play requires the OLD purchase object when switching plans, and the only
+  /// place that object exists is the stream.
+  GooglePlayPurchaseDetails? _ownedSubscription;
+
+  void _rememberSubscription(PurchaseDetails purchase) {
+    if (purchase is! GooglePlayPurchaseDetails) return;
+    if (!ProductIds.subscriptionIds.contains(purchase.productID)) return;
+    _ownedSubscription = purchase;
+  }
+
+  /// The Play subscription this account currently holds, or null.
+  ///
+  /// Falls back to a restore because the stream only speaks when something
+  /// happens: on a cold start nothing has been bought or replayed yet, so the
+  /// cache is empty even for a long-standing subscriber — and a switch
+  /// attempted with a null old purchase silently degrades into a plain buy,
+  /// which Play then rejects as "already owned".
+  Future<GooglePlayPurchaseDetails?> currentSubscription() async {
+    if (_ownedSubscription != null) return _ownedSubscription;
+    if (!Platform.isAndroid) return null;
+    try {
+      await restorePurchases();
+      // restorePurchases() completes when the platform call is DISPATCHED; the
+      // purchases arrive later on the stream. Give them a beat to land.
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+    } catch (e) {
+      AppLogger.warning('Could not read the current subscription: $e');
+    }
+    return _ownedSubscription;
+  }
+
+  /// The product id of the active subscription, or null when there isn't one.
+  String? get activeSubscriptionId => _ownedSubscription?.productID;
+
+  /// Open the store's own subscription management surface.
+  ///
+  /// Cancelling, changing payment method and viewing the renewal date all
+  /// belong to Play / the App Store — both stores require it, and neither
+  /// exposes an in-app API for them. Deep-linking to the specific SKU lands
+  /// the user on this subscription rather than a list of everything they own.
+  Future<void> openManageSubscription({String? productId}) async {
+    final Uri uri;
+    if (Platform.isIOS || Platform.isMacOS) {
+      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    } else {
+      uri = Uri.https('play.google.com', '/store/account/subscriptions', {
+        'sku': ?productId,
+        'package': 'com.pranta.snakeclassic',
+      });
+    }
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not open subscription settings');
+    }
+  }
+
+  /// Move an existing subscription to [targetProductId].
+  ///
+  /// The replacement mode is chosen by direction, and the choice is about
+  /// money rather than mechanics:
+  ///
+  /// * **Upgrade** (monthly → yearly) uses [ReplacementMode.chargeProratedPrice]
+  ///   — effective immediately, the unused remainder of the month is credited
+  ///   against the year. The user gets what they just paid for, and Pro never
+  ///   lapses across the switch.
+  /// * **Downgrade** (yearly → monthly) uses [ReplacementMode.deferred] — the
+  ///   period already paid for runs to its end and monthly starts after it.
+  ///   Switching immediately would mean refunding the remainder of a year, and
+  ///   nobody expects a downgrade to move money toward them.
+  ///
+  /// Returns false when there is no subscription to replace or the store
+  /// refuses to launch the flow. Like every purchase, the actual result
+  /// arrives asynchronously on the purchase stream.
+  Future<bool> switchSubscription(String targetProductId) async {
+    if (!ProductIds.subscriptionIds.contains(targetProductId)) {
+      throw ArgumentError('$targetProductId is not a subscription');
+    }
+
+    final target = getProduct(targetProductId);
+    if (target == null) {
+      throw Exception('Product $targetProductId not found');
+    }
+
+    final replacing = await currentSubscription();
+    if (replacing == null) {
+      // Nothing to replace — treat it as a first-time subscribe rather than
+      // failing, so a user whose purchase we simply could not read still gets
+      // a working buy button.
+      AppLogger.warning(
+        'switchSubscription($targetProductId): no active subscription found, '
+        'falling back to a plain purchase',
+      );
+      return buyProduct(target);
+    }
+
+    if (replacing.productID == targetProductId) {
+      AppLogger.info('Already on $targetProductId — nothing to switch');
+      return false;
+    }
+
+    final isUpgrade = targetProductId == ProductIds.snakeClassicProYearly;
+    return buyProduct(
+      target,
+      replacing: replacing,
+      replacementMode: isUpgrade
+          ? ReplacementMode.chargeProratedPrice
+          : ReplacementMode.deferred,
+    );
   }
 
   bool isPurchased(String productId) {

@@ -2721,6 +2721,52 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pbActiveSub => 'لديك وصول إلى كل ميزات بريميوم';
 
   @override
+  String get pbYourPlan => 'خطتك';
+
+  @override
+  String get pbPlanMonthly => 'شهري';
+
+  @override
+  String get pbPlanYearly => 'سنوي';
+
+  @override
+  String pbRenewsOn(Object date) {
+    return 'يتجدد في $date';
+  }
+
+  @override
+  String get pbSwitchToYearly => 'التبديل إلى السنوي';
+
+  @override
+  String get pbSwitchToMonthly => 'التبديل إلى الشهري';
+
+  @override
+  String get pbSwitchToYearlyBlurb =>
+      'يبدأ اليوم. يُحتسب باقي الشهر، وتوفّر 33% سنويًا.';
+
+  @override
+  String get pbSwitchToMonthlyBlurb =>
+      'يبدأ عند انتهاء سنتك المدفوعة. لا يوجد خصم اليوم.';
+
+  @override
+  String get pbManageSubscription => 'إدارة الاشتراك';
+
+  @override
+  String get pbManageBlurb => 'ألغِ أو حدّث الدفع من المتجر';
+
+  @override
+  String get pbSwitchedToYearly => 'تم التبديل إلى السنوي';
+
+  @override
+  String get pbSwitchedToMonthly => 'يبدأ الشهري بعد انتهاء هذه الفترة';
+
+  @override
+  String get pbAllUnlocked => 'كل هذا لك';
+
+  @override
+  String get pbKeepProCta => 'الاحتفاظ بـ Pro';
+
+  @override
   String get pbHeaderSub => 'افتح كل ما تقدمه اللعبة';
 
   @override
