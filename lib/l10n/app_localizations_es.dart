@@ -311,6 +311,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mostrar botones direccionales en pantalla durante el juego';
 
   @override
+  String get settingsSnapMovement => 'Movimiento por casillas';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Muévete casilla a casilla como en el original. Los giros ocurren al instante.';
+
+  @override
   String get settingsDPadPosition => 'Posición de la cruceta';
 
   @override

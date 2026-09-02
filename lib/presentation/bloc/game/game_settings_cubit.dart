@@ -76,6 +76,11 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           .getCrashFeedbackDuration();
       final dPadEnabled = await _storageService.isDPadEnabled();
       final dPadPosition = await _storageService.getDPadPosition();
+      // Device-local feel preferences: never synced, never cleared on
+      // logout (see device_preferences).
+      final controlLayout = await _storageService.getControlLayout();
+      final snapMovementEnabled =
+          await _storageService.isSnapMovementEnabled();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
       final hapticsEnabled = await _storageService.isHapticsEnabled();
       final gameMode = await _storageService.getGameMode();
@@ -98,6 +103,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           crashFeedbackDuration: crashFeedbackDuration,
           dPadEnabled: dPadEnabled,
           dPadPosition: dPadPosition,
+          controlLayout: controlLayout,
+          snapMovementEnabled: snapMovementEnabled,
           screenShakeEnabled: screenShakeEnabled,
           hapticsEnabled: hapticsEnabled,
           gameMode: gameMode,
@@ -273,6 +280,20 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   /// Alias for setDPadPosition
   Future<void> updateDPadPosition(DPadPosition position) =>
       setDPadPosition(position);
+
+  /// Which on-screen control to draw. Device-local.
+  Future<void> setControlLayout(ControlLayout layout) async {
+    if (state.controlLayout == layout) return;
+    emit(state.copyWith(controlLayout: layout));
+    await _storageService.setControlLayout(layout);
+  }
+
+  /// Cell-by-cell movement. Device-local.
+  Future<void> setSnapMovementEnabled(bool enabled) async {
+    if (state.snapMovementEnabled == enabled) return;
+    emit(state.copyWith(snapMovementEnabled: enabled));
+    await _storageService.setSnapMovementEnabled(enabled);
+  }
 
   /// Update board size
   Future<void> setBoardSize(BoardSize size) async {

@@ -90,6 +90,8 @@
   "settingsSectionPremium": "FUNCIONES PREMIUM",
   "settingsDPadControls": "Controles de cruceta",
   "settingsDPadSubtitle": "Mostrar botones direccionales en pantalla durante el juego",
+  "settingsSnapMovement": "Movimiento por casillas",
+  "settingsSnapMovementSubtitle": "Muévete casilla a casilla como en el original. Los giros ocurren al instante.",
   "settingsDPadPosition": "Posición de la cruceta",
   "settingsDesktopControls": "Controles de escritorio/web",
   "settingsArrowKeys": "Teclas de flecha",

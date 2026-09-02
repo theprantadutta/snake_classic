@@ -13,6 +13,12 @@ class GameSettingsState extends Equatable {
   final GameSettingsStatus status;
   final bool dPadEnabled;
   final DPadPosition dPadPosition;
+
+  /// Which on-screen control [dPadEnabled] shows. Device-local.
+  final ControlLayout controlLayout;
+
+  /// Render cell-by-cell instead of gliding between cells. Device-local.
+  final bool snapMovementEnabled;
   final BoardSize boardSize;
   final Difficulty difficulty;
   final GameMode gameMode;
@@ -30,6 +36,8 @@ class GameSettingsState extends Equatable {
     this.status = GameSettingsStatus.initial,
     this.dPadEnabled = false,
     this.dPadPosition = DPadPosition.bottomCenter,
+    this.controlLayout = ControlLayout.dPad,
+    this.snapMovementEnabled = false,
     this.boardSize = BoardSize.classic,
     this.difficulty = Difficulty.normal,
     this.gameMode = GameMode.classic,
@@ -49,6 +57,8 @@ class GameSettingsState extends Equatable {
     GameSettingsStatus? status,
     bool? dPadEnabled,
     DPadPosition? dPadPosition,
+    ControlLayout? controlLayout,
+    bool? snapMovementEnabled,
     BoardSize? boardSize,
     Difficulty? difficulty,
     GameMode? gameMode,
@@ -64,6 +74,8 @@ class GameSettingsState extends Equatable {
       status: status ?? this.status,
       dPadEnabled: dPadEnabled ?? this.dPadEnabled,
       dPadPosition: dPadPosition ?? this.dPadPosition,
+      controlLayout: controlLayout ?? this.controlLayout,
+      snapMovementEnabled: snapMovementEnabled ?? this.snapMovementEnabled,
       boardSize: boardSize ?? this.boardSize,
       difficulty: difficulty ?? this.difficulty,
       gameMode: gameMode ?? this.gameMode,
@@ -87,6 +99,8 @@ class GameSettingsState extends Equatable {
     status,
     dPadEnabled,
     dPadPosition,
+    controlLayout,
+    snapMovementEnabled,
     boardSize,
     difficulty,
     gameMode,

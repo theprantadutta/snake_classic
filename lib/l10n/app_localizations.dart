@@ -652,6 +652,18 @@ abstract class AppLocalizations {
   /// **'Show on-screen directional buttons during gameplay'**
   String get settingsDPadSubtitle;
 
+  /// No description provided for @settingsSnapMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap Movement'**
+  String get settingsSnapMovement;
+
+  /// No description provided for @settingsSnapMovementSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move cell by cell like the original. Turns land the instant you press.'**
+  String get settingsSnapMovementSubtitle;
+
   /// No description provided for @settingsDPadPosition.
   ///
   /// In en, this message translates to:

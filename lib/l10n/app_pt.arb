@@ -90,6 +90,8 @@
   "settingsSectionPremium": "RECURSOS PREMIUM",
   "settingsDPadControls": "Controles D-Pad",
   "settingsDPadSubtitle": "Mostrar botões direcionais na tela durante o jogo",
+  "settingsSnapMovement": "Movimento por células",
+  "settingsSnapMovementSubtitle": "Mova-se célula a célula como no original. As curvas acontecem na hora.",
   "settingsDPadPosition": "Posição do D-Pad",
   "settingsDesktopControls": "Controles de Desktop/Web",
   "settingsArrowKeys": "Setas",

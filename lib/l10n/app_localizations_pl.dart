@@ -310,6 +310,13 @@ class AppLocalizationsPl extends AppLocalizations {
       'Pokazuj przyciski kierunkowe na ekranie podczas gry';
 
   @override
+  String get settingsSnapMovement => 'Ruch skokowy';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Poruszaj się pole po polu jak w oryginale. Skręty następują natychmiast.';
+
+  @override
   String get settingsDPadPosition => 'Pozycja D-Pada';
 
   @override

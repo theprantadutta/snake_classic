@@ -33,6 +33,7 @@ class SnakeFlameGame extends FlameGame {
     required this.initialTheme,
     required this.initialPremiumState,
     this.initialTrailSystemEnabled = true,
+    this.initialSnapMovement = false,
   }) {
     final gs = initialCubitState.gameState;
     boardWidth = gs?.boardWidth ?? 20;
@@ -41,12 +42,14 @@ class SnakeFlameGame extends FlameGame {
     theme = initialTheme;
     premiumState = initialPremiumState;
     trailSystemEnabled = initialTrailSystemEnabled;
+    snapMovement = initialSnapMovement;
   }
 
   final GameCubitState initialCubitState;
   final GameTheme initialTheme;
   final PremiumState initialPremiumState;
   final bool initialTrailSystemEnabled;
+  final bool initialSnapMovement;
 
   late int boardWidth;
   late int boardHeight;
@@ -56,6 +59,10 @@ class SnakeFlameGame extends FlameGame {
   late GameTheme theme;
   late PremiumState premiumState;
   late bool trailSystemEnabled;
+
+  /// Render at committed cells only — no inter-tick glide. See the
+  /// device preference of the same name for why a player wants this.
+  late bool snapMovement;
 
   model.GameState? get gameState => cubitState.gameState;
   model.GameState? get previousGameState => cubitState.previousGameState;
@@ -168,8 +175,10 @@ class SnakeFlameGame extends FlameGame {
     GameTheme newTheme,
     PremiumState newPremiumState, {
     required bool trailEnabled,
+    bool snapMovement = false,
   }) {
     theme = newTheme;
+    this.snapMovement = snapMovement;
     premiumState = newPremiumState;
     trailSystemEnabled = trailEnabled;
 
@@ -309,7 +318,12 @@ class SnakeFlameGame extends FlameGame {
     // previous cell (slowMotion) or snap it forward (speedBoost/level-up).
     final tickSeconds = (cubitState.tickDurationMs ?? gs.gameSpeed) / 1000.0;
     _elapsedSinceTick += dt;
-    moveProgress = tickSeconds <= 0
+    // Snap movement: the head is drawn at the cell it is IN, never on the
+    // way to the next one. The board painter treats a progress of 1.0 as
+    // 'use the current positions' — the glide is simply never started.
+    // The crash lunge above is untouched; that one is a deliberate
+    // animation, not a movement the player is trying to time.
+    moveProgress = snapMovement || tickSeconds <= 0
         ? 1.0
         : (_elapsedSinceTick / tickSeconds).clamp(0.0, 1.0);
   }

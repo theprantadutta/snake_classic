@@ -305,6 +305,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'إظهار أزرار الاتجاهات على الشاشة أثناء اللعب';
 
   @override
+  String get settingsSnapMovement => 'حركة متقطعة';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'التحرك خلية بخلية كما في اللعبة الأصلية. تُنفَّذ الانعطافات فور الضغط.';
+
+  @override
   String get settingsDPadPosition => 'موضع أزرار الاتجاهات';
 
   @override

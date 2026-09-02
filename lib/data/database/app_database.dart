@@ -647,6 +647,19 @@ class DevicePreferences extends Table {
   BoolColumn get highRefreshRateEnabled =>
       boolean().withDefault(const Constant(true))();
 
+  /// Render the snake cell-by-cell, like the original, instead of gliding
+  /// between cells. Off by default: the glide is the app's look. It exists
+  /// because a gliding head reads as already past the corner when a turn
+  /// can only happen at the next cell, so button players see every turn
+  /// land 'late'. Snapped, a turn is never visibly late.
+  BoolColumn get snapMovementEnabled =>
+      boolean().withDefault(const Constant(false))();
+
+  /// [ControlLayout] index for the on-screen controls. A thumb layout
+  /// describes the hand and the phone, so it stays on this device.
+  IntColumn get controlLayoutIndex =>
+      integer().withDefault(const Constant(0))();
+
   DateTimeColumn get updatedAt =>
       dateTime().withDefault(currentDateAndTime)();
 }
@@ -933,7 +946,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1203,6 +1216,19 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(devicePreferences);
         // createTable does not seed; initializeDefaults() runs on every open
         // and inserts the singleton row right after this returns.
+      }
+      if (from < 22) {
+        // v22: two more device-local preferences for how the game feels in
+        // the hand — snap movement and the on-screen control layout. Plain
+        // addColumn: a brand-new step cannot have run anywhere before.
+        await m.addColumn(
+          devicePreferences,
+          devicePreferences.snapMovementEnabled,
+        );
+        await m.addColumn(
+          devicePreferences,
+          devicePreferences.controlLayoutIndex,
+        );
       }
     },
   );

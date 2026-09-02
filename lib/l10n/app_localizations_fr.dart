@@ -310,6 +310,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Afficher les boutons directionnels à l\'écran pendant le jeu';
 
   @override
+  String get settingsSnapMovement => 'Déplacement par cases';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Avance case par case comme l\'original. Les virages sont instantanés.';
+
+  @override
   String get settingsDPadPosition => 'Position du D-Pad';
 
   @override

@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
 
 /// D-Pad position presets for user preference
+/// Which on-screen control is drawn when `dPadEnabled` is on.
+///
+/// Device-local (Drift `device_preferences`), unlike `dPadEnabled` itself,
+/// which is synced: a thumb layout describes the hand and the phone, not
+/// the account. Index-stored — never reorder.
+enum ControlLayout {
+  /// Four arrows: up, down, left, right. The absolute pad.
+  dPad,
+
+  /// Two big buttons, one per bottom corner: turn left, turn right,
+  /// relative to where the snake is heading. Works blind, both thumbs
+  /// resting where they already are on a tall phone, and a relative turn
+  /// can never be a reversal — so the single most frustrating rejection
+  /// the d-pad produces cannot happen here at all.
+  turnButtons;
+
+  static ControlLayout fromIndex(int index) =>
+      values[index.clamp(0, values.length - 1)];
+}
+
 enum DPadPosition {
   bottomLeft,
   bottomCenter,

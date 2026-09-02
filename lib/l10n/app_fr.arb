@@ -90,6 +90,8 @@
   "settingsSectionPremium": "FONCTIONNALITÉS PREMIUM",
   "settingsDPadControls": "Commandes D-Pad",
   "settingsDPadSubtitle": "Afficher les boutons directionnels à l'écran pendant le jeu",
+  "settingsSnapMovement": "Déplacement par cases",
+  "settingsSnapMovementSubtitle": "Avance case par case comme l'original. Les virages sont instantanés.",
   "settingsDPadPosition": "Position du D-Pad",
   "settingsDesktopControls": "Commandes bureau/web",
   "settingsArrowKeys": "Touches fléchées",

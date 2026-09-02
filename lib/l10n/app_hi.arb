@@ -90,6 +90,8 @@
   "settingsSectionPremium": "प्रीमियम सुविधाएँ",
   "settingsDPadControls": "डी-पैड नियंत्रण",
   "settingsDPadSubtitle": "गेम के दौरान स्क्रीन पर दिशा बटन दिखाएँ",
+  "settingsSnapMovement": "सेल-दर-सेल चाल",
+  "settingsSnapMovementSubtitle": "मूल गेम की तरह एक-एक सेल चलें। मोड़ दबाते ही लगते हैं।",
   "settingsDPadPosition": "डी-पैड स्थिति",
   "settingsDesktopControls": "डेस्कटॉप/वेब नियंत्रण",
   "settingsArrowKeys": "एरो कीज़",

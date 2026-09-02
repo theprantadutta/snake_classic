@@ -307,6 +307,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsDPadSubtitle => 'गेम के दौरान स्क्रीन पर दिशा बटन दिखाएँ';
 
   @override
+  String get settingsSnapMovement => 'सेल-दर-सेल चाल';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'मूल गेम की तरह एक-एक सेल चलें। मोड़ दबाते ही लगते हैं।';
+
+  @override
   String get settingsDPadPosition => 'डी-पैड स्थिति';
 
   @override

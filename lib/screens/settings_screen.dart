@@ -363,6 +363,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 ),
                                               ],
                                               const SizedBox(height: 16),
+                                              _buildSnapMovementToggle(theme),
+                                              const SizedBox(height: 16),
                                               _buildControlInfo(theme),
                                             ],
                                             theme,
@@ -1331,6 +1333,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
       theme: theme,
       description: description,
       enabled: enabled,
+    );
+  }
+
+  /// Cell-by-cell movement. Reads [GameSettingsCubit] directly rather than
+  /// the cached settings map: it is device-local and never in the cache.
+  Widget _buildSnapMovementToggle(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
+      buildWhen: (a, b) => a.snapMovementEnabled != b.snapMovementEnabled,
+      builder: (context, settings) {
+        return _buildAudioSwitch(
+          l10n.settingsSnapMovement,
+          settings.snapMovementEnabled,
+          (value) async {
+            await context.read<GameSettingsCubit>().setSnapMovementEnabled(
+              value,
+            );
+            _analytics.trackSettingChanged(
+              settingName: 'snap_movement_enabled',
+              value: '$value',
+            );
+          },
+          theme,
+          description: l10n.settingsSnapMovementSubtitle,
+        );
+      },
     );
   }
 

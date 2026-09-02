@@ -175,6 +175,41 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// Whether this device renders the snake cell-by-cell. Default off.
+  Future<bool> isSnapMovementEnabled() async {
+    final prefs = await getDevicePreferences();
+    return prefs?.snapMovementEnabled ?? false;
+  }
+
+  /// Persist snap movement for this device only. Upsert, for the same
+  /// reason as [updateHighRefreshRateEnabled].
+  Future<void> updateSnapMovementEnabled(bool enabled) async {
+    await into(devicePreferences).insertOnConflictUpdate(
+      DevicePreferencesCompanion(
+        id: const Value(1),
+        snapMovementEnabled: Value(enabled),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// The on-screen control layout index for this device. Default 0.
+  Future<int> getControlLayoutIndex() async {
+    final prefs = await getDevicePreferences();
+    return prefs?.controlLayoutIndex ?? 0;
+  }
+
+  /// Persist the on-screen control layout for this device only.
+  Future<void> updateControlLayoutIndex(int index) async {
+    await into(devicePreferences).insertOnConflictUpdate(
+      DevicePreferencesCompanion(
+        id: const Value(1),
+        controlLayoutIndex: Value(index),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Reset settings to defaults. Outbox row queues a fresh sync so
   /// the backend picks up the reset.
   ///

@@ -90,6 +90,8 @@
   "settingsSectionPremium": "FUNZIONI PREMIUM",
   "settingsDPadControls": "Controlli D-Pad",
   "settingsDPadSubtitle": "Mostra i pulsanti direzionali sullo schermo durante il gioco",
+  "settingsSnapMovement": "Movimento a scatti",
+  "settingsSnapMovementSubtitle": "Muoviti cella per cella come nell'originale. Le curve avvengono all'istante.",
   "settingsDPadPosition": "Posizione del D-Pad",
   "settingsDesktopControls": "Controlli desktop/web",
   "settingsArrowKeys": "Tasti freccia",

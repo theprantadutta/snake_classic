@@ -90,6 +90,8 @@
   "settingsSectionPremium": "FUNKCJE PREMIUM",
   "settingsDPadControls": "Sterowanie D-Pad",
   "settingsDPadSubtitle": "Pokazuj przyciski kierunkowe na ekranie podczas gry",
+  "settingsSnapMovement": "Ruch skokowy",
+  "settingsSnapMovementSubtitle": "Poruszaj się pole po polu jak w oryginale. Skręty następują natychmiast.",
   "settingsDPadPosition": "Pozycja D-Pada",
   "settingsDesktopControls": "Sterowanie na komputerze",
   "settingsArrowKeys": "Strzałki",

@@ -43,6 +43,8 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
       initialTheme: themeState.currentTheme,
       initialPremiumState: context.read<PremiumCubit>().state,
       initialTrailSystemEnabled: themeState.isTrailSystemEnabled,
+      initialSnapMovement:
+          context.read<GameSettingsCubit>().state.snapMovementEnabled,
     );
   }
 
@@ -55,6 +57,10 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
   /// purple/gold identity, similarly slimmed.
   @override
   Widget build(BuildContext context) {
+    // Device-local feel preference; the game reads it every sync.
+    final snapMovement = context.select<GameSettingsCubit, bool>(
+      (c) => c.state.snapMovementEnabled,
+    );
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         return BlocBuilder<PremiumCubit, PremiumState>(
@@ -84,6 +90,7 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                     initialTheme: themeState.currentTheme,
                     initialPremiumState: premiumState,
                     initialTrailSystemEnabled: themeState.isTrailSystemEnabled,
+                    initialSnapMovement: snapMovement,
                   );
                 }
                 _game.syncState(
@@ -91,6 +98,7 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                   themeState.currentTheme,
                   premiumState,
                   trailEnabled: themeState.isTrailSystemEnabled,
+                  snapMovement: snapMovement,
                 );
                 // The boundary frame (glowing border + ambient shadow) lives at
                 // the Flutter layer in the legacy GameBoard, not in the shared

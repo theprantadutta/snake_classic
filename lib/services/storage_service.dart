@@ -143,6 +143,23 @@ class StorageService {
     await _settingsDao?.updateHighRefreshRateEnabled(enabled);
   }
 
+  Future<bool> isSnapMovementEnabled() async {
+    return await _settingsDao?.isSnapMovementEnabled() ?? false;
+  }
+
+  Future<void> setSnapMovementEnabled(bool enabled) async {
+    await _settingsDao?.updateSnapMovementEnabled(enabled);
+  }
+
+  Future<ControlLayout> getControlLayout() async {
+    final index = await _settingsDao?.getControlLayoutIndex() ?? 0;
+    return ControlLayout.fromIndex(index);
+  }
+
+  Future<void> setControlLayout(ControlLayout layout) async {
+    await _settingsDao?.updateControlLayoutIndex(layout.index);
+  }
+
   // ==================== Notification Preferences ====================
 
   /// Per-category notification opt-ins, keyed by NotificationType.key

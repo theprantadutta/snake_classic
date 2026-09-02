@@ -307,6 +307,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Показывать экранные кнопки направления во время игры';
 
   @override
+  String get settingsSnapMovement => 'Движение по клеткам';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Двигайтесь по клеткам, как в оригинале. Повороты срабатывают сразу.';
+
+  @override
   String get settingsDPadPosition => 'Положение D-Pad';
 
   @override

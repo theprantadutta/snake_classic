@@ -90,6 +90,8 @@
   "settingsSectionPremium": "ПРЕМИУМ-ФУНКЦИИ",
   "settingsDPadControls": "Экранные кнопки (D-Pad)",
   "settingsDPadSubtitle": "Показывать экранные кнопки направления во время игры",
+  "settingsSnapMovement": "Движение по клеткам",
+  "settingsSnapMovementSubtitle": "Двигайтесь по клеткам, как в оригинале. Повороты срабатывают сразу.",
   "settingsDPadPosition": "Положение D-Pad",
   "settingsDesktopControls": "Управление на компьютере",
   "settingsArrowKeys": "Стрелки",

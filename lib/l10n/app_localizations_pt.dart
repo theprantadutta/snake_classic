@@ -309,6 +309,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'Mostrar botões direcionais na tela durante o jogo';
 
   @override
+  String get settingsSnapMovement => 'Movimento por células';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Mova-se célula a célula como no original. As curvas acontecem na hora.';
+
+  @override
   String get settingsDPadPosition => 'Posição do D-Pad';
 
   @override

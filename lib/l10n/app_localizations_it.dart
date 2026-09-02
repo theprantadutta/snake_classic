@@ -310,6 +310,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Mostra i pulsanti direzionali sullo schermo durante il gioco';
 
   @override
+  String get settingsSnapMovement => 'Movimento a scatti';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Muoviti cella per cella come nell\'originale. Le curve avvengono all\'istante.';
+
+  @override
   String get settingsDPadPosition => 'Posizione del D-Pad';
 
   @override

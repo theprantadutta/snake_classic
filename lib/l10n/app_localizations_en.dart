@@ -307,6 +307,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show on-screen directional buttons during gameplay';
 
   @override
+  String get settingsSnapMovement => 'Snap Movement';
+
+  @override
+  String get settingsSnapMovementSubtitle =>
+      'Move cell by cell like the original. Turns land the instant you press.';
+
+  @override
   String get settingsDPadPosition => 'D-Pad Position';
 
   @override

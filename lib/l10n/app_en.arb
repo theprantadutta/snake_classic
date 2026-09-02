@@ -165,6 +165,8 @@
   "settingsSectionPremium": "PREMIUM FEATURES",
   "settingsDPadControls": "D-Pad Controls",
   "settingsDPadSubtitle": "Show on-screen directional buttons during gameplay",
+  "settingsSnapMovement": "Snap Movement",
+  "settingsSnapMovementSubtitle": "Move cell by cell like the original. Turns land the instant you press.",
   "settingsDPadPosition": "D-Pad Position",
   "settingsDesktopControls": "Desktop/Web Controls",
   "settingsArrowKeys": "Arrow Keys",
