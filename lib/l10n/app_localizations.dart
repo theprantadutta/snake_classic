@@ -1510,6 +1510,36 @@ abstract class AppLocalizations {
   /// **'CANCEL'**
   String get mpLobbyCancelUpper;
 
+  /// No description provided for @mpLobbyConnectionLostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CONNECTION LOST'**
+  String get mpLobbyConnectionLostTitle;
+
+  /// No description provided for @mpLobbyConnectionLostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your connection dropped while we were searching.\nCheck Wi-Fi or mobile data and try again.'**
+  String get mpLobbyConnectionLostBody;
+
+  /// No description provided for @mpLobbyTimedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NO MATCH YET'**
+  String get mpLobbyTimedOutTitle;
+
+  /// No description provided for @mpLobbyTimedOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This search ran longer than it should have.\nTry again — matches usually take under a minute.'**
+  String get mpLobbyTimedOutBody;
+
+  /// No description provided for @mpLobbyWaitingForConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost — waiting to reconnect…'**
+  String get mpLobbyWaitingForConnection;
+
   /// No description provided for @mpLobbyUnreachableTitle.
   ///
   /// In en, this message translates to:

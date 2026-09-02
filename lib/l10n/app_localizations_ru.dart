@@ -801,6 +801,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ОТМЕНА';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'СОЕДИНЕНИЕ ПОТЕРЯНО';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'Соединение оборвалось во время поиска.\nПроверьте Wi-Fi или мобильные данные и попробуйте снова.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'МАТЧ ПОКА НЕ НАЙДЕН';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'Поиск занял больше времени, чем должен.\nПопробуйте снова — обычно матч находится меньше чем за минуту.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'Соединение потеряно — ждём переподключения…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'МАТЧМЕЙКИНГ НЕДОСТУПЕН';
 
   @override

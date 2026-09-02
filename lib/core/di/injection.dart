@@ -151,6 +151,7 @@ Future<void> configureDependencies() async {
       hapticService: getIt<HapticService>(),
       analytics: getIt<AnalyticsFacade>(),
       settlementService: getIt<MultiplayerSettlementService>(),
+      connectivity: getIt<ConnectivityService>(),
     ),
   );
 

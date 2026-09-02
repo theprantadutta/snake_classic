@@ -367,6 +367,11 @@
   "mpLobbyModePlayers": "{mode} • {count, plural, one{{count} Player} other{{count} Players}}",
   "mpLobbyQueuePosition": "Queue Position: {position}",
   "mpLobbyCancelUpper": "CANCEL",
+  "mpLobbyConnectionLostTitle": "CONNECTION LOST",
+  "mpLobbyConnectionLostBody": "Your connection dropped while we were searching.\nCheck Wi-Fi or mobile data and try again.",
+  "mpLobbyTimedOutTitle": "NO MATCH YET",
+  "mpLobbyTimedOutBody": "This search ran longer than it should have.\nTry again — matches usually take under a minute.",
+  "mpLobbyWaitingForConnection": "Connection lost — waiting to reconnect…",
   "mpLobbyUnreachableTitle": "CAN'T REACH MATCHMAKING",
   "mpLobbyUnreachableBody": "We couldn't reach the server.\nCheck your connection and try again.",
   "@mpLobbyUnreachableBody": {

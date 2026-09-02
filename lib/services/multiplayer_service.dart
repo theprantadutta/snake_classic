@@ -76,6 +76,9 @@ class MultiplayerService {
 
   // Matchmaking state
   bool _isInMatchmaking = false;
+  // What we asked for, so a transport reconnect can ask for it again.
+  MultiplayerGameMode? _matchmakingMode;
+  int _matchmakingPlayerCount = 2;
   int _matchmakingQueuePosition = 0;
   int _matchmakingEstimatedWait = 0;
 
@@ -332,6 +335,8 @@ class MultiplayerService {
       await hub.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
 
       _isInMatchmaking = true;
+      _matchmakingMode = mode;
+      _matchmakingPlayerCount = playerCount;
       _matchmakingStreamController.add(
         MatchmakingStatus(
           isSearching: true,
@@ -357,6 +362,7 @@ class MultiplayerService {
       AppLogger.error('Error leaving matchmaking', e);
     } finally {
       _isInMatchmaking = false;
+      _matchmakingMode = null;
       _matchmakingQueuePosition = 0;
       _matchmakingEstimatedWait = 0;
       _matchmakingStreamController.add(const MatchmakingStatus());
@@ -486,6 +492,7 @@ class MultiplayerService {
       _hubConnection!.onreconnected(({connectionId}) {
         _isConnected = true;
         final roomCode = _currentRoomCode;
+        final queuedMode = _matchmakingMode;
         if (roomCode != null) {
           _hubConnection?.invoke('Reconnect', args: [roomCode]).catchError((
             Object e,
@@ -493,6 +500,22 @@ class MultiplayerService {
             AppLogger.error('Error re-joining room after reconnect', e);
             return null;
           });
+        } else if (_isInMatchmaking && queuedMode != null) {
+          // Mid-search the server deleted our queue row the moment the old
+          // socket closed (OnDisconnected → LeaveQueue). A fresh connection
+          // id on its own puts nothing back, so ask again. The cubit's poll
+          // would notice and re-queue too; doing it here closes the gap
+          // without waiting for a poll.
+          AppLogger.info('Hub reconnected mid-search — re-entering queue');
+          _hubConnection
+              ?.invoke(
+                'JoinMatchmaking',
+                args: [queuedMode.name, _matchmakingPlayerCount],
+              )
+              .catchError((Object e) {
+                AppLogger.error('Error re-entering queue after reconnect', e);
+                return null;
+              });
         }
       });
 

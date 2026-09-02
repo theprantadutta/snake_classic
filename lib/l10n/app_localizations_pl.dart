@@ -803,6 +803,24 @@ class AppLocalizationsPl extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ANULUJ';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'UTRACONO POŁĄCZENIE';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'Połączenie zerwało się podczas wyszukiwania.\nSprawdź Wi-Fi lub dane mobilne i spróbuj ponownie.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'WCIĄŻ BRAK MECZU';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'To wyszukiwanie trwało dłużej, niż powinno.\nSpróbuj ponownie — mecz zwykle znajduje się w mniej niż minutę.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'Utracono połączenie — oczekiwanie na ponowne połączenie…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'BRAK POŁĄCZENIA Z MATCHMAKINGIEM';
 
   @override

@@ -797,6 +797,24 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mpLobbyCancelUpper => 'रद्द करें';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'कनेक्शन टूट गया';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'खोज के दौरान आपका कनेक्शन टूट गया।\nवाई-फ़ाई या मोबाइल डेटा जाँचें और फिर कोशिश करें।';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'अभी तक कोई मैच नहीं';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'यह खोज ज़रूरत से ज़्यादा समय ले गई।\nफिर कोशिश करें — मैच आमतौर पर एक मिनट से कम में मिल जाता है।';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'कनेक्शन टूट गया — दोबारा जुड़ने का इंतज़ार…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'मैचमेकिंग से संपर्क नहीं';
 
   @override

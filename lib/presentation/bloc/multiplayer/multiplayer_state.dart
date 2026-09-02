@@ -4,6 +4,7 @@ import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/services/multiplayer/matchmaking_watch.dart';
 
 export 'package:snake_classic/models/multiplayer_error.dart';
 
@@ -119,7 +120,19 @@ class MultiplayerState extends Equatable {
   /// the client giving up while the server was still working is how a match
   /// that had already been created went unclaimed.
   final int matchmakingDeadlineSeconds;
-  final bool matchmakingUnreachable;
+
+  /// Why the last search ended without a match, if it did. Null while
+  /// searching and after the player dismisses the message.
+  final MatchmakingFailure? matchmakingFailure;
+
+  /// The device has no link right now, mid-search. The search is still
+  /// alive — inside the watch's grace window — but the player should know
+  /// why the numbers stopped meaning anything.
+  final bool matchmakingOffline;
+
+  /// The lobby's switch to the failure card. Kept as a bool so the screen
+  /// reads the same for every kind of failure; the kind picks the copy.
+  bool get matchmakingUnreachable => matchmakingFailure != null;
 
   const MultiplayerState({
     this.status = MultiplayerStatus.initial,
@@ -142,7 +155,8 @@ class MultiplayerState extends Equatable {
     this.matchmakingPlayerCount,
     this.matchmakingElapsedSeconds = 0,
     this.matchmakingDeadlineSeconds = 35,
-    this.matchmakingUnreachable = false,
+    this.matchmakingFailure,
+    this.matchmakingOffline = false,
     this.settlementStatus = SettlementStatus.none,
     this.settlement,
   });
@@ -180,7 +194,9 @@ class MultiplayerState extends Equatable {
     int? matchmakingPlayerCount,
     int? matchmakingElapsedSeconds,
     int? matchmakingDeadlineSeconds,
-    bool? matchmakingUnreachable,
+    MatchmakingFailure? matchmakingFailure,
+    bool clearMatchmakingFailure = false,
+    bool? matchmakingOffline,
     bool clearMatchmaking = false,
   }) {
     return MultiplayerState(
@@ -229,9 +245,12 @@ class MultiplayerState extends Equatable {
       matchmakingElapsedSeconds: clearMatchmaking
           ? 0
           : (matchmakingElapsedSeconds ?? this.matchmakingElapsedSeconds),
-      matchmakingUnreachable: clearMatchmaking
+      matchmakingFailure: (clearMatchmaking || clearMatchmakingFailure)
+          ? null
+          : (matchmakingFailure ?? this.matchmakingFailure),
+      matchmakingOffline: clearMatchmaking
           ? false
-          : (matchmakingUnreachable ?? this.matchmakingUnreachable),
+          : (matchmakingOffline ?? this.matchmakingOffline),
     );
   }
 
@@ -297,6 +316,7 @@ class MultiplayerState extends Equatable {
     matchmakingPlayerCount,
     matchmakingElapsedSeconds,
     matchmakingDeadlineSeconds,
-    matchmakingUnreachable,
+    matchmakingFailure,
+    matchmakingOffline,
   ];
 }

@@ -793,6 +793,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mpLobbyCancelUpper => 'إلغاء';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'انقطع الاتصال';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'انقطع اتصالك أثناء البحث.\nتحقق من الواي فاي أو بيانات الهاتف وحاول مرة أخرى.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'لا توجد مباراة بعد';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'استغرق هذا البحث وقتًا أطول مما ينبغي.\nحاول مرة أخرى — عادةً ما يُعثر على مباراة في أقل من دقيقة.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'انقطع الاتصال — بانتظار إعادة الاتصال…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'تعذّر الوصول إلى المطابقة';
 
   @override

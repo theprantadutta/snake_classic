@@ -23,6 +23,7 @@ import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/services/multiplayer/matchmaking_watch.dart';
 
 class MultiplayerLobbyScreen extends StatefulWidget {
   final String? gameId;
@@ -870,6 +871,34 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                           ),
                         ],
 
+                        // Mid-search with no link. The search is still
+                        // alive inside the grace window; say why the
+                        // numbers stopped instead of looking hung.
+                        if (multiplayerState.matchmakingOffline) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.wifi_off_rounded,
+                                size: 16,
+                                color: theme.foodColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  l10n.mpLobbyWaitingForConnection,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: theme.foodColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+
                         const SizedBox(height: 24),
 
                         GradientButton(
@@ -904,6 +933,26 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    // One card, three reasons. The kind picks the icon and the words; the
+    // actions are the same because the answer is the same: try again.
+    final (IconData icon, String title, String body) = switch (
+      multiplayerState.matchmakingFailure) {
+      MatchmakingFailure.connectionLost => (
+        Icons.wifi_off_rounded,
+        l10n.mpLobbyConnectionLostTitle,
+        l10n.mpLobbyConnectionLostBody,
+      ),
+      MatchmakingFailure.timedOut => (
+        Icons.hourglass_bottom_rounded,
+        l10n.mpLobbyTimedOutTitle,
+        l10n.mpLobbyTimedOutBody,
+      ),
+      MatchmakingFailure.unreachable || null => (
+        Icons.hourglass_empty_rounded,
+        l10n.mpLobbyUnreachableTitle,
+        l10n.mpLobbyUnreachableBody,
+      ),
+    };
     return Column(
       children: [
         _buildHeader(theme),
@@ -936,7 +985,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         // orange alarm disc, just the same quiet hairline
                         // treatment the rest of the screen uses.
                         Icon(
-                          Icons.hourglass_empty_rounded,
+                          icon,
                           size: 36,
                           color: theme.accentColor.withValues(alpha: 0.8),
                         ),
@@ -944,7 +993,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         const SizedBox(height: 20),
 
                         Text(
-                          l10n.mpLobbyUnreachableTitle,
+                          title,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -957,7 +1006,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                         const SizedBox(height: 8),
 
                         Text(
-                          l10n.mpLobbyUnreachableBody,
+                          body,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13.5,

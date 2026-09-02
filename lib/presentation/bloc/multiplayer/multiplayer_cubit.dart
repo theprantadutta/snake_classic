@@ -20,6 +20,8 @@ import 'multiplayer_input_feedback.dart';
 import 'multiplayer_recovery.dart';
 import 'multiplayer_steering.dart';
 import 'multiplayer_state.dart';
+import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/multiplayer/matchmaking_watch.dart';
 
 export 'multiplayer_state.dart';
 
@@ -37,6 +39,11 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   final AudioService _audioService;
   final HapticService _hapticService;
   final AnalyticsFacade _analytics;
+
+  /// Read once a second while searching, so a dropped link is noticed in
+  /// seconds rather than after five failed polls. Optional so the cubit
+  /// still constructs in tests and anywhere the service is not wired.
+  final ConnectivityService? _connectivity;
 
   /// Shared end-of-game rewards/stats pipeline (same instance the
   /// single-player GameCubit uses) — keeps reward rules in one place.
@@ -73,6 +80,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Reads each poll answer. Recreated per search so a previous search's
   /// failures cannot leak into this one.
   QueueResolution _queueResolution = QueueResolution();
+
+  /// The client-side safety net: hard deadline, offline grace, re-queue
+  /// budget. Recreated per search alongside [_queueResolution].
+  MatchmakingWatch _watch = MatchmakingWatch();
+
+  /// Wall-clock time for the WHOLE search. A re-queue restarts the
+  /// visible counter (the server's clock restarted too) but not this one,
+  /// so repeated re-queues cannot push the hard deadline out forever.
+  final Stopwatch _searchClock = Stopwatch();
+
+  /// What the ring shows. Restarts on re-queue.
+  int _elapsedSeconds = 0;
+
+  bool _requeueInFlight = false;
 
   /// Guards against a slow poll overlapping the next tick.
   bool _pollInFlight = false;
@@ -127,6 +148,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     required this._hapticService,
     required this._analytics,
     required this._settlementService,
+    this._connectivity,
   }) : super(MultiplayerState.initial()) {
     // Start listening to matchmaking stream
     _startMatchmakingListener();
@@ -581,7 +603,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           matchmakingMode: mode,
           matchmakingPlayerCount: playerCount,
           matchmakingElapsedSeconds: 0,
-          matchmakingUnreachable: false,
+          matchmakingOffline: false,
+          clearMatchmakingFailure: true,
         ),
       );
 
@@ -618,20 +641,56 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// queue and the player pressing Cancel — plus the genuine third case of
   /// not being able to reach the server at all, which is reported as what it
   /// is rather than as "nobody wanted to play with you".
+  ///
+  /// What the client DOES judge — see [MatchmakingWatch] — is when waiting
+  /// has stopped being useful: the device has been offline past a grace
+  /// window (the server dropped our row the moment the socket went), or the
+  /// search has run far past the server's own quoted deadline. Both end in a
+  /// card with a Try Again button instead of a ring that spins forever.
   void _startMatchmakingWatch() {
     _stopMatchmakingTimer();
     _queueResolution = QueueResolution(
       failuresBeforeUnreachable: queuePollFailuresBeforeError,
     );
+    _watch = MatchmakingWatch();
+    _elapsedSeconds = 0;
+    _searchClock
+      ..reset()
+      ..start();
 
     _matchmakingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!state.isMatchmaking) {
         _stopMatchmakingTimer();
         return;
       }
-      emit(state.copyWith(matchmakingElapsedSeconds: timer.tick));
+      _elapsedSeconds++;
+      final online = _connectivity?.hasInternetAccess ?? true;
+      final verdict = _watch.onTick(
+        _searchClock.elapsed.inSeconds,
+        online: online,
+      );
+      emit(
+        state.copyWith(
+          matchmakingElapsedSeconds: _elapsedSeconds,
+          matchmakingOffline: !online,
+        ),
+      );
 
-      if (timer.tick % queuePollInterval.inSeconds == 0) {
+      switch (verdict) {
+        case MatchmakingWatchVerdict.timedOut:
+          unawaited(_onMatchmakingFailed(MatchmakingFailure.timedOut));
+          return;
+        case MatchmakingWatchVerdict.connectionLost:
+          unawaited(_onMatchmakingFailed(MatchmakingFailure.connectionLost));
+          return;
+        case MatchmakingWatchVerdict.keepWaiting:
+          break;
+      }
+
+      // No point asking the server with no link: those failures would only
+      // count toward "unreachable", which is the wrong diagnosis. The
+      // grace window above is what ends an outage.
+      if (online && _elapsedSeconds % queuePollInterval.inSeconds == 0) {
         unawaited(_pollQueueStatus());
       }
     });
@@ -669,19 +728,16 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           }
 
         case QueueOutcome.notQueued:
-          // Cancelled or swept elsewhere. Leave the searching UI without
-          // claiming anything went wrong.
-          _stopMatchmakingTimer();
-          emit(
-            state.copyWith(
-              status: MultiplayerStatus.idle,
-              isMatchmaking: false,
-              clearMatchmaking: true,
-            ),
-          );
+          // The server has no entry for us while we are still searching.
+          // The usual cause is a socket blip: the hub deletes the queue
+          // row on disconnect, and the transport reconnects without
+          // telling the matchmaker. A server restart wipes the queue the
+          // same way. Silently rejoin, a bounded number of times — the
+          // player pressed one button and is still looking at the ring.
+          await _requeue(reason: 'server reports no queue entry');
 
         case QueueOutcome.unreachable:
-          await _onMatchmakingUnreachable();
+          await _onMatchmakingFailed(MatchmakingFailure.unreachable);
       }
     } finally {
       _pollInFlight = false;
@@ -692,12 +748,52 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   void _stopMatchmakingTimer() {
     _matchmakingTimer?.cancel();
     _matchmakingTimer = null;
+    _searchClock.stop();
   }
 
-  /// The backend cannot be reached at all — distinct from, and much rarer
-  /// than, simply not having been matched yet.
-  Future<void> _onMatchmakingUnreachable() async {
+  /// Re-enter the queue mid-search without disturbing the UI. Used when
+  /// the hub connection was lost and rebuilt, or the server says it no
+  /// longer has us. Budgeted by [MatchmakingWatch.takeRequeue]; when the
+  /// budget is spent, or the join itself fails, the search is reported as
+  /// lost rather than looping.
+  Future<void> _requeue({required String reason}) async {
+    if (_requeueInFlight || !state.isMatchmaking) return;
+    _requeueInFlight = true;
+    try {
+      if (!_watch.takeRequeue()) {
+        AppLogger.warning('Matchmaking re-queue budget spent ($reason)');
+        await _onMatchmakingFailed(MatchmakingFailure.connectionLost);
+        return;
+      }
+      AppLogger.warning(
+        'Re-entering matchmaking ($reason), attempt '
+        '${_watch.requeuesUsed}/${_watch.maxRequeues}',
+      );
+      final outcome = await _multiplayerService.joinMatchmaking(
+        mode: state.matchmakingMode ?? MultiplayerGameMode.classic,
+        playerCount: state.matchmakingPlayerCount ?? 2,
+      );
+      // Cancelled while the join was in flight — nothing to restore.
+      if (!state.isMatchmaking) return;
+      if (outcome != JoinQueueOutcome.joined) {
+        await _onMatchmakingFailed(MatchmakingFailure.connectionLost);
+        return;
+      }
+      // The server's clock restarted with the new row, so the ring
+      // restarts with it. The hard deadline keeps counting the whole search.
+      _elapsedSeconds = 0;
+      emit(state.copyWith(matchmakingElapsedSeconds: 0));
+    } finally {
+      _requeueInFlight = false;
+    }
+  }
+
+  /// The search ended without a match, for a reason the player needs to
+  /// hear. [MatchmakingFailure] picks the card; all three share the exit.
+  Future<void> _onMatchmakingFailed(MatchmakingFailure failure) async {
+    if (!state.isMatchmaking) return;
     _stopMatchmakingTimer();
+    AppLogger.warning('Matchmaking ended without a match: ${failure.name}');
 
     _audioService.playSound('game_over');
     _hapticService.mediumImpact();
@@ -716,7 +812,8 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       state.copyWith(
         status: MultiplayerStatus.idle,
         isMatchmaking: false,
-        matchmakingUnreachable: true,
+        matchmakingOffline: false,
+        matchmakingFailure: failure,
       ),
     );
   }
@@ -747,7 +844,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Clear matchmaking timeout state (to dismiss the timeout message)
   void clearMatchmakingTimeout() {
-    emit(state.copyWith(matchmakingUnreachable: false, clearMatchmaking: true));
+    emit(
+      state.copyWith(clearMatchmakingFailure: true, clearMatchmaking: true),
+    );
   }
 
   /// Attempt to reconnect to a game after disconnect. Stays in
@@ -1223,6 +1322,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         if (state.status == MultiplayerStatus.playing ||
             state.status == MultiplayerStatus.reconnecting) {
           unawaited(attemptReconnect());
+        } else if (state.isMatchmaking) {
+          // The hub gave up mid-search. The server deleted our queue row
+          // when the socket went, so re-enter — joinMatchmaking rebuilds
+          // the socket on the way. With no link at all there is nothing to
+          // rebuild yet; the watch's grace window handles that case.
+          if (_connectivity?.hasInternetAccess ?? true) {
+            unawaited(_requeue(reason: 'hub connection lost'));
+          }
         }
         break;
 

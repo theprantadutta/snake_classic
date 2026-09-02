@@ -798,6 +798,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mpLobbyCancelUpper => 'CANCEL';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'CONNECTION LOST';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'Your connection dropped while we were searching.\nCheck Wi-Fi or mobile data and try again.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'NO MATCH YET';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'This search ran longer than it should have.\nTry again — matches usually take under a minute.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'Connection lost — waiting to reconnect…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'CAN\'T REACH MATCHMAKING';
 
   @override

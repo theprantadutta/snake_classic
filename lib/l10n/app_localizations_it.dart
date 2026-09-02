@@ -804,6 +804,24 @@ class AppLocalizationsIt extends AppLocalizations {
   String get mpLobbyCancelUpper => 'ANNULLA';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'CONNESSIONE PERSA';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'La connessione è caduta durante la ricerca.\nControlla il Wi-Fi o i dati mobili e riprova.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'ANCORA NESSUNA PARTITA';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'Questa ricerca è durata più del dovuto.\nRiprova — di solito una partita si trova in meno di un minuto.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'Connessione persa — in attesa di riconnessione…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'MATCHMAKING NON RAGGIUNGIBILE';
 
   @override

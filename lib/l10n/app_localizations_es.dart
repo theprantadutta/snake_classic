@@ -807,6 +807,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mpLobbyCancelUpper => 'CANCELAR';
 
   @override
+  String get mpLobbyConnectionLostTitle => 'CONEXIÓN PERDIDA';
+
+  @override
+  String get mpLobbyConnectionLostBody =>
+      'Tu conexión se cortó mientras buscábamos.\nComprueba el Wi-Fi o los datos móviles e inténtalo de nuevo.';
+
+  @override
+  String get mpLobbyTimedOutTitle => 'AÚN SIN PARTIDA';
+
+  @override
+  String get mpLobbyTimedOutBody =>
+      'Esta búsqueda tardó más de lo debido.\nInténtalo de nuevo — normalmente se encuentra partida en menos de un minuto.';
+
+  @override
+  String get mpLobbyWaitingForConnection =>
+      'Conexión perdida — esperando reconexión…';
+
+  @override
   String get mpLobbyUnreachableTitle => 'SIN CONEXIÓN CON EL EMPAREJAMIENTO';
 
   @override
