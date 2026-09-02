@@ -3556,6 +3556,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get poDPadOff => 'الأزرار: متوقفة';
 
   @override
+  String get poSnapOn => 'التقطيع: يعمل';
+
+  @override
+  String get poSnapOff => 'التقطيع: متوقف';
+
+  @override
+  String get poLayoutDPad => 'الأزرار';
+
+  @override
+  String get poLayoutTurn => 'انعطاف';
+
+  @override
   String get poSound => 'الصوت';
 
   @override

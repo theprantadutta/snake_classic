@@ -6334,6 +6334,30 @@ abstract class AppLocalizations {
   /// **'D-PAD: OFF'**
   String get poDPadOff;
 
+  /// No description provided for @poSnapOn.
+  ///
+  /// In en, this message translates to:
+  /// **'SNAP: ON'**
+  String get poSnapOn;
+
+  /// No description provided for @poSnapOff.
+  ///
+  /// In en, this message translates to:
+  /// **'SNAP: OFF'**
+  String get poSnapOff;
+
+  /// No description provided for @poLayoutDPad.
+  ///
+  /// In en, this message translates to:
+  /// **'D-PAD'**
+  String get poLayoutDPad;
+
+  /// No description provided for @poLayoutTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'TURN'**
+  String get poLayoutTurn;
+
   /// No description provided for @poSound.
   ///
   /// In en, this message translates to:

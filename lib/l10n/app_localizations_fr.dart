@@ -3611,6 +3611,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get poDPadOff => 'D-PAD : NON';
 
   @override
+  String get poSnapOn => 'CASES : OUI';
+
+  @override
+  String get poSnapOff => 'CASES : NON';
+
+  @override
+  String get poLayoutDPad => 'D-PAD';
+
+  @override
+  String get poLayoutTurn => 'VIRAGE';
+
+  @override
   String get poSound => 'SON';
 
   @override

@@ -226,6 +226,70 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     },
                   ),
 
+                  // Layout choice (only while the on-screen controls
+                  // are on) and snap movement, right under the D-pad
+                  // toggle: this is where players actually switch
+                  // controls, mid-run, not in Settings.
+                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
+                    buildWhen: (prev, curr) =>
+                        prev.dPadEnabled != curr.dPadEnabled ||
+                        prev.controlLayout != curr.controlLayout ||
+                        prev.snapMovementEnabled != curr.snapMovementEnabled,
+                    builder: (context, settings) {
+                      final cubit = context.read<GameSettingsCubit>();
+                      final snap = settings.snapMovementEnabled;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (settings.dPadEnabled) ...[
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildAudioToggle(
+                                  label: l10n.poLayoutDPad,
+                                  value: settings.controlLayout ==
+                                      ControlLayout.dPad,
+                                  onIcon: Icons.gamepad,
+                                  offIcon: Icons.gamepad_outlined,
+                                  onChanged: (_) =>
+                                      cubit.setControlLayout(ControlLayout.dPad),
+                                ),
+                                const SizedBox(width: 10),
+                                _buildAudioToggle(
+                                  label: l10n.poLayoutTurn,
+                                  value: settings.controlLayout ==
+                                      ControlLayout.turnButtons,
+                                  onIcon: Icons.turn_left_rounded,
+                                  offIcon: Icons.turn_left_rounded,
+                                  onChanged: (_) => cubit.setControlLayout(
+                                    ControlLayout.turnButtons,
+                                  ),
+                                ),
+                              ],
+                            ).gameZoomIn(delay: 328.ms),
+                          ],
+                          const SizedBox(height: 10),
+                          GradientButton(
+                            onPressed: () =>
+                                cubit.setSnapMovementEnabled(!snap),
+                            text: snap ? l10n.poSnapOn : l10n.poSnapOff,
+                            primaryColor: snap
+                                ? theme.accentColor.withValues(alpha: 0.8)
+                                : theme.accentColor.withValues(alpha: 0.5),
+                            secondaryColor: snap
+                                ? theme.accentColor.withValues(alpha: 0.6)
+                                : theme.accentColor.withValues(alpha: 0.3),
+                            icon: snap ? Icons.grid_on : Icons.grid_off,
+                            width: 170,
+                            height: 42,
+                            outlined: !snap,
+                          ).gameZoomIn(delay: 334.ms),
+                        ],
+                      );
+                    },
+                  ),
+
                   const SizedBox(height: 10),
 
                   // Sound / Music toggles — same 170px footprint as the

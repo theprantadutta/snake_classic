@@ -3566,6 +3566,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get poDPadOff => 'डी-पैड: बंद';
 
   @override
+  String get poSnapOn => 'स्नैप: चालू';
+
+  @override
+  String get poSnapOff => 'स्नैप: बंद';
+
+  @override
+  String get poLayoutDPad => 'डी-पैड';
+
+  @override
+  String get poLayoutTurn => 'मोड़';
+
+  @override
   String get poSound => 'ध्वनि';
 
   @override

@@ -3600,6 +3600,18 @@ class AppLocalizationsPl extends AppLocalizations {
   String get poDPadOff => 'D-PAD: WYŁ.';
 
   @override
+  String get poSnapOn => 'SKOKI: TAK';
+
+  @override
+  String get poSnapOff => 'SKOKI: NIE';
+
+  @override
+  String get poLayoutDPad => 'D-PAD';
+
+  @override
+  String get poLayoutTurn => 'SKRĘT';
+
+  @override
   String get poSound => 'DŹWIĘK';
 
   @override

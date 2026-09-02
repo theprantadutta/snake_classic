@@ -3589,6 +3589,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get poDPadOff => 'D-PAD: ВЫКЛ';
 
   @override
+  String get poSnapOn => 'КЛЕТКИ: ВКЛ';
+
+  @override
+  String get poSnapOff => 'КЛЕТКИ: ВЫКЛ';
+
+  @override
+  String get poLayoutDPad => 'D-PAD';
+
+  @override
+  String get poLayoutTurn => 'ПОВОРОТ';
+
+  @override
   String get poSound => 'ЗВУК';
 
   @override

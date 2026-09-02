@@ -3601,6 +3601,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get poDPadOff => 'CRUCETA: NO';
 
   @override
+  String get poSnapOn => 'CASILLAS: SÍ';
+
+  @override
+  String get poSnapOff => 'CASILLAS: NO';
+
+  @override
+  String get poLayoutDPad => 'CRUCETA';
+
+  @override
+  String get poLayoutTurn => 'GIRO';
+
+  @override
   String get poSound => 'SONIDO';
 
   @override
