@@ -119,13 +119,27 @@ class Snake {
     }
   }
 
+  /// The direction the snake will be travelling once every buffered turn
+  /// has applied — the heading a relative "turn left / turn right" input
+  /// must be measured against, so that two quick relative presses compose
+  /// into a U-shaped corner instead of both resolving off the same heading.
+  Direction get plannedDirection => _pendingDirection ?? currentDirection;
+
   /// Queues a direction change. Two turns can be buffered per tick: the
   /// first applies on the next move, the second on the move after that.
-  /// Returns `true` when the input is accepted, `false` when rejected —
-  /// either because both buffer slots are full or because the requested
-  /// move would reverse the snake into itself. Callers use the return
-  /// value to surface "denied" feedback (haptic + red flash on the
-  /// gesture indicator).
+  /// Returns `true` when the input is accepted, `false` when rejected
+  /// because the requested move would reverse the snake into itself.
+  /// Callers use the return value to surface "denied" feedback (haptic +
+  /// red flash on the gesture indicator).
+  ///
+  /// The buffer is LATEST WINS. It used to refuse a third input while both
+  /// slots were full, which was correct in a narrow sense and wrong for the
+  /// player: at the fast end of a run ticks are 50-100ms, a quick tapper
+  /// fills both slots constantly, and the third press — the one that
+  /// expresses where they actually want to go — got a red flash and a
+  /// double buzz. Now the newest press replaces the pending second turn,
+  /// and re-pressing the direction already queued first cancels the
+  /// pending turn behind it. The only refusal left is the reversal.
   bool changeDirection(Direction newDirection) {
     if (!_hasQueuedDirection) {
       // First slot. Validate against the LAST COMMITTED direction (not
@@ -141,15 +155,13 @@ class Snake {
 
     // Second slot: this turn executes AFTER currentDirection commits,
     // so validate against currentDirection.
-    if (_pendingDirection != null) {
-      return false; // both slots full
-    }
     if (newDirection == currentDirection.opposite) {
       return false;
     }
     if (newDirection == currentDirection) {
-      // Harmless no-op — the snake is already turning that way. Accept
-      // without wasting the slot so a real turn can still be buffered.
+      // The player's newest intent is the turn already queued first, so
+      // whatever was buffered behind it is no longer wanted.
+      _pendingDirection = null;
       return true;
     }
     _pendingDirection = newDirection;

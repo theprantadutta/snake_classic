@@ -82,14 +82,40 @@ void main() {
   });
 
   group('what the buffer refuses', () {
-    test('a third turn in the same tick is rejected, not silently dropped', () {
+    test('a third turn in the same tick replaces the second — latest wins', () {
+      // At 50-100ms ticks a quick tapper fills both slots constantly. The
+      // third press is the one that says where they actually want to go;
+      // refusing it with a red flash read as "the game ignored me".
       final snake = movingRight();
       expect(snake.changeDirection(Direction.up), isTrue);
       expect(snake.changeDirection(Direction.left), isTrue);
+      expect(snake.changeDirection(Direction.right), isTrue,
+          reason: 'accepted: it replaces the pending left');
+      snake.move(ateFood: false);
+      expect(snake.head, const Position(5, 4), reason: 'first turn, up');
+      snake.move(ateFood: false);
+      expect(snake.head, const Position(6, 4),
+          reason: 'then RIGHT, the newest intent — not the stale left');
+    });
 
-      // The caller uses this false to flash and buzz "denied" — the player
-      // is told the input did not land rather than left wondering.
-      expect(snake.changeDirection(Direction.down), isFalse);
+    test('re-pressing the queued turn cancels the one buffered behind it', () {
+      // up, then left, then up again: the player changed their mind about
+      // the corner. The snake should keep going up.
+      final snake = movingRight();
+      expect(snake.changeDirection(Direction.up), isTrue);
+      expect(snake.changeDirection(Direction.left), isTrue);
+      expect(snake.changeDirection(Direction.up), isTrue);
+      snake.move(ateFood: false);
+      snake.move(ateFood: false);
+      expect(snake.head, const Position(5, 3), reason: 'still heading up');
+    });
+
+    test('the replacement still cannot reverse the turn ahead of it', () {
+      final snake = movingRight();
+      snake.changeDirection(Direction.up);
+      snake.changeDirection(Direction.left);
+      expect(snake.changeDirection(Direction.down), isFalse,
+          reason: 'down would reverse the queued up');
     });
 
     test('repeating the current direction does not spend a slot', () {
@@ -122,6 +148,30 @@ void main() {
       );
     });
   });
+  group('the planned heading', () {
+    test('is the current direction with nothing buffered', () {
+      expect(movingRight().plannedDirection, Direction.right);
+    });
+
+    test('follows the last buffered turn', () {
+      final snake = movingRight();
+      snake.changeDirection(Direction.up);
+      expect(snake.plannedDirection, Direction.up);
+      snake.changeDirection(Direction.left);
+      expect(snake.plannedDirection, Direction.left);
+    });
+
+    test('settles as the turns commit', () {
+      final snake = movingRight();
+      snake.changeDirection(Direction.up);
+      snake.changeDirection(Direction.left);
+      snake.move(ateFood: false);
+      expect(snake.plannedDirection, Direction.left);
+      snake.move(ateFood: false);
+      expect(snake.plannedDirection, Direction.left);
+    });
+  });
+
   group('through the real simulation, not just the model', () {
     test('cornering with two quick swipes does not kill the snake', () {
       // The model test above proves the ordering. This proves the game loop
