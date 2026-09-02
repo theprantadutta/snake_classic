@@ -3122,6 +3122,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get ldStepAudioSub => 'ध्वनि प्रभाव लोड हो रहे हैं';
 
   @override
+  String get ldStepAds => 'इनाम तैयार हो रहे हैं...';
+
+  @override
+  String get ldStepAdsSub => 'आपका मुफ़्त पावर-अप विज्ञापन तैयार हो रहा है';
+
+  @override
   String get ldStepSetup => 'सेटअप स्थिति जाँची जा रही है...';
 
   @override

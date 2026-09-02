@@ -3149,6 +3149,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get ldStepAudioSub => 'Wczytywanie efektów dźwiękowych';
 
   @override
+  String get ldStepAds => 'Przygotowywanie nagród...';
+
+  @override
+  String get ldStepAdsSub => 'Przygotowywanie reklamy darmowego wzmocnienia';
+
+  @override
   String get ldStepSetup => 'Sprawdzanie stanu konfiguracji...';
 
   @override

@@ -907,6 +907,8 @@
   "ldStepGameDataSub": "Obteniendo datos del juego",
   "ldStepAudio": "Configurando el sistema de audio...",
   "ldStepAudioSub": "Cargando efectos de sonido",
+  "ldStepAds": "Preparando recompensas...",
+  "ldStepAdsSub": "Preparando tu anuncio de potenciador gratis",
   "ldStepSetup": "Comprobando el estado de configuración...",
   "ldStepSetupSub": "¡Casi listo!",
   "ldWelcome": "¡Bienvenido!",

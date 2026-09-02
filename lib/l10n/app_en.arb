@@ -1040,6 +1040,8 @@
   "ldStepGameDataSub": "Fetching Game Data",
   "ldStepAudio": "Configuring audio system...",
   "ldStepAudioSub": "Loading sound effects",
+  "ldStepAds": "Warming up rewards...",
+  "ldStepAdsSub": "Getting your free power-up ad ready",
   "ldStepSetup": "Checking setup status...",
   "ldStepSetupSub": "Almost ready!",
   "ldWelcome": "Welcome!",

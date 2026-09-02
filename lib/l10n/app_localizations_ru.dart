@@ -3141,6 +3141,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ldStepAudioSub => 'Загрузка звуковых эффектов';
 
   @override
+  String get ldStepAds => 'Подготовка наград...';
+
+  @override
+  String get ldStepAdsSub => 'Готовим рекламу бесплатного усиления';
+
+  @override
   String get ldStepSetup => 'Проверка состояния настройки...';
 
   @override

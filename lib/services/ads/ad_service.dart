@@ -112,6 +112,10 @@ class AdService {
   static const _kFirstGameOverDone = 'ads_first_session_done';
 
   bool _initialized = false;
+  // Set once [initialize] has run to completion (success or failure), so a
+  // caller waiting on the first rewarded fill can tell "ads are off" apart
+  // from "ads aren't on YET". See [waitForRewardedReady].
+  bool _initFinished = false;
   bool _sdkReady = false;
   bool _consentGathered = false;
   // UMP's verdict on whether ad requests are allowed at all (e.g. an EEA user
@@ -391,7 +395,11 @@ class AdService {
     } catch (e) {
       AppLogger.error('AdService init failed', e);
     } finally {
+      _initFinished = true;
       _notifyAdsEnabled();
+      // Re-evaluate readiness now that the verdict is final, so anything in
+      // [waitForRewardedReady] stops waiting when ads turned out to be off.
+      _notifyRewardedReady();
     }
   }
 
@@ -755,6 +763,50 @@ class AdService {
   /// Eagerly (re)load a rewarded ad — call when entering a screen that offers
   /// one, so it's ready by the time the user taps.
   void preloadRewarded() => _loadRewarded();
+
+  /// Wait for the first rewarded ad to be loaded, bounded by [timeout].
+  ///
+  /// Used by the loading screen so a free user reaches Home with an ad
+  /// already in the pool — tapping the Free button then shows it at once
+  /// instead of meeting "no ad ready". The loads themselves were already
+  /// kicked off from main() via [initialize]; this only waits for the fill.
+  ///
+  /// Resolves `true` the moment a rewarded ad is ready. Resolves `false`
+  /// early — without burning the whole timeout — when there is nothing to
+  /// wait for: not a mobile platform, a Pro user, or init finished with ads
+  /// disabled (no consent, SDK failure). Never throws.
+  Future<bool> waitForRewardedReady({required Duration timeout}) async {
+    if (isRewardedReady) return true;
+    if (!_isMobile || _isPro) return false;
+    if (_initFinished && !adsEnabled) return false;
+    if (!_hasInternet) return false;
+
+    final done = Completer<bool>();
+    void check() {
+      if (done.isCompleted) return;
+      if (isRewardedReady) {
+        done.complete(true);
+      } else if (_initFinished && !adsEnabled) {
+        done.complete(false);
+      }
+    }
+
+    _rewardedReadyNotifier.addListener(check);
+    _adsEnabledNotifier.addListener(check);
+    try {
+      // A load may already be in flight from initialize(); this is a no-op
+      // then, and the real request when init finished before the pool
+      // filled (e.g. a failed load sitting in backoff).
+      if (adsEnabled) _loadRewarded();
+      check();
+      return await done.future.timeout(timeout, onTimeout: () => false);
+    } catch (_) {
+      return false;
+    } finally {
+      _rewardedReadyNotifier.removeListener(check);
+      _adsEnabledNotifier.removeListener(check);
+    }
+  }
 
   /// Show the rewarded ad. [onReward] fires only if the user earned the reward
   /// (watched to completion) AND **after the ad is dismissed** — never while

@@ -5512,6 +5512,18 @@ abstract class AppLocalizations {
   /// **'Loading sound effects'**
   String get ldStepAudioSub;
 
+  /// No description provided for @ldStepAds.
+  ///
+  /// In en, this message translates to:
+  /// **'Warming up rewards...'**
+  String get ldStepAds;
+
+  /// No description provided for @ldStepAdsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting your free power-up ad ready'**
+  String get ldStepAdsSub;
+
   /// No description provided for @ldStepSetup.
   ///
   /// In en, this message translates to:

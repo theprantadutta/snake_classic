@@ -3113,6 +3113,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ldStepAudioSub => 'تحميل المؤثرات الصوتية';
 
   @override
+  String get ldStepAds => 'تجهيز المكافآت...';
+
+  @override
+  String get ldStepAdsSub => 'تحضير إعلان الطاقة المجانية';
+
+  @override
   String get ldStepSetup => 'التحقق من حالة الإعداد...';
 
   @override

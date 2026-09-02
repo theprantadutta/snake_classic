@@ -3159,6 +3159,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ldStepAudioSub => 'Chargement des effets sonores';
 
   @override
+  String get ldStepAds => 'Préparation des récompenses...';
+
+  @override
+  String get ldStepAdsSub => 'Préparation de votre pub bonus gratuit';
+
+  @override
   String get ldStepSetup => 'Vérification de la configuration...';
 
   @override

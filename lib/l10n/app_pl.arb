@@ -907,6 +907,8 @@
   "ldStepGameDataSub": "Pobieranie danych gry",
   "ldStepAudio": "Konfigurowanie systemu audio...",
   "ldStepAudioSub": "Wczytywanie efektów dźwiękowych",
+  "ldStepAds": "Przygotowywanie nagród...",
+  "ldStepAdsSub": "Przygotowywanie reklamy darmowego wzmocnienia",
   "ldStepSetup": "Sprawdzanie stanu konfiguracji...",
   "ldStepSetupSub": "Prawie gotowe!",
   "ldWelcome": "Witaj!",

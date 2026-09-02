@@ -1222,8 +1222,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    // No ad loaded → explain why, don't just do nothing.
-    if (!ads.isRewardedReady) {
+    // Deliberately NOT gated on isRewardedReady. The loading screen warms a
+    // rewarded ad for free users, so the pool is normally full here; on the
+    // rare miss, showRewardedOrWait triggers the load and waits it out, and
+    // only THEN reports "no ad" — instead of turning the tap away up front.
+    if (!ads.adsEnabled) {
       messenger.showSnackBar(
         arcadeSnackBar(context, message: l10n.homeNoAdReady),
       );
@@ -1272,15 +1275,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
     if (confirmed != true) return;
 
-    final granted = await ads.showRewardedFor(
+    final outcome = await ads.showRewardedOrWait(
       placement: AdService.placementFreePowerUp,
       onReward: powerUps.grantFreePowerUp,
+      onWaitStart: () => messenger.showSnackBar(
+        arcadeSnackBarFor(theme, message: l10n.rvoLoadingAd),
+      ),
     );
 
     // Confirm the reward (fires after the ad is dismissed). If the user closed
     // the ad early, tell them no reward was given rather than leaving them
-    // guessing.
-    if (granted) {
+    // guessing; if no ad could be fetched at all, say that instead.
+    if (outcome == RewardedOutcome.unavailable) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        arcadeSnackBarFor(theme, message: l10n.homeNoAdReady),
+      );
+    } else if (outcome == RewardedOutcome.rewarded) {
       showRewardToast(
         messenger,
         l10n.homeFreeSpeedBoostAdded,

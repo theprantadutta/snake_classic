@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/services/achievement_service.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -70,6 +71,12 @@ class _LoadingScreenState extends State<LoadingScreen>
   /// timer guarantees the user reaches the game.
   Timer? _watchdogTimer;
   static const Duration _initWatchdog = Duration(seconds: 18);
+
+  /// How long the loading screen is willing to hold for the FIRST rewarded ad
+  /// to fill, measured from the start of init (the wait overlaps every other
+  /// step, so it only extends the screen when the fill is slower than the
+  /// rest of startup). Free users only — see [_beginRewardedAdWarmup].
+  static const Duration _rewardedWarmupBudget = Duration(seconds: 8);
 
   /// Guards against a double navigation when the watchdog fires at the same
   /// moment init finishes.
@@ -192,6 +199,11 @@ class _LoadingScreenState extends State<LoadingScreen>
       await _updateProgress(0.1, _InitStep.core);
       await _initializeCoreServices();
 
+      // Start waiting for the first rewarded ad NOW so the wait overlaps
+      // the profile / cloud / game-data steps below; it is awaited at the
+      // dedicated ads step. Pro users and non-mobile resolve immediately.
+      final rewardedWarmup = _beginRewardedAdWarmup();
+
       // Step 2: Initialize User System
       await _updateProgress(0.25, _InitStep.profile);
       await _initializeUserSystem();
@@ -218,7 +230,12 @@ class _LoadingScreenState extends State<LoadingScreen>
         _drainSyncQueue(),
       ]);
 
-      // Step 6: Initialize Audio System
+      // Step 6: Free users — hold (bounded) for the first rewarded ad so
+      // Home's Free button pops the ad instantly instead of "no ad ready".
+      await _updateProgress(0.80, _InitStep.ads);
+      await rewardedWarmup;
+
+      // Step 7: Initialize Audio System
       await _updateProgress(0.90, _InitStep.audio);
       await _initializeAudio();
 
@@ -441,6 +458,27 @@ class _LoadingScreenState extends State<LoadingScreen>
     }
   }
 
+  /// Kick off the bounded wait for a rewarded fill. Never throws and never
+  /// blocks a Pro user, a desktop/web build, or an offline device — all of
+  /// those resolve at once inside [AdService.waitForRewardedReady].
+  Future<void> _beginRewardedAdWarmup() async {
+    try {
+      if (!getIt.isRegistered<AdService>()) return;
+      final ready = await getIt<AdService>().waitForRewardedReady(
+        timeout: _rewardedWarmupBudget,
+      );
+      if (ready) {
+        AppLogger.success('Rewarded ad warmed up before Home');
+      } else {
+        AppLogger.info(
+          'Rewarded ad not ready before Home — continuing (loads in background)',
+        );
+      }
+    } catch (e) {
+      AppLogger.warning('Rewarded ad warmup skipped: $e');
+    }
+  }
+
   Future<void> _initializeAudio() async {
     try {
       AppLogger.audio('Verifying audio service');
@@ -594,6 +632,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         _InitStep.prefs => l10n.ldStepPrefs,
         _InitStep.cloud => l10n.ldStepCloud,
         _InitStep.gameData => l10n.ldStepGameData,
+        _InitStep.ads => l10n.ldStepAds,
         _InitStep.audio => l10n.ldStepAudio,
         _InitStep.setup => l10n.ldStepSetup,
         _InitStep.welcome => l10n.ldWelcome,
@@ -609,6 +648,7 @@ class _LoadingScreenState extends State<LoadingScreen>
         _InitStep.prefs => l10n.ldStepPrefsSub,
         _InitStep.cloud => l10n.ldStepCloudSub,
         _InitStep.gameData => l10n.ldStepGameDataSub,
+        _InitStep.ads => l10n.ldStepAdsSub,
         _InitStep.audio => l10n.ldStepAudioSub,
         _InitStep.setup => l10n.ldStepSetupSub,
         _InitStep.welcome => l10n.ldWelcomeSub,
@@ -1480,6 +1520,7 @@ enum _InitStep {
   prefs,
   cloud,
   gameData,
+  ads,
   audio,
   setup,
   welcome,

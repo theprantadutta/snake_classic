@@ -907,6 +907,8 @@
   "ldStepGameDataSub": "Récupération des données de jeu",
   "ldStepAudio": "Configuration du système audio...",
   "ldStepAudioSub": "Chargement des effets sonores",
+  "ldStepAds": "Préparation des récompenses...",
+  "ldStepAdsSub": "Préparation de votre pub bonus gratuit",
   "ldStepSetup": "Vérification de la configuration...",
   "ldStepSetupSub": "Presque prêt !",
   "ldWelcome": "Bienvenue !",
