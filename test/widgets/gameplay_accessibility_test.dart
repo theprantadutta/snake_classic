@@ -359,15 +359,29 @@ void main() {
         ),
       );
 
-      final gestureLayer = tester.widget<GestureDetector>(
-        find
-            .descendant(
-              of: find.byType(DPadControls),
-              matching: find.byType(GestureDetector),
-            )
-            .first,
+      final handle = tester.ensureSemantics();
+      final inPad = find.byType(DPadControls);
+
+      // The pointer layer is a raw Listener, which contributes nothing to
+      // the semantics tree — there is no GestureDetector left to exclude.
+      expect(
+        find.descendant(of: inPad, matching: find.byType(GestureDetector)),
+        findsNothing,
       );
-      expect(gestureLayer.excludeFromSemantics, isTrue);
+      expect(
+        find.descendant(of: inPad, matching: find.byType(Listener)),
+        findsOneWidget,
+      );
+
+      // What IS announced is exactly the four labelled arms.
+      final announcedButtons = find.descendant(
+        of: inPad,
+        matching: find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.button == true,
+        ),
+      );
+      expect(announcedButtons, findsNWidgets(4));
+      handle.dispose();
     });
   });
 

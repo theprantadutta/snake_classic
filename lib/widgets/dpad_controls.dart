@@ -7,12 +7,23 @@ import 'package:snake_classic/utils/direction.dart';
 /// Provides an alternative to swipe controls for users who prefer buttons.
 ///
 /// Hit testing is deliberately NOT per-button. The four circles are pure
-/// visuals; a single gesture layer spans the whole square and resolves the
+/// visuals; a single pointer layer spans the whole square and resolves the
 /// touch point to a quadrant. Four discrete button hit boxes only covered
 /// ~45% of the control's footprint - every diagonal gap between them was
 /// inert - and they only accepted taps, so sliding a thumb from up to right
 /// never registered the second turn. Both read to players as the game
 /// ignoring their input.
+///
+/// The pointer layer is a raw [Listener], not a GestureDetector. This is the
+/// part that matters for feel. A GestureDetector with tap AND pan handlers
+/// puts two recognisers into the gesture arena for every press, and Flutter
+/// withholds the tap's down callback until the arena settles: for a finger
+/// that lands and holds, that is the 100ms press timeout; for a quick tap, it
+/// is the release. The pan side only spoke up after the touch slop, so a
+/// slide-through lost its FIRST direction altogether. Every d-pad press was
+/// therefore reaching the game late, on top of the tick it then had to wait
+/// for — and "the d-pad feels laggy" was the most common review complaint.
+/// A Listener has no arena. The direction fires on the down event itself.
 class DPadControls extends StatefulWidget {
   final Function(Direction) onDirection;
   final GameTheme theme;
@@ -40,6 +51,12 @@ class _DPadControlsState extends State<DPadControls> {
   /// cubit every frame; cleared on release so re-tapping the same button
   /// still counts as a fresh input.
   Direction? _lastFiredDirection;
+
+  /// The pointer that is steering right now. Latest press wins: a second
+  /// finger landing while the first is still held takes over, exactly as a
+  /// physical pad reads the newest press, and the first finger's release
+  /// or movement is then ignored rather than ending the live gesture.
+  int? _activePointer;
 
   /// Resolve a local touch point to a direction, splitting the square on its
   /// diagonals so 100% of the footprint is live. Returns null only inside a
@@ -82,6 +99,25 @@ class _DPadControlsState extends State<DPadControls> {
     _lastFiredDirection = null;
   }
 
+  void _onPointerDown(PointerDownEvent event) {
+    _activePointer = event.pointer;
+    _handlePointer(event.localPosition);
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _activePointer) return;
+    // The Listener keeps delivering moves after the finger leaves its box,
+    // so a thumb that drifts past the edge still resolves to the nearest
+    // arm instead of dropping the press mid-corner.
+    _handlePointer(event.localPosition);
+  }
+
+  void _onPointerEnd(PointerEvent event) {
+    if (event.pointer != _activePointer) return;
+    _activePointer = null;
+    _releasePointer();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Button ratio dialled to 0.38 — the geometric ceiling for this
@@ -95,25 +131,18 @@ class _DPadControlsState extends State<DPadControls> {
     final spacing = widget.size * 0.04;
     final hubSize = widget.size * 0.10;
 
-    return GestureDetector(
+    return Listener(
       // Opaque so presses anywhere in the square are captured, including
       // the gaps that used to fall through to the bar behind.
       behavior: HitTestBehavior.opaque,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerEnd,
+      onPointerCancel: _onPointerEnd,
       // Quadrant resolution is meaningless to a screen reader — where you
-      // touched inside the square is the whole input. The accessible
-      // control is the four labelled buttons underneath, each of which
-      // carries its own tap action.
-      excludeFromSemantics: true,
-      onTapDown: (details) => _handlePointer(details.localPosition),
-      onTapUp: (_) => _releasePointer(),
-      onTapCancel: _releasePointer,
-      // Pan handlers give slide-through: keeping the thumb down and moving
-      // from one quadrant to the next fires each turn in sequence, which is
-      // how a real d-pad behaves when taking a corner.
-      onPanStart: (details) => _handlePointer(details.localPosition),
-      onPanUpdate: (details) => _handlePointer(details.localPosition),
-      onPanEnd: (_) => _releasePointer(),
-      onPanCancel: _releasePointer,
+      // touched inside the square is the whole input. A Listener adds no
+      // semantics of its own; the accessible control is the four labelled
+      // buttons underneath, each of which carries its own tap action.
       child: Container(
         width: widget.size,
         height: widget.size,
@@ -188,9 +217,9 @@ class _DPadControlsState extends State<DPadControls> {
     required double buttonSize,
   }) {
     // The accessible half of the control. Sighted players drive the single
-    // quadrant gesture layer above; assistive tech gets four ordinary
-    // labelled buttons with real tap actions, which is the only way to
-    // steer without being able to aim at a quadrant.
+    // pointer layer above; assistive tech gets four ordinary labelled
+    // buttons with real tap actions, which is the only way to steer without
+    // being able to aim at a quadrant.
     return Semantics(
       button: true,
       label: _labelFor(context, direction),
@@ -221,7 +250,7 @@ class _DPadControlsState extends State<DPadControls> {
 }
 
 /// Pure visual for one arm of the d-pad. Pointer handling lives in the
-/// parent's single gesture layer.
+/// parent's single pointer layer.
 class _DPadButton extends StatelessWidget {
   final IconData icon;
   final double size;
