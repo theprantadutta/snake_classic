@@ -4,16 +4,16 @@ A premium, modern implementation of the classic Snake game built with Flutter, f
 
 ## 📲 Download
 
-<div align="center">
-
-<a href="https://play.google.com/store/apps/details?id=com.pranta.snakeclassic">
-  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80" alt="Get it on Google Play">
-</a>
-<a href="https://apps.apple.com/us/app/snake-classic-retro-arcade/id6779621362">
-  <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" height="55" alt="Download on the App Store">
-</a>
-
-</div>
+<table align="center" border="0">
+  <tr>
+    <td align="center" valign="middle">
+      <a href="https://play.google.com/store/apps/details?id=com.pranta.snakeclassic"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60" alt="Get it on Google Play"></a>
+    </td>
+    <td align="center" valign="middle">
+      <a href="https://apps.apple.com/us/app/snake-classic-retro-arcade/id6779621362"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" height="40" alt="Download on the App Store"></a>
+    </td>
+  </tr>
+</table>
 
 - **Google Play:** [com.pranta.snakeclassic](https://play.google.com/store/apps/details?id=com.pranta.snakeclassic)
 - **App Store:** [Snake Classic - Retro Arcade](https://apps.apple.com/us/app/snake-classic-retro-arcade/id6779621362)
