@@ -75,6 +75,12 @@ class MultiplayerFlameGame extends FlameGame {
 
   double get worldSize => boardSize * GameConstants.cellSize;
 
+  /// Flame paints this behind the world before anything renders. The
+  /// default is black, which is exactly the flat black board this used to
+  /// show while the viewport was still settling.
+  @override
+  Color backgroundColor() => theme.backgroundColor;
+
   /// Pulse in [0.9, 1.1] over a 2s period (matches the legacy pulse tween).
   double get pulse {
     final p = (_elapsed % 2.0) / 2.0;

@@ -7,7 +7,7 @@ import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/board_frame.dart';
 
 /// The single-player gameplay board, rendered with the Flame engine.
 ///
@@ -53,46 +53,6 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
   /// four stacked shadows that made the playfield look like a separate,
   /// zoomed-in panel floating over the scene. Tournament mode keeps its
   /// purple/gold identity, similarly slimmed.
-  BoxDecoration _boardFrameDecoration(GameTheme theme) {
-    return BoxDecoration(
-      border: Border.all(
-        color: widget.isTournamentMode
-            ? Colors.purple.withValues(alpha: 0.55)
-            : theme.accentColor.withValues(alpha: 0.35),
-        width: widget.isTournamentMode ? 2.0 : 1.5,
-      ),
-      borderRadius: BorderRadius.circular(0),
-      boxShadow: widget.isTournamentMode
-          ? [
-              BoxShadow(
-                color: Colors.purple.withValues(alpha: 0.22),
-                blurRadius: 18,
-                offset: const Offset(0, 0),
-              ),
-              BoxShadow(
-                color: Colors.amber.withValues(alpha: 0.12),
-                blurRadius: 28,
-                spreadRadius: 2,
-                offset: const Offset(0, 0),
-              ),
-            ]
-          : [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.16),
-                blurRadius: 18,
-                spreadRadius: -2,
-                offset: const Offset(0, 0),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 14,
-                spreadRadius: 0,
-                offset: const Offset(0, 6),
-              ),
-            ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeCubit, ThemeState>(
@@ -138,46 +98,20 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                 // playfield has no visible edge. Mirrors GameBoard's decorated
                 // Container so both renderers frame the board identically.
                 return RepaintBoundary(
-                  // Corner brackets on the arena, the same mark a settings
-                  // panel wears — this is the frame around the playfield, so
-                  // it gets the language too.
-                  //
-                  // Everything about them is chosen to cost the game nothing:
-                  // they are static, they sit OUTSIDE the wall line in the
-                  // padding the game screen already leaves, and they never
-                  // overlap a cell the snake can occupy. Nothing inside the
-                  // frame animates — a moving thing in there competes with
-                  // the only object the player is tracking.
-                  //
-                  // inset 4 rather than the card default of 10: the board
-                  // deliberately carries no margin of its own, so there is
-                  // only the slot's padding to reach into.
-                  child: HudCorners(
-                    color: widget.isTournamentMode
-                        ? Colors.purple
-                        : themeState.currentTheme.accentColor,
-                    inset: 4,
-                    arm: 16,
-                    clipBehavior: Clip.none,
-                    child: Container(
-                      // No extra margin: the game screen already pads the
-                      // board slot; the old 8px on top of that shrank the
-                      // playfield and deepened the floating-panel look.
-                      margin: EdgeInsets.zero,
-                      decoration: _boardFrameDecoration(
-                        themeState.currentTheme,
+                  // Frame + corner brackets live in BoardFrame, shared
+                  // with the multiplayer board so both read as the same
+                  // object. See that widget for the reasoning behind the
+                  // inset/arm values.
+                  child: BoardFrame(
+                    theme: themeState.currentTheme,
+                    tournament: widget.isTournamentMode,
+                    child: GameWidget(
+                      key: ValueKey(
+                        gs == null
+                            ? 'none'
+                            : '${gs.boardWidth}x${gs.boardHeight}',
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(0),
-                        child: GameWidget(
-                          key: ValueKey(
-                            gs == null
-                                ? 'none'
-                                : '${gs.boardWidth}x${gs.boardHeight}',
-                          ),
-                          game: _game,
-                        ),
-                      ),
+                      game: _game,
                     ),
                   ),
                 );

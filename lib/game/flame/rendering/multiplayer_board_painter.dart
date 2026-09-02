@@ -38,11 +38,38 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Base fill + ambient wash, mirroring LegacyBoardComponent so the two
+    // playfields are the same surface. Without the fill the Flame canvas
+    // showed through as flat black — the board looked like a hole cut in
+    // the screen rather than part of it.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = theme.backgroundColor,
+    );
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = RadialGradient(
+          center: Alignment.topRight,
+          radius: 1.5,
+          colors: [
+            theme.accentColor.withValues(alpha: 0.10),
+            theme.accentColor.withValues(alpha: 0.03),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.4, 0.8],
+        ).createShader(Offset.zero & size),
+    );
+
     final cellWidth = size.width / boardSize;
     final cellHeight = size.height / boardSize;
 
+    // Grid weight matches GameBoardBackgroundPainter: a touch louder on the
+    // grid-forward themes, a texture rather than a feature everywhere else.
+    final gridForward =
+        theme == GameTheme.neon || theme == GameTheme.cyberpunk;
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.08)
+      ..color = theme.accentColor.withValues(alpha: gridForward ? 0.12 : 0.07)
       ..strokeWidth = lineWidth;
 
     // Draw vertical lines

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -606,14 +607,48 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                               // column, so a drag starting
                                               // on the versus header or the
                                               // control strip could steer.
-                                              child: SwipeDetector(
-                                                onSwipe: _handleSwipe,
-                                                child: MultiplayerFlameBoard(
-                                                  snapshot: snapshot,
-                                                  boardSize: multiplayerState
-                                                      .boardSize,
-                                                  currentUserId: currentUserId,
-                                                ),
+                                              // The board is square; size
+                                              // it HERE and centre it, so
+                                              // the frame wraps the
+                                              // playfield exactly. Letting
+                                              // the frame fill the tall
+                                              // slot and squaring the
+                                              // board inside it left dead
+                                              // bands above and below.
+                                              child: LayoutBuilder(
+                                                builder: (context, c) {
+                                                  final cap = context
+                                                      .responsive<double>(
+                                                        phone: double.infinity,
+                                                        tablet: 640,
+                                                        largeTablet: 820,
+                                                      );
+                                                  final side = math.min(
+                                                    math.min(
+                                                      c.maxWidth,
+                                                      c.maxHeight,
+                                                    ),
+                                                    cap,
+                                                  );
+                                                  return Center(
+                                                    child: SizedBox(
+                                                      width: side,
+                                                      height: side,
+                                                      child: SwipeDetector(
+                                                        onSwipe: _handleSwipe,
+                                                        child:
+                                                            MultiplayerFlameBoard(
+                                                          snapshot: snapshot,
+                                                          boardSize:
+                                                              multiplayerState
+                                                                  .boardSize,
+                                                          currentUserId:
+                                                              currentUserId,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           ),
