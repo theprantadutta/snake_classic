@@ -314,6 +314,31 @@ class AppLocalizationsHi extends AppLocalizations {
       'मूल गेम की तरह एक-एक सेल चलें। मोड़ दबाते ही लगते हैं।';
 
   @override
+  String get settingsControlLayout => 'बटन लेआउट';
+
+  @override
+  String get settingsControlLayoutDPad => 'डी-पैड';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'ऊपर, नीचे, बाएँ, दाएँ';
+
+  @override
+  String get settingsControlLayoutTurn => 'मोड़ बटन';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'अपनी दिशा से बाएँ या दाएँ मुड़ें। कभी उल्टा नहीं।';
+
+  @override
+  String get gameTurnLeft => 'बाएँ मुड़ें';
+
+  @override
+  String get gameTurnRight => 'दाएँ मुड़ें';
+
+  @override
+  String get gameTurnControls => 'मोड़ बटन';
+
+  @override
   String get settingsDPadPosition => 'डी-पैड स्थिति';
 
   @override

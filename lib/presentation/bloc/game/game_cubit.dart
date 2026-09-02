@@ -653,6 +653,17 @@ class GameCubit extends Cubit<GameCubitState> {
   ///
   /// Haptics stay here. One owner, so the three entry points cannot each add
   /// their own.
+  /// Where a relative turn would send the snake: a quarter turn off the
+  /// heading it will have once every buffered turn has applied, so two
+  /// quick presses compose into a corner. Null with no game to steer.
+  /// The screen feeds the answer to [changeDirection] like any swipe,
+  /// which keeps one owner for acceptance, haptics and the indicators.
+  Direction? relativeTarget(RelativeTurn turn) {
+    final snake = state.gameState?.snake;
+    if (snake == null) return null;
+    return turn.applyTo(snake.plannedDirection);
+  }
+
   InputResult changeDirection(Direction newDirection) {
     if (state.status != GamePlayStatus.playing) return InputResult.ignored;
     if (state.gameState == null) return InputResult.ignored;

@@ -317,6 +317,31 @@ class AppLocalizationsIt extends AppLocalizations {
       'Muoviti cella per cella come nell\'originale. Le curve avvengono all\'istante.';
 
   @override
+  String get settingsControlLayout => 'Disposizione dei pulsanti';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Su, giù, sinistra, destra';
+
+  @override
+  String get settingsControlLayoutTurn => 'Pulsanti di svolta';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Svolta a sinistra o a destra rispetto alla tua direzione. Mai un\'inversione.';
+
+  @override
+  String get gameTurnLeft => 'Svolta a sinistra';
+
+  @override
+  String get gameTurnRight => 'Svolta a destra';
+
+  @override
+  String get gameTurnControls => 'Pulsanti di svolta';
+
+  @override
   String get settingsDPadPosition => 'Posizione del D-Pad';
 
   @override

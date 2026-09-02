@@ -316,6 +316,31 @@ class AppLocalizationsPt extends AppLocalizations {
       'Mova-se célula a célula como no original. As curvas acontecem na hora.';
 
   @override
+  String get settingsControlLayout => 'Disposição dos botões';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Cima, baixo, esquerda, direita';
+
+  @override
+  String get settingsControlLayoutTurn => 'Botões de curva';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Vire à esquerda ou à direita a partir do seu rumo. Nunca marcha a ré.';
+
+  @override
+  String get gameTurnLeft => 'Virar à esquerda';
+
+  @override
+  String get gameTurnRight => 'Virar à direita';
+
+  @override
+  String get gameTurnControls => 'Botões de curva';
+
+  @override
   String get settingsDPadPosition => 'Posição do D-Pad';
 
   @override

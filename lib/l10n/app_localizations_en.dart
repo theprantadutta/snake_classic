@@ -314,6 +314,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Move cell by cell like the original. Turns land the instant you press.';
 
   @override
+  String get settingsControlLayout => 'Button Layout';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Up, down, left, right';
+
+  @override
+  String get settingsControlLayoutTurn => 'Turn Buttons';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Turn left or right from where you\'re heading. Never a reversal.';
+
+  @override
+  String get gameTurnLeft => 'Turn left';
+
+  @override
+  String get gameTurnRight => 'Turn right';
+
+  @override
+  String get gameTurnControls => 'Turn buttons';
+
+  @override
   String get settingsDPadPosition => 'D-Pad Position';
 
   @override

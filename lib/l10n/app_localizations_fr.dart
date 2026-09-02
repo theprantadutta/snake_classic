@@ -317,6 +317,31 @@ class AppLocalizationsFr extends AppLocalizations {
       'Avance case par case comme l\'original. Les virages sont instantanés.';
 
   @override
+  String get settingsControlLayout => 'Disposition des boutons';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Haut, bas, gauche, droite';
+
+  @override
+  String get settingsControlLayoutTurn => 'Boutons de virage';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Tournez à gauche ou à droite depuis votre cap. Jamais de demi-tour.';
+
+  @override
+  String get gameTurnLeft => 'Tourner à gauche';
+
+  @override
+  String get gameTurnRight => 'Tourner à droite';
+
+  @override
+  String get gameTurnControls => 'Boutons de virage';
+
+  @override
   String get settingsDPadPosition => 'Position du D-Pad';
 
   @override

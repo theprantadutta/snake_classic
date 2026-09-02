@@ -21,6 +21,7 @@ import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
 import 'package:snake_classic/widgets/game_circle_button.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
+import 'package:snake_classic/widgets/turn_buttons.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -104,6 +105,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   String? get _currentUserId => context.read<AuthCubit>().state.userId;
+
+  /// A press on the two-button layout, resolved off my snake's heading
+  /// and then handled exactly like a swipe.
+  void _handleRelativeTurn(RelativeTurn turn) {
+    final target = context.read<MultiplayerCubit>().relativeTarget(turn);
+    if (target != null) _handleSwipe(target);
+  }
 
   void _handleSwipe(Direction direction) {
     // One result, one owner of the feedback.
@@ -1294,6 +1302,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final settings = context.watch<GameSettingsCubit>().state;
     final dPadEnabled = settings.dPadEnabled;
     final dPadPosition = settings.dPadPosition;
+    final turnButtons = settings.controlLayout == ControlLayout.turnButtons;
     final dpadSize = 120.0 * context.uiScale;
 
     // Whether this player can steer AT ALL right now — dead, ended, or
@@ -1314,13 +1323,26 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         ),
       ),
       child: dPadEnabled
-          ? _buildDPadRow(
-              theme: theme,
-              dpadSize: dpadSize,
-              dPadPosition: dPadPosition,
-              canSteer: canSteer,
-              snakeLength: mySnake?.body.length ?? 0,
-            )
+          ? (turnButtons
+                ? SteerableTurnButtons(
+                    onTurn: _handleRelativeTurn,
+                    theme: theme,
+                    height: dpadSize,
+                    canSteer: canSteer,
+                    centre: _statPill(
+                      theme,
+                      Icons.straighten,
+                      AppLocalizations.of(context)!.mpLength,
+                      '${mySnake?.body.length ?? 0}',
+                    ),
+                  )
+                : _buildDPadRow(
+                    theme: theme,
+                    dpadSize: dpadSize,
+                    dPadPosition: dPadPosition,
+                    canSteer: canSteer,
+                    snakeLength: mySnake?.body.length ?? 0,
+                  ))
           : Row(
               children: [
                 _statPill(

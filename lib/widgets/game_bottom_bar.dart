@@ -6,6 +6,7 @@ import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
+import 'package:snake_classic/widgets/turn_buttons.dart';
 
 /// The bar under the board. Two shapes, one per control mode:
 ///
@@ -31,6 +32,8 @@ class GameBottomBar extends StatelessWidget {
     required this.dPadEnabled,
     required this.onDirection,
     this.dPadPosition = DPadPosition.bottomCenter,
+    this.controlLayout = ControlLayout.dPad,
+    this.onRelativeTurn,
     this.canSteerOverride,
   });
 
@@ -53,6 +56,11 @@ class GameBottomBar extends StatelessWidget {
   /// Centre stays the default, and existing saved values start working as-is;
   /// nothing about them needed migrating.
   final DPadPosition dPadPosition;
+
+  /// Which on-screen control [dPadEnabled] draws. Turn buttons need
+  /// [onRelativeTurn]; without it the bar falls back to the d-pad.
+  final ControlLayout controlLayout;
+  final void Function(RelativeTurn)? onRelativeTurn;
 
   // Convert game speed (ms per tick) to human-readable label
   String _getSpeedLabel(AppLocalizations l10n, int gameSpeed) {
@@ -113,15 +121,22 @@ class GameBottomBar extends StatelessWidget {
           vertical: dPadEnabled ? verticalPadding : 4 * scale,
         ),
         child: dPadEnabled
-            // D-Pad on: center reserves the dpadSize square, side stats
-            // shrink to fit the remaining columns. Compact cards aligned
-            // to the outer edges so the d-pad has breathing room.
-            ? _buildDPadRow(
-                context,
-                l10n: l10n,
-                dpadSize: dpadSize,
-                isInteractive: isInteractive,
-              )
+            // On-screen controls on. Turn buttons take both ends of the
+            // bar with the readouts between them; the d-pad reserves its
+            // square and the side stats shrink to the remaining columns.
+            ? (controlLayout == ControlLayout.turnButtons &&
+                      onRelativeTurn != null
+                  ? _buildTurnButtonsRow(
+                      l10n: l10n,
+                      height: dpadSize,
+                      isInteractive: isInteractive,
+                    )
+                  : _buildDPadRow(
+                      context,
+                      l10n: l10n,
+                      dpadSize: dpadSize,
+                      isInteractive: isInteractive,
+                    ))
             // D-Pad off: one slim inline strip instead of three stacked
             // cards.
             //
@@ -198,6 +213,42 @@ class GameBottomBar extends StatelessWidget {
   /// move the d-pad to that edge and put both stats together on the other
   /// side, which keeps the thumb's half of the bar clear of anything it might
   /// brush past on the way to a turn.
+  /// Turn buttons fill both ends of the bar; the readouts sit between
+  /// them, stacked, so the buttons keep the full bar height.
+  Widget _buildTurnButtonsRow({
+    required AppLocalizations l10n,
+    required double height,
+    required bool isInteractive,
+  }) {
+    return SteerableTurnButtons(
+      onTurn: onRelativeTurn!,
+      theme: theme,
+      height: height,
+      canSteer: isInteractive,
+      centre: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildInlineStat(
+              '${gameState.snake.length}',
+              Icons.straighten,
+              theme,
+              isSmallScreen,
+            ),
+            const SizedBox(height: 8),
+            _buildInlineStat(
+              _getSpeedLabel(l10n, gameState.gameSpeed),
+              _getSpeedIcon(gameState.gameSpeed),
+              theme,
+              isSmallScreen,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDPadRow(
     BuildContext context, {
     required AppLocalizations l10n,

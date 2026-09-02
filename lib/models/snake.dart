@@ -125,6 +125,12 @@ class Snake {
   /// into a U-shaped corner instead of both resolving off the same heading.
   Direction get plannedDirection => _pendingDirection ?? currentDirection;
 
+  /// How many turns are buffered ahead of the next move, 0 to 2. At 2 the
+  /// buffer is full and a further input can only replace the second turn —
+  /// or be refused if what it asks for would reverse the first.
+  int get bufferedTurns =>
+      (_hasQueuedDirection ? 1 : 0) + (_pendingDirection != null ? 1 : 0);
+
   /// Queues a direction change. Two turns can be buffered per tick: the
   /// first applies on the next move, the second on the move after that.
   /// Returns `true` when the input is accepted, `false` when rejected

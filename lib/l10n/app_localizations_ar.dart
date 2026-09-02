@@ -312,6 +312,31 @@ class AppLocalizationsAr extends AppLocalizations {
       'التحرك خلية بخلية كما في اللعبة الأصلية. تُنفَّذ الانعطافات فور الضغط.';
 
   @override
+  String get settingsControlLayout => 'تخطيط الأزرار';
+
+  @override
+  String get settingsControlLayoutDPad => 'أزرار الاتجاهات';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'أعلى، أسفل، يسار، يمين';
+
+  @override
+  String get settingsControlLayoutTurn => 'أزرار الانعطاف';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'انعطف يسارًا أو يمينًا من اتجاهك الحالي. لا رجوع للخلف أبدًا.';
+
+  @override
+  String get gameTurnLeft => 'انعطاف يسارًا';
+
+  @override
+  String get gameTurnRight => 'انعطاف يمينًا';
+
+  @override
+  String get gameTurnControls => 'أزرار الانعطاف';
+
+  @override
   String get settingsDPadPosition => 'موضع أزرار الاتجاهات';
 
   @override

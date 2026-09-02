@@ -314,6 +314,31 @@ class AppLocalizationsRu extends AppLocalizations {
       'Двигайтесь по клеткам, как в оригинале. Повороты срабатывают сразу.';
 
   @override
+  String get settingsControlLayout => 'Раскладка кнопок';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Вверх, вниз, влево, вправо';
+
+  @override
+  String get settingsControlLayoutTurn => 'Кнопки поворота';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Поворачивайте влево или вправо относительно курса. Никакого разворота.';
+
+  @override
+  String get gameTurnLeft => 'Повернуть влево';
+
+  @override
+  String get gameTurnRight => 'Повернуть вправо';
+
+  @override
+  String get gameTurnControls => 'Кнопки поворота';
+
+  @override
   String get settingsDPadPosition => 'Положение D-Pad';
 
   @override

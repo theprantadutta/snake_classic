@@ -505,6 +505,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Accepted means accepted LOCALLY. The input passed the client's rules and
   /// went to the server; waiting for acknowledgement before acknowledging the
   /// player would make the controls feel broken on any real connection.
+  /// Where a relative turn would send my snake. Measured from the intent
+  /// already sent this tick when there is one, else from the heading the
+  /// server last showed — so two quick presses compose into a corner
+  ///here too. Null when there is nothing to steer.
+  Direction? relativeTarget(RelativeTurn turn) {
+    final snapshot = state.snapshot;
+    if (snapshot == null) return null;
+    final uid = _userService.currentUser?.uid;
+    final me = uid == null ? null : snapshot.playerByUserId(uid);
+    final heading = state.intentDirection ?? me?.direction;
+    if (heading == null) return null;
+    return turn.applyTo(heading);
+  }
+
   InputResult changeDirection(Direction direction) {
     final steerable = canSteer;
     final me = steerable

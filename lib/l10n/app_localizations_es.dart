@@ -318,6 +318,32 @@ class AppLocalizationsEs extends AppLocalizations {
       'Muévete casilla a casilla como en el original. Los giros ocurren al instante.';
 
   @override
+  String get settingsControlLayout => 'Disposición de botones';
+
+  @override
+  String get settingsControlLayoutDPad => 'Cruceta';
+
+  @override
+  String get settingsControlLayoutDPadDesc =>
+      'Arriba, abajo, izquierda, derecha';
+
+  @override
+  String get settingsControlLayoutTurn => 'Botones de giro';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Gira a la izquierda o a la derecha desde tu rumbo. Nunca marcha atrás.';
+
+  @override
+  String get gameTurnLeft => 'Girar a la izquierda';
+
+  @override
+  String get gameTurnRight => 'Girar a la derecha';
+
+  @override
+  String get gameTurnControls => 'Botones de giro';
+
+  @override
   String get settingsDPadPosition => 'Posición de la cruceta';
 
   @override

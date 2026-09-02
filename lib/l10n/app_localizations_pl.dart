@@ -317,6 +317,31 @@ class AppLocalizationsPl extends AppLocalizations {
       'Poruszaj się pole po polu jak w oryginale. Skręty następują natychmiast.';
 
   @override
+  String get settingsControlLayout => 'Układ przycisków';
+
+  @override
+  String get settingsControlLayoutDPad => 'D-Pad';
+
+  @override
+  String get settingsControlLayoutDPadDesc => 'Góra, dół, lewo, prawo';
+
+  @override
+  String get settingsControlLayoutTurn => 'Przyciski skrętu';
+
+  @override
+  String get settingsControlLayoutTurnDesc =>
+      'Skręcaj w lewo lub w prawo względem kierunku jazdy. Nigdy zawracania.';
+
+  @override
+  String get gameTurnLeft => 'Skręć w lewo';
+
+  @override
+  String get gameTurnRight => 'Skręć w prawo';
+
+  @override
+  String get gameTurnControls => 'Przyciski skrętu';
+
+  @override
   String get settingsDPadPosition => 'Pozycja D-Pada';
 
   @override

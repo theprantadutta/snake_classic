@@ -664,6 +664,54 @@ abstract class AppLocalizations {
   /// **'Move cell by cell like the original. Turns land the instant you press.'**
   String get settingsSnapMovementSubtitle;
 
+  /// No description provided for @settingsControlLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Button Layout'**
+  String get settingsControlLayout;
+
+  /// No description provided for @settingsControlLayoutDPad.
+  ///
+  /// In en, this message translates to:
+  /// **'D-Pad'**
+  String get settingsControlLayoutDPad;
+
+  /// No description provided for @settingsControlLayoutDPadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Up, down, left, right'**
+  String get settingsControlLayoutDPadDesc;
+
+  /// No description provided for @settingsControlLayoutTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Buttons'**
+  String get settingsControlLayoutTurn;
+
+  /// No description provided for @settingsControlLayoutTurnDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn left or right from where you\'re heading. Never a reversal.'**
+  String get settingsControlLayoutTurnDesc;
+
+  /// No description provided for @gameTurnLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn left'**
+  String get gameTurnLeft;
+
+  /// No description provided for @gameTurnRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn right'**
+  String get gameTurnRight;
+
+  /// No description provided for @gameTurnControls.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn buttons'**
+  String get gameTurnControls;
+
   /// No description provided for @settingsDPadPosition.
   ///
   /// In en, this message translates to:

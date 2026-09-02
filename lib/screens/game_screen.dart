@@ -287,6 +287,14 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  /// A press on the two-button layout. Resolved to an absolute direction
+  /// off the snake's planned heading, then handled exactly like a swipe,
+  ///so acceptance, haptics and the compass indicator have one path.
+  void _handleRelativeTurn(RelativeTurn turn) {
+    final target = context.read<GameCubit>().relativeTarget(turn);
+    if (target != null) _handleSwipe(target);
+  }
+
   void _handleSwipe(Direction direction) {
     // If tutorial is active, send swipe to tutorial controller
     if (_tutorialActive && _tutorialController != null) {
@@ -848,7 +856,10 @@ class _GameScreenState extends State<GameScreen>
                                                                             .dPadEnabled ||
                                                                     previous.dPadPosition !=
                                                                         current
-                                                                            .dPadPosition,
+                                                                            .dPadPosition ||
+                                                                    previous.controlLayout !=
+                                                                        current
+                                                                            .controlLayout,
                                                             builder: (context, controlSettings) {
                                                               return BlocBuilder<
                                                                 GameCubit,
@@ -892,6 +903,11 @@ class _GameScreenState extends State<GameScreen>
                                                                     dPadPosition:
                                                                         controlSettings
                                                                             .dPadPosition,
+                                                                    controlLayout:
+                                                                        controlSettings
+                                                                            .controlLayout,
+                                                                    onRelativeTurn:
+                                                                        _handleRelativeTurn,
                                                                     // The tutorial pauses
                                                                     // the game and then
                                                                     // asks for a turn.
