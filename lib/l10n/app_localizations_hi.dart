@@ -355,6 +355,41 @@ class AppLocalizationsHi extends AppLocalizations {
   String get gameJoystickHint => 'चलाने के लिए धकेलें';
 
   @override
+  String get wtControlOptionsTitle => 'स्वाइप पसंद नहीं?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'बटन पसंद हैं? पॉज़ करें और डी-पैड, दो बड़े मोड़ बटन या फ़्लोटिंग जॉयस्टिक चुनें। हर मोड़ दबाते ही लगे, इसके लिए सेल-दर-सेल चाल चालू करें। यह सब सेटिंग्स → नियंत्रण में भी है।';
+
+  @override
+  String get insTurnButtons => 'मोड़ बटन';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'दो बड़े बटन, हर कोने में एक: बाएँ मुड़ें, दाएँ मुड़ें। कभी उल्टा नहीं';
+
+  @override
+  String get insJoystick => 'जॉयस्टिक';
+
+  @override
+  String get insJoystickDesc =>
+      'बार में कहीं भी जिस दिशा में जाना है उधर धकेलें; दबाए रखकर चलाते रहें';
+
+  @override
+  String get insSnap => 'सेल-दर-सेल चाल';
+
+  @override
+  String get insSnapDesc =>
+      'मूल गेम की तरह एक-एक सेल चलें, ताकि मोड़ दबाते ही लगें';
+
+  @override
+  String get settingsOnScreenControls => 'स्क्रीन पर नियंत्रण';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'डी-पैड, मोड़ बटन या जॉयस्टिक — बटन लेआउट में चुनें';
+
+  @override
   String get settingsDPadPosition => 'डी-पैड स्थिति';
 
   @override
@@ -3388,7 +3423,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'बोर्ड पर स्वाइप करके, ऑन-स्क्रीन डी-पैड से, या तीर कुंजियों से दिशा बदलें।';
+      'बोर्ड पर स्वाइप करके, स्क्रीन पर डी-पैड, मोड़ बटन या जॉयस्टिक से, या ऐरो कुंजियों से दिशा बदलें। अपना तरीका सेटिंग्स → नियंत्रण या पॉज़ मेनू से चुनें।';
 
   @override
   String get wtPracticeRightTitle => 'आज़माएँ — दाएँ मुड़ें';
@@ -3442,7 +3477,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'रन रोकने के लिए पॉज़ आइकन दबाएँ। वहाँ से जारी रखें, पुनः शुरू करें, गेम गाइड खोलें, यह ट्यूटोरियल दोहराएँ या डी-पैड बदलें।';
+      'गेम रोकने के लिए पॉज़ आइकन दबाएँ। वहाँ से आप जारी रख सकते हैं, फिर से शुरू कर सकते हैं, गेम गाइड खोल सकते हैं, यह ट्यूटोरियल दोबारा देख सकते हैं, नियंत्रण बदल सकते हैं या सेल-दर-सेल चाल चालू कर सकते हैं।';
 
   @override
   String get wtReadyTitle => 'आप तैयार हैं!';
@@ -6182,11 +6217,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get insDpad => 'ऑन-स्क्रीन डी-पैड';
 
   @override
-  String get insDpadDesc => 'स्वाइप के बजाय मुड़ने के लिए वैकल्पिक बटन';
+  String get insDpadDesc => 'स्वाइप की जगह मुड़ने के लिए वैकल्पिक चार-दिशा बटन';
 
   @override
   String get insControlsNote =>
-      'डी-पैड चालू/बंद करें और उसकी जगह चुनें — Settings → Controls.';
+      'स्क्रीन नियंत्रण चालू/बंद करें, डी-पैड, मोड़ बटन या जॉयस्टिक चुनें और सेल-दर-सेल चाल सेट करें — सेटिंग्स → नियंत्रण में, या खेल के बीच पॉज़ मेनू से।';
 
   @override
   String get insVersus => 'वर्सेस';

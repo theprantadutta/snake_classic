@@ -358,6 +358,41 @@ class AppLocalizationsIt extends AppLocalizations {
   String get gameJoystickHint => 'Spingi per guidare';
 
   @override
+  String get wtControlOptionsTitle => 'Non ti piace scorrere?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Preferisci i pulsanti? Metti in pausa e scegli un D-Pad, due grandi pulsanti di svolta o un joystick fluttuante. Attiva Movimento a scatti se vuoi che ogni curva avvenga all\'istante. Trovi tutto anche in Impostazioni → Controlli.';
+
+  @override
+  String get insTurnButtons => 'Pulsanti di svolta';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Due grandi pulsanti, uno per angolo: svolta a sinistra, svolta a destra. Mai un\'inversione';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Spingi ovunque nella barra verso dove vuoi andare; tieni premuto per continuare a guidare';
+
+  @override
+  String get insSnap => 'Movimento a scatti';
+
+  @override
+  String get insSnapDesc =>
+      'Muoviti cella per cella come nell\'originale, così le curve avvengono all\'istante';
+
+  @override
+  String get settingsOnScreenControls => 'Controlli su schermo';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, pulsanti di svolta o joystick — scegli in Disposizione dei pulsanti';
+
+  @override
   String get settingsDPadPosition => 'Posizione del D-Pad';
 
   @override
@@ -3419,7 +3454,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Cambia direzione scorrendo sul campo, con il pad direzionale a schermo o con le frecce. Scegli il tuo stile in Impostazioni → Controlli.';
+      'Cambia direzione scorrendo sul tabellone, con un D-Pad, pulsanti di svolta o joystick su schermo, oppure con le frecce. Scegli il tuo stile in Impostazioni → Controlli o dal menu di pausa.';
 
   @override
   String get wtPracticeRightTitle => 'Provaci — gira a DESTRA';
@@ -3474,7 +3509,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Tocca l\'icona pausa per congelare la partita. Da lì puoi riprendere, ricominciare, aprire la Guida, ripetere questo tutorial o attivare il D-Pad.';
+      'Tocca l\'icona di pausa per fermare la partita. Da lì puoi riprendere, ricominciare, aprire la Guida al gioco, rivedere questo tutorial, cambiare controlli o attivare il Movimento a scatti.';
 
   @override
   String get wtReadyTitle => 'Sei pronto!';
@@ -6254,11 +6289,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get insDpadDesc =>
-      'Pulsanti opzionali per girare, al posto dello scorrimento';
+      'Pulsanti opzionali a quattro direzioni per girare, invece di scorrere';
 
   @override
   String get insControlsNote =>
-      'Attiva o disattiva il pad direzionale — e scegli dove sta — in Impostazioni → Controlli.';
+      'Attiva o disattiva i controlli su schermo, scegli D-Pad, pulsanti di svolta o joystick e imposta il Movimento a scatti in Impostazioni → Controlli — o dal menu di pausa durante la partita.';
 
   @override
   String get insVersus => 'Versus';

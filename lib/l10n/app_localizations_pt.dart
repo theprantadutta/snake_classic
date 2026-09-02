@@ -357,6 +357,41 @@ class AppLocalizationsPt extends AppLocalizations {
   String get gameJoystickHint => 'Empurre para guiar';
 
   @override
+  String get wtControlOptionsTitle => 'Não curte deslizar?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Prefere botões? Pause e escolha um D-Pad, dois botões grandes de curva ou um joystick flutuante. Ative Movimento por células se quiser que cada curva aconteça na hora. Tudo isso também fica em Configurações → Controles.';
+
+  @override
+  String get insTurnButtons => 'Botões de curva';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Dois botões grandes, um em cada canto: virar à esquerda, virar à direita. Nunca marcha a ré';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Empurre em qualquer lugar da barra na direção desejada; mantenha pressionado para continuar guiando';
+
+  @override
+  String get insSnap => 'Movimento por células';
+
+  @override
+  String get insSnapDesc =>
+      'Mova-se célula a célula como no original, para as curvas acontecerem na hora';
+
+  @override
+  String get settingsOnScreenControls => 'Controles na tela';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, botões de curva ou joystick — escolha em Disposição dos botões';
+
+  @override
   String get settingsDPadPosition => 'Posição do D-Pad';
 
   @override
@@ -3415,7 +3450,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Muda de direção deslizando no tabuleiro, com o botão direcional no ecrã ou com as setas. Escolhe o teu estilo em Definições → Controlos.';
+      'Mude de direção deslizando no tabuleiro, com um D-Pad, botões de curva ou joystick na tela, ou com as setas do teclado. Escolha seu estilo em Configurações → Controles ou no menu de pausa.';
 
   @override
   String get wtPracticeRightTitle => 'Experimenta — vira à DIREITA';
@@ -3470,7 +3505,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Toque no ícone de pausa para congelar a partida. De lá você pode retomar, reiniciar, abrir o Guia do Jogo, repetir este tutorial ou alternar o D-Pad.';
+      'Toque no ícone de pausa para congelar a partida. Dali você pode retomar, reiniciar, abrir o Guia do jogo, repetir este tutorial, trocar os controles ou ativar o Movimento por células.';
 
   @override
   String get wtReadyTitle => 'Você está pronto!';
@@ -6249,11 +6284,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get insDpad => 'Botão direcional no ecrã';
 
   @override
-  String get insDpadDesc => 'Botões opcionais para virar, em vez de deslizar';
+  String get insDpadDesc =>
+      'Botões opcionais de quatro direções para virar, em vez de deslizar';
 
   @override
   String get insControlsNote =>
-      'Ativa ou desativa o botão direcional — e escolhe onde fica — em Definições → Controlos.';
+      'Ative ou desative os controles na tela, escolha D-Pad, botões de curva ou joystick e ajuste o Movimento por células em Configurações → Controles — ou no menu de pausa durante a partida.';
 
   @override
   String get insVersus => 'Versus';

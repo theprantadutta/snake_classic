@@ -355,6 +355,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameJoystickHint => 'Push to steer';
 
   @override
+  String get wtControlOptionsTitle => 'Not a swiper?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Prefer buttons? Pause and pick a D-Pad, two big Turn buttons, or a floating Joystick. Turn on Snap Movement if you want every turn to land the instant you press. All of it lives in Settings → Controls too.';
+
+  @override
+  String get insTurnButtons => 'Turn Buttons';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Two big buttons, one per corner: turn left, turn right. Never a reversal';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Push anywhere in the bar toward where you want to go; keep pressing to keep steering';
+
+  @override
+  String get insSnap => 'Snap Movement';
+
+  @override
+  String get insSnapDesc =>
+      'Move cell by cell like the original, so turns land the instant you press';
+
+  @override
+  String get settingsOnScreenControls => 'On-Screen Controls';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, Turn buttons or Joystick — pick under Button Layout';
+
+  @override
   String get settingsDPadPosition => 'D-Pad Position';
 
   @override
@@ -3393,7 +3428,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Change direction by swiping the board, using the on-screen D-pad, or pressing the arrow keys. Pick your style in Settings → Controls.';
+      'Change direction by swiping the board, with an on-screen D-Pad, Turn buttons or Joystick, or with the arrow keys. Pick your style in Settings → Controls or from the pause menu.';
 
   @override
   String get wtPracticeRightTitle => 'Try it — turn RIGHT';
@@ -3448,7 +3483,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, or toggle the D-Pad.';
+      'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, switch your controls, or turn Snap Movement on.';
 
   @override
   String get wtReadyTitle => 'You\'re Ready!';
@@ -6192,11 +6227,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get insDpad => 'On-Screen D-Pad';
 
   @override
-  String get insDpadDesc => 'Optional buttons for turning, instead of swiping';
+  String get insDpadDesc =>
+      'Optional four-way buttons for turning, instead of swiping';
 
   @override
   String get insControlsNote =>
-      'Turn the D-pad on or off — and choose where it sits — in Settings → Controls.';
+      'Turn on-screen controls on or off, choose D-Pad, Turn buttons or Joystick, and set Snap Movement in Settings → Controls — or from the pause menu mid-run.';
 
   @override
   String get insVersus => 'Versus';

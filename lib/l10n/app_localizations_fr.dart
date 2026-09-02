@@ -358,6 +358,41 @@ class AppLocalizationsFr extends AppLocalizations {
   String get gameJoystickHint => 'Poussez pour diriger';
 
   @override
+  String get wtControlOptionsTitle => 'Pas fan du glissement ?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Vous préférez des boutons ? Mettez en pause et choisissez un D-Pad, deux gros boutons de virage ou un joystick flottant. Activez Déplacement par cases pour que chaque virage soit instantané. Tout est aussi dans Réglages → Commandes.';
+
+  @override
+  String get insTurnButtons => 'Boutons de virage';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Deux gros boutons, un par coin : tourner à gauche, tourner à droite. Jamais de demi-tour';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Poussez n\'importe où dans la barre vers la direction voulue ; gardez le doigt appuyé pour continuer';
+
+  @override
+  String get insSnap => 'Déplacement par cases';
+
+  @override
+  String get insSnapDesc =>
+      'Avance case par case comme l\'original, pour des virages instantanés';
+
+  @override
+  String get settingsOnScreenControls => 'Commandes à l\'écran';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, boutons de virage ou joystick — au choix dans Disposition des boutons';
+
+  @override
   String get settingsDPadPosition => 'Position du D-Pad';
 
   @override
@@ -3431,7 +3466,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Change de direction en balayant le plateau, avec la croix directionnelle à l’écran ou avec les flèches. Choisis ton style dans Réglages → Commandes.';
+      'Changez de direction en glissant sur le plateau, avec un D-Pad, des boutons de virage ou un joystick à l\'écran, ou avec les flèches du clavier. Choisissez votre style dans Réglages → Commandes ou depuis le menu pause.';
 
   @override
   String get wtPracticeRightTitle => 'Essaie — tourne à DROITE';
@@ -3486,7 +3521,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Touchez l\'icône pause pour figer la partie. De là : reprendre, recommencer, ouvrir le Guide du jeu, revoir ce tutoriel ou basculer le D-Pad.';
+      'Touchez l\'icône pause pour figer la partie. De là, vous pouvez reprendre, recommencer, ouvrir le Guide du jeu, rejouer ce tutoriel, changer de commandes ou activer le Déplacement par cases.';
 
   @override
   String get wtReadyTitle => 'Vous êtes prêt !';
@@ -6276,11 +6311,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get insDpadDesc =>
-      'Boutons optionnels pour tourner, au lieu du balayage';
+      'Boutons optionnels à quatre directions pour tourner, au lieu de glisser';
 
   @override
   String get insControlsNote =>
-      'Active ou désactive la croix directionnelle — et choisis sa position — dans Réglages → Commandes.';
+      'Activez ou désactivez les commandes à l\'écran, choisissez D-Pad, boutons de virage ou joystick et réglez le Déplacement par cases dans Réglages → Commandes — ou depuis le menu pause en pleine partie.';
 
   @override
   String get insVersus => 'Versus';

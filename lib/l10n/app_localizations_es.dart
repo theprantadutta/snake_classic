@@ -360,6 +360,41 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gameJoystickHint => 'Empuja para girar';
 
   @override
+  String get wtControlOptionsTitle => '¿No te va deslizar?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      '¿Prefieres botones? Pausa y elige una cruceta, dos botones grandes de giro o un joystick flotante. Activa Movimiento por casillas si quieres que cada giro ocurra al instante. Todo está también en Ajustes → Controles.';
+
+  @override
+  String get insTurnButtons => 'Botones de giro';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Dos botones grandes, uno en cada esquina: girar a la izquierda, girar a la derecha. Nunca marcha atrás';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Empuja en cualquier parte de la barra hacia donde quieras ir; mantén pulsado para seguir girando';
+
+  @override
+  String get insSnap => 'Movimiento por casillas';
+
+  @override
+  String get insSnapDesc =>
+      'Muévete casilla a casilla como en el original, para que los giros ocurran al instante';
+
+  @override
+  String get settingsOnScreenControls => 'Controles en pantalla';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'Cruceta, botones de giro o joystick — elige en Disposición de botones';
+
+  @override
   String get settingsDPadPosition => 'Posición de la cruceta';
 
   @override
@@ -3422,7 +3457,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Cambia de dirección deslizando en el tablero, con el pad direccional en pantalla o con las flechas. Elige tu estilo en Ajustes → Controles.';
+      'Cambia de dirección deslizando en el tablero, con una cruceta, botones de giro o joystick en pantalla, o con las flechas del teclado. Elige tu estilo en Ajustes → Controles o desde el menú de pausa.';
 
   @override
   String get wtPracticeRightTitle => 'Pruébalo: gira a la DERECHA';
@@ -3477,7 +3512,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Toca el icono de pausa para congelar la partida. Desde ahí puedes reanudar, reiniciar, abrir la Guía del Juego, repetir este tutorial o alternar la cruceta.';
+      'Toca el icono de pausa para congelar la partida. Desde ahí puedes reanudar, reiniciar, abrir la Guía del juego, repetir este tutorial, cambiar de controles o activar el Movimiento por casillas.';
 
   @override
   String get wtReadyTitle => '¡Estás listo!';
@@ -6260,11 +6295,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get insDpad => 'Pad direccional en pantalla';
 
   @override
-  String get insDpadDesc => 'Botones opcionales para girar en vez de deslizar';
+  String get insDpadDesc =>
+      'Botones opcionales de cuatro direcciones para girar, en lugar de deslizar';
 
   @override
   String get insControlsNote =>
-      'Activa o desactiva el pad direccional, y elige su posición, en Ajustes → Controles.';
+      'Activa o desactiva los controles en pantalla, elige cruceta, botones de giro o joystick y ajusta el Movimiento por casillas en Ajustes → Controles, o desde el menú de pausa en plena partida.';
 
   @override
   String get insVersus => 'Versus';

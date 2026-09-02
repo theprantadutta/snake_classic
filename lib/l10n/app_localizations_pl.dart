@@ -358,6 +358,41 @@ class AppLocalizationsPl extends AppLocalizations {
   String get gameJoystickHint => 'Pchnij, by sterować';
 
   @override
+  String get wtControlOptionsTitle => 'Nie lubisz przesuwać?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Wolisz przyciski? Zatrzymaj grę i wybierz D-Pad, dwa duże przyciski skrętu albo pływający joystick. Włącz Ruch skokowy, jeśli chcesz, by każdy skręt następował natychmiast. Wszystko to znajdziesz też w Ustawieniach → Sterowanie.';
+
+  @override
+  String get insTurnButtons => 'Przyciski skrętu';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Dwa duże przyciski, po jednym w rogu: skręć w lewo, skręć w prawo. Nigdy zawracania';
+
+  @override
+  String get insJoystick => 'Joystick';
+
+  @override
+  String get insJoystickDesc =>
+      'Pchnij w dowolnym miejscu paska w stronę, w którą chcesz jechać; trzymaj, by dalej sterować';
+
+  @override
+  String get insSnap => 'Ruch skokowy';
+
+  @override
+  String get insSnapDesc =>
+      'Poruszaj się pole po polu jak w oryginale, by skręty następowały natychmiast';
+
+  @override
+  String get settingsOnScreenControls => 'Sterowanie na ekranie';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, przyciski skrętu lub joystick — wybierz w Układzie przycisków';
+
+  @override
   String get settingsDPadPosition => 'Pozycja D-Pada';
 
   @override
@@ -3421,7 +3456,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Zmieniaj kierunek gestem na planszy, padem kierunkowym na ekranie lub strzałkami. Wybierz styl w Ustawienia → Sterowanie.';
+      'Zmieniaj kierunek przesuwając palcem po planszy, ekranowym D-Padem, przyciskami skrętu lub joystickiem, albo strzałkami. Wybierz swój styl w Ustawieniach → Sterowanie lub z menu pauzy.';
 
   @override
   String get wtPracticeRightTitle => 'Spróbuj — skręć w PRAWO';
@@ -3476,7 +3511,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Dotknij ikony pauzy, aby zamrozić grę. Stamtąd możesz wznowić, zacząć od nowa, otworzyć Przewodnik, powtórzyć ten samouczek lub przełączyć D-Pad.';
+      'Dotknij ikony pauzy, by zatrzymać grę. Stamtąd możesz wznowić, zacząć od nowa, otworzyć Przewodnik, powtórzyć ten samouczek, zmienić sterowanie lub włączyć Ruch skokowy.';
 
   @override
   String get wtReadyTitle => 'Jesteś gotowy!';
@@ -6238,11 +6273,12 @@ class AppLocalizationsPl extends AppLocalizations {
   String get insDpad => 'Pad kierunkowy na ekranie';
 
   @override
-  String get insDpadDesc => 'Opcjonalne przyciski do skręcania zamiast gestów';
+  String get insDpadDesc =>
+      'Opcjonalne czterokierunkowe przyciski do skręcania zamiast przesuwania';
 
   @override
   String get insControlsNote =>
-      'Włącz lub wyłącz pad kierunkowy — i wybierz jego położenie — w Ustawienia → Sterowanie.';
+      'Włączaj i wyłączaj sterowanie na ekranie, wybieraj D-Pad, przyciski skrętu lub joystick i ustaw Ruch skokowy w Ustawieniach → Sterowanie — lub z menu pauzy w trakcie gry.';
 
   @override
   String get insVersus => 'Versus';

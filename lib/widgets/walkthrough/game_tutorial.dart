@@ -224,6 +224,16 @@ List<WalkthroughStep> _buildTutorialSteps(AppLocalizations l10n) => [
     canSkip: false,
   ),
 
+  // Step 5b: Control options. Taught right after the player has steered
+  // once, so 'prefer buttons?' lands on someone who now knows what
+  // swiping feels like. Everything named here is one pause away.
+  WalkthroughStep(
+    id: 'tutorial_control_options',
+    title: l10n.wtControlOptionsTitle,
+    message: l10n.wtControlOptionsMsg,
+    position: TooltipPosition.center,
+    icon: Icons.gamepad,
+  ),
   // Step 6: Food explanation. Food TYPES + point values are intentionally
   // not taught here — the pause menu's Game Guide carries that reference
   // (and the food chip on the HUD shows the current type's value live).

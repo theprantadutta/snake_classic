@@ -353,6 +353,41 @@ class AppLocalizationsAr extends AppLocalizations {
   String get gameJoystickHint => 'ادفع للتوجيه';
 
   @override
+  String get wtControlOptionsTitle => 'لا تحب السحب؟';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'تفضّل الأزرار؟ أوقف اللعبة مؤقتًا واختر أزرار الاتجاهات، أو زرّي انعطاف كبيرين، أو عصا تحكم عائمة. فعّل الحركة المتقطعة إذا أردت أن يُنفَّذ كل انعطاف فور الضغط. كل هذا موجود أيضًا في الإعدادات ← التحكم.';
+
+  @override
+  String get insTurnButtons => 'أزرار الانعطاف';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'زران كبيران، واحد في كل زاوية: انعطاف يسارًا، انعطاف يمينًا. لا رجوع للخلف أبدًا';
+
+  @override
+  String get insJoystick => 'عصا التحكم';
+
+  @override
+  String get insJoystickDesc =>
+      'ادفع في أي مكان بالشريط نحو الاتجاه المطلوب؛ استمر بالضغط للاستمرار في التوجيه';
+
+  @override
+  String get insSnap => 'حركة متقطعة';
+
+  @override
+  String get insSnapDesc =>
+      'التحرك خلية بخلية كما في اللعبة الأصلية، لتُنفَّذ الانعطافات فور الضغط';
+
+  @override
+  String get settingsOnScreenControls => 'أزرار الشاشة';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'أزرار الاتجاهات أو أزرار الانعطاف أو عصا التحكم — اختر من تخطيط الأزرار';
+
+  @override
   String get settingsDPadPosition => 'موضع أزرار الاتجاهات';
 
   @override
@@ -3378,7 +3413,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'غيّر الاتجاه بالسحب على اللوحة أو بلوحة الاتجاهات أو بمفاتيح الأسهم.';
+      'غيّر الاتجاه بالسحب على اللوحة، أو بأزرار الاتجاهات أو أزرار الانعطاف أو عصا التحكم على الشاشة، أو بمفاتيح الأسهم. اختر أسلوبك من الإعدادات ← التحكم أو من قائمة الإيقاف المؤقت.';
 
   @override
   String get wtPracticeRightTitle => 'جرّب — اتجه يمينًا';
@@ -3432,7 +3467,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'انقر أيقونة الإيقاف لتجميد الجولة. من هناك يمكنك المتابعة أو البدء من جديد أو فتح دليل اللعبة أو إعادة هذا الدرس أو تبديل أزرار الاتجاهات.';
+      'اضغط أيقونة الإيقاف المؤقت لتجميد الجولة. من هناك يمكنك المتابعة أو إعادة البدء أو فتح دليل اللعبة أو إعادة هذا الدرس أو تبديل أسلوب التحكم أو تفعيل الحركة المتقطعة.';
 
   @override
   String get wtReadyTitle => 'أنت جاهز!';
@@ -6185,11 +6220,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get insDpad => 'لوحة اتجاهات على الشاشة';
 
   @override
-  String get insDpadDesc => 'أزرار اختيارية للانعطاف بدلاً من السحب';
+  String get insDpadDesc =>
+      'أزرار اختيارية بأربعة اتجاهات للانعطاف بدلًا من السحب';
 
   @override
   String get insControlsNote =>
-      'يمكنك تفعيل لوحة الاتجاهات أو إيقافها واختيار موضعها من الإعدادات.';
+      'فعّل أزرار الشاشة أو عطّلها، واختر أزرار الاتجاهات أو أزرار الانعطاف أو عصا التحكم، واضبط الحركة المتقطعة من الإعدادات ← التحكم — أو من قائمة الإيقاف المؤقت أثناء اللعب.';
 
   @override
   String get insVersus => 'مواجهة';

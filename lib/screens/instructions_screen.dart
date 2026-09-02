@@ -133,6 +133,9 @@ class InstructionsScreen extends StatelessWidget {
       _row(l10n.insSwipeLeft, l10n.insSwipeLeftDesc),
       _row(l10n.insSwipeRight, l10n.insSwipeRightDesc),
       _row(l10n.insDpad, l10n.insDpadDesc),
+      _row(l10n.insTurnButtons, l10n.insTurnButtonsDesc),
+      _row(l10n.insJoystick, l10n.insJoystickDesc),
+      _row(l10n.insSnap, l10n.insSnapDesc),
       // "Tap Screen — Pause/Resume" used to be here, describing a handler the
       // game has never had. The pause button is the real one.
       _row(l10n.insHudPause, l10n.insHudPauseDesc),

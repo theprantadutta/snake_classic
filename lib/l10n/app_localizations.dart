@@ -742,6 +742,66 @@ abstract class AppLocalizations {
   /// **'Push to steer'**
   String get gameJoystickHint;
 
+  /// No description provided for @wtControlOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a swiper?'**
+  String get wtControlOptionsTitle;
+
+  /// No description provided for @wtControlOptionsMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer buttons? Pause and pick a D-Pad, two big Turn buttons, or a floating Joystick. Turn on Snap Movement if you want every turn to land the instant you press. All of it lives in Settings → Controls too.'**
+  String get wtControlOptionsMsg;
+
+  /// No description provided for @insTurnButtons.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Buttons'**
+  String get insTurnButtons;
+
+  /// No description provided for @insTurnButtonsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Two big buttons, one per corner: turn left, turn right. Never a reversal'**
+  String get insTurnButtonsDesc;
+
+  /// No description provided for @insJoystick.
+  ///
+  /// In en, this message translates to:
+  /// **'Joystick'**
+  String get insJoystick;
+
+  /// No description provided for @insJoystickDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Push anywhere in the bar toward where you want to go; keep pressing to keep steering'**
+  String get insJoystickDesc;
+
+  /// No description provided for @insSnap.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap Movement'**
+  String get insSnap;
+
+  /// No description provided for @insSnapDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Move cell by cell like the original, so turns land the instant you press'**
+  String get insSnapDesc;
+
+  /// No description provided for @settingsOnScreenControls.
+  ///
+  /// In en, this message translates to:
+  /// **'On-Screen Controls'**
+  String get settingsOnScreenControls;
+
+  /// No description provided for @settingsOnScreenControlsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'D-Pad, Turn buttons or Joystick — pick under Button Layout'**
+  String get settingsOnScreenControlsDesc;
+
   /// No description provided for @settingsDPadPosition.
   ///
   /// In en, this message translates to:
@@ -6019,7 +6079,7 @@ abstract class AppLocalizations {
   /// No description provided for @wtControlsMsg.
   ///
   /// In en, this message translates to:
-  /// **'Change direction by swiping the board, using the on-screen D-pad, or pressing the arrow keys. Pick your style in Settings → Controls.'**
+  /// **'Change direction by swiping the board, with an on-screen D-Pad, Turn buttons or Joystick, or with the arrow keys. Pick your style in Settings → Controls or from the pause menu.'**
   String get wtControlsMsg;
 
   /// No description provided for @wtPracticeRightTitle.
@@ -6115,7 +6175,7 @@ abstract class AppLocalizations {
   /// No description provided for @wtPauseMsg.
   ///
   /// In en, this message translates to:
-  /// **'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, or toggle the D-Pad.'**
+  /// **'Tap the pause icon to freeze the run. From there you can resume, restart, open the Game Guide, replay this tutorial, switch your controls, or turn Snap Movement on.'**
   String get wtPauseMsg;
 
   /// No description provided for @wtReadyTitle.
@@ -11179,13 +11239,13 @@ abstract class AppLocalizations {
   /// No description provided for @insDpadDesc.
   ///
   /// In en, this message translates to:
-  /// **'Optional buttons for turning, instead of swiping'**
+  /// **'Optional four-way buttons for turning, instead of swiping'**
   String get insDpadDesc;
 
   /// No description provided for @insControlsNote.
   ///
   /// In en, this message translates to:
-  /// **'Turn the D-pad on or off — and choose where it sits — in Settings → Controls.'**
+  /// **'Turn on-screen controls on or off, choose D-Pad, Turn buttons or Joystick, and set Snap Movement in Settings → Controls — or from the pause menu mid-run.'**
   String get insControlsNote;
 
   /// No description provided for @insVersus.

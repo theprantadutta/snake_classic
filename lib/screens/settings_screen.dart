@@ -1709,6 +1709,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             theme,
           ),
           _buildControlItem(
+            l10n.settingsOnScreenControls,
+            l10n.settingsOnScreenControlsDesc,
+            theme,
+          ),
+          _buildControlItem(
             l10n.settingsTapScreen,
             l10n.settingsPauseResume,
             theme,

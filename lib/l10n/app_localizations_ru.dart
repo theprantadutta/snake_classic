@@ -355,6 +355,41 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameJoystickHint => 'Толкните, чтобы рулить';
 
   @override
+  String get wtControlOptionsTitle => 'Не любите свайпы?';
+
+  @override
+  String get wtControlOptionsMsg =>
+      'Предпочитаете кнопки? Поставьте паузу и выберите D-Pad, две большие кнопки поворота или плавающий джойстик. Включите движение по клеткам, чтобы каждый поворот срабатывал сразу. Всё это есть и в Настройках → Управление.';
+
+  @override
+  String get insTurnButtons => 'Кнопки поворота';
+
+  @override
+  String get insTurnButtonsDesc =>
+      'Две большие кнопки, по одной в углу: повернуть влево, повернуть вправо. Никакого разворота';
+
+  @override
+  String get insJoystick => 'Джойстик';
+
+  @override
+  String get insJoystickDesc =>
+      'Толкните в любом месте панели в нужную сторону; держите палец, чтобы продолжать управлять';
+
+  @override
+  String get insSnap => 'Движение по клеткам';
+
+  @override
+  String get insSnapDesc =>
+      'Двигайтесь по клеткам, как в оригинале, чтобы повороты срабатывали сразу';
+
+  @override
+  String get settingsOnScreenControls => 'Экранное управление';
+
+  @override
+  String get settingsOnScreenControlsDesc =>
+      'D-Pad, кнопки поворота или джойстик — выбирайте в Раскладке кнопок';
+
+  @override
   String get settingsDPadPosition => 'Положение D-Pad';
 
   @override
@@ -3410,7 +3445,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get wtControlsMsg =>
-      'Меняйте направление свайпом по полю, экранной крестовиной или стрелками.';
+      'Меняйте направление свайпом по полю, экранным D-Pad, кнопками поворота или джойстиком, либо стрелками. Выберите свой стиль в Настройках → Управление или в меню паузы.';
 
   @override
   String get wtPracticeRightTitle => 'Попробуйте — поверните ВПРАВО';
@@ -3465,7 +3500,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get wtPauseMsg =>
-      'Нажмите значок паузы, чтобы заморозить игру. Оттуда можно продолжить, начать заново, открыть гид по игре, повторить этот урок или переключить D-Pad.';
+      'Нажмите значок паузы, чтобы остановить забег. Оттуда можно продолжить, начать заново, открыть руководство, повторить обучение, сменить управление или включить движение по клеткам.';
 
   @override
   String get wtReadyTitle => 'Вы готовы!';
@@ -6230,11 +6265,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get insDpad => 'Экранная крестовина';
 
   @override
-  String get insDpadDesc => 'Кнопки для поворотов вместо свайпов';
+  String get insDpadDesc =>
+      'Необязательные четырёхсторонние кнопки для поворотов вместо свайпов';
 
   @override
   String get insControlsNote =>
-      'Включить крестовину и выбрать её расположение можно в настройках управления.';
+      'Включайте и выключайте экранное управление, выбирайте D-Pad, кнопки поворота или джойстик и настраивайте движение по клеткам в Настройках → Управление — или в меню паузы прямо во время игры.';
 
   @override
   String get insVersus => 'Версус';
