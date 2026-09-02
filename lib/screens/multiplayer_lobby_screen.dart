@@ -260,7 +260,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                     bottomNavigationBar: const SnakeBannerAd(),
                     body: AppBackground(
                       theme: theme,
-                      child: SafeArea(
+                      child: Stack(
+                        children: [
+                          SafeArea(
                         child: multiplayerState.matchmakingUnreachable
                             ? _buildMatchmakingUnreachableUI(
                                 context,
@@ -287,6 +289,21 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                                 theme,
                                 authState,
                               ),
+                          ),
+
+                          // The start countdown scrim sits OUTSIDE the
+                          // SafeArea so it covers the status-bar and
+                          // nav-bar strips too. Inside, those strips
+                          // showed the lobby through an un-dimmed band.
+                          if (multiplayerState.currentGame?.status ==
+                              MultiplayerGameStatus.starting)
+                            Positioned.fill(
+                              child: _buildCountdownOverlay(
+                                theme,
+                                multiplayerState.countdownSeconds,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   );
@@ -353,11 +370,10 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     AuthState authState,
   ) {
     final game = multiplayerState.currentGame!;
-    final isStarting = game.status == MultiplayerGameStatus.starting;
 
-    return Stack(
-      children: [
-        Column(
+    // The start countdown scrim is mounted by build(), above the
+    // SafeArea, so it can cover the inset strips.
+    return Column(
           children: [
             // Header with room info
             _buildGameHeader(theme, game),
@@ -396,11 +412,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ),
             ),
           ],
-        ),
-        // Countdown overlay
-        if (isStarting)
-          _buildCountdownOverlay(theme, multiplayerState.countdownSeconds),
-      ],
     );
   }
 

@@ -555,15 +555,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                         stops: const [0.0, 0.4, 0.8, 1.0],
                       ),
                     ),
-                    child: SafeArea(
-                      child: Stack(
-                        children: [
-                          // Background pattern
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _GameBackgroundPainter(theme),
-                            ),
+                    // No SafeArea at this level: the grid painter and the
+                    // reconnecting scrim must reach the status-bar and
+                    // nav-bar strips, or they show through as flat bands.
+                    // The gameplay column pads its own insets below; the
+                    // match intro is centred and needs none.
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _GameBackgroundPainter(theme),
                           ),
+                        ),
 
                           BlocBuilder<MultiplayerCubit, MultiplayerState>(
                             builder: (context, multiplayerState) {
@@ -584,8 +587,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
 
                                   return Stack(
                                     children: [
-                                      // Main game content
-                                      Column(
+                                      // Main game content, padded for
+                                      // the insets the Stack ignores.
+                                      SafeArea(
+                                      child: Column(
                                         children: [
                                           // Face-to-face versus header:
                                           // duel panel, live scores, momentum
@@ -661,6 +666,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                           ),
                                         ],
                                       ),
+                                      ),
 
                                       // Connection-loss overlay: the board
                                       // freezes on the last snapshot while
@@ -681,7 +687,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                           ),
                         ],
                       ),
-                    ),
                   ),
                 ),
               ),
