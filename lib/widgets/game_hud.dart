@@ -1321,30 +1321,52 @@ class _ComboDecayBarState extends State<_ComboDecayBar>
       animation: _ticker,
       builder: (context, _) {
         final fraction = _dangerFraction();
+        // Painted, not composed. The chip wraps this in an IntrinsicWidth,
+        // which asks each child for its intrinsic width. The old
+        // FractionallySizedBox answered "child width / widthFactor", and at
+        // the end of the danger window the factor reaches 0 — 0/0 is NaN,
+        // and the SizedBox above it asserted `width.isFinite` on every
+        // frame the combo was about to break. A CustomPaint with no child
+        // reports a finite (zero) intrinsic width and stretches to the chip.
         return SizedBox(
           height: 3,
           child: fraction == null
               ? const SizedBox.shrink()
-              : DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: fraction,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
+              : CustomPaint(painter: _ComboDecayBarPainter(fraction)),
         );
       },
     );
   }
+}
+
+/// Track + fill for [_ComboDecayBar]. Two rounded rects, no children, so
+/// its intrinsic width is finite inside the chip's IntrinsicWidth.
+class _ComboDecayBarPainter extends CustomPainter {
+  const _ComboDecayBarPainter(this.fraction);
+
+  /// 0..1 of the danger window remaining.
+  final double fraction;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = Radius.circular(size.height / 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, radius),
+      Paint()..color = Colors.red.withValues(alpha: 0.2),
+    );
+    final fillWidth = size.width * fraction.clamp(0.0, 1.0);
+    if (fillWidth <= 0) return;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, fillWidth, size.height),
+        radius,
+      ),
+      Paint()..color = Colors.redAccent,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ComboDecayBarPainter old) => old.fraction != fraction;
 }
 
 /// Lightweight 8-spoke radial burst drawn behind the level badge for the
