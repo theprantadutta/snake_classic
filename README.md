@@ -2,6 +2,23 @@
 
 A premium, modern implementation of the classic Snake game built with Flutter, featuring stunning visuals, smooth 60FPS gameplay, and immersive audio experience.
 
+## 📲 Download
+
+<div align="center">
+
+<a href="https://play.google.com/store/apps/details?id=com.pranta.snakeclassic">
+  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80" alt="Get it on Google Play">
+</a>
+<a href="https://apps.apple.com/us/app/snake-classic-retro-arcade/id6779621362">
+  <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" height="55" alt="Download on the App Store">
+</a>
+
+</div>
+
+- **Google Play:** [com.pranta.snakeclassic](https://play.google.com/store/apps/details?id=com.pranta.snakeclassic)
+- **App Store:** [Snake Classic - Retro Arcade](https://apps.apple.com/us/app/snake-classic-retro-arcade/id6779621362)
+- **Source:** [github.com/theprantadutta/snake_classic](https://github.com/theprantadutta/snake_classic)
+
 ## 📸 Screenshots
 
 Experience Snake Classic's beautiful, modern interface and premium game design:
