@@ -72,6 +72,7 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     required int boardWidth,
     required int boardHeight,
     required String gameMode,
+    required String controlScheme,
   }) {
     return _analytics.logEvent(
       name: 'game_started',
@@ -79,6 +80,10 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         'board_width': boardWidth,
         'board_height': boardHeight,
         'game_mode': gameMode,
+        // 'swipe' | 'dpad' | 'turn_buttons' — so control-scheme feel
+        // complaints can be checked against how those players actually
+        // fare, instead of argued about.
+        'control_scheme': controlScheme,
       },
     );
   }
@@ -103,6 +108,8 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     required int powerUpsCollected,
     required int maxCombo,
     required bool isNewHighScore,
+    required int inputsAccepted,
+    required int inputsRejected,
   }) {
     return _analytics.logEvent(
       name: 'game_over',
@@ -115,6 +122,8 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         'power_ups_collected': powerUpsCollected,
         'max_combo': maxCombo,
         'is_new_high_score': isNewHighScore ? 1 : 0,
+        'inputs_accepted': inputsAccepted,
+        'inputs_rejected': inputsRejected,
       },
     );
   }

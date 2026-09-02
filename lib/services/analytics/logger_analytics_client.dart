@@ -63,9 +63,11 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     required int boardWidth,
     required int boardHeight,
     required String gameMode,
+    required String controlScheme,
   }) async {
     AppLogger.info(
-      '$_tag game_started: board=${boardWidth}x$boardHeight, mode=$gameMode',
+      '$_tag game_started: board=${boardWidth}x$boardHeight, mode=$gameMode, '
+      'controls=$controlScheme',
     );
   }
 
@@ -89,11 +91,14 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     required int powerUpsCollected,
     required int maxCombo,
     required bool isNewHighScore,
+    required int inputsAccepted,
+    required int inputsRejected,
   }) async {
     AppLogger.info(
       '$_tag game_over: score=$score, level=$level, duration=${durationSeconds}s, '
       'cause=$cause, food=$foodEaten, powerUps=$powerUpsCollected, '
-      'maxCombo=$maxCombo, newHighScore=$isNewHighScore',
+      'maxCombo=$maxCombo, newHighScore=$isNewHighScore, '
+      'inputs=$inputsAccepted accepted/$inputsRejected rejected',
     );
   }
 

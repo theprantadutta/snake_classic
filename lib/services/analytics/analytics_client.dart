@@ -29,6 +29,7 @@ abstract class AnalyticsClient {
     required int boardWidth,
     required int boardHeight,
     required String gameMode,
+    required String controlScheme,
   });
   Future<void> trackGamePaused();
   Future<void> trackGameResumed();
@@ -41,6 +42,8 @@ abstract class AnalyticsClient {
     required int powerUpsCollected,
     required int maxCombo,
     required bool isNewHighScore,
+    required int inputsAccepted,
+    required int inputsRejected,
   });
   Future<void> trackLevelUp(int level);
   Future<void> trackPowerUpUsed(String powerUpType);

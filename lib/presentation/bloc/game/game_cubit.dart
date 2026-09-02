@@ -107,6 +107,11 @@ class GameCubit extends Cubit<GameCubitState> {
   int _wallHitsThisGame = 0;
   int _selfHitsThisGame = 0;
   int _powerUpsCollectedThisGame = 0;
+
+  /// Steering inputs this run, by outcome. Reported at game over so the
+  /// rejected rate per control scheme is a number rather than a review.
+  int _inputsAcceptedThisGame = 0;
+  int _inputsRejectedThisGame = 0;
   int _consecutiveGamesWithoutWallHits = 0;
 
   // PerfectGame mode visited-cell tracking now lives in [_simulation].
@@ -365,6 +370,8 @@ class GameCubit extends Cubit<GameCubitState> {
     _wallHitsThisGame = 0;
     _selfHitsThisGame = 0;
     _powerUpsCollectedThisGame = 0;
+    _inputsAcceptedThisGame = 0;
+    _inputsRejectedThisGame = 0;
     _currentGameFoodTypes.clear();
     _currentGameFoodPoints = 0;
     _currentGamePowerUpTypes.clear();
@@ -459,6 +466,7 @@ class GameCubit extends Cubit<GameCubitState> {
       boardWidth: gameState.boardWidth,
       boardHeight: gameState.boardHeight,
       gameMode: state.isTournamentMode ? 'tournament' : gameState.gameMode.name,
+      controlScheme: _controlSchemeName,
     );
 
     // Advances the first-run counter that every onboarding gate reads, and
@@ -658,6 +666,15 @@ class GameCubit extends Cubit<GameCubitState> {
   /// quick presses compose into a corner. Null with no game to steer.
   /// The screen feeds the answer to [changeDirection] like any swipe,
   /// which keeps one owner for acceptance, haptics and the indicators.
+  /// The control scheme in force, as the analytics see it.
+  String get _controlSchemeName {
+    final settings = _settingsCubit.state;
+    if (!settings.dPadEnabled) return 'swipe';
+    return settings.controlLayout == ControlLayout.turnButtons
+        ? 'turn_buttons'
+        : 'dpad';
+  }
+
   Direction? relativeTarget(RelativeTurn turn) {
     final snake = state.gameState?.snake;
     if (snake == null) return null;
@@ -670,6 +687,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final accepted = state.gameState!.snake.changeDirection(newDirection);
     if (accepted) {
+      _inputsAcceptedThisGame++;
       _hapticService.selectionClick();
       // Emit timestamp + direction so the edge bloom and snake-head intent
       // shimmer can fire. Clears after 300ms.
@@ -685,6 +703,7 @@ class GameCubit extends Cubit<GameCubitState> {
         }
       });
     } else {
+      _inputsRejectedThisGame++;
       // Denied: surface a double-buzz haptic + timestamp the rejection so
       // the gesture indicators can flash red. Without this, reverse-into-
       // self attempts look like the game ignored the input entirely.
@@ -1670,6 +1689,8 @@ class GameCubit extends Cubit<GameCubitState> {
       cause: cause,
       foodEaten: totalFoodEaten,
       powerUpsCollected: _powerUpsCollectedThisGame,
+      inputsAccepted: _inputsAcceptedThisGame,
+      inputsRejected: _inputsRejectedThisGame,
       maxCombo: gameState.maxCombo,
       isNewHighScore: isNewHighScore,
     );

@@ -76,12 +76,14 @@ class AnalyticsFacade implements AnalyticsClient {
     required int boardWidth,
     required int boardHeight,
     required String gameMode,
+    required String controlScheme,
   }) async =>
       _fire(
         (c) => c.trackGameStarted(
           boardWidth: boardWidth,
           boardHeight: boardHeight,
           gameMode: gameMode,
+          controlScheme: controlScheme,
         ),
       );
 
@@ -102,6 +104,8 @@ class AnalyticsFacade implements AnalyticsClient {
     required int powerUpsCollected,
     required int maxCombo,
     required bool isNewHighScore,
+    required int inputsAccepted,
+    required int inputsRejected,
   }) async =>
       _fire(
         (c) => c.trackGameOver(
@@ -113,6 +117,8 @@ class AnalyticsFacade implements AnalyticsClient {
           powerUpsCollected: powerUpsCollected,
           maxCombo: maxCombo,
           isNewHighScore: isNewHighScore,
+          inputsAccepted: inputsAccepted,
+          inputsRejected: inputsRejected,
         ),
       );
 
