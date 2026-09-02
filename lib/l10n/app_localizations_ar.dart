@@ -337,6 +337,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get gameTurnControls => 'أزرار الانعطاف';
 
   @override
+  String get settingsControlLayoutStick => 'عصا التحكم';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'ادفع في أي مكان بالشريط نحو الاتجاه المطلوب. استمر بالضغط للاستمرار في التوجيه.';
+
+  @override
+  String get poLayoutStick => 'عصا';
+
+  @override
+  String get gameJoystick => 'عصا التحكم';
+
+  @override
+  String get gameJoystickHint => 'ادفع للتوجيه';
+
+  @override
   String get settingsDPadPosition => 'موضع أزرار الاتجاهات';
 
   @override

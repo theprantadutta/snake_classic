@@ -342,6 +342,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get gameTurnControls => 'Boutons de virage';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Poussez n\'importe où dans la barre vers la direction voulue. Gardez le doigt appuyé pour continuer à diriger.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Poussez pour diriger';
+
+  @override
   String get settingsDPadPosition => 'Position du D-Pad';
 
   @override

@@ -15,7 +15,13 @@ enum ControlLayout {
   /// resting where they already are on a tall phone, and a relative turn
   /// can never be a reversal — so the single most frustrating rejection
   /// the d-pad produces cannot happen here at all.
-  turnButtons;
+  turnButtons,
+
+  /// A floating stick: the thumb lands anywhere in the bar and that point
+  /// becomes the centre; a push resolves to the nearest of the four
+  /// directions and re-centres, so cornering never needs a lift. Nothing
+  /// to aim at. See JoystickTracker for the mapping.
+  joystick;
 
   static ControlLayout fromIndex(int index) =>
       values[index.clamp(0, values.length - 1)];

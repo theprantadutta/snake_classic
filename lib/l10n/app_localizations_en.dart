@@ -339,6 +339,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameTurnControls => 'Turn buttons';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Push anywhere in the bar toward where you want to go. Keep pressing to keep steering.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Push to steer';
+
+  @override
   String get settingsDPadPosition => 'D-Pad Position';
 
   @override

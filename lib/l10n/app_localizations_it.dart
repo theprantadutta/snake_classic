@@ -342,6 +342,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get gameTurnControls => 'Pulsanti di svolta';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Spingi ovunque nella barra verso dove vuoi andare. Tieni premuto per continuare a guidare.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Spingi per guidare';
+
+  @override
   String get settingsDPadPosition => 'Posizione del D-Pad';
 
   @override

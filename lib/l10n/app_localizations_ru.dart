@@ -339,6 +339,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gameTurnControls => 'Кнопки поворота';
 
   @override
+  String get settingsControlLayoutStick => 'Джойстик';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Толкните в любом месте панели в нужную сторону. Держите палец, чтобы продолжать управлять.';
+
+  @override
+  String get poLayoutStick => 'СТИК';
+
+  @override
+  String get gameJoystick => 'Джойстик';
+
+  @override
+  String get gameJoystickHint => 'Толкните, чтобы рулить';
+
+  @override
   String get settingsDPadPosition => 'Положение D-Pad';
 
   @override

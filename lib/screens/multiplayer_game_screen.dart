@@ -22,6 +22,7 @@ import 'package:snake_classic/widgets/dpad_row_layout.dart';
 import 'package:snake_classic/widgets/game_circle_button.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/turn_buttons.dart';
+import 'package:snake_classic/widgets/joystick_controls.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
@@ -1303,6 +1304,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final dPadEnabled = settings.dPadEnabled;
     final dPadPosition = settings.dPadPosition;
     final turnButtons = settings.controlLayout == ControlLayout.turnButtons;
+    final joystick = settings.controlLayout == ControlLayout.joystick;
     final dpadSize = 120.0 * context.uiScale;
 
     // Whether this player can steer AT ALL right now — dead, ended, or
@@ -1335,6 +1337,28 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       AppLocalizations.of(context)!.mpLength,
                       '${mySnake?.body.length ?? 0}',
                     ),
+                  )
+                : joystick
+                ? Row(
+                    children: [
+                      _statPill(
+                        theme,
+                        Icons.straighten,
+                        AppLocalizations.of(context)!.mpLength,
+                        '${mySnake?.body.length ?? 0}',
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SteerableJoystick(
+                          onDirection: _handleSwipe,
+                          theme: theme,
+                          height: dpadSize,
+                          canSteer: canSteer,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _swipeIndicator(theme),
+                    ],
                   )
                 : _buildDPadRow(
                     theme: theme,

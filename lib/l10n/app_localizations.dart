@@ -712,6 +712,36 @@ abstract class AppLocalizations {
   /// **'Turn buttons'**
   String get gameTurnControls;
 
+  /// No description provided for @settingsControlLayoutStick.
+  ///
+  /// In en, this message translates to:
+  /// **'Joystick'**
+  String get settingsControlLayoutStick;
+
+  /// No description provided for @settingsControlLayoutStickDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Push anywhere in the bar toward where you want to go. Keep pressing to keep steering.'**
+  String get settingsControlLayoutStickDesc;
+
+  /// No description provided for @poLayoutStick.
+  ///
+  /// In en, this message translates to:
+  /// **'STICK'**
+  String get poLayoutStick;
+
+  /// No description provided for @gameJoystick.
+  ///
+  /// In en, this message translates to:
+  /// **'Joystick'**
+  String get gameJoystick;
+
+  /// No description provided for @gameJoystickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Push to steer'**
+  String get gameJoystickHint;
+
   /// No description provided for @settingsDPadPosition.
   ///
   /// In en, this message translates to:

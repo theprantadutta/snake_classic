@@ -342,6 +342,22 @@ class AppLocalizationsPl extends AppLocalizations {
   String get gameTurnControls => 'Przyciski skrętu';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Pchnij w dowolnym miejscu paska w stronę, w którą chcesz jechać. Trzymaj, by dalej sterować.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Pchnij, by sterować';
+
+  @override
   String get settingsDPadPosition => 'Pozycja D-Pada';
 
   @override

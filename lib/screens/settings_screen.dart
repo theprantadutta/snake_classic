@@ -1494,6 +1494,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.settingsControlLayoutTurn,
                     description: l10n.settingsControlLayoutTurnDesc,
                   ),
+                  option(
+                    layout: ControlLayout.joystick,
+                    icon: Icons.control_camera_rounded,
+                    title: l10n.settingsControlLayoutStick,
+                    description: l10n.settingsControlLayoutStickDesc,
+                  ),
                 ],
               ),
             ),

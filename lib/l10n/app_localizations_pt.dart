@@ -341,6 +341,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get gameTurnControls => 'Botões de curva';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Empurre em qualquer lugar da barra na direção desejada. Mantenha pressionado para continuar guiando.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Empurre para guiar';
+
+  @override
   String get settingsDPadPosition => 'Posição do D-Pad';
 
   @override

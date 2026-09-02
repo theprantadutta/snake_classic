@@ -246,24 +246,43 @@ class _PauseOverlayState extends State<PauseOverlay> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                // Three text chips in the same 170px
+                                // column as the buttons above.
                                 _buildAudioToggle(
                                   label: l10n.poLayoutDPad,
                                   value: settings.controlLayout ==
                                       ControlLayout.dPad,
                                   onIcon: Icons.gamepad,
                                   offIcon: Icons.gamepad_outlined,
+                                  width: 52,
+                                  showIcon: false,
                                   onChanged: (_) =>
                                       cubit.setControlLayout(ControlLayout.dPad),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 7),
                                 _buildAudioToggle(
                                   label: l10n.poLayoutTurn,
                                   value: settings.controlLayout ==
                                       ControlLayout.turnButtons,
                                   onIcon: Icons.turn_left_rounded,
                                   offIcon: Icons.turn_left_rounded,
+                                  width: 52,
+                                  showIcon: false,
                                   onChanged: (_) => cubit.setControlLayout(
                                     ControlLayout.turnButtons,
+                                  ),
+                                ),
+                                const SizedBox(width: 7),
+                                _buildAudioToggle(
+                                  label: l10n.poLayoutStick,
+                                  value: settings.controlLayout ==
+                                      ControlLayout.joystick,
+                                  onIcon: Icons.control_camera_rounded,
+                                  offIcon: Icons.control_camera_rounded,
+                                  width: 52,
+                                  showIcon: false,
+                                  onChanged: (_) => cubit.setControlLayout(
+                                    ControlLayout.joystick,
                                   ),
                                 ),
                               ],
@@ -383,6 +402,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
     required IconData onIcon,
     required IconData offIcon,
     required ValueChanged<bool> onChanged,
+    double width = 80,
+    bool showIcon = true,
   }) {
     final color = theme.accentColor;
     return GestureDetector(
@@ -393,7 +414,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
         onChanged(!value);
       },
       child: Container(
-        width: 80,
+        width: width,
         height: 42,
         decoration: BoxDecoration(
           color: value
@@ -408,12 +429,14 @@ class _PauseOverlayState extends State<PauseOverlay> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              value ? onIcon : offIcon,
-              size: 16,
-              color: color.withValues(alpha: value ? 0.9 : 0.45),
-            ),
-            const SizedBox(width: 5),
+            if (showIcon) ...[
+              Icon(
+                value ? onIcon : offIcon,
+                size: 16,
+                color: color.withValues(alpha: value ? 0.9 : 0.45),
+              ),
+              const SizedBox(width: 5),
+            ],
             Text(
               label,
               style: TextStyle(

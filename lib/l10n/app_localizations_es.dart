@@ -344,6 +344,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gameTurnControls => 'Botones de giro';
 
   @override
+  String get settingsControlLayoutStick => 'Joystick';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'Empuja en cualquier parte de la barra hacia donde quieras ir. Mantén pulsado para seguir girando.';
+
+  @override
+  String get poLayoutStick => 'STICK';
+
+  @override
+  String get gameJoystick => 'Joystick';
+
+  @override
+  String get gameJoystickHint => 'Empuja para girar';
+
+  @override
   String get settingsDPadPosition => 'Posición de la cruceta';
 
   @override

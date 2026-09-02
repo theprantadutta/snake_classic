@@ -339,6 +339,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get gameTurnControls => 'मोड़ बटन';
 
   @override
+  String get settingsControlLayoutStick => 'जॉयस्टिक';
+
+  @override
+  String get settingsControlLayoutStickDesc =>
+      'बार में कहीं भी जिस दिशा में जाना है उधर धकेलें। दबाए रखकर चलाते रहें।';
+
+  @override
+  String get poLayoutStick => 'स्टिक';
+
+  @override
+  String get gameJoystick => 'जॉयस्टिक';
+
+  @override
+  String get gameJoystickHint => 'चलाने के लिए धकेलें';
+
+  @override
   String get settingsDPadPosition => 'डी-पैड स्थिति';
 
   @override

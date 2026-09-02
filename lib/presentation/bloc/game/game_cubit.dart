@@ -670,9 +670,14 @@ class GameCubit extends Cubit<GameCubitState> {
   String get _controlSchemeName {
     final settings = _settingsCubit.state;
     if (!settings.dPadEnabled) return 'swipe';
-    return settings.controlLayout == ControlLayout.turnButtons
-        ? 'turn_buttons'
-        : 'dpad';
+    switch (settings.controlLayout) {
+      case ControlLayout.dPad:
+        return 'dpad';
+      case ControlLayout.turnButtons:
+        return 'turn_buttons';
+      case ControlLayout.joystick:
+        return 'joystick';
+    }
   }
 
   Direction? relativeTarget(RelativeTurn turn) {

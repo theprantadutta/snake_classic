@@ -5,6 +5,7 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/joystick_controls.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/turn_buttons.dart';
 
@@ -131,6 +132,12 @@ class GameBottomBar extends StatelessWidget {
                       height: dpadSize,
                       isInteractive: isInteractive,
                     )
+                  : controlLayout == ControlLayout.joystick
+                  ? _buildJoystickRow(
+                      l10n: l10n,
+                      height: dpadSize,
+                      isInteractive: isInteractive,
+                    )
                   : _buildDPadRow(
                       context,
                       l10n: l10n,
@@ -213,6 +220,46 @@ class GameBottomBar extends StatelessWidget {
   /// move the d-pad to that edge and put both stats together on the other
   /// side, which keeps the thumb's half of the bar clear of anything it might
   /// brush past on the way to a turn.
+  /// The joystick zone is everything between the two readouts — the
+  /// wider the better, since the thumb lands wherever it likes.
+  Widget _buildJoystickRow({
+    required AppLocalizations l10n,
+    required double height,
+    required bool isInteractive,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _buildControlBarStat(
+          l10n.gbLength,
+          '${gameState.snake.length}',
+          Icons.straighten,
+          theme,
+          isSmallScreen,
+          alignment: Alignment.centerLeft,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SteerableJoystick(
+            onDirection: onDirection,
+            theme: theme,
+            height: height,
+            canSteer: isInteractive,
+          ),
+        ),
+        const SizedBox(width: 10),
+        _buildControlBarStat(
+          l10n.gbSpeed,
+          _getSpeedLabel(l10n, gameState.gameSpeed),
+          _getSpeedIcon(gameState.gameSpeed),
+          theme,
+          isSmallScreen,
+          alignment: Alignment.centerRight,
+        ),
+      ],
+    );
+  }
+
   /// Turn buttons fill both ends of the bar; the readouts sit between
   /// them, stacked, so the buttons keep the full bar height.
   Widget _buildTurnButtonsRow({
