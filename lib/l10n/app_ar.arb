@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "فُتحت مؤخرًا",
   "goInProgress": "قيد التقدم",
   "goPlayAgain": "العب مجددًا",
+  "goAdNoticeRewarded": "إعلان قصير بعد ذلك · +{count} عملة مقابل المشاهدة",
+  "goAdNoticeInterstitial": "سيُعرض إعلان قصير بعد ذلك",
   "goMenu": "القائمة",
   "storeTitle": "متجر Snake",
   "storeTabPro": "برو",

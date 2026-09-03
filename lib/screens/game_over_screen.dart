@@ -32,6 +32,7 @@ import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/services/ads/game_over_ad_gate.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
@@ -1699,12 +1700,19 @@ class _BottomActionBar extends StatelessWidget {
   /// Everything the reward callback touches is captured BEFORE the await —
   /// onReward fires after the ad is dismissed, across an async gap where this
   /// context may already be gone.
-  Future<void> _showGameOverAd(BuildContext context) async {
+  ///
+  /// [announced] is what this bar told the player when it built; the
+  /// slot honours it, so the notice above the buttons is never a lie.
+  Future<void> _showGameOverAd(
+    BuildContext context, {
+    required GameOverAdFormat announced,
+  }) async {
     final coins = context.read<CoinsCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     await getIt<AdService>().maybeShowGameOverAd(
+      announced: announced,
       onReward: () {
         coins.earnCoins(
           CoinEarningSource.watchedAd,
@@ -1723,6 +1731,9 @@ class _BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Decided once per build and captured by both buttons, so the notice
+    // and the press agree even if an ad fills in between.
+    final announced = getIt<AdService>().peekGameOverAd();
     return Container(
       padding: EdgeInsets.fromLTRB(
         16 + context.sideInset(),
@@ -1741,7 +1752,19 @@ class _BottomActionBar extends StatelessWidget {
           ],
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Say so BEFORE the press. A rewarded ad is a bonus and reads
+          // as one; a plain one is a toll the player at least agreed to.
+          if (announced != GameOverAdFormat.none) ...[
+            _AdNotice(
+              theme: theme,
+              rewarded: announced == GameOverAdFormat.rewarded,
+            ).gameZoomIn(delay: 550.ms),
+            SizedBox(height: compact ? 8 : 10),
+          ],
+          Row(
         children: [
           Expanded(
             child: GradientButton(
@@ -1751,7 +1774,7 @@ class _BottomActionBar extends StatelessWidget {
                 // Frequency-capped + Pro/connectivity-gated inside AdService;
                 // a no-op when an ad shouldn't show. May be a rewarded
                 // interstitial, in which case watching it through pays coins.
-                await _showGameOverAd(context);
+                await _showGameOverAd(context, announced: announced);
                 if (!context.mounted) return;
                 // Strictly AFTER the ad — the picker is a modal sheet and
                 // would otherwise be raced by (or buried under) a full-screen
@@ -1774,7 +1797,7 @@ class _BottomActionBar extends StatelessWidget {
               width: double.infinity,
               height: compact ? 50 : 56,
               onPressed: () async {
-                await _showGameOverAd(context);
+                await _showGameOverAd(context, announced: announced);
                 if (!context.mounted) return;
                 // Offered on this path too: a player heading back to the menu
                 // after one game is exactly the churn-risk cohort this picker
@@ -1793,6 +1816,59 @@ class _BottomActionBar extends StatelessWidget {
             ).gameZoomIn(delay: 700.ms),
           ),
         ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One line above the buttons: what pressing either of them plays, and
+/// what the player gets for it. Gold when there are coins in it.
+class _AdNotice extends StatelessWidget {
+  const _AdNotice({required this.theme, required this.rewarded});
+
+  final GameTheme theme;
+  final bool rewarded;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final color = rewarded ? theme.foodColor : theme.accentColor;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              rewarded ? Icons.monetization_on : Icons.ondemand_video,
+              size: 15,
+              color: color.withValues(alpha: 0.9),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                rewarded
+                    ? l10n.goAdNoticeRewarded(AdService.freeCoinsPerAd)
+                    : l10n.goAdNoticeInterstitial,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color.withValues(alpha: 0.95),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

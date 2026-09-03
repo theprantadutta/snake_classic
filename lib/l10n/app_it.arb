@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "Sbloccati di recente",
   "goInProgress": "In corso",
   "goPlayAgain": "GIOCA ANCORA",
+  "goAdNoticeRewarded": "Breve annuncio a seguire · +{count} monete se lo guardi",
+  "goAdNoticeInterstitial": "A seguire un breve annuncio",
   "goMenu": "MENU",
   "storeTitle": "Negozio Snake",
   "storeTabPro": "Pro",

@@ -1101,6 +1101,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get goPlayAgain => 'العب مجددًا';
 
   @override
+  String goAdNoticeRewarded(Object count) {
+    return 'إعلان قصير بعد ذلك · +$count عملة مقابل المشاهدة';
+  }
+
+  @override
+  String get goAdNoticeInterstitial => 'سيُعرض إعلان قصير بعد ذلك';
+
+  @override
   String get goMenu => 'القائمة';
 
   @override

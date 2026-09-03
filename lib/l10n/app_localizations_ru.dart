@@ -1110,6 +1110,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get goPlayAgain => 'СЫГРАТЬ ЕЩЁ';
 
   @override
+  String goAdNoticeRewarded(Object count) {
+    return 'Далее короткая реклама · +$count монет за просмотр';
+  }
+
+  @override
+  String get goAdNoticeInterstitial => 'Далее покажем короткую рекламу';
+
+  @override
   String get goMenu => 'МЕНЮ';
 
   @override

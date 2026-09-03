@@ -2038,6 +2038,18 @@ abstract class AppLocalizations {
   /// **'PLAY AGAIN'**
   String get goPlayAgain;
 
+  /// No description provided for @goAdNoticeRewarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Short ad next · +{count} coins for watching'**
+  String goAdNoticeRewarded(Object count);
+
+  /// No description provided for @goAdNoticeInterstitial.
+  ///
+  /// In en, this message translates to:
+  /// **'A short ad plays next'**
+  String get goAdNoticeInterstitial;
+
   /// No description provided for @goMenu.
   ///
   /// In en, this message translates to:

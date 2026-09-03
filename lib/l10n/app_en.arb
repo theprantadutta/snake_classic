@@ -458,6 +458,8 @@
   "goRecentlyUnlocked": "Recently Unlocked",
   "goInProgress": "In Progress",
   "goPlayAgain": "PLAY AGAIN",
+  "goAdNoticeRewarded": "Short ad next · +{count} coins for watching",
+  "goAdNoticeInterstitial": "A short ad plays next",
   "goMenu": "MENU",
   "storeTitle": "Snake Store",
   "storeTabPro": "Pro",

@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "Недавно открытые",
   "goInProgress": "В процессе",
   "goPlayAgain": "СЫГРАТЬ ЕЩЁ",
+  "goAdNoticeRewarded": "Далее короткая реклама · +{count} монет за просмотр",
+  "goAdNoticeInterstitial": "Далее покажем короткую рекламу",
   "goMenu": "МЕНЮ",
   "storeTitle": "Магазин Snake",
   "storeTabPro": "Pro",

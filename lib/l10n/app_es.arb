@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "Desbloqueados recientemente",
   "goInProgress": "En progreso",
   "goPlayAgain": "JUGAR OTRA VEZ",
+  "goAdNoticeRewarded": "Anuncio breve a continuación · +{count} monedas por verlo",
+  "goAdNoticeInterstitial": "A continuación se reproduce un anuncio breve",
   "goMenu": "MENÚ",
   "storeTitle": "Tienda Snake",
   "storeTabPro": "Pro",

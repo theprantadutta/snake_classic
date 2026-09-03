@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "Débloqués récemment",
   "goInProgress": "En cours",
   "goPlayAgain": "REJOUER",
+  "goAdNoticeRewarded": "Courte pub ensuite · +{count} pièces si vous la regardez",
+  "goAdNoticeInterstitial": "Une courte pub suit",
   "goMenu": "MENU",
   "storeTitle": "Boutique Snake",
   "storeTabPro": "Pro",

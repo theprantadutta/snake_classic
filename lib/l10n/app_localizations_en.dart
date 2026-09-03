@@ -1103,6 +1103,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goPlayAgain => 'PLAY AGAIN';
 
   @override
+  String goAdNoticeRewarded(Object count) {
+    return 'Short ad next · +$count coins for watching';
+  }
+
+  @override
+  String get goAdNoticeInterstitial => 'A short ad plays next';
+
+  @override
   String get goMenu => 'MENU';
 
   @override

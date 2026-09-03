@@ -1104,6 +1104,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get goPlayAgain => 'फिर से खेलें';
 
   @override
+  String goAdNoticeRewarded(Object count) {
+    return 'आगे एक छोटा विज्ञापन · देखने पर +$count सिक्के';
+  }
+
+  @override
+  String get goAdNoticeInterstitial => 'आगे एक छोटा विज्ञापन चलेगा';
+
+  @override
   String get goMenu => 'मेनू';
 
   @override

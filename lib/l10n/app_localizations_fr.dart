@@ -1114,6 +1114,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get goPlayAgain => 'REJOUER';
 
   @override
+  String goAdNoticeRewarded(Object count) {
+    return 'Courte pub ensuite · +$count pièces si vous la regardez';
+  }
+
+  @override
+  String get goAdNoticeInterstitial => 'Une courte pub suit';
+
+  @override
   String get goMenu => 'MENU';
 
   @override

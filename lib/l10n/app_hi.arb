@@ -328,6 +328,8 @@
   "goRecentlyUnlocked": "हाल में अनलॉक",
   "goInProgress": "प्रगति में",
   "goPlayAgain": "फिर से खेलें",
+  "goAdNoticeRewarded": "आगे एक छोटा विज्ञापन · देखने पर +{count} सिक्के",
+  "goAdNoticeInterstitial": "आगे एक छोटा विज्ञापन चलेगा",
   "goMenu": "मेनू",
   "storeTitle": "स्नेक स्टोर",
   "storeTabPro": "प्रो",

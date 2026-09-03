@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/ads/ad_config.dart';
+import 'package:snake_classic/services/ads/game_over_ad_gate.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -635,6 +636,33 @@ class AdService {
     _loadInterstitial();
   }
 
+  /// What the game-over slot would do RIGHT NOW, without changing anything.
+  ///
+  /// The game over screen asks this when it builds, so it can tell the
+  /// player before they press a button. The press then hands the answer
+  /// back to [maybeShowGameOverAd] as `announced`, and the slot honours
+  /// it: an ad that filled in between is not sprung on a player who was
+  /// told there would be none. Being told is what turns a toll into a
+  /// bonus — the same ad from a button labelled MENU is what reviews
+  /// complain about.
+  GameOverAdFormat peekGameOverAd() {
+    if (!adsEnabled) return GameOverAdFormat.none;
+    final prefs = _prefs;
+    if (prefs == null) return GameOverAdFormat.none;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return GameOverAdGate.decide(
+      firstGameOverDone: prefs.getBool(_kFirstGameOverDone) ?? false,
+      gamesSinceLastAd: prefs.getInt(_kGamesSinceInterstitial) ?? 0,
+      msSinceInterstitial: now - (prefs.getInt(_kLastInterstitialMs) ?? 0),
+      msSinceAnyFullScreenAd: now - _lastFullScreenAdMs,
+      rewardedLoaded: _rewardedInterstitial != null,
+      interstitialLoaded: _interstitial != null,
+      everyNGames: _interstitialEveryNGames,
+      minGapMs: _interstitialMinGap.inMilliseconds,
+      fullScreenGapMs: _fullScreenAdMinGap.inMilliseconds,
+    );
+  }
+
   /// Show the game-over ad if the frequency cap allows. Returns true if one
   /// was shown. Counts the game regardless.
   ///
@@ -645,9 +673,18 @@ class AdService {
   /// The plain interstitial is the fallback when the rewarded one hasn't
   /// filled — which, at current fill rates, is often.
   ///
+  /// [announced] is what the screen told the player would happen (from
+  /// [peekGameOverAd]). Told nothing → nothing plays, even if an ad has
+  /// filled since. Told a rewarded ad → a plain one is not substituted,
+  /// because the promised coins would not arrive. Told a plain one → a
+  /// rewarded one that filled meanwhile is fine; it only adds coins.
+  ///
   /// [onReward] is only invoked on the rewarded-interstitial path, and only
   /// when the player actually watched it through.
-  Future<bool> maybeShowGameOverAd({VoidCallback? onReward}) async {
+  Future<bool> maybeShowGameOverAd({
+    VoidCallback? onReward,
+    GameOverAdFormat? announced,
+  }) async {
     if (!adsEnabled) return false;
     final prefs = _prefs;
     if (prefs == null) return false;
@@ -659,15 +696,15 @@ class AdService {
     }
 
     final games = (prefs.getInt(_kGamesSinceInterstitial) ?? 0) + 1;
-    final lastMs = prefs.getInt(_kLastInterstitialMs) ?? 0;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    // The gap counts from the last interstitial AND from any other full-screen
-    // ad (rewarded / app-open) — no back-to-back full-screen ads, ever.
-    final gapOk = now - lastMs >= _interstitialMinGap.inMilliseconds &&
-        now - _lastFullScreenAdMs >= _fullScreenAdMinGap.inMilliseconds;
-    final haveAd = _rewardedInterstitial != null || _interstitial != null;
+    var format = peekGameOverAd();
+    if (announced == GameOverAdFormat.none) {
+      format = GameOverAdFormat.none;
+    } else if (announced == GameOverAdFormat.rewarded &&
+        format == GameOverAdFormat.interstitial) {
+      format = GameOverAdFormat.none;
+    }
 
-    if (games < _interstitialEveryNGames || !gapOk || !haveAd) {
+    if (format == GameOverAdFormat.none) {
       await prefs.setInt(_kGamesSinceInterstitial, games);
       _loadInterstitial();
       _loadRewardedInterstitial();
@@ -677,7 +714,7 @@ class AdService {
     // Preferred path: rewarded interstitial. Resets the same counter and gap
     // as the plain one, so the slot fires at one cadence regardless of which
     // format filled it.
-    if (_rewardedInterstitial != null) {
+    if (format == GameOverAdFormat.rewarded) {
       final shown = await _showRewardedInterstitial(
         placement: 'game_over',
         onReward: onReward ?? () {},
@@ -688,8 +725,9 @@ class AdService {
             _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
         return true;
       }
-      // Failed to show — fall through to the plain interstitial if we have one.
-      if (_interstitial == null) {
+      // Failed to show. Fall through to the plain interstitial only if the
+      // player was not promised coins.
+      if (_interstitial == null || announced == GameOverAdFormat.rewarded) {
         await prefs.setInt(_kGamesSinceInterstitial, games);
         return false;
       }
