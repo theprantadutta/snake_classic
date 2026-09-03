@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/control_layout_picker.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -1368,142 +1369,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// D-pad vs turn buttons. Device-local, read straight off the cubit.
+  /// D-pad / turn buttons / joystick. Device-local, read straight off the
+  /// cubit. The picker itself is a standalone widget so it can be tested
+  /// inside a scroll view, which is where it lives here.
   Widget _buildControlLayoutPicker(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<GameSettingsCubit, GameSettingsState>(
       buildWhen: (a, b) => a.controlLayout != b.controlLayout,
       builder: (context, settings) {
-        Widget option({
-          required ControlLayout layout,
-          required IconData icon,
-          required String title,
-          required String description,
-        }) {
-          final isSelected = settings.controlLayout == layout;
-          return Expanded(
-            child: Semantics(
-              button: true,
-              selected: isSelected,
-              label: title,
-              child: GestureDetector(
-                onTap: () async {
-                  await context.read<GameSettingsCubit>().setControlLayout(
-                    layout,
-                  );
-                  _analytics.trackSettingChanged(
-                    settingName: 'control_layout',
-                    value: layout.name,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.accentColor.withValues(alpha: 0.2)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: isSelected
-                        ? Border.all(color: theme.accentColor, width: 1.5)
-                        : null,
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        icon,
-                        size: 22,
-                        color: theme.accentColor.withValues(
-                          alpha: isSelected ? 1.0 : 0.7,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(
-                            alpha: isSelected ? 1.0 : 0.8,
-                          ),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        description,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 11,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.videogame_asset_outlined,
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.settingsControlLayout,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: theme.backgroundColor.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  option(
-                    layout: ControlLayout.dPad,
-                    icon: Icons.gamepad_outlined,
-                    title: l10n.settingsControlLayoutDPad,
-                    description: l10n.settingsControlLayoutDPadDesc,
-                  ),
-                  option(
-                    layout: ControlLayout.turnButtons,
-                    icon: Icons.turn_left_rounded,
-                    title: l10n.settingsControlLayoutTurn,
-                    description: l10n.settingsControlLayoutTurnDesc,
-                  ),
-                  option(
-                    layout: ControlLayout.joystick,
-                    icon: Icons.control_camera_rounded,
-                    title: l10n.settingsControlLayoutStick,
-                    description: l10n.settingsControlLayoutStickDesc,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        return ControlLayoutPicker(
+          theme: theme,
+          selected: settings.controlLayout,
+          onSelect: (layout) async {
+            await context.read<GameSettingsCubit>().setControlLayout(layout);
+            _analytics.trackSettingChanged(
+              settingName: 'control_layout',
+              value: layout.name,
+            );
+          },
         );
       },
     );
