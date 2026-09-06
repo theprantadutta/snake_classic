@@ -956,297 +956,298 @@ class AppDatabase extends _$AppDatabase {
       await _createIndexes();
     },
     onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        // Add indexes for frequently queried columns
-        await _createIndexes();
-      }
-      if (from < 3) {
-        // v3: add the modelJson catch-all column to Statistics so the full
-        // GameStatistics model can round-trip without the per-field name
-        // translation that lost data on every save/load cycle.
-        await m.addColumn(statistics, statistics.modelJson);
-      }
-      if (from < 4) {
-        // v4: add `updatedAt` to every synced table so the sync engine
-        // has a uniform "this row changed at X" signal independent of
-        // the older / inconsistently-maintained `lastUpdated` columns.
-        //
-        // SQLite ALTER TABLE ADD COLUMN only accepts *constant*
-        // defaults — `CURRENT_TIMESTAMP` is non-constant and gets
-        // rejected. We add the column with a literal-0 default, then
-        // backfill the actual now() value in a follow-up UPDATE so
-        // existing rows aren't stuck at the epoch. New inserts pick
-        // up the proper currentDateAndTime default from the regular
-        // Drift companion path going forward.
-        const tables = <String>[
-          'game_settings',
-          'statistics',
-          'achievements',
-          'coins',
-          'coin_transactions',
-          'premium_status',
-          'unlocked_items',
-          'battle_passes',
-          'daily_challenges',
-        ];
-        for (final t in tables) {
+      // One transaction for the whole upgrade. Drift writes the new
+      // user_version only after this returns, and SQLite DDL is
+      // transactional, so a step that throws now rolls back every step
+      // before it instead of leaving them applied under the old version
+      // number for the next launch to replay. Every column step below is
+      // ALSO idempotent, for the devices already stuck in that state.
+      await transaction(() async {
+        if (from < 2) {
+          // Add indexes for frequently queried columns
+          await _createIndexes();
+        }
+        if (from < 3) {
+          // v3: add the modelJson catch-all column to Statistics so the full
+          // GameStatistics model can round-trip without the per-field name
+          // translation that lost data on every save/load cycle.
+          await _addColumnIfMissing(m, statistics, statistics.modelJson);
+        }
+        if (from < 4) {
+          // v4: add `updatedAt` to every synced table so the sync engine
+          // has a uniform "this row changed at X" signal independent of
+          // the older / inconsistently-maintained `lastUpdated` columns.
+          //
+          // SQLite ALTER TABLE ADD COLUMN only accepts *constant*
+          // defaults — `CURRENT_TIMESTAMP` is non-constant and gets
+          // rejected. We add the column with a literal-0 default, then
+          // backfill the actual now() value in a follow-up UPDATE so
+          // existing rows aren't stuck at the epoch. New inserts pick
+          // up the proper currentDateAndTime default from the regular
+          // Drift companion path going forward.
+          const tables = <String>[
+            'game_settings',
+            'statistics',
+            'achievements',
+            'coins',
+            'coin_transactions',
+            'premium_status',
+            'unlocked_items',
+            'battle_passes',
+            'daily_challenges',
+          ];
+          for (final t in tables) {
+            // Guarded like every other column step: a replay onto a table
+            // that already has the column must be a no-op, not a crash.
+            if (await _hasRawColumn(t, 'updated_at')) continue;
+            await customStatement(
+              'ALTER TABLE "$t" ADD COLUMN "updated_at" INTEGER NOT NULL DEFAULT 0',
+            );
+            await customStatement(
+              "UPDATE \"$t\" SET \"updated_at\" = CAST(strftime('%s', 'now') AS INTEGER)",
+            );
+          }
+        }
+        if (from < 5) {
+          // v5: leaderboard cache + meta. Server-rendered leaderboards
+          // are mirrored locally so the screen has something to show
+          // when offline; refreshes are write-through replaces from
+          // LeaderboardService.
+          await m.createTable(leaderboardEntries);
+          await m.createTable(leaderboardMeta);
           await customStatement(
-            'ALTER TABLE "$t" ADD COLUMN "updated_at" INTEGER NOT NULL DEFAULT 0',
-          );
-          await customStatement(
-            "UPDATE \"$t\" SET \"updated_at\" = CAST(strftime('%s', 'now') AS INTEGER)",
+            'CREATE INDEX IF NOT EXISTS idx_leaderboard_entries_board_rank '
+            'ON leaderboard_entries(board_type, rank)',
           );
         }
-      }
-      if (from < 5) {
-        // v5: leaderboard cache + meta. Server-rendered leaderboards
-        // are mirrored locally so the screen has something to show
-        // when offline; refreshes are write-through replaces from
-        // LeaderboardService.
-        await m.createTable(leaderboardEntries);
-        await m.createTable(leaderboardMeta);
-        await customStatement(
-          'CREATE INDEX IF NOT EXISTS idx_leaderboard_entries_board_rank '
-          'ON leaderboard_entries(board_type, rank)',
-        );
-      }
-      if (from < 6) {
-        // v6: tournament cache (list + per-tournament leaderboard +
-        // staleness meta). Same pattern as the leaderboard cache.
-        await m.createTable(tournamentsCache);
-        await m.createTable(tournamentLeaderboardCache);
-        await m.createTable(tournamentMeta);
-        await customStatement(
-          'CREATE INDEX IF NOT EXISTS idx_tournaments_cache_active_end '
-          'ON tournaments_cache(is_active_list, end_date)',
-        );
-        await customStatement(
-          'CREATE INDEX IF NOT EXISTS idx_tournament_leaderboard_tid_rank '
-          'ON tournament_leaderboard_cache(tournament_id, rank)',
-        );
-      }
-      if (from < 7) {
-        // v7: friends cache (friend list + friend requests +
-        // staleness meta). Mutations are live API calls, the cache
-        // only serves the read path.
-        await m.createTable(friendsCache);
-        await m.createTable(friendRequestsCache);
-        await m.createTable(friendsMeta);
-        await customStatement(
-          'CREATE INDEX IF NOT EXISTS idx_friend_requests_from_user '
-          'ON friend_requests_cache(from_user_id)',
-        );
-      }
-      if (from < 8) {
-        // v8: weekly quests claim mirror, analogous to daily_challenges.
-        // Sync engine writes here; backend's UserWeeklyQuestClaim table
-        // is the canonical sync destination. The legacy
-        // /weekly-quests/progress endpoint still maintains the
-        // gameplay-side UserWeeklyQuest table; the two coexist.
-        await m.createTable(weeklyQuests);
-        await customStatement(
-          'CREATE INDEX IF NOT EXISTS idx_weekly_quests_week_start '
-          'ON weekly_quests(week_start_date)',
-        );
-        await customStatement(
-          'CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_quests_quest_id '
-          'ON weekly_quests(quest_id)',
-        );
-      }
-      if (from < 9) {
-        // v9: daily bonus state singleton. Drift-first replacement for
-        // the legacy SharedPreferences-only gate ('last_daily_bonus_claim_date',
-        // 'daily_bonuses'). SyncEngine pushes the snapshot to the
-        // backend's DailyLoginBonus table.
-        await m.createTable(dailyBonusState);
-      }
-      if (from < 10) {
-        // v10: lifetime player progression singleton (XP + level), parallel
-        // to the per-season battle pass. SyncEngine pushes it to the
-        // backend's User.Experience/Level via the player_progress dataType.
-        await m.createTable(playerProgressTable);
-      }
-      if (from < 11) {
-        // v11: daily_challenges had no unique index on challenge_id, so
-        // upsertDailyChallenge (insertOnConflictUpdate) kept INSERTing new
-        // rows instead of upserting — once offline-first progress writes
-        // started, duplicate rows piled up and the sync batch shipped the
-        // same challenge_id twice, 500ing the backend. Dedupe (keep the
-        // latest row per challenge_id) then add the unique index so upserts
-        // behave like weekly_quests.
-        await customStatement(
-          'DELETE FROM daily_challenges WHERE id NOT IN '
-          '(SELECT MAX(id) FROM daily_challenges GROUP BY challenge_id)',
-        );
-        await customStatement(
-          'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_challenge_id '
-          'ON daily_challenges(challenge_id)',
-        );
-      }
-      if (from < 12) {
-        // v12: haptics toggle + per-category notification opt-ins move into
-        // the synced settings row. Previously haptics had no setting at all
-        // and the notification toggles lived in SharedPreferences
-        // (device-only, never synced). A one-time import of the legacy
-        // SharedPreferences values runs at app start (see
-        // legacy_prefs_import.dart), not here — Drift migrations shouldn't
-        // touch platform channels.
-        await m.addColumn(gameSettings, gameSettings.hapticsEnabled);
-        await m.addColumn(gameSettings, gameSettings.notifyDailyReminder);
-        await m.addColumn(gameSettings, gameSettings.notifyTournament);
-        await m.addColumn(gameSettings, gameSettings.notifyAchievement);
-        await m.addColumn(gameSettings, gameSettings.notifySocial);
-        await m.addColumn(gameSettings, gameSettings.notifySpecialEvent);
-      }
-      if (from < 13) {
-        // v13: power-up inventory singleton. Drift-first replacement for
-        // the legacy SharedPreferences-only store ('power_up_inventory_v1')
-        // so paid inventory survives reinstall. SyncEngine pushes the
-        // snapshot to the backend's UserPowerUpInventory mirror. The
-        // one-time import of the legacy SharedPreferences value runs in
-        // PowerUpCubit.loadInventory, not here — Drift migrations
-        // shouldn't touch platform channels.
-        await m.createTable(powerUpInventoryState);
-      }
-      if (from < 14) {
-        // v14: player-selected starting-speed preset. Lands on the synced
-        // settings row (not SharedPreferences) so it travels with the
-        // account like every other gameplay setting. Existing rows default
-        // to 1 = Difficulty.normal, which is the historical 300ms base, so
-        // the upgrade is a no-op for anyone already playing.
-        await m.addColumn(gameSettings, gameSettings.difficultyIndex);
-      }
-      if (from < 15) {
-        // v15: app language override. NULL = follow the device locale, so
-        // the upgrade is a no-op for everyone until they pick a language
-        // in settings. Lands on the synced settings row (like theme) so
-        // the choice travels with the account — and so the backend can
-        // localize push notifications later.
-        await m.addColumn(gameSettings, gameSettings.localeCode);
-      }
-      if (from < 16) {
-        // v16: dead-letter store for scores the backend permanently refused.
-        // Nothing to backfill — anything rejected before this existed was
-        // deleted at the time and is unrecoverable.
-        await m.createTable(scoreDeadLetters);
-      }
-      if (from < 17) {
-        // v17: which game mode a GameMode challenge requires. Nullable, so
-        // existing rows land on NULL = "any mode" — the same value the
-        // backend uses for an unrestricted challenge. The next successful
-        // refresh writes the real value for today's set.
-        //
-        // Added defensively because these three are the only bare
-        // ADD COLUMNs a device can already have applied while its
-        // user_version still reads 15: the v19 bug below crashed the run
-        // two steps later, and drift neither wraps the run in a transaction
-        // nor bumps user_version until every step succeeds. Without the
-        // check those devices replay v17 on each launch and die on
-        // "duplicate column name" forever. See [_addColumnIfMissing].
-        await _addColumnIfMissing(
-            m, dailyChallenges, dailyChallenges.requiredGameMode);
-        await _addColumnIfMissing(m, dailyChallenges, dailyChallenges.xpReward);
-        await _addColumnIfMissing(
-            m, dailyChallenges, dailyChallenges.difficulty);
-      }
-      if (from < 18) {
-        // v18: the client half of exactly-once multiplayer settlement.
-        // Nothing to backfill — before this, rewards were credited straight
-        // off the GameEnded broadcast and were never tracked at all.
-        await m.createTable(appliedMultiplayerSettlements);
-      }
-      if (from >= 18 && from < 19) {
-        // v19: per-step progress, so a crash midway through applying a
-        // settlement neither loses the remaining rewards nor replays the ones
-        // already applied.
-        //
-        // The `from >= 18` lower bound is load-bearing, and its absence was a
-        // launch-crash for every existing install. m.createTable above builds
-        // the table from its CURRENT Dart definition, which already carries
-        // these four columns — so a device coming from 17 or earlier gets the
-        // finished table at v18 and must not then be told to add the columns
-        // again. Only a device that stopped at exactly 18, when the table was
-        // genuinely four columns shorter, needs this step.
-        await m.addColumn(
-            appliedMultiplayerSettlements, appliedMultiplayerSettlements.statsApplied);
-        await m.addColumn(
-            appliedMultiplayerSettlements, appliedMultiplayerSettlements.coinsApplied);
-        await m.addColumn(
-            appliedMultiplayerSettlements, appliedMultiplayerSettlements.xpApplied);
-        await m.addColumn(
-            appliedMultiplayerSettlements, appliedMultiplayerSettlements.completedAt);
-        // Under v18 a row's mere existence meant "fully applied". Migrating it
-        // to all-steps-done preserves that meaning; leaving the new flags
-        // false would re-apply rewards that were already granted.
-        await m.database.customStatement(
-          'UPDATE applied_multiplayer_settlements '
-          'SET stats_applied = 1, coins_applied = 1, xp_applied = 1, '
-          '    completed_at = applied_at',
-        );
-      }
-      if (from < 20) {
-        // v20: daily-challenge rewards stop being credited locally and start
-        // being applied from server settlements, exactly once.
-        await m.createTable(appliedDailyChallengeSettlements);
+        if (from < 6) {
+          // v6: tournament cache (list + per-tournament leaderboard +
+          // staleness meta). Same pattern as the leaderboard cache.
+          await m.createTable(tournamentsCache);
+          await m.createTable(tournamentLeaderboardCache);
+          await m.createTable(tournamentMeta);
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_tournaments_cache_active_end '
+            'ON tournaments_cache(is_active_list, end_date)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_tournament_leaderboard_tid_rank '
+            'ON tournament_leaderboard_cache(tournament_id, rank)',
+          );
+        }
+        if (from < 7) {
+          // v7: friends cache (friend list + friend requests +
+          // staleness meta). Mutations are live API calls, the cache
+          // only serves the read path.
+          await m.createTable(friendsCache);
+          await m.createTable(friendRequestsCache);
+          await m.createTable(friendsMeta);
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_friend_requests_from_user '
+            'ON friend_requests_cache(from_user_id)',
+          );
+        }
+        if (from < 8) {
+          // v8: weekly quests claim mirror, analogous to daily_challenges.
+          // Sync engine writes here; backend's UserWeeklyQuestClaim table
+          // is the canonical sync destination. The legacy
+          // /weekly-quests/progress endpoint still maintains the
+          // gameplay-side UserWeeklyQuest table; the two coexist.
+          await m.createTable(weeklyQuests);
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_weekly_quests_week_start '
+            'ON weekly_quests(week_start_date)',
+          );
+          await customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_quests_quest_id '
+            'ON weekly_quests(quest_id)',
+          );
+        }
+        if (from < 9) {
+          // v9: daily bonus state singleton. Drift-first replacement for
+          // the legacy SharedPreferences-only gate ('last_daily_bonus_claim_date',
+          // 'daily_bonuses'). SyncEngine pushes the snapshot to the
+          // backend's DailyLoginBonus table.
+          await m.createTable(dailyBonusState);
+        }
+        if (from < 10) {
+          // v10: lifetime player progression singleton (XP + level), parallel
+          // to the per-season battle pass. SyncEngine pushes it to the
+          // backend's User.Experience/Level via the player_progress dataType.
+          await m.createTable(playerProgressTable);
+        }
+        if (from < 11) {
+          // v11: daily_challenges had no unique index on challenge_id, so
+          // upsertDailyChallenge (insertOnConflictUpdate) kept INSERTing new
+          // rows instead of upserting — once offline-first progress writes
+          // started, duplicate rows piled up and the sync batch shipped the
+          // same challenge_id twice, 500ing the backend. Dedupe (keep the
+          // latest row per challenge_id) then add the unique index so upserts
+          // behave like weekly_quests.
+          await customStatement(
+            'DELETE FROM daily_challenges WHERE id NOT IN '
+            '(SELECT MAX(id) FROM daily_challenges GROUP BY challenge_id)',
+          );
+          await customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_challenges_challenge_id '
+            'ON daily_challenges(challenge_id)',
+          );
+        }
+        if (from < 12) {
+          // v12: haptics toggle + per-category notification opt-ins move into
+          // the synced settings row. Previously haptics had no setting at all
+          // and the notification toggles lived in SharedPreferences
+          // (device-only, never synced). A one-time import of the legacy
+          // SharedPreferences values runs at app start (see
+          // legacy_prefs_import.dart), not here — Drift migrations shouldn't
+          // touch platform channels.
+          await _addColumnIfMissing(m, gameSettings, gameSettings.hapticsEnabled);
+          await _addColumnIfMissing(m, gameSettings, gameSettings.notifyDailyReminder);
+          await _addColumnIfMissing(m, gameSettings, gameSettings.notifyTournament);
+          await _addColumnIfMissing(m, gameSettings, gameSettings.notifyAchievement);
+          await _addColumnIfMissing(m, gameSettings, gameSettings.notifySocial);
+          await _addColumnIfMissing(m, gameSettings, gameSettings.notifySpecialEvent);
+        }
+        if (from < 13) {
+          // v13: power-up inventory singleton. Drift-first replacement for
+          // the legacy SharedPreferences-only store ('power_up_inventory_v1')
+          // so paid inventory survives reinstall. SyncEngine pushes the
+          // snapshot to the backend's UserPowerUpInventory mirror. The
+          // one-time import of the legacy SharedPreferences value runs in
+          // PowerUpCubit.loadInventory, not here — Drift migrations
+          // shouldn't touch platform channels.
+          await m.createTable(powerUpInventoryState);
+        }
+        if (from < 14) {
+          // v14: player-selected starting-speed preset. Lands on the synced
+          // settings row (not SharedPreferences) so it travels with the
+          // account like every other gameplay setting. Existing rows default
+          // to 1 = Difficulty.normal, which is the historical 300ms base, so
+          // the upgrade is a no-op for anyone already playing.
+          await _addColumnIfMissing(m, gameSettings, gameSettings.difficultyIndex);
+        }
+        if (from < 15) {
+          // v15: app language override. NULL = follow the device locale, so
+          // the upgrade is a no-op for everyone until they pick a language
+          // in settings. Lands on the synced settings row (like theme) so
+          // the choice travels with the account — and so the backend can
+          // localize push notifications later.
+          await _addColumnIfMissing(m, gameSettings, gameSettings.localeCode);
+        }
+        if (from < 16) {
+          // v16: dead-letter store for scores the backend permanently refused.
+          // Nothing to backfill — anything rejected before this existed was
+          // deleted at the time and is unrecoverable.
+          await m.createTable(scoreDeadLetters);
+        }
+        if (from < 17) {
+          // v17: which game mode a GameMode challenge requires. Nullable, so
+          // existing rows land on NULL = "any mode" — the same value the
+          // backend uses for an unrestricted challenge. The next successful
+          // refresh writes the real value for today's set.
+          //
+          // Added defensively because these three are the only bare
+          // ADD COLUMNs a device can already have applied while its
+          // user_version still reads 15: the v19 bug below crashed the run
+          // two steps later, and drift neither wraps the run in a transaction
+          // nor bumps user_version until every step succeeds. Without the
+          // check those devices replay v17 on each launch and die on
+          // "duplicate column name" forever. See [_addColumnIfMissing].
+          await _addColumnIfMissing(
+              m, dailyChallenges, dailyChallenges.requiredGameMode);
+          await _addColumnIfMissing(m, dailyChallenges, dailyChallenges.xpReward);
+          await _addColumnIfMissing(
+              m, dailyChallenges, dailyChallenges.difficulty);
+        }
+        if (from < 18) {
+          // v18: the client half of exactly-once multiplayer settlement.
+          // Nothing to backfill — before this, rewards were credited straight
+          // off the GameEnded broadcast and were never tracked at all.
+          await m.createTable(appliedMultiplayerSettlements);
+        }
+        if (from >= 18 && from < 19) {
+          // v19: per-step progress, so a crash midway through applying a
+          // settlement neither loses the remaining rewards nor replays the ones
+          // already applied.
+          //
+          // The `from >= 18` lower bound is load-bearing, and its absence was a
+          // launch-crash for every existing install. m.createTable above builds
+          // the table from its CURRENT Dart definition, which already carries
+          // these four columns — so a device coming from 17 or earlier gets the
+          // finished table at v18 and must not then be told to add the columns
+          // again. Only a device that stopped at exactly 18, when the table was
+          // genuinely four columns shorter, needs this step.
+          await _addColumnIfMissing(m, appliedMultiplayerSettlements, appliedMultiplayerSettlements.statsApplied);
+          await _addColumnIfMissing(m, appliedMultiplayerSettlements, appliedMultiplayerSettlements.coinsApplied);
+          await _addColumnIfMissing(m, appliedMultiplayerSettlements, appliedMultiplayerSettlements.xpApplied);
+          await _addColumnIfMissing(m, appliedMultiplayerSettlements, appliedMultiplayerSettlements.completedAt);
+          // Under v18 a row's mere existence meant "fully applied". Migrating it
+          // to all-steps-done preserves that meaning; leaving the new flags
+          // false would re-apply rewards that were already granted.
+          await m.database.customStatement(
+            'UPDATE applied_multiplayer_settlements '
+            'SET stats_applied = 1, coins_applied = 1, xp_applied = 1, '
+            '    completed_at = applied_at',
+          );
+        }
+        if (from < 20) {
+          // v20: daily-challenge rewards stop being credited locally and start
+          // being applied from server settlements, exactly once.
+          await m.createTable(appliedDailyChallengeSettlements);
 
-        // Seed the ledger with everything this device has ALREADY paid
-        // itself for, so a settlement the server offers for one of them is
-        // skipped rather than paid a second time.
-        //
-        // The backend backfill already marks historical claims acknowledged
-        // so they are never offered, which makes this belt as well as braces
-        // — but the two deploys are not simultaneous, and a device that
-        // upgrades between them would otherwise be handed a settlement for a
-        // reward it spent last week. There is no server settlement id for
-        // these, so they are recorded under a synthetic "local:" id.
-        await customStatement(
-          "INSERT OR IGNORE INTO applied_daily_challenge_settlements "
-          "(settlement_id, settlement_key, coins_applied, xp_applied, "
-          " origin, completed_at, created_at) "
-          "SELECT 'local:' || challenge_id, challenge_id, reward_coins, 0, "
-          "       'legacy_local_claim', strftime('%s','now'), strftime('%s','now') "
-          "FROM daily_challenges WHERE reward_claimed = 1",
-        );
-      }
-      if (from < 21) {
-        // v21: device-local preferences get their own table rather than
-        // another column on the synced settings row. The first tenant is the
-        // high-refresh-rate toggle, which describes the panel in the user's
-        // hand and must not be pushed to their other devices.
-        await m.createTable(devicePreferences);
-        // createTable does not seed; initializeDefaults() runs on every open
-        // and inserts the singleton row right after this returns.
-      }
-      if (from < 22) {
-        // v22: two more device-local preferences for how the game feels in
-        // the hand — snap movement and the on-screen control layout. Plain
-        // addColumn: a brand-new step cannot have run anywhere before.
-        await m.addColumn(
-          devicePreferences,
-          devicePreferences.snapMovementEnabled,
-        );
-        await m.addColumn(
-          devicePreferences,
-          devicePreferences.controlLayoutIndex,
-        );
-      }
+          // Seed the ledger with everything this device has ALREADY paid
+          // itself for, so a settlement the server offers for one of them is
+          // skipped rather than paid a second time.
+          //
+          // The backend backfill already marks historical claims acknowledged
+          // so they are never offered, which makes this belt as well as braces
+          // — but the two deploys are not simultaneous, and a device that
+          // upgrades between them would otherwise be handed a settlement for a
+          // reward it spent last week. There is no server settlement id for
+          // these, so they are recorded under a synthetic "local:" id.
+          await customStatement(
+            "INSERT OR IGNORE INTO applied_daily_challenge_settlements "
+            "(settlement_id, settlement_key, coins_applied, xp_applied, "
+            " origin, completed_at, created_at) "
+            "SELECT 'local:' || challenge_id, challenge_id, reward_coins, 0, "
+            "       'legacy_local_claim', strftime('%s','now'), strftime('%s','now') "
+            "FROM daily_challenges WHERE reward_claimed = 1",
+          );
+        }
+        if (from < 21) {
+          // v21: device-local preferences get their own table rather than
+          // another column on the synced settings row. The first tenant is the
+          // high-refresh-rate toggle, which describes the panel in the user's
+          // hand and must not be pushed to their other devices.
+          await m.createTable(devicePreferences);
+          // createTable does not seed; initializeDefaults() runs on every open
+          // and inserts the singleton row right after this returns.
+        }
+        if (from < 22) {
+          // v22: two more device-local preferences for how the game feels in
+          // the hand — snap movement and the on-screen control layout.
+          await _addColumnIfMissing(m, devicePreferences, devicePreferences.snapMovementEnabled);
+          await _addColumnIfMissing(m, devicePreferences, devicePreferences.controlLayoutIndex);
+        }
+      });
     },
   );
 
   /// [Migrator.addColumn] with the "if it isn't already there" that SQLite
-  /// does not offer.
+  /// does not offer. EVERY column step in onUpgrade goes through here.
   ///
   /// `ALTER TABLE ... ADD COLUMN` has no `IF NOT EXISTS` form, so a replayed
-  /// migration step throws instead of no-op'ing. That matters because a failed
-  /// upgrade is not rolled back: drift runs onUpgrade outside a transaction
-  /// and only writes the new user_version once every step has succeeded. A run
-  /// that dies at step N therefore leaves steps 1..N-1 durably applied and the
-  /// version number still pointing at the start — and every subsequent launch
-  /// replays them into a duplicate-column error, which is unrecoverable
-  /// without wiping app data.
+  /// migration step throws instead of no-op'ing. Drift only writes the new
+  /// user_version once every step has succeeded, so an upgrade interrupted
+  /// at step N (a kill, a lock, a crash in a later step) leaves steps
+  /// 1..N-1 applied and the version pointing at the start — and every
+  /// launch after that replays them into a duplicate-column error at
+  /// startup, unrecoverable without wiping app data. In the week of 31 Aug
+  /// 2026 that was the top crash in production: 37 users in a permanent
+  /// start-up loop on `stats_applied`, more on `difficulty_index`.
   ///
-  /// Reserve this for steps a device may already have applied. A brand new
-  /// step cannot have run anywhere, and plain [Migrator.addColumn] says so.
+  /// So no step may assume it has never run. This guard, plus the
+  /// transaction around the whole upgrade, is what makes that true.
   Future<void> _addColumnIfMissing(
     Migrator m,
     TableInfo table,
@@ -1259,6 +1260,15 @@ class AppDatabase extends _$AppDatabase {
     if (!present) {
       await m.addColumn(table, column);
     }
+  }
+
+  /// Whether [table] already has [column], by raw name — for the steps that
+  /// alter tables with hand-written SQL rather than a generated column.
+  Future<bool> _hasRawColumn(String table, String column) async {
+    final rows = await customSelect(
+      'PRAGMA table_info("$table")',
+    ).get();
+    return rows.any((r) => r.read<String>('name') == column);
   }
 
   /// Create indexes for better query performance
