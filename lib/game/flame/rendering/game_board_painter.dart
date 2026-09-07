@@ -707,9 +707,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
       } else {
         // For multi-color skins, use the colors directly — but lift the
         // leading stop so the head still out-values the body it sits on.
-        final base = skinColors.take(3).toList();
-        base[0] = _headTint(base[0]);
-        return base;
+        // Always exactly three: the gradient above has three stops, and a
+        // two-colour skin (Golden) fed straight in threw "colors and
+        // colorStops must have equal length" on every frame of every run
+        // for everyone who owned it — the top crash of 6.4.2.
+        return headGradientFromSkin(skinColors, tint: _headTint);
       }
     }
 
@@ -2998,4 +3000,31 @@ class GameBoardBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Three colours for the head's three-stop gradient, from a skin palette of
+/// any length. One colour fans out into tint / near-tint / base; two colours
+/// get their midpoint as the middle stop; three or more use the first three.
+/// The first stop is always lifted by [tint] so the head out-values the body.
+///
+/// Public and pure so the length contract can be tested for every skin.
+List<Color> headGradientFromSkin(
+  List<Color> skinColors, {
+  required Color Function(Color) tint,
+}) {
+  if (skinColors.isEmpty) {
+    throw ArgumentError.value(skinColors, 'skinColors', 'must not be empty');
+  }
+  if (skinColors.length == 1) {
+    final tinted = tint(skinColors[0]);
+    return [tinted, tinted.withValues(alpha: 0.92), skinColors[0]];
+  }
+  if (skinColors.length == 2) {
+    final a = skinColors[0];
+    final b = skinColors[1];
+    return [tint(a), Color.lerp(a, b, 0.5) ?? a, b];
+  }
+  final base = skinColors.take(3).toList();
+  base[0] = tint(base[0]);
+  return base;
 }
