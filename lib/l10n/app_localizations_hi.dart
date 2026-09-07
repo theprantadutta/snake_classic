@@ -3637,6 +3637,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get poLayoutTurn => 'मोड़';
 
   @override
+  String get updateReadyTitle => 'अपडेट तैयार है';
+
+  @override
+  String get updateReadyRestart => 'रीस्टार्ट';
+
+  @override
+  String get poUpdateReady => 'अपडेट के लिए रीस्टार्ट करें';
+
+  @override
   String get poSound => 'ध्वनि';
 
   @override

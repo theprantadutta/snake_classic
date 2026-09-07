@@ -3660,6 +3660,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get poLayoutTurn => 'ПОВОРОТ';
 
   @override
+  String get updateReadyTitle => 'Обновление готово';
+
+  @override
+  String get updateReadyRestart => 'Перезапустить';
+
+  @override
+  String get poUpdateReady => 'ПЕРЕЗАПУСТИТЬ ДЛЯ ОБНОВЛЕНИЯ';
+
+  @override
   String get poSound => 'ЗВУК';
 
   @override

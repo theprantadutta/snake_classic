@@ -3665,6 +3665,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get poLayoutTurn => 'CURVA';
 
   @override
+  String get updateReadyTitle => 'Atualização pronta';
+
+  @override
+  String get updateReadyRestart => 'Reiniciar';
+
+  @override
+  String get poUpdateReady => 'REINICIAR PARA ATUALIZAR';
+
+  @override
   String get poSound => 'SOM';
 
   @override

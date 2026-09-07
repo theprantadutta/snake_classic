@@ -3627,6 +3627,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get poLayoutTurn => 'انعطاف';
 
   @override
+  String get updateReadyTitle => 'التحديث جاهز';
+
+  @override
+  String get updateReadyRestart => 'إعادة التشغيل';
+
+  @override
+  String get poUpdateReady => 'أعد التشغيل للتحديث';
+
+  @override
   String get poSound => 'الصوت';
 
   @override

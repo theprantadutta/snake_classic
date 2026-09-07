@@ -19,6 +19,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
+import 'package:snake_classic/services/in_app_update_service.dart';
 
 class PauseOverlay extends StatefulWidget {
   final GameTheme theme;
@@ -193,6 +194,31 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     height: 42,
                     outlined: true,
                   ).gameZoomIn(delay: 300.ms),
+
+                  // A downloaded Play update waiting for a restart. Only
+                  // ever visible once the download has landed, so the
+                  // menu is unchanged on every other pause.
+                  ValueListenableBuilder<bool>(
+                    valueListenable:
+                        InAppUpdateService().updateReadyToInstall,
+                    builder: (context, ready, _) {
+                      if (!ready) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: GradientButton(
+                          onPressed: () =>
+                              InAppUpdateService().completeUpdate(),
+                          text: l10n.poUpdateReady,
+                          primaryColor: theme.foodColor,
+                          secondaryColor:
+                              theme.foodColor.withValues(alpha: 0.7),
+                          icon: Icons.system_update_rounded,
+                          width: 170,
+                          height: 42,
+                        ),
+                      );
+                    },
+                  ),
 
                   const SizedBox(height: 10),
 

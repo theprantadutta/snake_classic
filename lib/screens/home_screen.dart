@@ -48,6 +48,8 @@ import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/services/in_app_update_service.dart';
+import 'package:snake_classic/widgets/update_ready_notice.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -116,6 +118,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // launch-from-notification splash hang.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().markAppReady();
+      // Play update check: once per session, after first frame, so it
+      // never competes with the bootstrap. Flexible by default — the
+      // download runs while they play and the strip below the rail
+      // offers the restart when it lands.
+      unawaited(InAppUpdateService().checkForUpdate());
     });
   }
 
@@ -471,6 +478,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         bottomNavigationBar: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            UpdateReadyNotice(theme: theme),
                             FirstRunLegalNotice(theme: theme),
                             const SnakeBannerAd(),
                           ],

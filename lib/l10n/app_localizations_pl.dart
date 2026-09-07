@@ -3671,6 +3671,15 @@ class AppLocalizationsPl extends AppLocalizations {
   String get poLayoutTurn => 'SKRĘT';
 
   @override
+  String get updateReadyTitle => 'Aktualizacja gotowa';
+
+  @override
+  String get updateReadyRestart => 'Uruchom ponownie';
+
+  @override
+  String get poUpdateReady => 'URUCHOM PONOWNIE, BY ZAKTUALIZOWAĆ';
+
+  @override
   String get poSound => 'DŹWIĘK';
 
   @override

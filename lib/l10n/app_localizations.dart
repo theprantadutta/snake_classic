@@ -6460,6 +6460,24 @@ abstract class AppLocalizations {
   /// **'TURN'**
   String get poLayoutTurn;
 
+  /// No description provided for @updateReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update ready'**
+  String get updateReadyTitle;
+
+  /// No description provided for @updateReadyRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get updateReadyRestart;
+
+  /// No description provided for @poUpdateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'RESTART TO UPDATE'**
+  String get poUpdateReady;
+
   /// No description provided for @poSound.
   ///
   /// In en, this message translates to:

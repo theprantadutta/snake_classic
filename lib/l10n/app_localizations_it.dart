@@ -3669,6 +3669,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get poLayoutTurn => 'SVOLTA';
 
   @override
+  String get updateReadyTitle => 'Aggiornamento pronto';
+
+  @override
+  String get updateReadyRestart => 'Riavvia';
+
+  @override
+  String get poUpdateReady => 'RIAVVIA PER AGGIORNARE';
+
+  @override
   String get poSound => 'SUONO';
 
   @override

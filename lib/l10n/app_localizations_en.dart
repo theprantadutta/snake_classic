@@ -3643,6 +3643,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get poLayoutTurn => 'TURN';
 
   @override
+  String get updateReadyTitle => 'Update ready';
+
+  @override
+  String get updateReadyRestart => 'Restart';
+
+  @override
+  String get poUpdateReady => 'RESTART TO UPDATE';
+
+  @override
   String get poSound => 'SOUND';
 
   @override

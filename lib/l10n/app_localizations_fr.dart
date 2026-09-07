@@ -3682,6 +3682,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get poLayoutTurn => 'VIRAGE';
 
   @override
+  String get updateReadyTitle => 'Mise à jour prête';
+
+  @override
+  String get updateReadyRestart => 'Redémarrer';
+
+  @override
+  String get poUpdateReady => 'REDÉMARRER POUR METTRE À JOUR';
+
+  @override
   String get poSound => 'SON';
 
   @override

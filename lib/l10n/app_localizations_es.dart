@@ -3673,6 +3673,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get poLayoutTurn => 'GIRO';
 
   @override
+  String get updateReadyTitle => 'Actualización lista';
+
+  @override
+  String get updateReadyRestart => 'Reiniciar';
+
+  @override
+  String get poUpdateReady => 'REINICIAR PARA ACTUALIZAR';
+
+  @override
   String get poSound => 'SONIDO';
 
   @override

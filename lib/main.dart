@@ -38,7 +38,6 @@ import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/existing_install_probe.dart';
 import 'package:snake_classic/services/first_run_service.dart';
-import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
@@ -367,9 +366,10 @@ Future<void> _bootstrap() async {
           ),
     );
 
-    InAppUpdateService().checkForUpdate().then((_) {
-      AppLogger.success('In-app update check completed');
-    });
+    // The Play update check no longer runs here. It used to launch the
+    // BLOCKING immediate flow from inside the start-up bootstrap for
+    // every routine release; it now runs once Home has mounted (see
+    // HomeScreen.initState) and defaults to the flexible flow.
 
     // Initialize ads (UMP consent + ATT + SDK). Fire-and-forget — the service
     // is mobile-only, Pro-gated, and self-disables on web/desktop or for Pro.
