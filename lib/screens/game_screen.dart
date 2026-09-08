@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,7 +27,6 @@ import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
-import 'package:snake_classic/widgets/debug_perf_overlay.dart';
 import 'package:snake_classic/widgets/dialogs/exit_game_dialog.dart';
 import 'package:snake_classic/widgets/game_background_painter.dart';
 import 'package:snake_classic/widgets/game_bottom_bar.dart';
@@ -978,10 +976,6 @@ class _GameScreenState extends State<GameScreen>
                                               // to the play area and rides the existing 60fps
                                               // repaint cycle — no extra full-screen paints.
                                               const RejectedInputFlash(),
-
-                                              // Debug builds only: live tick/frame/event
-                                              // panel (top-left). Compiled out of release.
-                                              if (kDebugMode) const DebugPerfOverlay(),
                                             ],
                                           ),
                                         ),
