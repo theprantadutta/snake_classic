@@ -3,24 +3,23 @@
 <!-- Not named for a version on purpose. This file is the "What's new" text
      for whatever ships next, rewritten in place each release; pinning a
      number to it only guarantees the name goes stale at the next bump.
-     release_notes_5.0.0.md is kept as the archive of a release that
-     actually shipped. -->
+     A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **6.2.0+48**.
+Connect. Written for **6.4.3+54**.
 
-Scope note: 6.1.0+47 was bumped on 2026-08-16 but there is no record in this
-repo of it reaching the App Store, so these notes deliberately cover
-everything a player would notice since **6.0.1** — including the notification
-freeze fix that 6.1.0 carried. If 6.1.0 did ship, the only cost is that one
-bullet is a repeat. Verify in App Store Connect → History before submitting.
+Scope: everything since **6.2.0**, which is Ready for Distribution on the App
+Store — so it is the last thing players actually received. 6.3.0, 6.4.0, 6.4.1
+and 6.4.2 were bumped but never submitted; their changes are folded in here.
+
+Deliberately absent: the flexible Play update flow and the Play screenshot
+refresh (Android-only, and not selling points), README changes, and the
+internal database and analytics work.
 
 App Store limits: What's New 4000, Promotional Text 170. Play limits: What's
-new 500 — the blocks below exceed it, so Play needs the trimmed variants at
-the bottom of this file.
+new 500 — the blocks below exceed it, so Play needs trimming.
 
-en-GB is not listed separately: it takes the `en` text verbatim (no
-British-specific spellings occur in it).
+en-GB is not listed separately: it takes the `en` text verbatim.
 
 ---
 
@@ -28,28 +27,26 @@ British-specific spellings occur in it).
 
 ### What's New
 
-A faster, smoother, better-looking Snake Classic.
+Three ways to steer, and a snake that answers the moment you press.
 
-• Up to 120fps. The game now runs at your screen's full refresh rate, so the snake, the trail and every menu move as smoothly as your phone can draw them. There's a toggle in Settings if you'd rather save battery.
-• It finally speeds up as you grow. Speed now follows your length, not just your level — a long snake is a fast snake.
-• Your swipes land. Fixed a bug where two quick turns in a row could cancel each other out, sometimes sending you straight into your own tail.
-• A whole new arcade look. Home, game over, the store, leaderboards, tournaments, replays and every dialog now share one bracketed arcade frame.
-• A HUD you can actually read. Bigger score and food count on every phone, and level progress is now a full-width snake gauge instead of a cramped little card.
-• Power-ups last longer. They sit on the board longer and run longer once collected.
-• A second chance, twice. You can now revive twice in a single run.
-• Free trials are visible. Both Pro plans have always included one — now the app actually tells you.
+• Pick your controls. The four-way pad now has company: a floating joystick that centres wherever your thumb lands, and Turn Buttons — TURN LEFT and TURN RIGHT in the bottom corners, where your thumbs already rest. Two quick presses make a corner. Choose in Settings or straight from the pause menu.
+• The pad answers on touch. Presses register the instant your thumb lands instead of waiting for the gesture to finish, sliding across the arms turns at each one you cross, and a second finger takes over from the first.
+• No more refused presses. A quick third tap now replaces the turn queued behind it instead of being rejected with a buzz.
+• Snap Movement. If you steer by button, switch the glide off and the snake sits squarely in its cell — so a turn never looks late.
+• Know before you press. The game over screen now tells you when an ad is coming, and whether watching it earns you coins.
+• Change your Pro plan. Switch between monthly and yearly from inside the app, and see at a glance which one you're on.
+• Multiplayer looks like the real game. The versus board now matches single player, and both fill the whole screen.
 
 Also fixed:
 
-• Tapping a notification no longer freezes the app on the splash screen.
-• Tournament links open the tournament properly.
-• Music and sound effects no longer drop out.
-• Messages and prompts now appear in your language everywhere.
-• Various crash fixes.
+• The Golden skin crashed constantly for anyone wearing it.
+• The settings screen failed to open for some players.
+• A crash when the combo timer ran down.
+• Free coins are ready sooner — the rewarded ad is loaded by the time you reach the home screen.
 
 ### Promotional Text
 
-Now at your screen's full refresh rate — up to 120fps. A brand new arcade look, a snake that finally speeds up as it grows, and a HUD you can actually read.
+Three ways to steer: the classic pad, a floating joystick, or turn buttons in the corners. Plus a pad that answers the instant your thumb lands.
 
 ---
 
@@ -57,28 +54,26 @@ Now at your screen's full refresh rate — up to 120fps. A brand new arcade look
 
 ### What's New
 
-Snake Classic अब और तेज़, और स्मूद, और बेहतर दिखता है।
+चलाने के तीन तरीके, और एक सांप जो दबाते ही जवाब देता है।
 
-• 120fps तक। गेम अब आपकी स्क्रीन के पूरे रिफ्रेश रेट पर चलता है, इसलिए सांप, ट्रेल और हर मेन्यू उतनी स्मूद चलते हैं जितना आपका फ़ोन दिखा सकता है। बैटरी बचानी हो तो सेटिंग्स में टॉगल है।
-• अब लंबाई के साथ रफ़्तार भी बढ़ती है। स्पीड अब सिर्फ़ लेवल नहीं, आपकी लंबाई के हिसाब से चलती है — लंबा सांप तेज़ सांप।
-• आपके स्वाइप अब लगते हैं। वह बग ठीक किया जिसमें दो तेज़ टर्न एक-दूसरे को रद्द कर देते थे और कभी-कभी आप सीधे अपनी ही पूंछ में जा घुसते थे।
-• बिल्कुल नया आर्केड लुक। होम, गेम ओवर, स्टोर, लीडरबोर्ड, टूर्नामेंट, रीप्ले और हर डायलॉग अब एक ही आर्केड फ्रेम में।
-• पढ़ने लायक HUD। हर फ़ोन पर बड़ा स्कोर और फूड काउंट, और लेवल प्रोग्रेस अब पूरी चौड़ाई का सांप गेज।
-• पावर-अप ज़्यादा देर टिकते हैं। बोर्ड पर भी और उठाने के बाद भी।
-• दूसरा मौका, दो बार। अब एक ही गेम में दो बार रिवाइव कर सकते हैं।
-• फ्री ट्रायल अब दिखता है। दोनों Pro प्लान में यह हमेशा से था — अब ऐप बताता भी है।
+• अपना कंट्रोल चुनें। चार-तरफ़ा पैड के साथ अब दो और: एक फ़्लोटिंग जॉयस्टिक जो आपके अंगूठे की जगह पर ही केंद्र बना लेता है, और टर्न बटन — नीचे के कोनों में TURN LEFT और TURN RIGHT, जहाँ आपके अंगूठे पहले से रहते हैं। दो तेज़ प्रेस से एक मोड़। सेटिंग्स में या सीधे पॉज़ मेन्यू से चुनें।
+• पैड छूते ही जवाब देता है। प्रेस अब जेस्चर पूरा होने का इंतज़ार किए बिना उसी पल दर्ज होता है, बाहों पर उंगली फिराने से हर बाँह पर मोड़ होता है, और दूसरी उंगली पहली से कमान ले लेती है।
+• अब कोई प्रेस बेकार नहीं। तीसरा तेज़ टैप अब बज़र के साथ रद्द होने के बजाय पीछे कतार में लगे मोड़ की जगह ले लेता है।
+• स्नैप मूवमेंट। अगर आप बटन से चलाते हैं, तो ग्लाइड बंद कर दें — सांप अपने खाने में सीधा बैठेगा और मोड़ कभी देर से नहीं लगेगा।
+• दबाने से पहले जानें। गेम ओवर स्क्रीन अब बताती है कि विज्ञापन आने वाला है या नहीं, और देखने पर सिक्के मिलेंगे या नहीं।
+• अपना Pro प्लान बदलें। ऐप के अंदर से ही मासिक और वार्षिक के बीच बदलें, और देखें आप किस पर हैं।
+• मल्टीप्लेयर अब असली गेम जैसा दिखता है। वर्सेस बोर्ड अब सिंगल प्लेयर से मेल खाता है, और दोनों पूरी स्क्रीन भरते हैं।
 
 ये भी ठीक हुए:
 
-• नोटिफिकेशन टैप करने पर ऐप अब स्प्लैश स्क्रीन पर अटकता नहीं।
-• टूर्नामेंट लिंक सही टूर्नामेंट खोलते हैं।
-• म्यूज़िक और साउंड इफ़ेक्ट अब बंद नहीं होते।
-• संदेश और प्रॉम्प्ट हर जगह आपकी भाषा में।
-• कई क्रैश ठीक किए।
+• गोल्डन स्किन पहनने वालों के लिए गेम बार-बार क्रैश हो रहा था।
+• कुछ खिलाड़ियों के लिए सेटिंग्स स्क्रीन नहीं खुल रही थी।
+• कॉम्बो टाइमर खत्म होने पर होने वाला क्रैश।
+• मुफ़्त सिक्के अब जल्दी — होम स्क्रीन तक पहुँचते-पहुँचते विज्ञापन तैयार रहता है।
 
 ### Promotional Text
 
-अब आपकी स्क्रीन के पूरे रिफ्रेश रेट पर — 120fps तक। बिल्कुल नया आर्केड लुक, लंबाई के साथ तेज़ होता सांप, और पढ़ने लायक HUD।
+चलाने के तीन तरीके: क्लासिक पैड, फ़्लोटिंग जॉयस्टिक, या कोनों में टर्न बटन। और एक पैड जो अंगूठा छूते ही जवाब देता है।
 
 ---
 
@@ -86,28 +81,26 @@ Snake Classic अब और तेज़, और स्मूद, और बेह�
 
 ### What's New
 
-Snake Classic está mais rápido, mais fluido e mais bonito.
+Três formas de dirigir, e uma cobra que responde no instante em que você toca.
 
-• Até 120 fps. O jogo agora roda na taxa de atualização completa da sua tela, então a cobra, o rastro e cada menu se movem com toda a fluidez que seu celular consegue desenhar. Há um botão nos Ajustes se você preferir economizar bateria.
-• Finalmente acelera conforme você cresce. A velocidade agora acompanha seu comprimento, não só o nível: cobra longa é cobra rápida.
-• Seus deslizes valem. Corrigimos um erro em que duas curvas rápidas se cancelavam, às vezes jogando você direto na própria cauda.
-• Um visual arcade totalmente novo. Início, fim de jogo, loja, rankings, torneios, replays e cada janela agora dividem a mesma moldura arcade.
-• Um HUD que dá para ler. Pontuação e contador de comida maiores em todos os celulares, e o progresso de nível virou uma barra de largura total em forma de cobra.
-• Os power-ups duram mais. Ficam mais tempo no tabuleiro e duram mais depois de coletados.
-• Uma segunda chance, duas vezes. Agora você pode reviver duas vezes na mesma partida.
-• Os testes grátis aparecem. Os dois planos Pro sempre tiveram um — agora o app avisa.
+• Escolha seus controles. O direcional de quatro vias agora tem companhia: um joystick flutuante que se centraliza onde seu polegar tocar, e os Botões de Curva — TURN LEFT e TURN RIGHT nos cantos inferiores, onde seus polegares já descansam. Dois toques rápidos fazem uma curva. Escolha nos Ajustes ou direto no menu de pausa.
+• O direcional responde ao toque. Os toques registram no instante em que o polegar encosta, em vez de esperar o gesto terminar; deslizar pelos braços vira a cada um que você cruza, e um segundo dedo assume o comando do primeiro.
+• Chega de toques recusados. Um terceiro toque rápido agora substitui a curva que estava na fila, em vez de ser rejeitado com uma vibração.
+• Movimento Travado. Se você dirige por botão, desligue o deslize: a cobra fica exatamente na sua célula, e a curva nunca parece atrasada.
+• Saiba antes de tocar. A tela de fim de jogo agora avisa quando vem um anúncio e se assistir rende moedas.
+• Mude seu plano Pro. Alterne entre mensal e anual dentro do app e veja de relance em qual você está.
+• O multijogador parece o jogo de verdade. O tabuleiro do versus agora combina com o de um jogador, e ambos preenchem a tela inteira.
 
 Também corrigido:
 
-• Tocar em uma notificação não trava mais o app na tela de abertura.
-• Links de torneio abrem o torneio corretamente.
-• A música e os efeitos sonoros não somem mais.
-• Mensagens e avisos aparecem no seu idioma em todo lugar.
-• Diversas correções de travamento.
+• A skin Dourada travava o jogo constantemente para quem a usava.
+• A tela de ajustes não abria para alguns jogadores.
+• Uma falha quando o cronômetro de combo zerava.
+• Moedas grátis mais rápido: o anúncio já está carregado quando você chega à tela inicial.
 
 ### Promotional Text
 
-Agora na taxa de atualização completa da sua tela — até 120 fps. Visual arcade novo, uma cobra que enfim acelera ao crescer e um HUD que dá para ler.
+Três formas de dirigir: o direcional clássico, um joystick flutuante ou botões de curva nos cantos. E um direcional que responde ao primeiro toque.
 
 ---
 
@@ -115,28 +108,26 @@ Agora na taxa de atualização completa da sua tela — até 120 fps. Visual arc
 
 ### What's New
 
-Snake Classic es más rápido, más fluido y se ve mejor.
+Tres formas de conducir, y una víbora que responde en cuanto tocas.
 
-• Hasta 120 fps. El juego ahora corre a la tasa de refresco completa de tu pantalla, así que la víbora, la estela y cada menú se mueven tan fluido como tu teléfono puede dibujar. Hay un interruptor en Ajustes si prefieres ahorrar batería.
-• Por fin acelera conforme creces. La velocidad ahora sigue tu longitud, no solo tu nivel: una víbora larga es una víbora rápida.
-• Tus deslizamientos sí cuentan. Corregimos un error por el que dos giros seguidos se cancelaban entre sí y a veces te mandaban directo a tu propia cola.
-• Un aspecto arcade completamente nuevo. Inicio, fin de partida, tienda, clasificaciones, torneos, repeticiones y cada diálogo comparten ahora un mismo marco arcade.
-• Un HUD que sí se puede leer. Puntaje y contador de comida más grandes en todos los teléfonos, y el progreso de nivel ahora es una barra de ancho completo en forma de víbora.
-• Los potenciadores duran más. Permanecen más tiempo en el tablero y duran más al recogerlos.
-• Una segunda oportunidad, dos veces. Ahora puedes revivir dos veces en una misma partida.
-• Las pruebas gratis ya se ven. Ambos planes Pro siempre las incluyeron; ahora la app te lo dice.
+• Elige tus controles. La cruceta de cuatro direcciones ya tiene compañía: un joystick flotante que se centra donde pongas el pulgar, y los Botones de Giro — TURN LEFT y TURN RIGHT en las esquinas inferiores, donde tus pulgares ya descansan. Dos toques rápidos hacen una curva. Elige en Ajustes o directo desde el menú de pausa.
+• La cruceta responde al tacto. Los toques se registran en cuanto apoyas el pulgar, sin esperar a que termine el gesto; deslizar por los brazos gira en cada uno que cruzas, y un segundo dedo toma el relevo del primero.
+• Se acabaron los toques rechazados. Un tercer toque rápido ahora reemplaza el giro que esperaba en la cola, en lugar de ser rechazado con una vibración.
+• Movimiento Fijo. Si conduces con botones, desactiva el deslizamiento: la víbora queda justo en su casilla y el giro nunca parece tardío.
+• Entérate antes de tocar. La pantalla de fin de partida ahora te avisa si viene un anuncio y si verlo te da monedas.
+• Cambia tu plan Pro. Alterna entre mensual y anual desde la app y ve de un vistazo en cuál estás.
+• El multijugador se ve como el juego de verdad. El tablero de versus ahora coincide con el de un jugador, y ambos llenan toda la pantalla.
 
 También corregido:
 
-• Tocar una notificación ya no congela la app en la pantalla de inicio.
-• Los enlaces de torneos abren el torneo correctamente.
-• La música y los efectos de sonido ya no se cortan.
-• Los mensajes y avisos aparecen en tu idioma en todas partes.
-• Varias correcciones de fallas.
+• La skin Dorada hacía que el juego fallara constantemente a quien la llevaba.
+• La pantalla de ajustes no se abría para algunos jugadores.
+• Una falla cuando se agotaba el temporizador de combos.
+• Monedas gratis antes: el anuncio ya está listo cuando llegas a la pantalla de inicio.
 
 ### Promotional Text
 
-Ahora a la tasa de refresco completa de tu pantalla: hasta 120 fps. Un aspecto arcade nuevo, una víbora que por fin acelera al crecer y un HUD que sí se lee.
+Tres formas de conducir: la cruceta clásica, un joystick flotante o botones de giro en las esquinas. Y una cruceta que responde al primer toque.
 
 ---
 
@@ -144,28 +135,26 @@ Ahora a la tasa de refresco completa de tu pantalla: hasta 120 fps. Un aspecto a
 
 ### What's New
 
-Snake Classic est plus rapide, plus fluide et plus beau.
+Trois façons de diriger, et un serpent qui répond dès que vous appuyez.
 
-• Jusqu'à 120 fps. Le jeu tourne désormais à la fréquence d'affichage maximale de votre écran : le serpent, la traînée et chaque menu bougent aussi bien que votre téléphone le permet. Un réglage permet de revenir en arrière pour économiser la batterie.
-• Il accélère enfin quand vous grandissez. La vitesse suit maintenant votre longueur, et plus seulement votre niveau : un long serpent est un serpent rapide.
-• Vos gestes sont pris en compte. Correction d'un bug où deux virages rapides s'annulaient, vous envoyant parfois droit dans votre propre queue.
-• Un tout nouveau style arcade. Accueil, fin de partie, boutique, classements, tournois, replays et chaque fenêtre partagent désormais le même cadre arcade.
-• Un HUD enfin lisible. Score et compteur de nourriture plus grands sur tous les téléphones, et la progression de niveau devient une jauge serpent pleine largeur.
-• Les bonus durent plus longtemps. Ils restent plus longtemps sur le plateau et durent plus longtemps une fois ramassés.
-• Une seconde chance, deux fois. Vous pouvez désormais revivre deux fois dans une même partie.
-• Les essais gratuits sont visibles. Les deux formules Pro en ont toujours inclus un — l'appli vous le dit enfin.
+• Choisissez vos commandes. La croix directionnelle a de la compagnie : un joystick flottant qui se centre là où votre pouce se pose, et les Boutons de Virage — TURN LEFT et TURN RIGHT dans les coins inférieurs, là où vos pouces reposent déjà. Deux appuis rapides font un virage. À choisir dans les Réglages ou directement depuis le menu pause.
+• La croix répond au toucher. Les appuis sont pris en compte dès que le pouce se pose, sans attendre la fin du geste ; glisser sur les branches tourne à chacune que vous croisez, et un second doigt prend le relais du premier.
+• Fini les appuis refusés. Un troisième appui rapide remplace désormais le virage en attente au lieu d'être rejeté par une vibration.
+• Déplacement par Case. Si vous dirigez au bouton, coupez le glissement : le serpent reste bien dans sa case, et un virage ne paraît jamais en retard.
+• Sachez avant d'appuyer. L'écran de fin de partie indique désormais si une pub arrive, et si la regarder rapporte des pièces.
+• Changez de formule Pro. Passez du mensuel à l'annuel depuis l'appli, et voyez d'un coup d'œil celle que vous avez.
+• Le multijoueur ressemble au vrai jeu. Le plateau du versus correspond maintenant à celui du solo, et les deux remplissent tout l'écran.
 
 Également corrigé :
 
-• Toucher une notification ne bloque plus l'appli sur l'écran de démarrage.
-• Les liens de tournoi ouvrent bien le tournoi.
-• La musique et les effets sonores ne se coupent plus.
-• Les messages et invites s'affichent dans votre langue partout.
-• Divers correctifs de plantage.
+• Le skin Doré faisait planter le jeu en permanence pour ceux qui le portaient.
+• L'écran des réglages ne s'ouvrait pas pour certains joueurs.
+• Un plantage à l'expiration du minuteur de combo.
+• Des pièces gratuites plus tôt : la pub est prête dès votre arrivée sur l'accueil.
 
 ### Promotional Text
 
-Désormais à la fréquence maximale de votre écran — jusqu'à 120 fps. Un nouveau style arcade, un serpent qui accélère enfin en grandissant, un HUD enfin lisible.
+Trois façons de diriger : la croix classique, un joystick flottant ou des boutons de virage dans les coins. Et une croix qui répond dès le premier contact.
 
 ---
 
@@ -173,28 +162,26 @@ Désormais à la fréquence maximale de votre écran — jusqu'à 120 fps. Un no
 
 ### What's New
 
-Snake Classic стал быстрее, плавнее и красивее.
+Три способа управления и змейка, которая отвечает сразу на нажатие.
 
-• До 120 к/с. Игра теперь идёт с полной частотой обновления вашего экрана — змейка, след и все меню двигаются настолько плавно, насколько может ваш телефон. В настройках есть переключатель, если хотите беречь батарею.
-• Наконец ускоряется по мере роста. Скорость теперь зависит от длины, а не только от уровня: длинная змейка — быстрая змейка.
-• Свайпы срабатывают. Исправлена ошибка, из-за которой два быстрых поворота отменяли друг друга и иногда отправляли вас прямо в собственный хвост.
-• Совершенно новый аркадный вид. Главный экран, конец игры, магазин, таблицы лидеров, турниры, повторы и все окна теперь в одной аркадной рамке.
-• HUD, который читается. Крупнее счёт и счётчик еды на любом телефоне, а прогресс уровня стал полосой во всю ширину в виде змейки.
-• Бонусы держатся дольше. Дольше лежат на поле и дольше действуют после подбора.
-• Второй шанс — дважды. Теперь можно возродиться два раза за одну игру.
-• Бесплатный период виден. Оба тарифа Pro всегда его включали — теперь приложение об этом говорит.
+• Выберите управление. У четырёхпозиционной панели появилась компания: плавающий джойстик, который центрируется там, где вы поставили палец, и Кнопки поворота — TURN LEFT и TURN RIGHT в нижних углах, где ваши большие пальцы и так лежат. Два быстрых нажатия дают поворот. Выбор в настройках или прямо в меню паузы.
+• Панель отвечает на касание. Нажатие засчитывается в момент касания, а не после завершения жеста; проведя пальцем по лучам, вы поворачиваете на каждом пересечённом, а второй палец перехватывает управление у первого.
+• Больше никаких отклонённых нажатий. Третье быстрое нажатие теперь заменяет поворот, стоящий в очереди, вместо отказа с вибрацией.
+• Пошаговое движение. Если вы управляете кнопками, отключите скольжение — змейка стоит ровно в своей клетке, и поворот никогда не выглядит запоздалым.
+• Знайте до нажатия. Экран конца игры теперь сообщает, будет ли реклама и дадут ли за просмотр монеты.
+• Смена тарифа Pro. Переключайтесь между месячным и годовым прямо в приложении и сразу видите, какой у вас.
+• Мультиплеер выглядит как настоящая игра. Поле матча теперь совпадает с одиночным, и оба занимают весь экран.
 
 Также исправлено:
 
-• Нажатие на уведомление больше не подвешивает приложение на заставке.
-• Ссылки на турниры открывают нужный турнир.
-• Музыка и звуковые эффекты больше не пропадают.
-• Сообщения и подсказки везде на вашем языке.
-• Различные исправления сбоев.
+• Золотой скин постоянно приводил к сбою у тех, кто его носил.
+• У части игроков не открывался экран настроек.
+• Сбой при обнулении таймера комбо.
+• Бесплатные монеты быстрее: реклама готова уже к моменту загрузки главного экрана.
 
 ### Promotional Text
 
-Теперь с полной частотой обновления экрана — до 120 к/с. Новый аркадный вид, змейка, которая наконец ускоряется по мере роста, и читаемый HUD.
+Три способа управления: классическая панель, плавающий джойстик или кнопки поворота в углах. И панель, которая отвечает сразу на касание.
 
 ---
 
@@ -202,28 +189,26 @@ Snake Classic стал быстрее, плавнее и красивее.
 
 ### What's New
 
-Snake Classic jest szybszy, płynniejszy i ładniejszy.
+Trzy sposoby sterowania i wąż, który reaguje w chwili naciśnięcia.
 
-• Nawet 120 fps. Gra działa teraz z pełną częstotliwością odświeżania Twojego ekranu, więc wąż, smuga i każde menu poruszają się tak płynnie, jak potrafi to narysować telefon. W Ustawieniach jest przełącznik, jeśli wolisz oszczędzać baterię.
-• Wreszcie przyspiesza, gdy rośniesz. Prędkość zależy teraz od Twojej długości, nie tylko od poziomu — długi wąż to szybki wąż.
-• Twoje gesty działają. Naprawiliśmy błąd, przez który dwa szybkie skręty znosiły się nawzajem, czasem wysyłając Cię prosto we własny ogon.
-• Zupełnie nowy wygląd arcade. Ekran główny, koniec gry, sklep, rankingi, turnieje, powtórki i każde okno mają teraz tę samą arcade'ową ramę.
-• HUD, który da się odczytać. Większy wynik i licznik jedzenia na każdym telefonie, a postęp poziomu to teraz pasek węża na całą szerokość.
-• Ulepszenia trwają dłużej. Dłużej leżą na planszy i dłużej działają po podniesieniu.
-• Druga szansa, dwa razy. Możesz teraz wskrzesić się dwa razy w jednej grze.
-• Darmowe okresy próbne są widoczne. Oba plany Pro zawsze je miały — teraz aplikacja o tym mówi.
+• Wybierz sterowanie. Czterokierunkowy pad ma teraz towarzystwo: pływający joystick, który środkuje się tam, gdzie położysz kciuk, oraz Przyciski Skrętu — TURN LEFT i TURN RIGHT w dolnych rogach, gdzie kciuki i tak spoczywają. Dwa szybkie naciśnięcia dają zakręt. Wybór w Ustawieniach albo prosto z menu pauzy.
+• Pad reaguje na dotyk. Naciśnięcia liczą się w chwili dotknięcia, bez czekania na koniec gestu; przesunięcie po ramionach skręca na każdym mijanym, a drugi palec przejmuje stery od pierwszego.
+• Koniec z odrzucanymi naciśnięciami. Trzecie szybkie naciśnięcie zastępuje teraz zakręt czekający w kolejce, zamiast być odrzucone wibracją.
+• Ruch Skokowy. Jeśli sterujesz przyciskami, wyłącz płynny ruch — wąż stoi dokładnie w swoim polu, więc zakręt nigdy nie wygląda na spóźniony.
+• Wiedz, zanim naciśniesz. Ekran końca gry mówi teraz, czy zaraz będzie reklama i czy jej obejrzenie da monety.
+• Zmień plan Pro. Przełączaj się między miesięcznym a rocznym w aplikacji i od razu widzisz, który masz.
+• Tryb wieloosobowy wygląda jak prawdziwa gra. Plansza pojedynku pasuje teraz do jednoosobowej, a obie wypełniają cały ekran.
 
 Poprawiono także:
 
-• Dotknięcie powiadomienia nie zawiesza już aplikacji na ekranie powitalnym.
-• Linki do turniejów otwierają właściwy turniej.
-• Muzyka i efekty dźwiękowe już się nie urywają.
-• Komunikaty i pytania pojawiają się wszędzie w Twoim języku.
-• Różne poprawki awarii.
+• Złota skórka powodowała ciągłe awarie u każdego, kto jej używał.
+• U części graczy nie otwierał się ekran ustawień.
+• Awaria po wyzerowaniu licznika kombinacji.
+• Darmowe monety szybciej — reklama jest gotowa, zanim dotrzesz do ekranu głównego.
 
 ### Promotional Text
 
-Teraz z pełną częstotliwością odświeżania ekranu — nawet 120 fps. Nowy wygląd arcade, wąż, który wreszcie przyspiesza, i czytelny HUD.
+Trzy sposoby sterowania: klasyczny pad, pływający joystick albo przyciski skrętu w rogach. I pad, który reaguje w chwili dotknięcia.
 
 ---
 
@@ -231,28 +216,26 @@ Teraz z pełną częstotliwością odświeżania ekranu — nawet 120 fps. Nowy 
 
 ### What's New
 
-لعبة Snake Classic أسرع وأكثر سلاسة وأجمل مظهرًا.
+ثلاث طرق للتحكم، وثعبان يستجيب لحظة الضغط.
 
-• حتى 120 إطارًا في الثانية. تعمل اللعبة الآن بمعدل التحديث الكامل لشاشتك، فيتحرك الثعبان والأثر وكل قائمة بأقصى سلاسة يستطيعها جهازك. وهناك مفتاح في الإعدادات إن كنت تفضّل توفير البطارية.
-• السرعة تزداد مع طول الثعبان أخيرًا. صارت السرعة تتبع طولك لا مستواك فقط — الثعبان الطويل ثعبان سريع.
-• تمريراتك تُنفَّذ. أصلحنا خللًا كان يُلغي فيه دورانان سريعان أحدهما الآخر، فيقودك أحيانًا إلى ذيلك مباشرة.
-• مظهر أركيد جديد كليًا. الشاشة الرئيسية ونهاية اللعبة والمتجر ولوحات الصدارة والبطولات والإعادات وكل النوافذ صارت بإطار أركيد واحد.
-• لوحة معلومات يمكن قراءتها فعلًا. نتيجة وعدّاد طعام أكبر على كل الهواتف، وتقدّم المستوى صار شريطًا بعرض الشاشة على شكل ثعبان.
-• قدرات تدوم أطول. تبقى على اللوح مدة أطول وتستمر أطول بعد التقاطها.
-• فرصة ثانية، مرتين. يمكنك الآن إحياء الجولة مرتين.
-• التجارب المجانية ظاهرة. خطتا Pro كانتا تتضمنانها دائمًا — والآن يخبرك التطبيق بذلك.
+• اختر تحكمك. لوحة الاتجاهات الرباعية صار لها رفيقان: عصا تحكم عائمة تتمركز حيث يستقر إبهامك، وأزرار الانعطاف — TURN LEFT وTURN RIGHT في الزاويتين السفليتين حيث يستريح إبهاماك أصلًا. ضغطتان سريعتان تصنعان منعطفًا. الاختيار من الإعدادات أو مباشرة من قائمة الإيقاف المؤقت.
+• اللوحة تستجيب للمس. تُسجَّل الضغطة لحظة ملامسة الإبهام لا بعد انتهاء الإيماءة، وتمرير الإصبع على الأذرع ينعطف عند كل ذراع تعبره، والإصبع الثاني يتسلم القيادة من الأول.
+• لا مزيد من الضغطات المرفوضة. الضغطة الثالثة السريعة تحل الآن محل الانعطاف المنتظر في الطابور بدلًا من رفضها باهتزاز.
+• الحركة الخطوية. إن كنت تتحكم بالأزرار، أوقف الانزلاق: يستقر الثعبان في مربعه تمامًا فلا يبدو الانعطاف متأخرًا أبدًا.
+• اعرف قبل أن تضغط. شاشة انتهاء اللعبة تخبرك الآن إن كان إعلان قادمًا، وإن كانت مشاهدته تمنحك عملات.
+• غيّر خطة Pro. بدّل بين الشهرية والسنوية من داخل التطبيق، وشاهد بلمحة أيهما لديك.
+• اللعب الجماعي صار يشبه اللعبة الحقيقية. لوح المواجهة صار مطابقًا للوح الفردي، وكلاهما يملأ الشاشة بالكامل.
 
 كذلك تم إصلاح:
 
-• النقر على الإشعار لم يعد يجمّد التطبيق على شاشة البداية.
-• روابط البطولات تفتح البطولة كما ينبغي.
-• الموسيقى والمؤثرات الصوتية لم تعد تنقطع.
-• الرسائل والتنبيهات تظهر بلغتك في كل مكان.
-• إصلاحات متنوعة للتعطّل.
+• سكين الذهبي كان يسبب تعطّلًا متكررًا لكل من يرتديه.
+• شاشة الإعدادات لم تكن تُفتح لبعض اللاعبين.
+• تعطّل عند انتهاء مؤقت السلسلة.
+• عملات مجانية أسرع: الإعلان جاهز قبل وصولك إلى الشاشة الرئيسية.
 
 ### Promotional Text
 
-الآن بمعدل التحديث الكامل لشاشتك — حتى 120 إطارًا في الثانية. مظهر أركيد جديد كليًا، وثعبان يزداد سرعة كلما طال، ولوحة معلومات يمكن قراءتها فعلًا.
+ثلاث طرق للتحكم: اللوحة الكلاسيكية، أو عصا تحكم عائمة، أو أزرار انعطاف في الزوايا. ولوحة تستجيب لحظة ملامسة إبهامك.
 
 ---
 
@@ -260,28 +243,26 @@ Teraz z pełną częstotliwością odświeżania ekranu — nawet 120 fps. Nowy 
 
 ### What's New
 
-Snake Classic è più veloce, più fluido e più bello.
+Tre modi di guidare, e un serpente che risponde nell'istante in cui premi.
 
-• Fino a 120 fps. Il gioco gira ora alla frequenza di aggiornamento piena del tuo schermo: serpente, scia e ogni menu si muovono con tutta la fluidità che il telefono può disegnare. C'è un interruttore nelle Impostazioni se preferisci risparmiare batteria.
-• Finalmente accelera mentre cresci. La velocità ora segue la tua lunghezza, non solo il livello: un serpente lungo è un serpente veloce.
-• Le tue strisciate contano. Corretto un bug per cui due curve rapide si annullavano a vicenda, mandandoti a volte dritto sulla tua coda.
-• Un look arcade completamente nuovo. Home, fine partita, negozio, classifiche, tornei, replay e ogni finestra condividono ora la stessa cornice arcade.
-• Un HUD davvero leggibile. Punteggio e contatore cibo più grandi su ogni telefono, e la progressione di livello è ora una barra a tutta larghezza a forma di serpente.
-• I power-up durano di più. Restano più a lungo sul tabellone e durano di più una volta raccolti.
-• Una seconda possibilità, due volte. Ora puoi rivivere due volte nella stessa partita.
-• Le prove gratuite si vedono. Entrambi i piani Pro le hanno sempre incluse: ora l'app te lo dice.
+• Scegli i comandi. Il pad a quattro direzioni ha ora compagnia: un joystick fluttuante che si centra dove appoggi il pollice, e i Pulsanti di Svolta — TURN LEFT e TURN RIGHT negli angoli in basso, dove i pollici già riposano. Due pressioni rapide fanno una curva. Si sceglie nelle Impostazioni o direttamente dal menu di pausa.
+• Il pad risponde al tocco. Le pressioni contano nell'istante in cui il pollice appoggia, senza attendere la fine del gesto; scorrere sui bracci fa svoltare a ognuno che attraversi, e un secondo dito subentra al primo.
+• Basta pressioni rifiutate. Una terza pressione rapida sostituisce ora la svolta in coda, invece di essere respinta con una vibrazione.
+• Movimento a Scatti. Se guidi con i pulsanti, disattiva lo scorrimento: il serpente resta esattamente nella sua cella e una svolta non sembra mai in ritardo.
+• Sappilo prima di premere. La schermata di fine partita ti dice ora se sta per arrivare una pubblicità e se guardarla frutta monete.
+• Cambia il piano Pro. Passa da mensile ad annuale dall'app e vedi a colpo d'occhio quale hai.
+• Il multiplayer sembra il gioco vero. Il tabellone della sfida corrisponde ora a quello in singolo, ed entrambi riempiono tutto lo schermo.
 
 Inoltre corretto:
 
-• Toccare una notifica non blocca più l'app sulla schermata di avvio.
-• I link dei tornei aprono correttamente il torneo.
-• Musica ed effetti sonori non si interrompono più.
-• Messaggi e avvisi appaiono nella tua lingua ovunque.
-• Varie correzioni di crash.
+• La skin Dorata mandava in crash il gioco di continuo a chi la indossava.
+• La schermata delle impostazioni non si apriva per alcuni giocatori.
+• Un crash allo scadere del timer delle combo.
+• Monete gratis prima: la pubblicità è pronta quando arrivi alla schermata iniziale.
 
 ### Promotional Text
 
-Ora alla frequenza piena del tuo schermo: fino a 120 fps. Un look arcade tutto nuovo, un serpente che finalmente accelera crescendo e un HUD davvero leggibile.
+Tre modi di guidare: il pad classico, un joystick fluttuante o i pulsanti di svolta negli angoli. E un pad che risponde al primo tocco.
 
 ---
 
@@ -289,25 +270,23 @@ Ora alla frequenza piena del tuo schermo: fino a 120 fps. Un look arcade tutto n
 
 ### What's New
 
-Snake Classic daha hızlı, daha akıcı ve daha güzel.
+Üç farklı yönlendirme yolu ve bastığın anda karşılık veren bir yılan.
 
-• 120 fps'ye kadar. Oyun artık ekranının tam yenileme hızında çalışıyor; yılan, iz ve her menü telefonunun çizebildiği kadar akıcı hareket ediyor. Pil tasarrufu istersen Ayarlar'da bir anahtar var.
-• Sonunda büyüdükçe hızlanıyor. Hız artık sadece seviyeni değil uzunluğunu takip ediyor: uzun yılan hızlı yılandır.
-• Kaydırmaların işliyor. İki hızlı dönüşün birbirini iptal ettiği ve bazen seni doğrudan kendi kuyruğuna gönderen hata giderildi.
-• Tamamen yeni arcade görünüm. Ana ekran, oyun sonu, mağaza, liderlik tabloları, turnuvalar, tekrarlar ve her pencere artık aynı arcade çerçevesini paylaşıyor.
-• Gerçekten okunan bir HUD. Her telefonda daha büyük puan ve yem sayacı, seviye ilerlemesi ise artık tam genişlikte bir yılan göstergesi.
-• Güçlendirmeler daha uzun sürüyor. Tahtada daha uzun duruyor, toplandıktan sonra da daha uzun etkili.
-• İkinci şans, iki kez. Artık aynı oyunda iki kez canlanabilirsin.
-• Ücretsiz denemeler görünür oldu. Her iki Pro planı da hep içeriyordu — artık uygulama bunu söylüyor.
+• Kontrolünü seç. Dört yönlü pedin artık arkadaşları var: başparmağını nereye koyarsan orada merkezlenen kayan bir joystick ve Dönüş Düğmeleri — alt köşelerde TURN LEFT ve TURN RIGHT, yani başparmaklarının zaten durduğu yerde. İki hızlı basış bir viraj yapar. Ayarlar'dan ya da doğrudan duraklatma menüsünden seç.
+• Ped dokunuşta yanıt veriyor. Basışlar hareketin bitmesini beklemeden, başparmağın değdiği anda işleniyor; kollar üzerinde kaydırmak geçtiğin her kolda döndürüyor ve ikinci parmak birincinin yerini alıyor.
+• Reddedilen basışlar bitti. Üçüncü hızlı dokunuş artık titreşimle reddedilmek yerine sırada bekleyen dönüşün yerini alıyor.
+• Kare Kare Hareket. Düğmeyle yönlendiriyorsan kaymayı kapat: yılan tam kendi karesinde durur ve dönüş asla geç görünmez.
+• Basmadan önce bil. Oyun sonu ekranı artık bir reklamın geleceğini ve izlemenin sana jeton kazandırıp kazandırmayacağını söylüyor.
+• Pro planını değiştir. Uygulama içinden aylık ve yıllık arasında geçiş yap, hangisinde olduğunu bir bakışta gör.
+• Çok oyunculu artık gerçek oyun gibi görünüyor. Karşılaşma tahtası tek oyunculuyla eşleşiyor ve ikisi de ekranın tamamını dolduruyor.
 
 Ayrıca düzeltildi:
 
-• Bildirime dokunmak uygulamayı artık açılış ekranında dondurmuyor.
-• Turnuva bağlantıları turnuvayı düzgün açıyor.
-• Müzik ve ses efektleri artık kesilmiyor.
-• Mesajlar ve uyarılar her yerde kendi dilinde.
-• Çeşitli çökme düzeltmeleri.
+• Altın kostüm, kullanan herkeste oyunu sürekli çökertiyordu.
+• Ayarlar ekranı bazı oyuncularda açılmıyordu.
+• Kombo sayacı sıfırlandığında oluşan çökme.
+• Bedava jetonlar daha erken: ana ekrana ulaştığında reklam çoktan hazır.
 
 ### Promotional Text
 
-Artık ekranının tam yenileme hızında — 120 fps'ye kadar. Yepyeni arcade görünüm, büyüdükçe hızlanan bir yılan ve gerçekten okunan bir HUD.
+Üç yönlendirme yolu: klasik ped, kayan bir joystick ya da köşelerde dönüş düğmeleri. Bir de dokunduğun anda yanıt veren bir ped.
