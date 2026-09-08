@@ -1889,5 +1889,12 @@
   "homeTapToPlay": "खेलने के लिए टैप करें",
   "homeTileMe": "मैं",
   "dchSectionChallenges": "चुनौतियाँ",
-  "dchRewardLine": "{coins} सिक्के · {xp} XP"
+  "dchRewardLine": "{coins} सिक्के · {xp} XP",
+  "updateAvailableTitle": "अपडेट उपलब्ध है",
+  "updateAvailableBody": "App Store पर Snake Classic {version} आ गया है। नए फ़ीचर और सुधार पाने के लिए अपडेट करें।",
+  "updateRequiredTitle": "अपडेट ज़रूरी है",
+  "updateRequiredBody": "Snake Classic का यह वर्शन अब समर्थित नहीं है। खेलते रहने के लिए App Store से अपडेट करें।",
+  "updateActionUpdate": "अपडेट करें",
+  "updateActionLater": "बाद में",
+  "updateOpenStoreFailed": "App Store नहीं खुल सका"
 }

@@ -1016,6 +1016,28 @@ class ApiService {
   // are live calls (can't be outbox-deferred: entry quota + final
   // score ranking are server-validated in real time).
 
+  /// The store-release policy for a platform ("ios" / "android").
+  ///
+  /// Deliberately unauthenticated and short-timeout. It runs at launch, and
+  /// the player who most needs the answer may be on a build old enough that
+  /// its auth no longer works — gating this behind a token would silence
+  /// the message in exactly the case it exists for. A failure returns null
+  /// and the caller says nothing.
+  Future<Map<String, dynamic>?> getAppRelease(String platform) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/app-release/$platform'),
+            headers: const {'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 5));
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /app-release/$platform', e);
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> getActiveTournaments() async {
     try {
       final response = await http

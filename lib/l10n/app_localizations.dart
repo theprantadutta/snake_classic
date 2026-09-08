@@ -11409,6 +11409,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{coins} coins · {xp} XP'**
   String dchRewardLine(int coins, int xp);
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateAvailableTitle;
+
+  /// Body of the dismissible iOS update prompt. {version} is the store version, e.g. 6.4.3.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Classic {version} is on the App Store. Update for the latest features and fixes.'**
+  String updateAvailableBody(String version);
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Snake Classic is no longer supported. Please update from the App Store to keep playing.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @updateActionUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateActionUpdate;
+
+  /// No description provided for @updateActionLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateActionLater;
+
+  /// No description provided for @updateOpenStoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the App Store'**
+  String get updateOpenStoreFailed;
 }
 
 class _AppLocalizationsDelegate

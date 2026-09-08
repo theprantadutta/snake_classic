@@ -6370,4 +6370,28 @@ class AppLocalizationsPl extends AppLocalizations {
   String dchRewardLine(int coins, int xp) {
     return '$coins monet · $xp XP';
   }
+
+  @override
+  String get updateAvailableTitle => 'Dostępna aktualizacja';
+
+  @override
+  String updateAvailableBody(String version) {
+    return 'Snake Classic $version jest już w App Store. Zaktualizuj, aby mieć najnowsze funkcje i poprawki.';
+  }
+
+  @override
+  String get updateRequiredTitle => 'Wymagana aktualizacja';
+
+  @override
+  String get updateRequiredBody =>
+      'Ta wersja Snake Classic nie jest już wspierana. Zaktualizuj z App Store, aby grać dalej.';
+
+  @override
+  String get updateActionUpdate => 'Aktualizuj';
+
+  @override
+  String get updateActionLater => 'Później';
+
+  @override
+  String get updateOpenStoreFailed => 'Nie udało się otworzyć App Store';
 }

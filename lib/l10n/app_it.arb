@@ -1889,5 +1889,12 @@
   "homeTapToPlay": "Tocca per giocare",
   "homeTileMe": "Io",
   "dchSectionChallenges": "Sfide",
-  "dchRewardLine": "{coins} monete · {xp} XP"
+  "dchRewardLine": "{coins} monete · {xp} XP",
+  "updateAvailableTitle": "Aggiornamento disponibile",
+  "updateAvailableBody": "Snake Classic {version} è su App Store. Aggiorna per avere le ultime novità e correzioni.",
+  "updateRequiredTitle": "Aggiornamento necessario",
+  "updateRequiredBody": "Questa versione di Snake Classic non è più supportata. Aggiorna da App Store per continuare a giocare.",
+  "updateActionUpdate": "Aggiorna",
+  "updateActionLater": "Più tardi",
+  "updateOpenStoreFailed": "Impossibile aprire App Store"
 }

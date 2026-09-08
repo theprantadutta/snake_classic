@@ -2391,5 +2391,21 @@
         "type": "int"
       }
     }
+  },
+  "updateAvailableTitle": "Update available",
+  "updateAvailableBody": "Snake Classic {version} is on the App Store. Update for the latest features and fixes.",
+  "updateRequiredTitle": "Update required",
+  "updateRequiredBody": "This version of Snake Classic is no longer supported. Please update from the App Store to keep playing.",
+  "updateActionUpdate": "Update",
+  "updateActionLater": "Later",
+  "updateOpenStoreFailed": "Could not open the App Store",
+  "@updateAvailableBody": {
+    "description": "Body of the dismissible iOS update prompt. {version} is the store version, e.g. 6.4.3.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "6.4.3"
+      }
+    }
   }
 }

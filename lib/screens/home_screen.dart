@@ -27,6 +27,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/app_update_dialog.dart';
 import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
@@ -49,6 +50,8 @@ import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
+import 'package:snake_classic/services/app_release_policy.dart';
+import 'package:snake_classic/services/app_release_service.dart';
 import 'package:snake_classic/widgets/update_ready_notice.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -123,7 +126,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // download runs while they play and the strip below the rail
       // offers the restart when it lands.
       unawaited(InAppUpdateService().checkForUpdate());
+      // The iOS half of the same job. The App Store has no in-app update
+      // API, so the version to compare against comes from our backend and
+      // the outcome is a dialog rather than a Play-owned download. Runs on
+      // Android too and returns immediately there.
+      unawaited(_checkIosAppRelease());
     });
+  }
+
+  /// Ask the backend whether this iOS build is behind the store, and show
+  /// the matching dialog. No-ops on Android, in debug, after the first
+  /// check of the session, and whenever anything at all is unclear — see
+  /// [AppReleasePolicy].
+  Future<void> _checkIosAppRelease() async {
+    final prompt = await AppReleaseService().check();
+    if (prompt == UpdatePrompt.none) return;
+    if (!mounted) return;
+    await showAppUpdateDialog(context, prompt);
   }
 
   /// Runs the first-launch prompts strictly one at a time, in priority

@@ -6316,4 +6316,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String dchRewardLine(int coins, int xp) {
     return '$coins عملة · $xp XP';
   }
+
+  @override
+  String get updateAvailableTitle => 'يتوفر تحديث';
+
+  @override
+  String updateAvailableBody(String version) {
+    return 'إصدار Snake Classic ‏$version متاح الآن على App Store. حدِّث للحصول على أحدث الميزات والإصلاحات.';
+  }
+
+  @override
+  String get updateRequiredTitle => 'التحديث مطلوب';
+
+  @override
+  String get updateRequiredBody =>
+      'لم يعد هذا الإصدار من Snake Classic مدعومًا. حدِّث من App Store لمواصلة اللعب.';
+
+  @override
+  String get updateActionUpdate => 'تحديث';
+
+  @override
+  String get updateActionLater => 'لاحقًا';
+
+  @override
+  String get updateOpenStoreFailed => 'تعذّر فتح App Store';
 }
