@@ -260,17 +260,26 @@ class GameCubit extends Cubit<GameCubitState> {
   /// multiple of this — see [reviveCoinCostFor].
   static const int reviveCoinCost = 1500;
 
-  /// How many times a single run can be revived.
+  /// How many times a single run can be revived. One, for everybody.
   ///
-  /// Was effectively one. A second is offered because the player who just
+  /// This was briefly two, on the reasoning that a player who has just
   /// watched an ad to save a run is the most willing person in the app to
-  /// watch another, and refusing them was leaving the most-wanted moment on
-  /// the table. It stops at two on purpose: a run that can be revived
-  /// indefinitely is not a run, and the high score stops meaning anything.
-  static const int maxRevivesPerGame = 2;
+  /// watch another. That reasoning only ever looked at the ad-watching
+  /// player. It is not a per-player setting, so it also handed Pro users a
+  /// SECOND free life — Pro revives cost neither an ad nor coins, so two
+  /// revives is simply two free continues, which was never the offer.
+  ///
+  /// One life per run, earned the same way by everyone: free players watch a
+  /// rewarded ad (or pay coins), Pro players get theirs as a perk. What
+  /// differs is the price, not the count.
+  static const int maxRevivesPerGame = 1;
 
-  /// Coin price of the revive after [used] revives, escalating so the second
-  /// one is a real decision rather than a formality.
+  /// Coin price of the revive after [used] revives.
+  ///
+  /// With [maxRevivesPerGame] at 1 only `used == 0` is reachable, so this is
+  /// effectively [reviveCoinCost]. The escalation is kept because it is the
+  /// correct shape if the cap is ever raised again — a flat price would make
+  /// a second revive a formality.
   static int reviveCoinCostFor(int used) => reviveCoinCost * (used + 1);
 
   /// Coin price of the revive currently on offer.
@@ -279,7 +288,7 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Revives already spent in this run, 0-based.
   int get revivesUsedThisGame => _revivesThisGame;
 
-  /// One revive per run — flips true on [revive], reset on [startGame].
+  /// Revives spent in this run. Bumped by [revive], reset by [startGame].
   int _revivesThisGame = 0;
 
   /// Time-Attack rewarded "+30s" extension: how many seconds each ad grants,

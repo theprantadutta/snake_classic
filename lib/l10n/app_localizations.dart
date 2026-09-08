@@ -9775,7 +9775,7 @@ abstract class AppLocalizations {
   /// No description provided for @rvoSubtitlePro.
   ///
   /// In en, this message translates to:
-  /// **'Revive and keep your score · Free with Pro'**
+  /// **'Thanks for being Pro — here\'s your free life'**
   String get rvoSubtitlePro;
 
   /// No description provided for @rvoSubtitleTimer.

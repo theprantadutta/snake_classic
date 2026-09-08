@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, one{1 élément en attente de synchronisation} other{{count} éléments en attente de synchronisation}}",
   "ssiOffline": "Hors ligne",
   "rvoContinue": "CONTINUER ?",
-  "rvoSubtitlePro": "Ressuscitez et gardez votre score · Gratuit avec Pro",
+  "rvoSubtitlePro": "Merci d’être Pro — voici votre vie gratuite",
   "rvoSubtitleTimer": "Ressuscitez et gardez votre score · {seconds}s",
   "rvoGetLifePro": "Obtenir une Vie · Gratuit pour Pro",
   "rvoWatchAd": "Regarder une pub pour revivre",

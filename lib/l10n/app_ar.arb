@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, zero{لا عناصر بانتظار المزامنة} one{عنصر واحد بانتظار المزامنة} two{عنصران بانتظار المزامنة} few{{count} عناصر بانتظار المزامنة} many{{count} عنصرًا بانتظار المزامنة} other{{count} عنصر بانتظار المزامنة}}",
   "ssiOffline": "غير متصل",
   "rvoContinue": "متابعة؟",
-  "rvoSubtitlePro": "عُد للحياة واحتفظ بنقاطك · مجانًا مع Pro",
+  "rvoSubtitlePro": "شكرًا لاشتراكك في Pro — إليك حياتك المجانية",
   "rvoSubtitleTimer": "عُد للحياة واحتفظ بنقاطك · {seconds} ث",
   "rvoGetLifePro": "احصل على حياة · مجانًا لمشتركي Pro",
   "rvoWatchAd": "شاهد إعلانًا لتعود للحياة",

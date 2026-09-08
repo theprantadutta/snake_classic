@@ -5367,7 +5367,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get rvoContinue => 'متابعة؟';
 
   @override
-  String get rvoSubtitlePro => 'عُد للحياة واحتفظ بنقاطك · مجانًا مع Pro';
+  String get rvoSubtitlePro => 'شكرًا لاشتراكك في Pro — إليك حياتك المجانية';
 
   @override
   String rvoSubtitleTimer(Object seconds) {

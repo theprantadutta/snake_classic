@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, one{1 item aguardando sincronização} other{{count} itens aguardando sincronização}}",
   "ssiOffline": "Offline",
   "rvoContinue": "CONTINUAR?",
-  "rvoSubtitlePro": "Reviva e mantenha seus pontos · Grátis com o Pro",
+  "rvoSubtitlePro": "Obrigado por ser Pro — aqui está sua vida grátis",
   "rvoSubtitleTimer": "Reviva e mantenha seus pontos · {seconds}s",
   "rvoGetLifePro": "Ganhar Vida · Grátis para Pro",
   "rvoWatchAd": "Assistir anúncio para reviver",

@@ -5450,8 +5450,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get rvoContinue => 'CONTINUER ?';
 
   @override
-  String get rvoSubtitlePro =>
-      'Ressuscitez et gardez votre score · Gratuit avec Pro';
+  String get rvoSubtitlePro => 'Merci d’être Pro — voici votre vie gratuite';
 
   @override
   String rvoSubtitleTimer(Object seconds) {

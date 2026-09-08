@@ -5411,7 +5411,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rvoContinue => 'ПРОДОЛЖИТЬ?';
 
   @override
-  String get rvoSubtitlePro => 'Возродитесь и сохраните счёт · Бесплатно с Pro';
+  String get rvoSubtitlePro =>
+      'Спасибо, что вы Pro — вот ваша бесплатная жизнь';
 
   @override
   String rvoSubtitleTimer(Object seconds) {

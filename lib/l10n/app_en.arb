@@ -1843,7 +1843,7 @@
   },
   "ssiOffline": "Offline",
   "rvoContinue": "CONTINUE?",
-  "rvoSubtitlePro": "Revive and keep your score · Free with Pro",
+  "rvoSubtitlePro": "Thanks for being Pro — here's your free life",
   "rvoSubtitleTimer": "Revive and keep your score · {seconds}s",
   "@rvoSubtitleTimer": {
     "placeholders": {

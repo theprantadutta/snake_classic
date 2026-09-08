@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, one{{count} элемент ждёт синхронизации} few{{count} элемента ждут синхронизации} many{{count} элементов ждут синхронизации} other{{count} элемента ждёт синхронизации}}",
   "ssiOffline": "Офлайн",
   "rvoContinue": "ПРОДОЛЖИТЬ?",
-  "rvoSubtitlePro": "Возродитесь и сохраните счёт · Бесплатно с Pro",
+  "rvoSubtitlePro": "Спасибо, что вы Pro — вот ваша бесплатная жизнь",
   "rvoSubtitleTimer": "Возродитесь и сохраните счёт · {seconds} с",
   "rvoGetLifePro": "Получить жизнь · Бесплатно для Pro",
   "rvoWatchAd": "Смотреть рекламу и возродиться",

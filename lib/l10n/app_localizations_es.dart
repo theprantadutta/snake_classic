@@ -5434,7 +5434,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get rvoSubtitlePro =>
-      'Revive y conserva tu puntuación · Gratis con Pro';
+      'Gracias por ser Pro: aquí tienes tu vida gratis';
 
   @override
   String rvoSubtitleTimer(Object seconds) {

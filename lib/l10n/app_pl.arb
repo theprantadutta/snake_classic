@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, one{{count} element czeka na synchronizację} few{{count} elementy czekają na synchronizację} many{{count} elementów czeka na synchronizację} other{{count} elementu czeka na synchronizację}}",
   "ssiOffline": "Offline",
   "rvoContinue": "KONTYNUOWAĆ?",
-  "rvoSubtitlePro": "Odrodź się i zachowaj wynik · Za darmo z Pro",
+  "rvoSubtitlePro": "Dzięki za Pro — oto Twoje darmowe życie",
   "rvoSubtitleTimer": "Odrodź się i zachowaj wynik · {seconds} s",
   "rvoGetLifePro": "Zdobądź Życie · Darmowe dla Pro",
   "rvoWatchAd": "Obejrzyj reklamę, aby się odrodzić",

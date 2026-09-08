@@ -1617,7 +1617,7 @@
   "ssiPendingCount": "{count, plural, one{1 आइटम सिंक बाकी} other{{count} आइटम सिंक बाकी}}",
   "ssiOffline": "ऑफ़लाइन",
   "rvoContinue": "जारी रखें?",
-  "rvoSubtitlePro": "रिवाइव करें और स्कोर बचाएँ · Pro के साथ मुफ़्त",
+  "rvoSubtitlePro": "Pro इस्तेमाल करने के लिए धन्यवाद — यह रही आपकी मुफ़्त जान",
   "rvoSubtitleTimer": "रिवाइव करें और स्कोर बचाएँ · {seconds} से.",
   "rvoGetLifePro": "जान पाएँ · Pro के लिए मुफ़्त",
   "rvoWatchAd": "रिवाइव के लिए विज्ञापन देखें",
