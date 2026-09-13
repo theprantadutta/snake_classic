@@ -1,12 +1,23 @@
-# Flutter wrapper
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.** { *; }
--keep class io.flutter.util.** { *; }
--keep class io.flutter.view.** { *; }
--keep class io.flutter.** { *; }
--keep class io.flutter.plugins.** { *; }
+# R8 rules for the release build.
+#
+# Play Console scored release 54 at a 14% optimisation / 15% obfuscation /
+# 14% shrinking rate. The cause was this file: it kept whole SDK packages
+# with "-keep class <pkg>.** { *; }", and "com.google.android.gms.**" alone
+# pinned 13,800 classes, 62% of the DEX, that R8 could otherwise have
+# inlined, merged, renamed or dropped. Every one of those SDKs ships its own
+# consumer rules inside its AAR (play-services-basement 17, play-services-ads
+# 4, firebase-auth 1, billing 5, openiap-google 3), and Firebase is built for
+# R8 full mode, so the blanket keeps protected nothing that was not already
+# protected. Only rules with a documented reason remain below.
 
-# Google Play Core (deferred components / split install)
+# ---------------------------------------------------------------------------
+# Flutter. No rules needed: the engine marks its JNI entry points with @Keep
+# (honoured by proguard-android-optimize.txt) and the Flutter Gradle plugin
+# keeps every FlutterPlugin implementation (flutter_proguard_rules.pro).
+# ---------------------------------------------------------------------------
+
+# Google Play Core (deferred components / split install) — referenced by the
+# Flutter embedding but not shipped in this app.
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallManager
@@ -20,45 +31,33 @@
 -dontwarn com.google.android.play.core.tasks.Task
 
 # ---------------------------------------------------------------------------
-# Firebase (Core / Auth / Messaging / Analytics / Crashlytics) + Google Play
-# Services. Broad keeps so the native SDKs' reflection-based init survives R8.
+# Firebase Crashlytics: readable stack traces. The Crashlytics Gradle plugin
+# uploads the R8 mapping file; these attributes must survive shrinking for
+# the retrace to line up, and custom exception types keep their names so a
+# report says what was thrown.
 # ---------------------------------------------------------------------------
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
-
-# Firebase Crashlytics
-# Preserve source-file names and line numbers so crash reports have readable,
-# de-obfuscated stack traces. The Crashlytics Gradle plugin uploads the R8
-# mapping file automatically, but these attributes must survive shrinking.
--keepattributes SourceFile,LineNumberTable
-# Keep custom exception types intact so they aren't merged/renamed in reports.
--keep public class * extends java.lang.Exception
--keep class com.google.firebase.crashlytics.** { *; }
--dontwarn com.google.firebase.crashlytics.**
-
-# Firebase Analytics / Measurement
--keep class com.google.firebase.analytics.** { *; }
--keep class com.google.android.gms.measurement.** { *; }
-
-# Firebase Cloud Messaging
--keep class com.google.firebase.messaging.** { *; }
 
 # ---------------------------------------------------------------------------
 # flutter_local_notifications — uses Gson to (de)serialize scheduled
 # notification details. R8 full mode strips the generic TypeToken signatures
-# and crashes on scheduled/rescheduled notifications without these keeps.
+# and crashes on scheduled/rescheduled notifications without these keeps
+# (the rules the plugin's README asks for).
 # ---------------------------------------------------------------------------
 -keep class com.dexterous.** { *; }
 -keep class com.google.gson.reflect.TypeToken { *; }
 -keep class * extends com.google.gson.reflect.TypeToken
-
-# Keep Gson classes (if used)
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn sun.misc.**
 -keep class com.google.gson.stream.** { *; }
+-keep class * extends com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
 
 # Keep native methods
 -keepclassmembers class * {
@@ -80,26 +79,12 @@
     java.lang.Object readResolve();
 }
 
-# Keep R8 from stripping interface information
--keep,allowobfuscation interface * {
-    @retrofit2.http.* <methods>;
-}
-
-# Prevent proguard from stripping interface information from TypeAdapter, TypeAdapterFactory,
-# JsonSerializer, JsonDeserializer instances (for Gson)
--keep class * extends com.google.gson.TypeAdapter
--keep class * implements com.google.gson.TypeAdapterFactory
--keep class * implements com.google.gson.JsonSerializer
--keep class * implements com.google.gson.JsonDeserializer
-
 # ---------------------------------------------------------------------------
-# flutter_inapp_purchase / OpenIAP + Google Play Billing. The plugin decodes
-# its own generated types by name across the method channel; R8 renaming
-# them turns every purchase event into a parse error.
+# Google Play Billing + flutter_inapp_purchase (OpenIAP). Both AARs ship
+# their own consumer rules: billing keeps its AIDL and proxy activities,
+# openiap-google keeps dev.hyo.openiap.models.** for its JSON bridge. The
+# Flutter plugin class itself is a FlutterPlugin and is kept by the Flutter
+# Gradle plugin. Nothing to add beyond silencing optional references.
 # ---------------------------------------------------------------------------
--keep class dev.hyo.** { *; }
--keep class io.github.hyochan.** { *; }
--keep class com.android.vending.billing.**
--keep class com.android.billingclient.** { *; }
 -dontwarn dev.hyo.**
 -dontwarn io.github.hyochan.**
