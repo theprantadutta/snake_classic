@@ -9595,8 +9595,20 @@ abstract class AppLocalizations {
   /// No description provided for @auBody.
   ///
   /// In en, this message translates to:
-  /// **'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.'**
+  /// **'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link an account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.'**
   String get auBody;
+
+  /// No description provided for @auApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get auApple;
+
+  /// No description provided for @auAppleSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your Apple ID. Your email can stay private.'**
+  String get auAppleSub;
 
   /// No description provided for @auGoogle.
   ///

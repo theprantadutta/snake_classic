@@ -5320,7 +5320,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get auBody =>
-      'Gli account ospite possono giocare e salvare i progressi in locale, ma non possono acquistare o abbonarsi. Collega un account Google o email per sbloccare gli acquisti — monete, cosmetici e record restano tuoi.';
+      'Gli account ospite possono giocare e salvare i progressi in locale, ma non acquistare oggetti né abbonarsi. Collega un account per sbloccare gli acquisti: monete, cosmetici e record restano collegati.';
+
+  @override
+  String get auApple => 'Continua con Apple';
+
+  @override
+  String get auAppleSub =>
+      'Accedi con il tuo Apple ID. La tua email può restare privata.';
 
   @override
   String get auGoogle => 'Continua con Google';

@@ -5307,7 +5307,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get auBody =>
-      'Contas de convidado podem jogar e salvar o progresso localmente, mas não podem comprar itens nem assinar. Vincule uma conta Google ou de e-mail para desbloquear compras — suas moedas, cosméticos e recordes continuam com você.';
+      'Contas de convidado podem jogar e salvar o progresso localmente, mas não podem comprar itens nem assinar. Vincule uma conta para desbloquear as compras — suas moedas, cosméticos e recordes atuais continuam vinculados.';
+
+  @override
+  String get auApple => 'Continuar com a Apple';
+
+  @override
+  String get auAppleSub =>
+      'Entre com seu Apple ID. Seu e-mail pode ficar privado.';
 
   @override
   String get auGoogle => 'Continuar com o Google';
