@@ -359,7 +359,7 @@ For each non-consumable and consumable product listed above:
 iOS purchases are **cryptographically verified** on the backend. There is
 nothing extra to configure beyond `APPLE_BUNDLE_ID`.
 
-The client (StoreKit 2 via `in_app_purchase`) sends the **signed transaction
+The client (StoreKit 2 via `flutter_inapp_purchase`) sends the **signed transaction
 JWS** as `receipt_data`. On `POST /purchases/verify`, the backend
 (`AppleStoreService` + `AppleJwsVerifier`) validates Apple's ES256 signature
 and the `x5c` certificate chain against the pinned **Apple Root CA - G3**

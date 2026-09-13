@@ -1280,6 +1280,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get storePurchaseFailed => 'Acquisto non riuscito. Riprova.';
 
   @override
+  String get storePurchasePending =>
+      'Pagamento in sospeso. L\'acquisto verrà sbloccato appena lo store lo confermerà.';
+
+  @override
   String get storeBuyCoins => 'Compra Monete Snake';
 
   @override

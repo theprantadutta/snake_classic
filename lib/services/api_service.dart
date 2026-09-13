@@ -565,6 +565,20 @@ class ApiService {
           )
           .timeout(_timeout);
 
+      // A 400 from /purchases/verify carries a stable error code (see
+      // VerifyPurchaseCommandHandler) that decides whether the receipt is
+      // retried later or refused for good. _handleResponse would flatten
+      // it to null, which reads as "try again later" whatever the reason.
+      if (response.statusCode == 400) {
+        ConnectivityService().recordBackendSuccess();
+        final decoded = jsonDecode(response.body);
+        final error = decoded is Map ? decoded['error']?.toString() : null;
+        AppLogger.warning(
+          'Purchase verification refused: ${error ?? response.body}',
+        );
+        return {'is_valid': false, 'error': ?error};
+      }
+
       return _handleResponse(response);
     } catch (e) {
       AppLogger.error('Error verifying purchase', e);

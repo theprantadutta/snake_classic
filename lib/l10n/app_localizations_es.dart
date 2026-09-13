@@ -1285,6 +1285,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get storePurchaseFailed => 'La compra falló. Inténtalo de nuevo.';
 
   @override
+  String get storePurchasePending =>
+      'Pago pendiente. Tu compra se desbloqueará cuando la tienda la confirme.';
+
+  @override
   String get storeBuyCoins => 'Comprar Monedas Snake';
 
   @override

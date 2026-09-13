@@ -1279,6 +1279,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get storePurchaseFailed => 'Zakup nie powiódł się. Spróbuj ponownie.';
 
   @override
+  String get storePurchasePending =>
+      'Płatność oczekuje. Zakup zostanie odblokowany, gdy sklep go potwierdzi.';
+
+  @override
   String get storeBuyCoins => 'Kup monety Snake';
 
   @override

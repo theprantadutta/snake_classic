@@ -2332,6 +2332,12 @@ abstract class AppLocalizations {
   /// **'Purchase failed. Please try again.'**
   String get storePurchaseFailed;
 
+  /// No description provided for @storePurchasePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment pending. Your purchase will unlock once the store confirms it.'**
+  String get storePurchasePending;
+
   /// No description provided for @storeBuyCoins.
   ///
   /// In en, this message translates to:

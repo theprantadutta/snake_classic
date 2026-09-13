@@ -1283,6 +1283,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get storePurchaseFailed => 'Achat échoué. Veuillez réessayer.';
 
   @override
+  String get storePurchasePending =>
+      'Paiement en attente. Votre achat sera débloqué dès que la boutique l\'aura confirmé.';
+
+  @override
   String get storeBuyCoins => 'Acheter des Pièces Snake';
 
   @override

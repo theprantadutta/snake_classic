@@ -122,7 +122,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the gameplay architecture, invariants
 - Drift for the local database, go_router for navigation
 - Firebase Auth, Cloud Messaging, Analytics and Crashlytics
 - signalr_netcore for real-time multiplayer
-- google_mobile_ads and in_app_purchase
+- google_mobile_ads, and flutter_inapp_purchase (OpenIAP) for the store — Play Billing Library 9.1 / StoreKit 2
 - flutter_soloud for audio, flutter_animate for motion
 
 **Backend** (separate repository, `snake-classic-backend`)

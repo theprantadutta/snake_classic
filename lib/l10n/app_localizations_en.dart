@@ -1271,6 +1271,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storePurchaseFailed => 'Purchase failed. Please try again.';
 
   @override
+  String get storePurchasePending =>
+      'Payment pending. Your purchase will unlock once the store confirms it.';
+
+  @override
   String get storeBuyCoins => 'Buy Snake Coins';
 
   @override

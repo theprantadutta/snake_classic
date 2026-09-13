@@ -697,6 +697,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       await AuthService().ensureBackendAuthentication();
       // Retry any pending offline purchases
       await PurchaseService().retryPendingVerifications();
+      // Deliver anything the store now reports as paid that we have not
+      // delivered: a deferred payment that cleared, a purchase made on
+      // another device, a transaction left unfinished by a crash.
+      await PurchaseService().reconcileStoreState();
       // Sync premium entitlements (catches subscription renewals/cancellations)
       getIt<PremiumCubit>().syncWithBackend();
     } catch (e) {

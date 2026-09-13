@@ -377,6 +377,7 @@
   "storeInitiatingPurchase": "جارٍ بدء شراء {name}...",
   "storeSubNotAvailable": "الاشتراك غير متاح. حاول لاحقًا.",
   "storePurchaseFailed": "فشل الشراء. حاول مرة أخرى.",
+  "storePurchasePending": "الدفع قيد الانتظار. سيتم فتح مشترياتك بمجرد تأكيد المتجر لها.",
   "storeBuyCoins": "اشترِ عملات Snake",
   "storeEarnFreeCoins": "اكسب عملات مجانية",
   "storeEarnPlay": "العب جولة",

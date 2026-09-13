@@ -507,6 +507,7 @@
   "storeInitiatingPurchase": "Initiating {name} purchase...",
   "storeSubNotAvailable": "Subscription not available. Please try again later.",
   "storePurchaseFailed": "Purchase failed. Please try again.",
+  "storePurchasePending": "Payment pending. Your purchase will unlock once the store confirms it.",
   "storeBuyCoins": "Buy Snake Coins",
   "storeEarnFreeCoins": "Earn Free Coins",
   "storeEarnPlay": "Play a Game",

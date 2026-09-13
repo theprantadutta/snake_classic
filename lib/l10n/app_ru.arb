@@ -377,6 +377,7 @@
   "storeInitiatingPurchase": "Оформляем покупку {name}...",
   "storeSubNotAvailable": "Подписка недоступна. Попробуйте позже.",
   "storePurchaseFailed": "Покупка не удалась. Попробуйте ещё раз.",
+  "storePurchasePending": "Платёж в обработке. Покупка откроется, как только магазин её подтвердит.",
   "storeBuyCoins": "Купить монеты Snake",
   "storeEarnFreeCoins": "Получайте монеты бесплатно",
   "storeEarnPlay": "Сыграйте игру",

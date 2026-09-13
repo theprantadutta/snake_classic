@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 6.4.3+54
+version: 6.5.0+55
 
 environment:
   # Tracks the Dart SDK this project is developed/built with (Flutter
@@ -91,12 +91,10 @@ dependencies:
   # SignalR for real-time multiplayer (replaces WebSocket)
   signalr_netcore: ^1.3.7
   
-  # In-app purchases for monetization
-  in_app_purchase: ^3.2.3
-  in_app_purchase_android: ^0.5.0+2
-  # Direct (not transitive) so the free-trial length can be read off
-  # SKProduct.introductoryPrice — see PurchaseService.getFreeTrialDays.
-  in_app_purchase_storekit: ^0.4.11
+  # In-app purchases (OpenIAP). Play Billing Library 9.1.0 on Android,
+  # StoreKit 2 on iOS. Every purchase token / signed transaction is
+  # verified by our backend before anything is delivered.
+  flutter_inapp_purchase: ^10.6.1
 
   # Ads (AdMob). Bundles the UMP consent SDK. Pro/trial users never see ads.
   google_mobile_ads: ^9.0.0

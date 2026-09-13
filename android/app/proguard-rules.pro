@@ -91,3 +91,15 @@
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
+
+# ---------------------------------------------------------------------------
+# flutter_inapp_purchase / OpenIAP + Google Play Billing. The plugin decodes
+# its own generated types by name across the method channel; R8 renaming
+# them turns every purchase event into a parse error.
+# ---------------------------------------------------------------------------
+-keep class dev.hyo.** { *; }
+-keep class io.github.hyochan.** { *; }
+-keep class com.android.vending.billing.**
+-keep class com.android.billingclient.** { *; }
+-dontwarn dev.hyo.**
+-dontwarn io.github.hyochan.**

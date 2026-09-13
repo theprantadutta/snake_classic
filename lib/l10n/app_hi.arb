@@ -377,6 +377,7 @@
   "storeInitiatingPurchase": "{name} खरीद शुरू हो रही है...",
   "storeSubNotAvailable": "सदस्यता उपलब्ध नहीं है। बाद में कोशिश करें।",
   "storePurchaseFailed": "खरीद विफल रही। कृपया फिर कोशिश करें।",
+  "storePurchasePending": "भुगतान लंबित है। स्टोर द्वारा पुष्टि होते ही आपकी खरीदारी अनलॉक हो जाएगी।",
   "storeBuyCoins": "स्नेक सिक्के खरीदें",
   "storeEarnFreeCoins": "मुफ़्त सिक्के कमाएँ",
   "storeEarnPlay": "एक गेम खेलें",

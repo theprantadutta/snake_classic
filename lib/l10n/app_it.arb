@@ -377,6 +377,7 @@
   "storeInitiatingPurchase": "Avvio dell'acquisto di {name}...",
   "storeSubNotAvailable": "Abbonamento non disponibile. Riprova più tardi.",
   "storePurchaseFailed": "Acquisto non riuscito. Riprova.",
+  "storePurchasePending": "Pagamento in sospeso. L'acquisto verrà sbloccato appena lo store lo confermerà.",
   "storeBuyCoins": "Compra Monete Snake",
   "storeEarnFreeCoins": "Guadagna monete gratis",
   "storeEarnPlay": "Gioca una partita",

@@ -1267,6 +1267,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get storePurchaseFailed => 'فشل الشراء. حاول مرة أخرى.';
 
   @override
+  String get storePurchasePending =>
+      'الدفع قيد الانتظار. سيتم فتح مشترياتك بمجرد تأكيد المتجر لها.';
+
+  @override
   String get storeBuyCoins => 'اشترِ عملات Snake';
 
   @override

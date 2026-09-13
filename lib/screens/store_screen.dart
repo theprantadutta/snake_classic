@@ -107,11 +107,18 @@ class _StoreScreenState extends State<StoreScreen>
   void _onPurchaseStatus(String status) {
     String? productId;
     var failed = false;
+    var pending = false;
     if (status.startsWith('purchase_canceled:')) {
       productId = status.substring('purchase_canceled:'.length);
     } else if (status.startsWith('purchase_failed:')) {
       productId = status.substring('purchase_failed:'.length);
       failed = true;
+    } else if (status.startsWith('purchase_pending:')) {
+      // A deferred payment (cash at a kiosk, carrier billing): the store
+      // has accepted the order but no money has moved. Nothing unlocks
+      // until it clears, so the card goes back to "Buy" with a note.
+      productId = status.substring('purchase_pending:'.length);
+      pending = true;
     } else {
       return;
     }
@@ -127,6 +134,13 @@ class _StoreScreenState extends State<StoreScreen>
           context,
           message: AppLocalizations.of(context)!.storePurchaseFailed,
           tone: ArcadeSnackTone.error,
+        ),
+      );
+    } else if (pending) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        arcadeSnackBar(
+          context,
+          message: AppLocalizations.of(context)!.storePurchasePending,
         ),
       );
     }

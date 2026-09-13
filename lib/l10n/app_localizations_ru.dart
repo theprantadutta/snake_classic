@@ -1278,6 +1278,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storePurchaseFailed => 'Покупка не удалась. Попробуйте ещё раз.';
 
   @override
+  String get storePurchasePending =>
+      'Платёж в обработке. Покупка откроется, как только магазин её подтвердит.';
+
+  @override
   String get storeBuyCoins => 'Купить монеты Snake';
 
   @override

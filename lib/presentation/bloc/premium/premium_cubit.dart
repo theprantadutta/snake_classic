@@ -382,8 +382,8 @@ class PremiumCubit extends Cubit<PremiumState> {
     try {
       final owned = await _purchaseService.currentSubscription();
       if (owned == null) return;
-      if (owned.productID == state.activeSubscriptionId) return;
-      emit(state.copyWith(activeSubscriptionId: owned.productID));
+      if (owned.productId == state.activeSubscriptionId) return;
+      emit(state.copyWith(activeSubscriptionId: owned.productId));
     } catch (e) {
       AppLogger.warning('Could not refresh the active plan: $e');
     }
@@ -924,10 +924,10 @@ class PremiumCubit extends Cubit<PremiumState> {
     return purchases
         .map(
           (p) => {
-            'productId': p.productID,
-            'purchaseId': p.purchaseID,
+            'productId': p.productId,
+            'purchaseId': p.id,
             'transactionDate': p.transactionDate,
-            'status': p.status.toString(),
+            'status': p.purchaseState.value,
           },
         )
         .toList();

@@ -334,7 +334,7 @@ Battle Pass Season includes:
 - [Testing In-app Billing](https://developer.android.com/google/play/billing/test)
 
 ### Flutter Resources
-- [In-App Purchase Plugin Documentation](https://pub.dev/packages/in_app_purchase)
+- [flutter_inapp_purchase (OpenIAP) Documentation](https://www.openiap.dev/docs/setup/flutter)
 - [Google Play Billing Guide](https://developer.android.com/google/play/billing)
 
 ## 🎯 Success Metrics Goals
@@ -809,7 +809,7 @@ REGIONAL_PAYMENT_PREFERENCES = {
 ### Documentation References
 - [Google Play Console - In-App Products](https://support.google.com/googleplay/android-developer/answer/1153481)
 - [Google Play Billing Library](https://developer.android.com/google/play/billing)
-- [Flutter In-App Purchase Plugin](https://pub.dev/packages/in_app_purchase)
+- [flutter_inapp_purchase on pub.dev](https://pub.dev/packages/flutter_inapp_purchase)
 - [Subscription Best Practices](https://developer.android.com/google/play/billing/subscriptions)
 - [Server-Side Verification Guide](https://developer.android.com/google/play/billing/security)
 
@@ -836,8 +836,8 @@ REGIONAL_PAYMENT_PREFERENCES = {
 ### ✅ COMPLETED - Frontend (Flutter)
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Product ID definitions | ✅ Done | 46 products in `purchase_service.dart` |
-| Google Play Billing integration | ✅ Done | Using `in_app_purchase` package |
+| Product ID definitions | ✅ Done | 37 products in `lib/services/purchases/product_ids.dart` |
+| Google Play Billing integration | ✅ Done | `flutter_inapp_purchase` 10.6 (OpenIAP) on Play Billing Library 9.1.0 |
 | Store UI screens | ✅ Done | 6-tab store, premium benefits screen |
 | Purchase verification flow | ✅ Done | Sends to backend for validation |
 | Restore purchases | ✅ Done | Platform + backend sync |

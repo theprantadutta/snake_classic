@@ -41,6 +41,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // flutter_inapp_purchase (OpenIAP) ships one Android module per
+        // store; the app has no product flavours of its own, so name the
+        // Google Play one explicitly.
+        missingDimensionStrategy("platform", "play")
     }
 
     signingConfigs {

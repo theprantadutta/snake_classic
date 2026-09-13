@@ -1273,6 +1273,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get storePurchaseFailed => 'खरीद विफल रही। कृपया फिर कोशिश करें।';
 
   @override
+  String get storePurchasePending =>
+      'भुगतान लंबित है। स्टोर द्वारा पुष्टि होते ही आपकी खरीदारी अनलॉक हो जाएगी।';
+
+  @override
   String get storeBuyCoins => 'स्नेक सिक्के खरीदें';
 
   @override
