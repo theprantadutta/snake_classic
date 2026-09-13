@@ -20,11 +20,16 @@ class MainActivity : FlutterActivity() {
     // compliance and to match the original "status bar hidden, nav bar
     // visible" look the app shipped with:
     //
-    //   1. setDecorFitsSystemWindows(window, false) — explicit edge-to-edge
-    //      opt-in. Flutter 3.27+ does this internally when targetSdk >= 35
-    //      but Play Console's bytecode scanner only sees this class, so we
-    //      call it explicitly to clear "Edge-to-edge may not display for
-    //      all users" warnings.
+    //   1. WindowCompat.enableEdgeToEdge(window) — the explicit edge-to-edge
+    //      opt-in for EVERY Android version. Android 15 forces edge-to-edge
+    //      on apps targeting SDK 35, but on 14 and below the app only got
+    //      it because we asked; Play Console checks for exactly this call
+    //      ("Edge-to-edge may not display for all users" on release 54 was
+    //      raised because we used to call setDecorFitsSystemWindows(false)
+    //      instead, which does the same job but is not what the scanner
+    //      recognises). It sets decorFitsSystemWindows=false, transparent
+    //      status/navigation bars and theme-appropriate icon contrast, the
+    //      same things the LaunchTheme XML already declares.
     //
     //   2. WindowInsetsController.hide(statusBars()) — the modern, non-
     //      deprecated way to hide ONLY the status bar app-wide. Pre-Android
@@ -41,10 +46,11 @@ class MainActivity : FlutterActivity() {
     // See flutter/flutter#183372 for the deprecated-API thread that
     // motivated this.
     //
-    // We use WindowCompat.setDecorFitsSystemWindows(window, false) rather
-    // than androidx.activity.enableEdgeToEdge() because the latter is an
+    // This is the androidx.core variant rather than
+    // androidx.activity.enableEdgeToEdge() because the latter is an
     // extension on ComponentActivity — FlutterActivity inherits from plain
-    // Activity, so the extension doesn't apply.
+    // Activity, so the extension doesn't apply. core 1.16+ added the
+    // Window-based one for exactly this case.
     // Android 10 renders with Skia, not Impeller.
     //
     // Play Console vitals, v6.1.0+47: SIGSEGV inside the GPU vendor drivers --
@@ -88,7 +94,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.enableEdgeToEdge(window)
         super.onCreate(savedInstanceState)
 
         val controller = WindowInsetsControllerCompat(window, window.decorView)

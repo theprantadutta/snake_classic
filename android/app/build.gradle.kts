@@ -78,6 +78,10 @@ kotlin {
 }
 
 dependencies {
+    // WindowCompat.enableEdgeToEdge(Window) (MainActivity) needs core 1.16+.
+    // It is already resolved transitively at 1.18; pinning it here keeps the
+    // compile classpath from ever drifting below the API we call.
+    implementation("androidx.core:core:1.18.0")
     implementation("androidx.window:window:1.0.0")
     implementation("androidx.window:window-java:1.0.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
