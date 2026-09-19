@@ -85,3 +85,12 @@ android/build/
 # a macOS build is ever needed.
 macos/Flutter/GeneratedPluginRegistrant.swift
 l10n_untranslated.txt
+
+# Sentry auth token for symbol upload (tools/release_android.{sh,ps1}).
+#
+# A separate file rather than a key in .env ON PURPOSE: .env is declared as
+# a Flutter asset in pubspec.yaml, so anything in it is packed into the
+# shipped APK/AAB and readable by anyone who unzips the app. That is fine
+# for public client ids; it is not fine for a credential that can write to
+# our Sentry org.
+.sentry-auth-token

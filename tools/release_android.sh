@@ -10,8 +10,10 @@
 # warned — the build succeeded, the upload simply never happened, and the
 # consequence only showed up once a crash needed reading.
 #
+# The auth token is read from .sentry-auth-token (gitignored, repo root), or
+# from SENTRY_AUTH_TOKEN if it is already exported — CI can use either.
+#
 # Usage:
-#   export SENTRY_AUTH_TOKEN=...          # project:releases scope
 #   ./tools/release_android.sh            # appbundle, the Play artifact
 #   ./tools/release_android.sh apk        # apk, for sideload testing
 #
@@ -30,6 +32,46 @@ case "$TARGET" in
   appbundle|apk) ;;
   *) echo "error: target must be 'appbundle' or 'apk', got '$TARGET'" >&2; exit 2 ;;
 esac
+
+# ---------------------------------------------------------------------------
+# Refuse to build if the token is sitting in .env.
+#
+# .env is a bundled Flutter ASSET (see `- .env` under assets: in
+# pubspec.yaml), so every key in it is packed into the APK/AAB and can be
+# read by anyone who unzips the app off the Play Store. Verified: the shipped
+# bundle contains base/assets/flutter_assets/.env. Public client ids there
+# are fine; a Sentry write credential is not.
+#
+# This check exists because putting it there is an easy and completely silent
+# mistake — the build would succeed and the upload would work.
+# ---------------------------------------------------------------------------
+if [[ -f .env ]] && grep -qE '^[[:space:]]*SENTRY_AUTH_TOKEN[[:space:]]*=[[:space:]]*[^[:space:]]' .env; then
+  cat >&2 <<'MSG'
+
+  ========================================================================
+  REFUSING TO BUILD: SENTRY_AUTH_TOKEN is set in .env
+
+  .env ships INSIDE the app bundle. Building now would publish your Sentry
+  auth token to every player who installs Snake Classic.
+
+  Move it:
+      1. delete the SENTRY_AUTH_TOKEN line from .env
+      2. put just the token value in .sentry-auth-token (gitignored)
+
+  ========================================================================
+
+MSG
+  exit 1
+fi
+
+# Token: an already-exported variable wins (CI), else the local file.
+TOKEN_FILE=".sentry-auth-token"
+if [[ -z "${SENTRY_AUTH_TOKEN:-}" && -f "$TOKEN_FILE" ]]; then
+  # Strip any trailing newline an editor may have added: a token carrying
+  # a stray CR or LF fails auth with an unhelpful 401.
+  SENTRY_AUTH_TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"
+  export SENTRY_AUTH_TOKEN
+fi
 
 VERSION="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
 echo "==> Building $TARGET for $VERSION"
@@ -50,13 +92,16 @@ if [[ -z "${SENTRY_AUTH_TOKEN:-}" ]]; then
   ========================================================================
   BUILD OK, SYMBOLS NOT UPLOADED
 
-  SENTRY_AUTH_TOKEN is not set, so `dart run sentry_dart_plugin` was
-  skipped. The artifact is fine and installable, but every crash it
-  reports will have unreadable frames.
+  No auth token found. `dart run sentry_dart_plugin` was skipped, so the
+  artifact is fine and installable, but every crash it reports will have
+  unreadable frames.
+
+  Put the token in .sentry-auth-token (gitignored, repo root) — NOT in
+  .env, which ships inside the app. Create one at
+  https://pranta-corp.sentry.io/settings/auth-tokens/ (scope: org:ci).
 
   Do NOT upload this build to Play until you have run:
 
-      export SENTRY_AUTH_TOKEN=...
       dart run sentry_dart_plugin
 
   from this directory, against THIS build output. Rebuilding later

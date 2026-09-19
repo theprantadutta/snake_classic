@@ -136,20 +136,30 @@ directly.** The script builds with the obfuscation / split-debug-info flags
 and uploads the symbols in one step, and refuses to finish quietly if
 `SENTRY_AUTH_TOKEN` is unset:
 
+Put the auth token in **`.sentry-auth-token`** at the repo root — just the
+token, nothing else. It is gitignored, and both scripts read it
+automatically, so a release is a single command:
+
 ```bash
-# Git Bash / macOS / Linux
-export SENTRY_AUTH_TOKEN=...   # project:releases scope, never committed
-./tools/release_android.sh     # appbundle, the Play artifact
+./tools/release_android.sh     # Git Bash / macOS / Linux
 ```
 
 ```powershell
-# Windows PowerShell — same script, same behaviour
-$env:SENTRY_AUTH_TOKEN = '...'
-.\tools\release_android.ps1
+.\tools\release_android.ps1    # Windows PowerShell
 ```
 
 Releases are cut from Windows, so both exist and must stay in step. If you
-change one, change the other.
+change one, change the other. `SENTRY_AUTH_TOKEN` in the environment still
+wins if it is already set, which is what CI would use.
+
+> ⚠️ **Never put the token in `.env`.** That file is declared as a Flutter
+> asset (`- .env` under `assets:` in pubspec.yaml), so it is packed into the
+> APK/AAB — verified: a built bundle contains
+> `base/assets/flutter_assets/.env`. Anyone who downloads the app from Play
+> can unzip it and read the file. Public client ids there are fine; a Sentry
+> write credential is not. Both scripts **refuse to build** if they find a
+> non-empty `SENTRY_AUTH_TOKEN` in `.env`, because the mistake is otherwise
+> completely silent — the build would succeed and the upload would work.
 
 This is not a style preference. 6.6.0+56 was built with a plain
 `flutter build appbundle` and no upload, and the first crash Play's

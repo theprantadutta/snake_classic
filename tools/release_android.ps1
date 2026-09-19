@@ -14,6 +14,10 @@
   the build succeeded, the upload simply never happened, and the consequence
   only showed up once a crash needed reading.
 
+  The auth token is read from .sentry-auth-token (gitignored, repo root), or
+  from $env:SENTRY_AUTH_TOKEN if it is already set — CI can use either. It is
+  deliberately NOT read from .env; see the guard below for why.
+
   Symbols are matched to the build by the release identifier, which
   sentry_flutter derives from pubspec.yaml as
   com.pranta.snakeclassic@<version>+<build>. That is why nothing here sets
@@ -24,7 +28,6 @@
   'appbundle' (default, the Play artifact) or 'apk' (sideload testing).
 
 .EXAMPLE
-  $env:SENTRY_AUTH_TOKEN = '...'   # project:releases scope
   .\tools\release_android.ps1
 
 .EXAMPLE
@@ -41,6 +44,43 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 Set-Location (Join-Path $PSScriptRoot '..')
+
+# ---------------------------------------------------------------------------
+# Refuse to build if the token is sitting in .env.
+#
+# .env is a bundled Flutter ASSET (see `- .env` under assets: in
+# pubspec.yaml), so every key in it is packed into the APK/AAB and is
+# readable by anyone who unzips the app off the Play Store. Verified against
+# a real build: the bundle contains base/assets/flutter_assets/.env. Public
+# client ids there are fine; a Sentry write credential is not.
+#
+# This guard exists because putting it there is an easy and completely silent
+# mistake — the build would succeed and the upload would work.
+# ---------------------------------------------------------------------------
+if ((Test-Path '.env') -and
+    (Select-String -Path '.env' -Pattern '^\s*SENTRY_AUTH_TOKEN\s*=\s*\S' -Quiet)) {
+    Write-Host ''
+    Write-Host '  ======================================================================'
+    Write-Host '  REFUSING TO BUILD: SENTRY_AUTH_TOKEN is set in .env'
+    Write-Host ''
+    Write-Host '  .env ships INSIDE the app bundle. Building now would publish your'
+    Write-Host '  Sentry auth token to every player who installs Snake Classic.'
+    Write-Host ''
+    Write-Host '  Move it:'
+    Write-Host '      1. delete the SENTRY_AUTH_TOKEN line from .env'
+    Write-Host '      2. put just the token value in .sentry-auth-token (gitignored)'
+    Write-Host '  ======================================================================'
+    Write-Host ''
+    exit 1
+}
+
+# Token: an already-set variable wins (CI), else the local file.
+$tokenFile = '.sentry-auth-token'
+if ([string]::IsNullOrWhiteSpace($env:SENTRY_AUTH_TOKEN) -and (Test-Path $tokenFile)) {
+    # -Raw then Trim(): without -Raw, Get-Content returns an array of lines,
+    # and a token carrying a stray CR or LF fails auth with an unhelpful 401.
+    $env:SENTRY_AUTH_TOKEN = (Get-Content -Raw -LiteralPath $tokenFile).Trim()
+}
 
 $versionLine = Select-String -Path 'pubspec.yaml' -Pattern '^version:\s*(\S+)' |
     Select-Object -First 1
@@ -80,13 +120,16 @@ if ([string]::IsNullOrWhiteSpace($env:SENTRY_AUTH_TOKEN)) {
     Write-Host '  ========================================================================'
     Write-Host '  BUILD OK, SYMBOLS NOT UPLOADED'
     Write-Host ''
-    Write-Host '  SENTRY_AUTH_TOKEN is not set, so `dart run sentry_dart_plugin` was'
-    Write-Host '  skipped. The artifact is fine and installable, but every crash it'
-    Write-Host '  reports will have unreadable frames.'
+    Write-Host '  No auth token found. `dart run sentry_dart_plugin` was skipped, so'
+    Write-Host '  the artifact is fine and installable, but every crash it reports'
+    Write-Host '  will have unreadable frames.'
+    Write-Host ''
+    Write-Host '  Put the token in .sentry-auth-token (gitignored, repo root) - NOT'
+    Write-Host '  in .env, which ships inside the app. Create one at'
+    Write-Host '  https://pranta-corp.sentry.io/settings/auth-tokens/ (scope: org:ci).'
     Write-Host ''
     Write-Host '  Do NOT upload this build to Play until you have run:'
     Write-Host ''
-    Write-Host '      $env:SENTRY_AUTH_TOKEN = "..."'
     Write-Host '      dart run sentry_dart_plugin'
     Write-Host ''
     Write-Host '  from this directory, against THIS build output. Rebuilding later'
