@@ -5319,7 +5319,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get auBody =>
-      'Las cuentas de invitado pueden jugar y guardar el progreso localmente, pero no comprar ni suscribirse. Vincula una cuenta de Google o de correo para desbloquear las compras — tus monedas, cosméticos y récords se conservan.';
+      'Las cuentas de invitado pueden jugar y guardar el progreso localmente, pero no comprar artículos ni suscribirse. Vincula una cuenta para desbloquear las compras: tus monedas, cosméticos y récords actuales se mantienen.';
+
+  @override
+  String get auApple => 'Continuar con Apple';
+
+  @override
+  String get auAppleSub =>
+      'Inicia sesión con tu Apple ID. Tu correo puede permanecer privado.';
 
   @override
   String get auGoogle => 'Continuar con Google';

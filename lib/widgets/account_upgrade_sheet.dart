@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -108,54 +109,38 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Guideline 4.8: wherever a third-party login is offered on
+              // an Apple platform, Sign in with Apple rides along — and the
+              // HIG asks for equal-or-greater prominence, so it leads.
+              //
+              // This sheet was the one surface that still offered Google
+              // alone. The sign-in screen and the profile screen already
+              // paired them; the purchase-upgrade path did not, and it is
+              // the path App Review walked.
+              if (_isApplePlatform) ...[
+                _UpgradeOption(
+                  icon: Icons.apple,
+                  title: l10n.auApple,
+                  subtitle: l10n.auAppleSub,
+                  color: Colors.black,
+                  busy: _busy,
+                  onPressed: () => _connect(
+                    (cubit, confirm) =>
+                        cubit.connectAccountWithApple(confirmAccountSwitch: confirm),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               _UpgradeOption(
                 icon: Icons.g_mobiledata_outlined,
                 title: l10n.auGoogle,
                 subtitle: l10n.auGoogleSub,
                 color: Colors.red.shade700,
                 busy: _busy,
-                onPressed: () async {
-                  // Capture context-bound handles before the await so we can
-                  // dismiss the sheet and show feedback safely afterwards.
-                  final cubit = context.read<AuthCubit>();
-                  final navigator = Navigator.of(context);
-                  final messenger = ScaffoldMessenger.of(context);
-                  final l10n = AppLocalizations.of(context)!;
-                  final snackTheme = context
-                      .read<ThemeCubit>()
-                      .state
-                      .currentTheme;
-                  setState(() => _busy = true);
-                  // Branches to link-vs-sign-in internally. Offline guests
-                  // have no Firebase user to link against and used to fail
-                  // here with a bare "link failed".
-                  final ok = await cubit.connectAccountWithGoogle(
-                    confirmAccountSwitch: () => confirmAccountSwitch(context),
-                  );
-                  if (!mounted) return;
-                  setState(() => _busy = false);
-                  if (ok) {
-                    navigator.pop(true);
-                    messenger.showSnackBar(
-                      arcadeSnackBarFor(
-                        snackTheme,
-                        message: l10n.auLinked,
-                        tone: ArcadeSnackTone.success,
-                      ),
-                    );
-                  } else {
-                    final code = cubit.state.errorMessage ?? '';
-                    if (code.isNotEmpty && code != 'link failed') {
-                      messenger.showSnackBar(
-                        arcadeSnackBarFor(
-                          snackTheme,
-                          message: _linkError(l10n, code),
-                          tone: ArcadeSnackTone.error,
-                        ),
-                      );
-                    }
-                  }
-                },
+                onPressed: () => _connect(
+                  (cubit, confirm) =>
+                      cubit.connectAccountWithGoogle(confirmAccountSwitch: confirm),
+                ),
               ),
               const SizedBox(height: 12),
               _UpgradeOption(
@@ -184,6 +169,59 @@ class _AccountUpgradeSheetState extends State<_AccountUpgradeSheet> {
         );
       },
     );
+  }
+
+  static bool get _isApplePlatform =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
+  /// Run one provider's connect call and report the outcome.
+  ///
+  /// Shared by both providers rather than duplicated per button: the part
+  /// that differs is one method call, and everything around it — capturing
+  /// context handles before the await, the busy flag, pop-on-success, the
+  /// error mapping — is the part that is easy to get subtly wrong twice.
+  Future<void> _connect(
+    Future<bool> Function(AuthCubit, Future<bool> Function()) connect,
+  ) async {
+    // Captured before the await so the sheet can be dismissed and feedback
+    // shown safely afterwards.
+    final cubit = context.read<AuthCubit>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+
+    setState(() => _busy = true);
+    // Branches to link-vs-sign-in internally. Offline guests have no
+    // Firebase user to link against and used to fail here with a bare
+    // "link failed".
+    final ok = await connect(cubit, () => confirmAccountSwitch(context));
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    if (ok) {
+      navigator.pop(true);
+      messenger.showSnackBar(
+        arcadeSnackBarFor(
+          snackTheme,
+          message: l10n.auLinked,
+          tone: ArcadeSnackTone.success,
+        ),
+      );
+      return;
+    }
+
+    final code = cubit.state.errorMessage ?? '';
+    if (code.isNotEmpty && code != 'link failed') {
+      messenger.showSnackBar(
+        arcadeSnackBarFor(
+          snackTheme,
+          message: _linkError(l10n, code),
+          tone: ArcadeSnackTone.error,
+        ),
+      );
+    }
   }
 
   String _linkError(AppLocalizations l10n, String code) {

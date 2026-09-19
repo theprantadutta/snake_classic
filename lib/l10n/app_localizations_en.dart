@@ -5268,7 +5268,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auBody =>
-      'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link a Google or email account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.';
+      'Guest accounts can play and save progress locally, but cannot buy items or subscribe. Link an account to unlock purchases — your existing coins, cosmetics, and high scores stay attached.';
+
+  @override
+  String get auApple => 'Continue with Apple';
+
+  @override
+  String get auAppleSub =>
+      'Sign in with your Apple ID. Your email can stay private.';
 
   @override
   String get auGoogle => 'Continue with Google';

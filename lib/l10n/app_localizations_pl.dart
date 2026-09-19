@@ -5299,7 +5299,14 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get auBody =>
-      'Konta gości mogą grać i zapisywać postęp lokalnie, ale nie mogą kupować ani subskrybować. Połącz konto Google lub e-mail, aby odblokować zakupy — twoje monety, kosmetyki i rekordy zostaną zachowane.';
+      'Konta gościa mogą grać i zapisywać postępy lokalnie, ale nie mogą kupować przedmiotów ani wykupić subskrypcji. Połącz konto, aby odblokować zakupy — Twoje monety, kosmetyki i rekordy pozostaną przypisane.';
+
+  @override
+  String get auApple => 'Kontynuuj z Apple';
+
+  @override
+  String get auAppleSub =>
+      'Zaloguj się przez Apple ID. Twój e-mail może pozostać prywatny.';
 
   @override
   String get auGoogle => 'Kontynuuj z Google';
