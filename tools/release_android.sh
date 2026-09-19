@@ -109,25 +109,50 @@ if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]] && command -v curl >/dev/null 2>&1; then
   [[ "$CODE" == "200" || "$CODE" == "404" ]] || echo "  (version check skipped: HTTP $CODE)"
 fi
 
+# The two signals mean genuinely different things and deserve different
+# advice. Sentry seeing events proves the version is on real devices; the
+# local ledger only proves this machine built it and uploaded its symbols,
+# which happens whether or not the artifact ever reached Play. Saying
+# "already released" for the second case is simply wrong, and sends you off
+# to bump a version that never shipped.
 if [[ ( "$ALREADY_LOCAL" == "1" || "$ALREADY_SENTRY" == "1" ) && "$FORCE" != "1" ]]; then
-  WHERE=""
-  [[ "$ALREADY_LOCAL"  == "1" ]] && WHERE="the local release ledger"
-  [[ "$ALREADY_SENTRY" == "1" ]] && WHERE="${WHERE:+$WHERE and }Sentry (events already seen from it)"
-  cat >&2 <<MSG
+  if [[ "$ALREADY_SENTRY" == "1" ]]; then
+    cat >&2 <<MSG
 
   ======================================================================
-  REFUSING TO BUILD: $VERSION has already been released
+  REFUSING TO BUILD: $VERSION is already in the wild
 
-  Found in: $WHERE
-
-  Bump 'version:' in pubspec.yaml before building. Play will reject a
+  Sentry has received events from this version, so real devices are
+  running it. Bump 'version:' in pubspec.yaml. Play would reject the
   duplicate version code anyway, and symbols uploaded under a version
-  already in the wild attach to the wrong binary.
+  already in use attach to the wrong binary.
 
-  If you really mean to rebuild this version, pass --force.
+  To build anyway: --force
   ======================================================================
 
 MSG
+  else
+    cat >&2 <<MSG
+
+  ======================================================================
+  ALREADY BUILT: $VERSION was built and its symbols uploaded
+
+  ...from this machine. Sentry has seen no events from it, so it may
+  never have reached the Play Store. Two cases:
+
+   - You already uploaded it to Play -> bump 'version:' and rebuild.
+
+   - You did NOT upload it -> the artifact from that run is still at
+     build/app/outputs/bundle/release/app-release.aab and its symbols
+     already match it. Just upload that file; no rebuild needed.
+     Only if it is gone (flutter clean, another build) rebuild with
+     --force, which is safe because Play never saw this version code.
+
+  To build anyway: --force
+  ======================================================================
+
+MSG
+  fi
   exit 1
 fi
 

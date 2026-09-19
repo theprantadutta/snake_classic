@@ -130,20 +130,38 @@ try {
 }
 
 if (($alreadyLocal -or $alreadyInSentry) -and -not $Force) {
-    $where = @()
-    if ($alreadyLocal)    { $where += 'the local release ledger' }
-    if ($alreadyInSentry) { $where += 'Sentry (events already seen from it)' }
+    # The two signals mean genuinely different things and deserve different
+    # advice. Sentry seeing events proves the version is on real devices;
+    # the local ledger only proves this machine built it and uploaded its
+    # symbols, which happens whether or not the artifact ever reached Play.
+    # Saying "already released" for the second case is simply wrong, and
+    # sends you off to bump a version that never shipped.
     Write-Host ''
     Write-Host '  ======================================================================'
-    Write-Host "  REFUSING TO BUILD: $version has already been released"
+    if ($alreadyInSentry) {
+        Write-Host "  REFUSING TO BUILD: $version is already in the wild"
+        Write-Host ''
+        Write-Host '  Sentry has received events from this version, so real devices are'
+        Write-Host '  running it. Bump `version:` in pubspec.yaml. Play would reject the'
+        Write-Host '  duplicate version code anyway, and symbols uploaded under a version'
+        Write-Host '  already in use attach to the wrong binary.'
+    }
+    else {
+        Write-Host "  ALREADY BUILT: $version was built and its symbols uploaded"
+        Write-Host ''
+        Write-Host '  ...from this machine. Sentry has seen no events from it, so it may'
+        Write-Host '  never have reached the Play Store. Two cases:'
+        Write-Host ''
+        Write-Host '   - You already uploaded it to Play -> bump `version:` and rebuild.'
+        Write-Host ''
+        Write-Host '   - You did NOT upload it -> the artifact from that run is still at'
+        Write-Host '     build/app/outputs/bundle/release/app-release.aab and its symbols'
+        Write-Host '     already match it. Just upload that file; no rebuild needed.'
+        Write-Host '     Only if it is gone (flutter clean, another build) rebuild with'
+        Write-Host '     -Force, which is safe because Play never saw this version code.'
+    }
     Write-Host ''
-    Write-Host "  Found in: $($where -join ' and ')"
-    Write-Host ''
-    Write-Host '  Bump `version:` in pubspec.yaml before building. Play will reject a'
-    Write-Host '  duplicate version code anyway, and symbols uploaded under a version'
-    Write-Host '  already in the wild attach to the wrong binary.'
-    Write-Host ''
-    Write-Host '  If you really mean to rebuild this version, pass -Force.'
+    Write-Host '  To build anyway: -Force'
     Write-Host '  ======================================================================'
     Write-Host ''
     exit 1
