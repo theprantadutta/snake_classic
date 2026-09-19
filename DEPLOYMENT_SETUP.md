@@ -137,9 +137,19 @@ and uploads the symbols in one step, and refuses to finish quietly if
 `SENTRY_AUTH_TOKEN` is unset:
 
 ```bash
+# Git Bash / macOS / Linux
 export SENTRY_AUTH_TOKEN=...   # project:releases scope, never committed
 ./tools/release_android.sh     # appbundle, the Play artifact
 ```
+
+```powershell
+# Windows PowerShell — same script, same behaviour
+$env:SENTRY_AUTH_TOKEN = '...'
+.\tools\release_android.ps1
+```
+
+Releases are cut from Windows, so both exist and must stay in step. If you
+change one, change the other.
 
 This is not a style preference. 6.6.0+56 was built with a plain
 `flutter build appbundle` and no upload, and the first crash Play's

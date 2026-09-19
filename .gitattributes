@@ -1,0 +1,19 @@
+# Shell scripts must keep LF endings in the working tree, on every platform.
+#
+# This repo is developed on Windows with core.autocrlf=true, which converts
+# text files to CRLF on checkout. For a .sh file that is fatal rather than
+# cosmetic: the shebang becomes "#!/usr/bin/env bash\r" and Git Bash reports
+#
+#     bad interpreter: /usr/bin/env bash^M: No such file or directory
+#
+# The file that is committed is fine — the damage happens on CHECKOUT, so it
+# would not show up for whoever wrote the script, only for the next person to
+# clone (or for the same person after a fresh clone). Pinning eol=lf here
+# overrides autocrlf for these files specifically.
+*.sh text eol=lf
+
+# Gradle wrappers are shell scripts without the extension.
+gradlew text eol=lf
+
+# PowerShell is happy with either ending, so it is left to the default.
+*.ps1 text
