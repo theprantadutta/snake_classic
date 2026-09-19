@@ -3,43 +3,29 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-/// Mirrors `_isRecoverableError` in lib/main.dart.
-///
-/// The production copy is private to main.dart (which cannot be imported in a
-/// test — it would run the app). Kept in lockstep by hand; the point of these
-/// tests is to pin the CLASSIFICATION RULES, and any change to one copy that is
-/// not made in the other will show up here as a failing expectation.
-bool isRecoverableError(Object error, {bool silent = false}) {
-  if (silent) return true;
-
-  final type = error.runtimeType.toString();
-  const recoverableTypes = {
-    'NetworkImageLoadException',
-    'SocketException',
-    'HttpException',
-    'HandshakeException',
-    'ClientException',
-    'TimeoutException',
-  };
-  if (recoverableTypes.contains(type)) return true;
-
-  final message = error.toString();
-  return message.contains('lh3.googleusercontent.com') ||
-      message.contains('Connection closed before full header was received');
-}
+import 'package:snake_classic/core/observability/error_classification.dart';
 
 /// Guards the crash-vs-noise boundary.
 ///
-/// Crashlytics was filing a failed Google avatar download as a Fatal Exception,
-/// because the FlutterError handler reported everything as fatal. That both
-/// depressed the crash-free rate Play ranks on and buried genuine crashes.
+/// The crash reporter was filing a failed Google avatar download as a fatal
+/// exception, because the FlutterError handler reported everything as fatal.
+/// That both depressed the crash-free rate Play ranks on and buried genuine
+/// crashes.
 ///
 /// The risk in fixing it is the opposite mistake — silently downgrading a real
 /// crash — so the "must stay fatal" group below matters more than the other.
+///
+/// This exercises the PRODUCTION classifier directly. It used to hold a
+/// hand-copied duplicate of a function private to main.dart, kept in lockstep
+/// by discipline alone; the real one now lives in lib/core/observability/ and
+/// is imported above, so the two can no longer drift apart.
+///
+/// The classifier is consumed by Sentry's `beforeSend` hook, which downgrades
+/// a recoverable error's level to `warning` and marks it handled instead of
+/// letting it count as a crash.
 void main() {
   group('recoverable — must NOT be filed as a crash', () {
-    test('the exact avatar failure from Crashlytics', () {
+    test('the exact avatar failure from the field', () {
       const error = HttpException(
         'Connection closed before full header was received, '
         'uri = https://lh3.googleusercontent.com/a/ACg8ocKtOfZbiMF3EZHjvNOrrmWSIceptsBd8f8qi53gD6tNSjP8jQ=s96-c',

@@ -128,7 +128,18 @@ dependencies:
   package_info_plus: ^10.1.0
   flame: ^1.37.0
   flame_bloc: ^1.12.23
-  firebase_crashlytics: ^5.2.4
+
+  # Crash reporting, tracing and session replay. Replaced
+  # firebase_crashlytics — see lib/core/observability/ for the init, the
+  # error classifier and the reasoning.
+  #
+  # Pins `jni: 0.14.2` EXACTLY, which is why path_provider_android resolves
+  # to 2.2.23 rather than 2.3.1: 2.3.x is the jnigen rewrite and needs
+  # jni ^1.0.0. 2.2.23 is the stable pre-JNI implementation and behaves
+  # identically for our use (the Drift database path and the log directory).
+  # If sentry_flutter ever relaxes that pin, path_provider_android will
+  # float back up on its own.
+  sentry_flutter: ^9.30.0
 
 dev_dependencies:
   flutter_test:
@@ -150,6 +161,13 @@ dev_dependencies:
   # Drift code generation
   drift_dev: ^2.18.0
   build_runner: ^2.4.9
+
+  # Uploads the Dart obfuscation map, the split debug info and the Android
+  # ProGuard mapping to Sentry after a release build. Without it every
+  # release stack trace is a list of hex offsets. Configured by the
+  # `sentry:` block at the bottom of this file; run with
+  # `dart run sentry_dart_plugin` immediately after `flutter build`.
+  sentry_dart_plugin: ^3.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -207,3 +225,22 @@ flutter:
         - asset: assets/fonts/NotoSansArabic-Regular.ttf
         - asset: assets/fonts/NotoSansArabic-Bold.ttf
           weight: 700
+
+# sentry_dart_plugin — debug symbol upload (see dev_dependencies above).
+#
+# Deliberately NO auth_token here: pubspec.yaml is committed, and the token
+# is a write credential for the whole Sentry org. The plugin reads
+# SENTRY_AUTH_TOKEN from the environment, so set it in the shell / CI secret
+# store before running `dart run sentry_dart_plugin`.
+sentry:
+  org: pranta-corp
+  project: snake-classic-flutter
+  # The Dart obfuscation map + split-debug-info produced by the
+  # --obfuscate/--split-debug-info build flags. Without this, release
+  # traces are unreadable.
+  upload_debug_symbols: true
+  # Source context — the actual lines around each frame, shown inline in the
+  # Sentry issue. Only our own lib/ sources, never the .env or credentials.
+  upload_sources: true
+  # Web only; the app does not ship a web build, but harmless if one is made.
+  upload_source_maps: false

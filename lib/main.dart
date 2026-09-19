@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +13,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/core/observability/sentry_bootstrap.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -77,7 +78,39 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // EVERY path out of main() must reach runApp().
+  // BEFORE SentryFlutter.init, not after.
+  //
+  // Sentry's FlutterErrorIntegration takes over FlutterError.onError and
+  // CHAINS to whatever handler it found at install time. Setting ours first
+  // therefore keeps both: Sentry reports the error, then our handler does the
+  // local console work. Setting it afterwards would replace Sentry's handler
+  // outright and silently stop every framework error from ever being
+  // reported — the failure mode being that the dashboard simply stays empty
+  // and nothing anywhere says why.
+  _installLocalErrorPresenter();
+
+  // Everything else runs inside Sentry's init, via appRunner. That gives us
+  // two things the old arrangement could not:
+  //
+  //   1. The bootstrap itself is instrumented. Sentry is up before Firebase,
+  //      before DI, before the database — so a failure in any of them is
+  //      reportable. Crashlytics could not report anything that happened
+  //      before Firebase initialized, which is exactly where the worst
+  //      startup crashes live.
+  //   2. Unhandled async errors in the boot sequence are captured rather
+  //      than lost. On mobile the SDK does this through
+  //      PlatformDispatcher.onError (OnErrorIntegration), not by wrapping
+  //      appRunner in a Zone — which is also why the binding can safely be
+  //      initialized above, in the root zone, without tripping Flutter's
+  //      "zone mismatch" check. Only the web build falls back to
+  //      runZonedGuarded.
+  await SentryFlutter.init(configureSentryOptions, appRunner: _startApp);
+}
+
+/// The real startup sequence, run by `SentryFlutter.init` as its `appRunner`
+/// — see [main].
+Future<void> _startApp() async {
+  // EVERY path out of here must reach runApp().
   //
   // FlutterNativeSplash.preserve() above holds the NATIVE launch image on
   // screen until something explicitly removes it, and the only remove() call
@@ -105,7 +138,7 @@ void main() async {
     // sync engine, token registration), so a timeout that still produced a
     // router means a degraded app the player can use — worth reporting, but
     // not a crash.
-    await _reportStartupFailure(
+    await reportStartupFailure(
       error,
       stackTrace,
       reason: 'Startup exceeded ${_bootstrapBudget.inSeconds}s',
@@ -113,7 +146,7 @@ void main() async {
     );
   } catch (error, stackTrace) {
     // The app cannot start. This IS the crash, so it is reported as one.
-    await _reportStartupFailure(
+    await reportStartupFailure(
       error,
       stackTrace,
       reason: 'Failed to initialize Snake Classic',
@@ -121,57 +154,20 @@ void main() async {
     );
   }
 
-  _installGlobalErrorHandlers();
-
   if (_initSucceeded) {
-    runApp(const riverpod.ProviderScope(child: SnakeClassicApp()));
+    runApp(
+      SentryWidget(
+        child: const riverpod.ProviderScope(child: SnakeClassicApp()),
+      ),
+    );
   } else {
     // Drop the native splash FIRST — otherwise the recovery screen renders
     // underneath it and the user still just sees a frozen launch image.
     FlutterNativeSplash.remove();
-    runApp(const _StartupFailureApp());
-  }
-}
-
-/// Send a startup failure to Crashlytics.
-///
-/// Goes to Crashlytics DIRECTLY rather than through [AppLogger]. Every
-/// AppLogger method is wrapped in `if (kDebugMode)`, so in a release build
-/// those calls compile to nothing — which is why the "Snake Classic couldn't
-/// start" screen could be reproduced on a real device with an empty logcat
-/// AND an empty Crashlytics dashboard. A failure that stops the app from
-/// starting is the single most important thing to hear about, and it was the
-/// only class of failure reporting nothing at all.
-///
-/// [fatal] distinguishes "the player did not get an app" from "the player got
-/// a degraded one". Only the former should move the crash-free rate.
-///
-/// Deliberately carries no user identifiers or custom keys: the error and its
-/// stack are what diagnose this, and a startup path that runs before consent
-/// is the last place to be attaching anything about a person.
-Future<void> _reportStartupFailure(
-  Object error,
-  StackTrace stackTrace, {
-  required String reason,
-  required bool fatal,
-}) async {
-  // Still logged for anyone attached to a debug session.
-  AppLogger.error(reason, error, stackTrace);
-
-  try {
-    // If Firebase itself never came up, Crashlytics cannot be reached and
-    // this failure is genuinely unreportable from the device. Nothing to do
-    // but avoid throwing a second exception on top of the first.
-    if (Firebase.apps.isEmpty) return;
-
-    await FirebaseCrashlytics.instance.recordError(
-      error,
-      stackTrace,
-      reason: reason,
-      fatal: fatal,
-    );
-  } catch (_) {
-    // Reporting a startup failure must never become one.
+    // Wrapped too. This screen is shown to a player whose app just failed to
+    // start, which is the single state we most want a screenshot and a
+    // replay of.
+    runApp(SentryWidget(child: const _StartupFailureApp()));
   }
 }
 
@@ -236,15 +232,16 @@ Future<void> _bootstrap() async {
       AppLogger.info('Firebase already initialized — reusing existing app');
     }
 
-    // Crashlytics: collect and upload crash reports in production builds only.
-    // Gated on kReleaseMode so debug AND profile builds never send data to the
-    // dashboard (keeps local crashes/errors out of production analytics).
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-      kReleaseMode,
-    );
-    AppLogger.success(
-      'Crashlytics collection ${kReleaseMode ? 'enabled' : 'disabled (non-release build)'}',
-    );
+    // No crash-reporter toggle here any more.
+    //
+    // Crashlytics had to be switched OFF outright in debug and profile,
+    // because it has no way to separate a developer's machine from a real
+    // install — which also meant the crash reporter was the one piece of the
+    // app that could never be tested before shipping it. Sentry tags each
+    // build with an environment instead (see sentryEnvironment), so every
+    // build reports and the production dashboard stays clean by filtering.
+    // It is also already running by this point, several steps earlier than
+    // this line.
 
     // Set preferred orientations
     AppLogger.ui('Setting device orientation...');
@@ -307,7 +304,16 @@ Future<void> _bootstrap() async {
     // assignment itself throws if repeated on a retry.
     if (!_routerReady) {
       appRouter = createAppRouter(
-        observers: [AnalyticsRouteObserver(getIt<AnalyticsFacade>())],
+        observers: [
+          AnalyticsRouteObserver(getIt<AnalyticsFacade>()),
+          // Names each screen for Sentry: navigation breadcrumbs, the
+          // "screen where it broke" on every issue, and a transaction per
+          // route so a slow screen is visible as a slow screen rather than
+          // as a vague app-wide average. Every GoRoute in app_router.dart
+          // carries a `name:` — which is what this reads; an unnamed route
+          // would be reported as `null` and quietly lose its own timings.
+          SentryNavigatorObserver(),
+        ],
       );
       _routerReady = true;
     }
@@ -409,92 +415,33 @@ Future<void> _bootstrap() async {
   }
 }
 
-/// Global error handling. In production (release) builds, fatal errors are
-/// forwarded to Crashlytics; in debug/profile they only get logged (and
-/// presented on the red screen) so nothing pollutes the production dashboard.
+/// Local, console-side presentation of framework errors.
 ///
-/// Installed on every path, including a failed bootstrap — a build that could
-/// not start is exactly the one whose errors we most want reported.
-/// Whether an error is something the app recovers from, and therefore must not
-/// be filed as a CRASH.
+/// This is NOT the reporting path any more. Sentry's FlutterErrorIntegration
+/// owns that, and it chains to whatever `FlutterError.onError` it finds when
+/// it installs — which is this handler, provided it was set first. See the
+/// comment in [main] for why the order is load-bearing.
 ///
-/// Crashlytics showed "Fatal Exception … HttpException: Connection closed
-/// before full header was received, uri = https://lh3.googleusercontent.com/…"
-/// — a user's Google profile picture failing to download. The app does not die
-/// from that; the avatar just falls back. But the error surfaces through
-/// FlutterError.reportError, the handler above filed EVERYTHING as fatal, and
-/// so a flaky connection while a leaderboard scrolled registered as a crash.
+/// What is left here is only what Sentry does not do: the AppLogger line a
+/// developer reads in the console, and the red error screen. `presentError`
+/// is deliberately withheld in release so a shipped build stays quiet in
+/// logcat, exactly as it did before.
 ///
-/// It is not merely cosmetic. Those reports suppress the crash-free rate that
-/// Play Console ranks on, and they bury real crashes in the issue list — the
-/// replay-viewer fatal was sitting underneath exactly this kind of noise.
+/// Note what is NOT here: the recoverable-vs-fatal classification, and the
+/// PlatformDispatcher.onError hook.
 ///
-/// Note that every avatar in the app ALREADY passes onBackgroundImageError or
-/// errorBuilder. Flutter routes an image failure to those listeners only if a
-/// listener is still attached when it lands; if the widget was disposed first
-/// (scrolled away, navigated off — precisely when slow images fail) the error
-/// falls through to FlutterError instead. Handling it at the widget is
-/// necessary but cannot be sufficient, which is why this classifier exists.
-///
-/// Deliberately string-based rather than `is SocketException` etc.: `dart:io`
-/// is not web-safe and this file is shared with the web build. Deliberately
-/// narrow, too — anything not positively identified stays fatal, because a
-/// misfiled crash is far worse than a misfiled non-crash.
-bool _isRecoverableError(Object error, {bool silent = false}) {
-  // The framework's own verdict. `silent` marks errors it considers expected
-  // and does not even print in debug — image decode/resolve failures set it.
-  if (silent) return true;
-
-  final type = error.runtimeType.toString();
-  const recoverableTypes = {
-    'NetworkImageLoadException', // HTTP status != 200 for an image
-    'SocketException', // connection reset / no route / abort
-    'HttpException', // truncated response, bad headers
-    'HandshakeException', // TLS negotiation failed
-    'ClientException', // package:http transport failure
-    'TimeoutException', // a bounded wait elapsed
+///  * The classifier moved to [isRecoverableError] and now runs inside
+///    Sentry's `beforeSend` (see sentry_bootstrap.dart), which is a better
+///    place for it — it applies to every error Sentry sees, not only the ones
+///    arriving through this one handler.
+///  * PlatformDispatcher.onError is owned by Sentry's OnErrorIntegration,
+///    which also chains. Setting it here would replace Sentry's and silently
+///    drop every async error thrown outside the framework.
+void _installLocalErrorPresenter() {
+  FlutterError.onError = (details) {
+    AppLogger.error('Flutter Error', details.exception, details.stack);
+    if (!kReleaseMode) FlutterError.presentError(details);
   };
-  if (recoverableTypes.contains(type)) return true;
-
-  // Fallback for wrapped/renamed transport errors that still name the host or
-  // the failure in their message.
-  final message = error.toString();
-  return message.contains('lh3.googleusercontent.com') ||
-      message.contains('Connection closed before full header was received');
-}
-
-void _installGlobalErrorHandlers() {
-  if (kReleaseMode) {
-    // Flutter framework errors → Crashlytics, classified.
-    FlutterError.onError = (details) {
-      AppLogger.error('Flutter Error', details.exception, details.stack);
-      if (_isRecoverableError(details.exception, silent: details.silent)) {
-        // Still reported, so the volume stays visible — just not as a crash.
-        FirebaseCrashlytics.instance.recordError(
-          details.exception,
-          details.stack,
-          reason: 'recoverable: ${details.library ?? 'flutter'}',
-          fatal: false,
-        );
-      } else {
-        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-      }
-    };
-    // Async errors thrown outside the Flutter framework (PlatformDispatcher).
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(
-        error,
-        stack,
-        fatal: !_isRecoverableError(error),
-      );
-      return true;
-    };
-  } else {
-    FlutterError.onError = (details) {
-      AppLogger.error('Flutter Error', details.exception, details.stack);
-      FlutterError.presentError(details);
-    };
-  }
 }
 
 /// Last-resort UI when [_bootstrap] failed outright.
@@ -535,7 +482,7 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
       // one stuck user tap the button repeatedly and bury the crash-free
       // rate. The separate reason keeps retries visible as their own signal —
       // "the retry never works" is a different bug from "startup failed once".
-      await _reportStartupFailure(
+      await reportStartupFailure(
         error,
         stackTrace,
         reason: 'Startup retry failed',

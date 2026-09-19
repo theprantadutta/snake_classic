@@ -128,11 +128,16 @@ The app includes Firebase Analytics tracking for:
 - Game completion events
 
 ### Error Monitoring
-Consider adding Crashlytics for production:
-```yaml
-dependencies:
-  firebase_crashlytics: ^latest_version
+Already wired, via Sentry — see `lib/core/observability/`, and `SENTRY.md`
+in the workspace root alongside this repo (it covers the backend too). Nothing to add; the one thing a release build needs is the
+symbol upload, which is a separate step after `flutter build`:
+
+```bash
+export SENTRY_AUTH_TOKEN=...   # org auth token, never committed
+dart run sentry_dart_plugin
 ```
+
+Skip it and every production stack trace is a list of hex offsets.
 
 ## Security Verification
 

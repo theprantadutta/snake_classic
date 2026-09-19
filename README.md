@@ -120,7 +120,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the gameplay architecture, invariants
 - Flutter with the Flame engine for rendering
 - flutter_bloc and Riverpod for state, get_it for dependency injection
 - Drift for the local database, go_router for navigation
-- Firebase Auth, Cloud Messaging, Analytics and Crashlytics
+- Firebase Auth, Cloud Messaging and Analytics
+- Sentry for crash reporting, tracing and session replay
+  (`lib/core/observability/`; full write-up in `SENTRY.md` in the workspace root)
 - signalr_netcore for real-time multiplayer
 - google_mobile_ads, and flutter_inapp_purchase (OpenIAP) for the store — Play Billing Library 9.1 / StoreKit 2
 - flutter_soloud for audio, flutter_animate for motion

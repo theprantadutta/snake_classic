@@ -31,10 +31,12 @@
 -dontwarn com.google.android.play.core.tasks.Task
 
 # ---------------------------------------------------------------------------
-# Firebase Crashlytics: readable stack traces. The Crashlytics Gradle plugin
-# uploads the R8 mapping file; these attributes must survive shrinking for
-# the retrace to line up, and custom exception types keep their names so a
-# report says what was thrown.
+# Readable stack traces in the crash reporter (Sentry, previously Firebase
+# Crashlytics). Still required after the swap: the R8 mapping file is uploaded
+# by `dart run sentry_dart_plugin` rather than by the Crashlytics Gradle
+# plugin, but these attributes must survive shrinking either way for the
+# retrace to line up, and custom exception types keep their names so a report
+# says what was thrown.
 # ---------------------------------------------------------------------------
 -keepattributes SourceFile,LineNumberTable
 -keep public class * extends java.lang.Exception

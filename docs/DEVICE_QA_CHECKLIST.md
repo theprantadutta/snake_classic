@@ -6,8 +6,14 @@ startup failure reporting fires exactly when nothing else works, and the
 restore path runs **once per install** — easy to ship broken, hard to notice.
 
 Run on a **release or profile build**. A debug build cannot exercise this:
-`AppLogger` is a no-op in release and Crashlytics collection is gated on
-`kReleaseMode`, so debug proves nothing about either.
+`AppLogger` is a no-op in release, so debug proves nothing about what a
+shipped build actually reports.
+
+Sentry reports from every build, tagged by environment (`production` /
+`profile` / `development` — see `sentryEnvironment`), so filter the Issues
+view to `environment:production` or `environment:profile` when checking these
+off. That is the one thing that changed when Crashlytics was replaced: there
+is no longer a build that silently reports nothing.
 
 **Signed-in accounts needed:** one with existing cloud progress ("Account A"),
 one never used with this app ("Account B").
@@ -17,21 +23,24 @@ one never used with this app ("Account B").
 ## A. Startup failure reporting
 
 The bug this closes: the "Snake Classic couldn't start" screen produced an
-empty logcat *and* an empty Crashlytics dashboard, because the only report
-went through `AppLogger`, which compiles to nothing in release.
+empty logcat *and* an empty dashboard, because the only report went through
+`AppLogger`, which compiles to nothing in release.
+
+Every report below is found in Sentry with `startup_failure:true`; the
+`startup` context carries the `reason` and the `fatal` flag.
 
 Forcing a failure needs a temporary local edit — throw from `_bootstrap()`
 before `runApp`. Do it on a scratch commit; do not merge it.
 
 | # | Steps | Expected |
 |---|---|---|
-| A1 | Throw early in `_bootstrap()`. Release build. Launch. | Recovery screen appears. Within a few minutes Crashlytics shows a **fatal** issue with reason `Failed to initialize Snake Classic`, carrying the real exception and stack. |
-| A2 | From A1's recovery screen, tap **Try again**. | Retry fails again. Crashlytics gains a **non-fatal** issue reasoned `Startup retry failed` — deliberately not fatal, so repeated taps cannot bury the crash-free rate. |
+| A1 | Throw early in `_bootstrap()`. Release build. Launch. | Recovery screen appears. Within a minute Sentry shows a **fatal**-level issue whose `startup` context reads `Failed to initialize Snake Classic`, carrying the real exception and stack. |
+| A2 | From A1's recovery screen, tap **Try again**. | Retry fails again. Sentry gains an **error**-level (not fatal) issue reasoned `Startup retry failed` — deliberately not fatal, so repeated taps cannot bury the crash-free rate. |
 | A3 | Throw from `_bootstrap()` *after* `Firebase.initializeApp` but before the router is assigned. | Fatal report arrives. Confirms the common case where Firebase is up and only later steps fail. |
-| A4 | Throw from `_bootstrap()` **before** `Firebase.initializeApp`. | Recovery screen still appears, app does not hard-crash. **No** Crashlytics report is possible — this is the documented blind spot, and the check is that we degrade quietly rather than throwing a second exception. |
-| A5 | Simulate a slow start so the 25s budget trips while the router *does* get assigned. | App launches degraded (no recovery screen). Crashlytics shows a **non-fatal** `Startup exceeded 25s`. Fatal here would be wrong: the player got a working app. |
-| A6 | Remove the temporary throw. Launch normally, several times. | No startup issues in Crashlytics. Guards against reporting on a healthy path. |
-| A7 | Inspect any report from A1–A5 in the Crashlytics console. | No user id, email or custom keys attached. Only error, stack and reason. |
+| A4 | Throw from `_bootstrap()` **before** `Firebase.initializeApp`. | Recovery screen appears **and the report arrives**. This used to be a documented blind spot — Crashlytics could not report anything from before Firebase came up. Sentry initializes ahead of the whole bootstrap, so this case is now covered like any other; a missing report here is a regression, not the expected result. |
+| A5 | Simulate a slow start so the 25s budget trips while the router *does* get assigned. | App launches degraded (no recovery screen). Sentry shows an **error**-level `Startup exceeded 25s`. Fatal here would be wrong: the player got a working app. |
+| A6 | Remove the temporary throw. Launch normally, several times. | No `startup_failure:true` issues in Sentry. Guards against reporting on a healthy path. |
+| A7 | Inspect any report from A1–A5 in Sentry. | No user id, email or IP attached (`sendDefaultPii` is off). Only error, stack, and the `startup` context. |
 
 ---
 
