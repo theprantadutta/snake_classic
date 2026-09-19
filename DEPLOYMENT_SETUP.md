@@ -170,6 +170,18 @@ symbols simply never existed.
 Symbols must come from the **same** build you upload. Rebuilding afterwards
 produces a different binary, and the debug IDs no longer match.
 
+**The script uploads in two passes and only the second one is fatal.**
+`sentry_dart_plugin` crashes on Windows with a `PathNotFoundException` on a
+path ending in a literal `*` — it hands a glob to a directory listing, which
+Unix expands and Windows does not — and it does so *after* its uploads
+succeed. So its exit code is ignored, and the script then uploads
+`build/debug-info` (the three per-ABI Dart debug companions) with
+`sentry-cli` directly and fails only if that fails.
+
+That second pass is not belt-and-braces. On 6.6.1+57 the plugin crashed
+mid-walk having uploaded arm64 and x86_64 but not armeabi-v7a, so every
+32-bit device would have reported unreadable traces with nothing saying why.
+
 ## Security Verification
 
 ### Test Security Rules

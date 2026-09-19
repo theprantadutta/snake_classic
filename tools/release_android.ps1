@@ -140,9 +140,49 @@ if ([string]::IsNullOrWhiteSpace($env:SENTRY_AUTH_TOKEN)) {
 }
 
 Write-Host "==> Uploading debug symbols for $version"
+
+# Pass 1: the plugin. It uploads the Android native libraries and wires up
+# the release, and usually does the Dart symbols too.
+#
+# Its exit code is NOT trusted, deliberately. On Windows the plugin crashes
+# with PathNotFoundException on a path ending in a literal `*` — it hands a
+# glob to a directory listing, which Unix expands and Windows does not — and
+# that happens AFTER the uploads succeed. Failing the release on it would
+# mean reporting a broken build that is in fact fine. Pass 2 below is what
+# actually decides.
 & dart run sentry_dart_plugin
+$pluginExit = $LASTEXITCODE
+
+# Pass 2: the Dart symbols, explicitly, and this one must succeed.
+#
+# build/debug-info holds exactly three ELF debug companions — one per shipped
+# ABI — produced by --split-debug-info. They are what turn a release stack
+# trace into file names and line numbers in YOUR code, and they are the one
+# thing worth failing the release over.
+#
+# This is not redundant with pass 1: on 6.6.1+57 the plugin crashed mid-walk
+# having uploaded arm64 and x86_64 but not armeabi-v7a, so 32-bit devices
+# would have reported unreadable traces with nothing indicating why.
+$cli = Join-Path $PSScriptRoot '..\.dart_tool\pub\bin\sentry_dart_plugin\sentry-cli.exe'
+if (-not (Test-Path $cli)) {
+    Write-Error @"
+sentry-cli not found at $cli
+The plugin downloads it on first run; that it is missing means pass 1 never
+got far enough. Fix that before shipping - the Dart symbols are unverified.
+"@
+}
+
+Write-Host '==> Uploading Dart debug companions (build/debug-info)'
+& $cli debug-files upload --org pranta-corp --project snake-classic-flutter build/debug-info
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "sentry_dart_plugin failed with exit code $LASTEXITCODE"
+    Write-Error "Dart symbol upload FAILED (exit $LASTEXITCODE) - do not ship this build"
+}
+
+if ($pluginExit -ne 0) {
+    Write-Host ''
+    Write-Host "  NOTE: sentry_dart_plugin exited $pluginExit (the known Windows"
+    Write-Host '        directory-walk crash). The Dart symbols above uploaded'
+    Write-Host '        cleanly, so this build is fine.'
 }
 
 $artifact = if ($Target -eq 'appbundle') {

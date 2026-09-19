@@ -235,12 +235,24 @@ flutter:
 sentry:
   org: pranta-corp
   project: snake-classic-flutter
+
   # The Dart obfuscation map + split-debug-info produced by the
   # --obfuscate/--split-debug-info build flags. Without this, release
   # traces are unreadable.
   upload_debug_symbols: true
-  # Source context — the actual lines around each frame, shown inline in the
-  # Sentry issue. Only our own lib/ sources, never the .env or credentials.
-  upload_sources: true
+  # Source context (the code shown inline around each frame) is OFF.
+  #
+  # It is all-or-nothing in this plugin — there is no path filter — and
+  # "all" means every debug information file in the build, not just ours.
+  # On 6.6.1+57 that was 292 files: the Flutter engine, flutter_soloud's
+  # bundled miniaudio, sqlite3, libdartjni, the timezone database. The
+  # symbol upload itself took 13 seconds; the source pass then held 2.1 GB
+  # of RSS for five minutes and died on a 300s API timeout, which failed the
+  # whole command AFTER the symbols had already landed.
+  #
+  # Losing it costs the inline snippet only. Frames still carry file name,
+  # line number and function, because that comes from the debug symbols
+  # above — which is the part that makes a trace readable.
+  upload_sources: false
   # Web only; the app does not ship a web build, but harmless if one is made.
   upload_source_maps: false

@@ -113,7 +113,48 @@ MSG
 fi
 
 echo "==> Uploading debug symbols for $VERSION"
-dart run sentry_dart_plugin
+
+# Pass 1: the plugin. Uploads the Android native libraries and wires up the
+# release, and usually the Dart symbols too.
+#
+# Its exit code is NOT trusted, deliberately. On Windows it crashes with
+# PathNotFoundException on a path ending in a literal `*` (it hands a glob to
+# a directory listing, which Unix expands and Windows does not), and that
+# happens AFTER the uploads succeed. Failing the release on it would report a
+# broken build that is in fact fine. Pass 2 is what decides.
+plugin_exit=0
+dart run sentry_dart_plugin || plugin_exit=$?
+
+# Pass 2: the Dart symbols, explicitly, and this one must succeed.
+#
+# build/debug-info holds exactly three ELF debug companions, one per shipped
+# ABI, produced by --split-debug-info. They are what turn a release stack
+# trace into file names and line numbers in OUR code.
+#
+# Not redundant with pass 1: on 6.6.1+57 the plugin crashed mid-walk having
+# uploaded arm64 and x86_64 but not armeabi-v7a, so 32-bit devices would have
+# reported unreadable traces with nothing indicating why.
+CLI="$(dirname "$0")/../.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli"
+[[ -x "$CLI" ]] || CLI="$CLI.exe"
+if [[ ! -x "$CLI" ]]; then
+  echo "error: sentry-cli not found near $CLI" >&2
+  echo "       The plugin downloads it on first run; missing means pass 1" >&2
+  echo "       never got that far. The Dart symbols are unverified." >&2
+  exit 1
+fi
+
+echo "==> Uploading Dart debug companions (build/debug-info)"
+if ! "$CLI" debug-files upload --org pranta-corp --project snake-classic-flutter build/debug-info; then
+  echo "error: Dart symbol upload FAILED - do not ship this build" >&2
+  exit 1
+fi
+
+if [[ "$plugin_exit" -ne 0 ]]; then
+  echo
+  echo "  NOTE: sentry_dart_plugin exited $plugin_exit (the known directory-walk"
+  echo "        crash). The Dart symbols above uploaded cleanly, so this"
+  echo "        build is fine."
+fi
 
 echo
 echo "==> Done. Artifact:"
