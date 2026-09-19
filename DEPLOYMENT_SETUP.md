@@ -182,6 +182,44 @@ That second pass is not belt-and-braces. On 6.6.1+57 the plugin crashed
 mid-walk having uploaded arm64 and x86_64 but not armeabi-v7a, so every
 32-bit device would have reported unreadable traces with nothing saying why.
 
+**The scripts refuse to rebuild a version that has already been released.**
+Forgetting to bump `version:` otherwise costs a full build before Play
+rejects the duplicate version code. Two signals: Sentry (which knows a
+release once events arrive from it, and needs no local state) and
+`.released-versions` (a gitignored local ledger, appended after each
+successful upload, covering versions shipped but not yet run by anyone).
+Pass `--force` / `-Force` to rebuild deliberately.
+
+### iOS — `tools/release_ios.sh` (UNVERIFIED)
+
+> ⚠️ **This script has never been run.** It was written on Windows with no
+> macOS and no Xcode, by translating the Android script and applying the
+> documented iOS differences. The Android logic in it is proven; the
+> iOS-specific parts are reasoned-about, not observed. Treat the first run
+> as a test of the script, not of your release — there is a FIRST RUN
+> CHECKLIST at the bottom of the file.
+
+```bash
+./tools/release_ios.sh          # macOS only; refuses to run elsewhere
+```
+
+Three things differ from Android and are worth knowing before you run it:
+
+- **dSYMs are a third upload pass with no Android counterpart.** Without
+  them, a native iOS crash (the engine, a plugin's Swift/ObjC, a signal)
+  symbolicates to hex. The Dart debug companions do not cover that. Their
+  location has moved between Xcode versions, so the script tries several
+  and warns loudly if it finds none.
+- **The already-released guard will false-positive across platforms.** iOS
+  and Android build from the same pubspec version, and Sentry's release id
+  does not distinguish them, so shipping Android first makes the iOS build
+  of that same version look already-released. Use `--force` for whichever
+  you build second, or split the version streams.
+- **The DWARF/strip behaviour is unchecked on iOS.** On Android, Gradle's
+  `stripReleaseDebugSymbols` removes the debug info before packaging —
+  verified against a real bundle. There is no equivalent verification for
+  the iOS path yet.
+
 ## Security Verification
 
 ### Test Security Rules

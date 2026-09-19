@@ -100,3 +100,4 @@ l10n_untranslated.txt
 # by design: it records what THIS machine has shipped, and a fresh clone
 # should fall back to the Sentry check rather than inherit a stale list.
 .released-versions
+.released-versions-ios

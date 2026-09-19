@@ -80,7 +80,12 @@ The rule, applied to every new code path:
   these instead of a bare `flutter build appbundle` for anything that ships: a
   plain build produces an artifact whose crash reports have unreadable frames,
   and nothing warns you until a crash arrives. The two scripts are twins —
-  change one, change the other.
+  change one, change the other. They refuse to build if the version has
+  already been released (`--force` / `-Force` overrides) or if a Sentry token
+  is sitting in `.env`, which would ship it inside the app.
+- **`./tools/release_ios.sh`** - The App Store equivalent. **UNVERIFIED — never
+  been run**, written without access to macOS or Xcode. Read the banner and the
+  FIRST RUN CHECKLIST inside it before trusting any of it.
 - `flutter pub get` - Install dependencies
 - `flutter run` - Run the app (ask user for platform preference first)
 - `flutter run -d android` - Run on Android device/emulator
