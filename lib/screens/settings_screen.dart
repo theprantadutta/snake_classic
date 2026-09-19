@@ -21,10 +21,7 @@ import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/screens/legal_document_screen.dart';
-import 'package:snake_classic/services/app_data_cache.dart';
-import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
@@ -75,8 +72,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final AudioService _audioService = AudioService();
-  final StorageService _storageService = StorageService();
 
   /// Driven by the category rail: it listens to this to know which section
   /// you are in, and animates it when you tap a chip.
@@ -87,10 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final Map<_SettingsSection, GlobalKey> _sectionKeys = {
     for (final section in _SettingsSection.values) section: GlobalKey(),
   };
-  late final AppDataCache _appCache;
   late final AnalyticsFacade _analytics;
-  bool _soundEnabled = true;
-  bool _musicEnabled = true;
   bool _dPadEnabled = false;
   bool _screenShakeEnabled = false;
   bool _hapticsEnabled = true;
@@ -121,9 +113,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _appCache = getIt<AppDataCache>();
     _analytics = getIt<AnalyticsFacade>();
-    _loadSettingsFromCache();
+    // Direct assignment, not _syncFromSettingsCubit: that one calls
+    // setState, which is not legal this early. Nothing has been built yet,
+    // so seeding the fields is enough.
+    _applySettings(context.read<GameSettingsCubit>().state);
     _loadNotificationPreferences();
     // Pull fresh user data so the USER PROFILE row shows the live
     // username (handles the case where the local UnifiedUser was
@@ -133,12 +127,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AuthCubit>().refreshUserFromBackend();
-      // The AppDataCache settings map is populated at boot and never
-      // re-synced — but GameSettingsCubit gets live writes from places
-      // like the game-screen first-launch modal that flips D-Pad on.
-      // After our initial cache-based paint, overlay the cubit's
-      // authoritative state so the toggles reflect reality.
-      _syncFromSettingsCubit(context.read<GameSettingsCubit>().state);
       // Re-read the live refresh rate when the screen opens, so the number
       // in the DISPLAY card is current rather than whatever we last saw at
       // launch (battery saver may have kicked in since).
@@ -146,31 +134,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  /// Mirror the GameSettingsCubit state into our local UI fields. Used both
-  /// for the post-frame initial sync and from the BlocListener below so the
-  /// settings screen stays in lock-step with the cubit (source of truth).
-  void _syncFromSettingsCubit(GameSettingsState s) {
+  /// Whether any cubit-owned value differs from our local mirror of it.
+  ///
+  /// This and [_applySettings] must cover the SAME fields, and so must the
+  /// `listenWhen` in build(). Keeping the three in step by hand is the whole
+  /// hazard here: `difficulty` was compared by the old version of this
+  /// method but missing from `listenWhen`, so a difficulty change made
+  /// anywhere else never reached this screen while it was open. Hence
+  /// [_settingsDiffer] — build()'s listenWhen now calls it instead of
+  /// repeating the list, so a field can only be forgotten in one place
+  /// rather than two.
+  bool _settingsDiffer(GameSettingsState s) =>
+      _dPadEnabled != s.dPadEnabled ||
+      _dPadPosition != s.dPadPosition ||
+      _screenShakeEnabled != s.screenShakeEnabled ||
+      _hapticsEnabled != s.hapticsEnabled ||
+      _selectedBoardSize != s.boardSize ||
+      _selectedGameMode != s.gameMode ||
+      _selectedDifficulty != s.difficulty ||
+      _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
+
+  /// Copy the cubit's values into the local mirrors. No setState — callers
+  /// decide, because initState cannot use it.
+  void _applySettings(GameSettingsState s) {
     if (!s.isReady) return;
-    final changed =
-        _dPadEnabled != s.dPadEnabled ||
-        _dPadPosition != s.dPadPosition ||
-        _screenShakeEnabled != s.screenShakeEnabled ||
-        _hapticsEnabled != s.hapticsEnabled ||
-        _selectedBoardSize != s.boardSize ||
-        _selectedGameMode != s.gameMode ||
-        _selectedDifficulty != s.difficulty ||
-        _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
-    if (!changed) return;
-    setState(() {
-      _dPadEnabled = s.dPadEnabled;
-      _dPadPosition = s.dPadPosition;
-      _screenShakeEnabled = s.screenShakeEnabled;
-      _hapticsEnabled = s.hapticsEnabled;
-      _selectedBoardSize = s.boardSize;
-      _selectedGameMode = s.gameMode;
-      _selectedDifficulty = s.difficulty;
-      _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
-    });
+    _dPadEnabled = s.dPadEnabled;
+    _dPadPosition = s.dPadPosition;
+    _screenShakeEnabled = s.screenShakeEnabled;
+    _hapticsEnabled = s.hapticsEnabled;
+    _selectedBoardSize = s.boardSize;
+    _selectedGameMode = s.gameMode;
+    _selectedDifficulty = s.difficulty;
+    _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
+  }
+
+  /// Mirror the GameSettingsCubit state into our local UI fields, rebuilding
+  /// if anything actually moved. Driven by the BlocListener in build(), so
+  /// this screen stays in lock-step with the cubit (the source of truth).
+  void _syncFromSettingsCubit(GameSettingsState s) {
+    if (!s.isReady || !_settingsDiffer(s)) return;
+    setState(() => _applySettings(s));
   }
 
   void _loadNotificationPreferences() {
@@ -197,57 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _loadSettingsFromCache() {
-    // Use cached settings data for instant display
-    final settingsData = _appCache.settingsData;
-    if (settingsData != null) {
-      setState(() {
-        _soundEnabled = _audioService.isSoundEnabled;
-        _musicEnabled = _audioService.isMusicEnabled;
-        _dPadEnabled = settingsData['dPadEnabled'] ?? false;
-        _screenShakeEnabled = settingsData['screenShakeEnabled'] ?? false;
-        _dPadPosition =
-            settingsData['dPadPosition'] ?? DPadPosition.bottomCenter;
-        _selectedBoardSize =
-            settingsData['boardSize'] ?? GameConstants.availableBoardSizes[1];
-        _selectedCrashFeedbackDuration =
-            settingsData['crashFeedbackDuration'] ??
-            GameConstants.defaultCrashFeedbackDuration;
-      });
-      // Game mode lives in SharedPreferences, not the cached settings map.
-      _storageService.getGameMode().then((mode) {
-        if (mounted) setState(() => _selectedGameMode = mode);
-      });
-    } else {
-      // Fallback to direct load if cache not available
-      _loadSettingsDirectly();
-    }
-  }
 
-  Future<void> _loadSettingsDirectly() async {
-    await _audioService.initialize();
-    final boardSize = await _storageService.getBoardSize();
-    final crashFeedbackDuration = await _storageService
-        .getCrashFeedbackDuration();
-    final dPadEnabled = await _storageService.isDPadEnabled();
-    final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
-    final hapticsEnabled = await _storageService.isHapticsEnabled();
-    final dPadPosition = await _storageService.getDPadPosition();
-    final gameMode = await _storageService.getGameMode();
-    final difficulty = await _storageService.getDifficulty();
-    setState(() {
-      _soundEnabled = _audioService.isSoundEnabled;
-      _musicEnabled = _audioService.isMusicEnabled;
-      _dPadEnabled = dPadEnabled;
-      _screenShakeEnabled = screenShakeEnabled;
-      _hapticsEnabled = hapticsEnabled;
-      _dPadPosition = dPadPosition;
-      _selectedBoardSize = boardSize;
-      _selectedCrashFeedbackDuration = crashFeedbackDuration;
-      _selectedGameMode = gameMode;
-      _selectedDifficulty = difficulty;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,18 +208,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Keep our local UI mirrors in lock-step with GameSettingsCubit so
     // changes that originate elsewhere (e.g. the game-screen first-launch
     // modal flipping D-Pad on) reflect here even if the screen is already
-    // mounted. The cubit is the source of truth; AppDataCache is a
-    // boot-time snapshot that can go stale.
+    // mounted. The cubit is the only source of truth for these values.
     return BlocListener<GameSettingsCubit, GameSettingsState>(
+      // Delegates to _settingsDiffer rather than re-listing every field,
+      // which is what let `difficulty` fall out of this condition while
+      // still being compared inside the sync.
       listenWhen: (prev, curr) =>
-          prev.isReady != curr.isReady ||
-          prev.dPadEnabled != curr.dPadEnabled ||
-          prev.dPadPosition != curr.dPadPosition ||
-          prev.screenShakeEnabled != curr.screenShakeEnabled ||
-          prev.hapticsEnabled != curr.hapticsEnabled ||
-          prev.boardSize != curr.boardSize ||
-          prev.gameMode != curr.gameMode ||
-          prev.crashFeedbackDuration != curr.crashFeedbackDuration,
+          prev.isReady != curr.isReady || _settingsDiffer(curr),
       listener: (context, settingsState) =>
           _syncFromSettingsCubit(settingsState),
       child: BlocBuilder<ThemeCubit, ThemeState>(
@@ -470,42 +418,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             _SettingsSection.audio,
                                             l10n.settingsSectionAudio,
                                             [
-                                              _buildAudioSwitch(
-                                                l10n.settingsSoundEffects,
-                                                _soundEnabled,
-                                                (value) async {
-                                                  setState(() {
-                                                    _soundEnabled = value;
-                                                  });
-                                                  await _audioService
-                                                      .setSoundEnabled(value);
-                                                  _analytics
-                                                      .trackSettingChanged(
-                                                        settingName:
-                                                            'sound_effects',
-                                                        value: '$value',
-                                                      );
+                                              // Read straight off the cubit
+                                              // — no local mirror. The pause
+                                              // overlay offers the same two
+                                              // toggles, and one value with
+                                              // two copies is how they drift.
+                                              BlocBuilder<GameSettingsCubit,
+                                                  GameSettingsState>(
+                                                buildWhen: (prev, curr) =>
+                                                    prev.soundEnabled !=
+                                                        curr.soundEnabled ||
+                                                    prev.musicEnabled !=
+                                                        curr.musicEnabled,
+                                                builder: (context, settings) {
+                                                  final cubit = context
+                                                      .read<
+                                                          GameSettingsCubit>();
+                                                  return Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      _buildAudioSwitch(
+                                                        l10n
+                                                            .settingsSoundEffects,
+                                                        settings.soundEnabled,
+                                                        (value) async {
+                                                          await cubit
+                                                              .setSoundEnabled(
+                                                                  value);
+                                                          _analytics
+                                                              .trackSettingChanged(
+                                                            settingName:
+                                                                'sound_effects',
+                                                            value: '$value',
+                                                          );
+                                                        },
+                                                        theme,
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 16),
+                                                      _buildAudioSwitch(
+                                                        l10n
+                                                            .settingsBackgroundMusic,
+                                                        settings.musicEnabled,
+                                                        (value) async {
+                                                          await cubit
+                                                              .setMusicEnabled(
+                                                                  value);
+                                                          _analytics
+                                                              .trackSettingChanged(
+                                                            settingName:
+                                                                'background_music',
+                                                            value: '$value',
+                                                          );
+                                                        },
+                                                        theme,
+                                                      ),
+                                                    ],
+                                                  );
                                                 },
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildAudioSwitch(
-                                                l10n.settingsBackgroundMusic,
-                                                _musicEnabled,
-                                                (value) async {
-                                                  setState(() {
-                                                    _musicEnabled = value;
-                                                  });
-                                                  await _audioService
-                                                      .setMusicEnabled(value);
-                                                  _analytics
-                                                      .trackSettingChanged(
-                                                        settingName:
-                                                            'background_music',
-                                                        value: '$value',
-                                                      );
-                                                },
-                                                theme,
                                               ),
                                             ],
                                             theme,

@@ -11,7 +11,6 @@ import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/power_up.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/game_animations.dart';
@@ -19,6 +18,7 @@ import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/pickup_icon.dart';
+import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 
 class PauseOverlay extends StatefulWidget {
@@ -44,14 +44,6 @@ class PauseOverlay extends StatefulWidget {
 }
 
 class _PauseOverlayState extends State<PauseOverlay> {
-  // Audio settings live in AudioService (backed by Drift + sync outbox),
-  // not in a cubit, so the overlay mirrors them in local state. The
-  // service is a singleton — the same instance the Settings screen reads
-  // — so flips made here are durable and show up there.
-  final AudioService _audioService = AudioService();
-  late bool _soundOn = _audioService.isSoundEnabled;
-  late bool _musicOn = _audioService.isMusicEnabled;
-
   GameTheme get theme => widget.theme;
   VoidCallback get onResume => widget.onResume;
   VoidCallback get onRestart => widget.onRestart;
@@ -338,34 +330,43 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   const SizedBox(height: 10),
 
                   // Sound / Music toggles — same 170px footprint as the
-                  // buttons above, split into two chips. Persisted through
-                  // AudioService so the change is immediate (mutes the
-                  // enhanced SFX channel too) and durable across runs.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildAudioToggle(
-                        label: l10n.poSound,
-                        value: _soundOn,
-                        onIcon: Icons.volume_up,
-                        offIcon: Icons.volume_off,
-                        onChanged: (value) async {
-                          setState(() => _soundOn = value);
-                          await _audioService.setSoundEnabled(value);
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _buildAudioToggle(
-                        label: l10n.poMusic,
-                        value: _musicOn,
-                        onIcon: Icons.music_note,
-                        offIcon: Icons.music_off,
-                        onChanged: (value) async {
-                          setState(() => _musicOn = value);
-                          await _audioService.setMusicEnabled(value);
-                        },
-                      ),
-                    ],
+                  // buttons above, split into two chips.
+                  //
+                  // Read straight off GameSettingsCubit, exactly like the
+                  // D-pad and snap toggles above and like the Settings
+                  // screen. This used to mirror AudioService into local
+                  // setState, which meant two widgets each held their own
+                  // copy of one value and the overlay could show a stale
+                  // one after anything changed it from elsewhere. The cubit
+                  // drives AudioService, so the flip is still immediate and
+                  // still durable.
+                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
+                    buildWhen: (prev, curr) =>
+                        prev.soundEnabled != curr.soundEnabled ||
+                        prev.musicEnabled != curr.musicEnabled,
+                    builder: (context, settings) {
+                      final cubit = context.read<GameSettingsCubit>();
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildAudioToggle(
+                            label: l10n.poSound,
+                            value: settings.soundEnabled,
+                            onIcon: Icons.volume_up,
+                            offIcon: Icons.volume_off,
+                            onChanged: cubit.setSoundEnabled,
+                          ),
+                          const SizedBox(width: 10),
+                          _buildAudioToggle(
+                            label: l10n.poMusic,
+                            value: settings.musicEnabled,
+                            onIcon: Icons.music_note,
+                            offIcon: Icons.music_off,
+                            onChanged: cubit.setMusicEnabled,
+                          ),
+                        ],
+                      );
+                    },
                   ).gameZoomIn(delay: 340.ms),
 
                   if (onShowTutorial != null) ...[
@@ -436,7 +437,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
       onTap: () {
         // Click cue fires before the flip so toggling sound OFF still
         // confirms the tap; the service gates it when sound is off.
-        _audioService.playSound('button_click');
+        // Playback only — the overlay no longer holds any audio STATE, that
+        // is GameSettingsCubit's now.
+        AudioService().playSound('button_click');
         onChanged(!value);
       },
       child: Container(

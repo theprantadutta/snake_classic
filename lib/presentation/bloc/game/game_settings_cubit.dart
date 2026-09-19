@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/data/database/app_database.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
@@ -16,8 +17,18 @@ export 'game_settings_state.dart';
 /// Cubit for managing game settings (D-pad, board size, etc.)
 class GameSettingsCubit extends Cubit<GameSettingsState> {
   final StorageService _storageService;
-  final StatisticsService _statisticsService = StatisticsService();
-  final ApiService _apiService = ApiService();
+
+  // Resolved on use, not in a field initializer.
+  //
+  // Both are singletons, so this costs nothing at runtime, but constructing
+  // StatisticsService reaches UnifiedUserService which touches
+  // FirebaseAuth.instance — meaning `GameSettingsCubit(storage)` used to
+  // throw `[core/no-app] No Firebase App '[DEFAULT]' has been created`
+  // before its constructor finished. That made the cubit impossible to
+  // exercise in a unit test even though none of its settings logic needs
+  // Firebase at all (see test/settings_single_source_test.dart).
+  StatisticsService get _statisticsService => StatisticsService();
+  ApiService get _apiService => ApiService();
   // Drift stream subscription that keeps state.highScore in lock-step with
   // the settings table. Without this the cubit reads the DB once at init
   // and goes blind to subsequent writes — most importantly, the writes
@@ -83,6 +94,13 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           await _storageService.isSnapMovementEnabled();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
       final hapticsEnabled = await _storageService.isHapticsEnabled();
+      // Read from storage rather than from AudioService's in-memory flags.
+      // AudioService.initialize() is bootstrapped behind a 10s timeout in
+      // main.dart, and on timeout it keeps its defaults (both true) without
+      // failing — so asking the service would silently report "sound on" to
+      // someone who had turned it off.
+      final soundEnabled = await _storageService.isSoundEnabled();
+      final musicEnabled = await _storageService.isMusicEnabled();
       final gameMode = await _storageService.getGameMode();
       final gameModePrompted = await _storageService.hasGameModeBeenPrompted();
       final difficulty = await _storageService.getDifficulty();
@@ -107,6 +125,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           snapMovementEnabled: snapMovementEnabled,
           screenShakeEnabled: screenShakeEnabled,
           hapticsEnabled: hapticsEnabled,
+          soundEnabled: soundEnabled,
+          musicEnabled: musicEnabled,
           gameMode: gameMode,
           gameModeFirstLaunchPrompted: gameModePrompted,
           difficulty: difficulty,
@@ -132,6 +152,26 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
         if (row.hapticsEnabled != state.hapticsEnabled) {
           HapticService().setEnabled(row.hapticsEnabled);
           emit(state.copyWith(hapticsEnabled: row.hapticsEnabled));
+        }
+        // Audio, same story: the first-sign-in snapshot pull writes the
+        // restored account's choices straight into the settings row, and
+        // without this the UI would keep showing this device's old values
+        // until the next cold start.
+        //
+        // AudioService has to be told as well. Its in-memory flags are what
+        // the playback gates actually read, and nothing else updates them
+        // on this path — that gap is how you get a Settings screen reading
+        // "music off" while the music keeps playing.
+        if (row.soundEnabled != state.soundEnabled ||
+            row.musicEnabled != state.musicEnabled) {
+          unawaited(AudioService().applyPersistedFlags(
+            sound: row.soundEnabled,
+            music: row.musicEnabled,
+          ));
+          emit(state.copyWith(
+            soundEnabled: row.soundEnabled,
+            musicEnabled: row.musicEnabled,
+          ));
         }
         // Locale can change underneath us via the first-sign-in snapshot
         // pull too — MaterialApp rebuilds off this state.
@@ -360,6 +400,27 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
   Future<void> resetHighScore() async {
     emit(state.copyWith(highScore: 0));
     await _storageService.saveHighScore(0);
+  }
+
+  /// Sound effects on/off.
+  ///
+  /// Goes through AudioService rather than straight to storage: the service
+  /// owns the playback side of this (it mutes the enhanced SFX channel
+  /// immediately) *and* the persistence. Exactly the HapticService
+  /// arrangement — the cubit owns the state, the service owns the effect.
+  Future<void> setSoundEnabled(bool enabled) async {
+    if (state.soundEnabled == enabled) return;
+
+    emit(state.copyWith(soundEnabled: enabled));
+    await AudioService().setSoundEnabled(enabled);
+  }
+
+  /// Background music on/off. See [setSoundEnabled].
+  Future<void> setMusicEnabled(bool enabled) async {
+    if (state.musicEnabled == enabled) return;
+
+    emit(state.copyWith(musicEnabled: enabled));
+    await AudioService().setMusicEnabled(enabled);
   }
 
   /// Update screen shake setting

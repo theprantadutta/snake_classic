@@ -28,8 +28,17 @@ class AudioService {
   static AudioService? _instance;
   final StorageService _storageService = StorageService();
 
-  // SoLoud for low-latency game sound effects
-  final SoLoud _soloud = SoLoud.instance;
+  // SoLoud for low-latency game sound effects.
+  //
+  // A getter, not a field. `SoLoud.instance` opens
+  // flutter_soloud_plugin.dll / .so on first access, so holding it in a
+  // field initializer meant merely CONSTRUCTING this service loaded the
+  // native audio library — including in callers that only wanted to read or
+  // flip a persisted flag, and including unit tests, where it fails outright
+  // with "Failed to load dynamic library". SoLoud.instance is itself a
+  // singleton, so resolving it per use costs nothing; it just happens at the
+  // first real audio call instead of at construction.
+  SoLoud get _soloud => SoLoud.instance;
   final Map<String, AudioSource> _loadedSounds = {};
 
   // List of sounds to pre-load
@@ -291,6 +300,37 @@ class AudioService {
     if (!enabled) {
       // Silence immediately, but keep the session flag so re-enabling
       // during the same run brings the music back.
+      await _stopMusicVoice();
+    } else if (_musicSessionActive) {
+      await startGameplayMusic();
+    }
+  }
+
+  /// Apply audio flags that were changed in storage by someone else,
+  /// WITHOUT writing them back.
+  ///
+  /// The case this exists for is the first-sign-in cloud restore: it writes
+  /// the restored account's settings straight into the Drift row, so
+  /// GameSettingsCubit's watchSettings stream sees the change and the UI
+  /// updates — but this service's in-memory flags would stay on the old
+  /// device's values, and the playback gates read those. The result was a
+  /// Settings screen reading "music off" while the music kept playing.
+  ///
+  /// Deliberately not [setSoundEnabled]/[setMusicEnabled]: those persist,
+  /// and persisting a value we just read back out of storage would write on
+  /// every restore and enqueue a pointless sync-outbox row each time.
+  Future<void> applyPersistedFlags({
+    required bool sound,
+    required bool music,
+  }) async {
+    _soundEnabled = sound;
+
+    if (_musicEnabled == music) return;
+    _musicEnabled = music;
+
+    // Music, unlike sound, has to act on the change: the currently playing
+    // voice keeps going otherwise.
+    if (!music) {
       await _stopMusicVoice();
     } else if (_musicSessionActive) {
       await startGameplayMusic();

@@ -58,7 +58,6 @@ class AppDataCache extends ChangeNotifier {
   List<String>? _replayKeys;
 
   // Settings
-  Map<String, dynamic>? _settingsData;
 
   // Daily Challenges
   List<DailyChallenge>? _dailyChallenges;
@@ -116,7 +115,6 @@ class AppDataCache extends ChangeNotifier {
   Map<String, dynamic>? get playPatterns => _playPatterns;
   List<Achievement>? get recentAchievements => _recentAchievements;
   List<String>? get replayKeys => _replayKeys;
-  Map<String, dynamic>? get settingsData => _settingsData;
   List<DailyChallenge>? get dailyChallenges => _dailyChallenges;
   List<Map<String, dynamic>>? get globalLeaderboard => _globalLeaderboard;
   List<Map<String, dynamic>>? get weeklyLeaderboard => _weeklyLeaderboard;
@@ -160,7 +158,6 @@ class AppDataCache extends ChangeNotifier {
         }),
         _loadRecentAchievements(),
         _loadReplayKeys(),
-        _loadSettingsData(),
         _loadDailyChallenges(),
         _loadPlayerProgress(),
 
@@ -252,28 +249,16 @@ class AppDataCache extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadSettingsData() async {
-    try {
-      final storage = getIt<StorageService>();
-      // Load all settings concurrently
-      final results = await Future.wait([
-        storage.getBoardSize(),
-        storage.getCrashFeedbackDuration(),
-        storage.isDPadEnabled(),
-        storage.getDPadPosition(),
-        storage.isScreenShakeEnabled(),
-      ]);
-      _settingsData = {
-        'boardSize': results[0],
-        'crashFeedbackDuration': results[1],
-        'dPadEnabled': results[2],
-        'dPadPosition': results[3],
-        'screenShakeEnabled': results[4],
-      };
-    } catch (e) {
-      if (kDebugMode) print('AppDataCache: Settings load warning: $e');
-    }
-  }
+  // _loadSettingsData was here.
+  //
+  // It cached board size, crash-feedback duration, D-pad enabled/position
+  // and screen shake at boot, purely so the Settings screen could paint
+  // before reading storage. GameSettingsCubit already owns every one of
+  // those values, loaded from the same StorageService calls, and it stays
+  // current afterwards — this snapshot never refreshed, so the two could
+  // disagree and the Settings screen would show the stale one on its first
+  // frame. Removed rather than fixed: a cache in front of an in-memory
+  // cubit buys nothing.
 
   Future<void> _loadDailyChallenges() async {
     try {
@@ -434,11 +419,6 @@ class AppDataCache extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> refreshSettings() async {
-    await _loadSettingsData();
-    notifyListeners();
-  }
-
   /// Clear all cached data
   void clearCache() {
     _statistics = null;
@@ -446,7 +426,6 @@ class AppDataCache extends ChangeNotifier {
     _playPatterns = null;
     _recentAchievements = null;
     _replayKeys = null;
-    _settingsData = null;
     _dailyChallenges = null;
     _globalLeaderboard = null;
     _weeklyLeaderboard = null;

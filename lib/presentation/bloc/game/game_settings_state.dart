@@ -28,6 +28,18 @@ class GameSettingsState extends Equatable {
   final bool screenShakeEnabled;
   final bool hapticsEnabled;
 
+  /// Sound effects and background music.
+  ///
+  /// These live here rather than only inside AudioService because two
+  /// separate screens let you flip them — Settings and the pause overlay —
+  /// and each used to keep its own `setState` copy read from the service at
+  /// mount. Two mirrors of one value is the shape every settings-drift bug
+  /// in this app has had, so they are state like everything else and the
+  /// service is driven from the cubit. Same arrangement as
+  /// [hapticsEnabled]/HapticService.
+  final bool soundEnabled;
+  final bool musicEnabled;
+
   /// BCP-47 tag of the user's app-language override ('en', 'hi', 'pt', …).
   /// Null = follow the device locale.
   final String? localeCode;
@@ -46,6 +58,8 @@ class GameSettingsState extends Equatable {
     this.highScore = 0,
     this.screenShakeEnabled = false, // Disabled by default
     this.hapticsEnabled = true,
+    this.soundEnabled = true,
+    this.musicEnabled = true,
     this.localeCode,
   });
 
@@ -67,6 +81,8 @@ class GameSettingsState extends Equatable {
     int? highScore,
     bool? screenShakeEnabled,
     bool? hapticsEnabled,
+    bool? soundEnabled,
+    bool? musicEnabled,
     String? localeCode,
     bool clearLocaleCode = false,
   }) {
@@ -86,6 +102,8 @@ class GameSettingsState extends Equatable {
       highScore: highScore ?? this.highScore,
       screenShakeEnabled: screenShakeEnabled ?? this.screenShakeEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      soundEnabled: soundEnabled ?? this.soundEnabled,
+      musicEnabled: musicEnabled ?? this.musicEnabled,
       localeCode:
           clearLocaleCode ? null : (localeCode ?? this.localeCode),
     );
@@ -109,6 +127,8 @@ class GameSettingsState extends Equatable {
     highScore,
     screenShakeEnabled,
     hapticsEnabled,
+    soundEnabled,
+    musicEnabled,
     localeCode,
   ];
 }
