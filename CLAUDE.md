@@ -75,6 +75,10 @@ The rule, applied to every new code path:
 - Storing replays on the backend. Replays are phone-only — they live in the Drift `replays` table and never enter the sync surface (no outbox row, no API endpoint, no DTO). Do not add a `GameReplay` entity or any cloud-side storage for them.
 
 ### Development Commands
+- **`./tools/release_android.sh`** - Build a Play release AND upload its Sentry
+  debug symbols. Use this instead of a bare `flutter build appbundle` for
+  anything that ships: a plain build produces an artifact whose crash reports
+  have unreadable frames, and nothing warns you until a crash arrives.
 - `flutter pub get` - Install dependencies
 - `flutter run` - Run the app (ask user for platform preference first)
 - `flutter run -d android` - Run on Android device/emulator

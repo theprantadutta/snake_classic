@@ -129,15 +129,26 @@ The app includes Firebase Analytics tracking for:
 
 ### Error Monitoring
 Already wired, via Sentry — see `lib/core/observability/`, and `SENTRY.md`
-in the workspace root alongside this repo (it covers the backend too). Nothing to add; the one thing a release build needs is the
-symbol upload, which is a separate step after `flutter build`:
+in the workspace root alongside this repo (it covers the backend too).
+
+**Build Play releases with `./tools/release_android.sh`, not `flutter build`
+directly.** The script builds with the obfuscation / split-debug-info flags
+and uploads the symbols in one step, and refuses to finish quietly if
+`SENTRY_AUTH_TOKEN` is unset:
 
 ```bash
-export SENTRY_AUTH_TOKEN=...   # org auth token, never committed
-dart run sentry_dart_plugin
+export SENTRY_AUTH_TOKEN=...   # project:releases scope, never committed
+./tools/release_android.sh     # appbundle, the Play artifact
 ```
 
-Skip it and every production stack trace is a list of hex offsets.
+This is not a style preference. 6.6.0+56 was built with a plain
+`flutter build appbundle` and no upload, and the first crash Play's
+pre-launch check produced came back with `<unknown>` where our frames should
+have been. Nothing failed and nothing warned — the build succeeded and the
+symbols simply never existed.
+
+Symbols must come from the **same** build you upload. Rebuilding afterwards
+produces a different binary, and the debug IDs no longer match.
 
 ## Security Verification
 
