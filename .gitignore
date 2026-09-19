@@ -94,3 +94,9 @@ l10n_untranslated.txt
 # for public client ids; it is not fine for a credential that can write to
 # our Sentry org.
 .sentry-auth-token
+
+# Versions already built and symbol-uploaded by tools/release_android.*.
+# Local ledger for the "did I forget to bump pubspec?" guard. Machine-local
+# by design: it records what THIS machine has shipped, and a fresh clone
+# should fall back to the Sentry check rather than inherit a stale list.
+.released-versions

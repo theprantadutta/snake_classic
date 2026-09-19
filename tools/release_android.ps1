@@ -37,7 +37,11 @@
 [CmdletBinding()]
 param(
     [ValidateSet('appbundle', 'apk')]
-    [string]$Target = 'appbundle'
+    [string]$Target = 'appbundle',
+
+    # Rebuild a version that has already been released. Only for redoing a
+    # release you deliberately want to redo.
+    [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
@@ -88,6 +92,62 @@ if (-not $versionLine) {
     Write-Error 'Could not read `version:` from pubspec.yaml'
 }
 $version = $versionLine.Matches[0].Groups[1].Value
+
+# ---------------------------------------------------------------------------
+# Refuse to rebuild a version that has already gone out.
+#
+# Forgetting to bump pubspec.yaml costs a full build before Play rejects it
+# with "version code N has already been used", and the symbols uploaded in
+# the meantime attach to a version already in the wild. Two seconds of
+# checking here beats five minutes of building.
+#
+# Two signals, because neither alone is enough:
+#   - Sentry knows a release once events arrive from it, so it catches
+#     "already in production" and survives a fresh clone. It does NOT know
+#     about a version built and uploaded to Play an hour ago that nobody has
+#     run yet.
+#   - .released-versions is a local ledger appended after each successful
+#     upload, which covers exactly that gap. It is gitignored and therefore
+#     empty on a fresh clone, which is why Sentry is checked too.
+# ---------------------------------------------------------------------------
+$ledger = '.released-versions'
+$alreadyLocal = (Test-Path $ledger) -and
+                (Get-Content $ledger | Where-Object { $_.Trim() -eq $version })
+
+$alreadyInSentry = $false
+try {
+    $rel = [uri]::EscapeDataString("com.pranta.snakeclassic@$version")
+    $null = Invoke-RestMethod -TimeoutSec 20 `
+        -Uri "https://sentry.io/api/0/organizations/pranta-corp/releases/$rel/" `
+        -Headers @{ Authorization = "Bearer $env:SENTRY_AUTH_TOKEN" } -ErrorAction Stop
+    $alreadyInSentry = $true
+} catch {
+    # 404 is the expected, healthy answer. Anything else (offline, token
+    # trouble) must not block a release over a convenience check.
+    if ($_.Exception.Response -and $_.Exception.Response.StatusCode.value__ -ne 404) {
+        Write-Host "  (version check skipped: $($_.Exception.Message))"
+    }
+}
+
+if (($alreadyLocal -or $alreadyInSentry) -and -not $Force) {
+    $where = @()
+    if ($alreadyLocal)    { $where += 'the local release ledger' }
+    if ($alreadyInSentry) { $where += 'Sentry (events already seen from it)' }
+    Write-Host ''
+    Write-Host '  ======================================================================'
+    Write-Host "  REFUSING TO BUILD: $version has already been released"
+    Write-Host ''
+    Write-Host "  Found in: $($where -join ' and ')"
+    Write-Host ''
+    Write-Host '  Bump `version:` in pubspec.yaml before building. Play will reject a'
+    Write-Host '  duplicate version code anyway, and symbols uploaded under a version'
+    Write-Host '  already in the wild attach to the wrong binary.'
+    Write-Host ''
+    Write-Host '  If you really mean to rebuild this version, pass -Force.'
+    Write-Host '  ======================================================================'
+    Write-Host ''
+    exit 1
+}
 
 Write-Host "==> Building $Target for $version"
 
@@ -183,6 +243,12 @@ if ($pluginExit -ne 0) {
     Write-Host "  NOTE: sentry_dart_plugin exited $pluginExit (the known Windows"
     Write-Host '        directory-walk crash). The Dart symbols above uploaded'
     Write-Host '        cleanly, so this build is fine.'
+}
+
+# Record the release only now — after the upload that decides success. A
+# version that failed to upload must stay buildable without -Force.
+if (-not ((Test-Path $ledger) -and (Get-Content $ledger | Where-Object { $_.Trim() -eq $version }))) {
+    Add-Content -LiteralPath $ledger -Value $version
 }
 
 $artifact = if ($Target -eq 'appbundle') {

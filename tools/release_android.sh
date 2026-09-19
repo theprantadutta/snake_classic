@@ -27,11 +27,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-TARGET="${1:-appbundle}"
-case "$TARGET" in
-  appbundle|apk) ;;
-  *) echo "error: target must be 'appbundle' or 'apk', got '$TARGET'" >&2; exit 2 ;;
-esac
+FORCE=0
+TARGET="appbundle"
+for arg in "$@"; do
+  case "$arg" in
+    --force)       FORCE=1 ;;
+    appbundle|apk) TARGET="$arg" ;;
+    *) echo "error: expected 'appbundle', 'apk' or --force, got '$arg'" >&2; exit 2 ;;
+  esac
+done
 
 # ---------------------------------------------------------------------------
 # Refuse to build if the token is sitting in .env.
@@ -74,6 +78,59 @@ if [[ -z "${SENTRY_AUTH_TOKEN:-}" && -f "$TOKEN_FILE" ]]; then
 fi
 
 VERSION="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+
+# ---------------------------------------------------------------------------
+# Refuse to rebuild a version that has already gone out.
+#
+# Forgetting to bump pubspec.yaml costs a full build before Play rejects it
+# with "version code N has already been used", and the symbols uploaded in
+# the meantime attach to a version already in the wild.
+#
+# Two signals, because neither alone is enough:
+#   - Sentry knows a release once events arrive from it, so it catches
+#     "already in production" and survives a fresh clone. It does NOT know
+#     about a version uploaded to Play an hour ago that nobody has run yet.
+#   - .released-versions is a local ledger appended after each successful
+#     upload, covering exactly that gap. Gitignored, so empty on a fresh
+#     clone, which is why Sentry is checked too.
+# ---------------------------------------------------------------------------
+LEDGER=".released-versions"
+ALREADY_LOCAL=0
+[[ -f "$LEDGER" ]] && grep -qxF "$VERSION" "$LEDGER" && ALREADY_LOCAL=1
+
+ALREADY_SENTRY=0
+if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]] && command -v curl >/dev/null 2>&1; then
+  REL_ENC="com.pranta.snakeclassic%40${VERSION/+/%2B}"
+  CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20     -H "Authorization: Bearer $SENTRY_AUTH_TOKEN"     "https://sentry.io/api/0/organizations/pranta-corp/releases/$REL_ENC/" || echo 000)"
+  # Only a definite 200 blocks. A 404 is the healthy answer, and anything
+  # else (offline, token trouble) must not stop a release over a
+  # convenience check.
+  [[ "$CODE" == "200" ]] && ALREADY_SENTRY=1
+  [[ "$CODE" == "200" || "$CODE" == "404" ]] || echo "  (version check skipped: HTTP $CODE)"
+fi
+
+if [[ ( "$ALREADY_LOCAL" == "1" || "$ALREADY_SENTRY" == "1" ) && "$FORCE" != "1" ]]; then
+  WHERE=""
+  [[ "$ALREADY_LOCAL"  == "1" ]] && WHERE="the local release ledger"
+  [[ "$ALREADY_SENTRY" == "1" ]] && WHERE="${WHERE:+$WHERE and }Sentry (events already seen from it)"
+  cat >&2 <<MSG
+
+  ======================================================================
+  REFUSING TO BUILD: $VERSION has already been released
+
+  Found in: $WHERE
+
+  Bump 'version:' in pubspec.yaml before building. Play will reject a
+  duplicate version code anyway, and symbols uploaded under a version
+  already in the wild attach to the wrong binary.
+
+  If you really mean to rebuild this version, pass --force.
+  ======================================================================
+
+MSG
+  exit 1
+fi
+
 echo "==> Building $TARGET for $VERSION"
 
 # --obfuscate makes release Dart frames unreadable on purpose; the map that
@@ -155,6 +212,10 @@ if [[ "$plugin_exit" -ne 0 ]]; then
   echo "        crash). The Dart symbols above uploaded cleanly, so this"
   echo "        build is fine."
 fi
+
+# Record the release only now — after the upload that decides success. A
+# version that failed to upload must stay buildable without --force.
+grep -qxF "$VERSION" "$LEDGER" 2>/dev/null || echo "$VERSION" >> "$LEDGER"
 
 echo
 echo "==> Done. Artifact:"
