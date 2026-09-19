@@ -46,11 +46,18 @@ void main() {
 
     for (final entity in Directory('lib').listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      if (definitionLayer.contains(entity.path)) continue;
+      // Normalise separators before the allowlist check. listSync yields
+      // backslashes on Windows, so a set written with forward slashes never
+      // matched there: the whole definitionLayer was bypassed and
+      // auth_service.dart — which DEFINES signInWithGoogle rather than
+      // offering it — was reported as an offender on a developer machine
+      // while CI stayed green.
+      final path = entity.path.replaceAll(Platform.pathSeparator, '/');
+      if (definitionLayer.contains(path)) continue;
 
       final code = codeOf(entity);
       if (!callsAny(code, googleCalls)) continue;
-      if (!callsAny(code, appleCalls)) offenders.add(entity.path);
+      if (!callsAny(code, appleCalls)) offenders.add(path);
     }
 
     expect(
