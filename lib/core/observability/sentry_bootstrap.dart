@@ -150,8 +150,19 @@ void configureSentryOptions(SentryFlutterOptions options) {
   // trail. Sample a thin slice of ordinary sessions in production to have
   // something to compare against; record none of them in development, where
   // a constant screen recorder is just overhead on the frame budget.
+  // Error sessions only. Ordinary-session sampling is OFF.
+  //
+  // Replay is the smallest quota on Sentry's free plan by a wide margin, and
+  // sampling ordinary sessions spends it on recordings of nothing happening.
+  // At 5% of all sessions a few hundred players a day would exhaust the
+  // month in days, after which replay stops recording — including for the
+  // crashes it exists to explain. Error sessions are the ones worth having,
+  // and at current volume (9 error events in 14 days) they fit comfortably.
+  //
+  // Set sessionSampleRate back above zero if the plan changes, or
+  // temporarily when chasing something that only reproduces mid-session.
   options.replay.onErrorSampleRate = 1.0;
-  options.replay.sessionSampleRate = kReleaseMode ? 0.05 : 0.0;
+  options.replay.sessionSampleRate = 0.0;
 
   // Mask everything by default: usernames, friend lists, leaderboard entries
   // and profile avatars are all somebody's data. What is left — the board,
