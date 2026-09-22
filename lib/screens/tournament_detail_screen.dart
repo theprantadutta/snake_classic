@@ -142,6 +142,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
       final result = await _tournamentService.getTournamentLeaderboard(
         _tournament!.id,
       );
+      // The leaderboard fetch is a network round trip, so the user can
+      // leave (or an interstitial can tear this route down) before it
+      // returns. setState on a disposed State dereferences a null
+      // _element and throws, which is fatal on the platform dispatcher.
+      if (!mounted) return;
       // Detect "real failure" vs "actually empty": if the tournament
       // says it has participants but we got an empty list back, the
       // fetch must have failed silently in the service layer.
@@ -154,6 +159,7 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
         _leaderboardLoadFailed = result.entries.isEmpty && !isLegitimatelyEmpty;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _leaderboardLoadFailed = true;

@@ -75,10 +75,12 @@ class _FirstTimeAuthScreenState extends State<FirstTimeAuthScreen> {
   Future<void> _loadPrivacyPolicy() async {
     try {
       final content = await rootBundle.loadString('assets/legal/PRIVACY.md');
+      if (!mounted) return;
       setState(() {
         _privacyPolicyContent = content;
       });
     } catch (e) {
+      if (!mounted) return;
       // Fallback if file can't be loaded
       setState(() {
         _privacyPolicyContent = '''# Privacy Policy for Snake Classic
