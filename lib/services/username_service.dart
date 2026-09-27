@@ -29,8 +29,29 @@ class UsernameService {
     r'^[a-zA-Z][a-zA-Z0-9_]{2,19}$',
   );
 
-  // Reserved/blocked usernames
+  // Reserved/blocked usernames. Must be a SUPERSET of the server's list in
+  // SetUsernameCommandValidator: a word only the server knows is a name the
+  // client lets through and the API then refuses.
   static const List<String> _reservedUsernames = [
+    // Server-side reserved words (SetUsernameCommandValidator.ReservedWords)
+    'official',
+    'staff',
+    'dev',
+    'developer',
+    'classic',
+    'snakeclassic',
+    'users',
+    'anonymous',
+    'tester',
+    'none',
+    'default',
+    'ban',
+    'banned',
+    'abuse',
+    'report',
+    'delete',
+    'deleted',
+    // Client-side
     'admin',
     'administrator',
     'mod',
@@ -214,9 +235,22 @@ class UsernameService {
   String generateRandomUsername() {
     final adjective = _adjectives[_random.nextInt(_adjectives.length)];
     final noun = _nouns[_random.nextInt(_nouns.length)];
-    final number = _random.nextInt(9999) + 1;
+    return composeGeneratedName(adjective, noun, _random);
+  }
 
-    return '${adjective}_${noun}_$number';
+  /// `Adjective_Noun_N`, with N given only as many digits as fit in
+  /// [maxLength]. A fixed 1–9999 suffix overflowed on the longer pairs —
+  /// `Lightning_Guardian_9999` is 23 characters, a name the server refuses.
+  static String composeGeneratedName(
+    String adjective,
+    String noun,
+    Random random,
+  ) {
+    final base = '${adjective}_$noun';
+    final digits = (maxLength - base.length - 1).clamp(0, 4);
+    if (digits == 0) return base.substring(0, min(base.length, maxLength));
+    final ceiling = pow(10, digits).toInt() - 1;
+    return '${base}_${random.nextInt(ceiling) + 1}';
   }
 
   /// Generate multiple random username suggestions

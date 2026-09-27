@@ -15,6 +15,7 @@ import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
 enum UserType { guest, anonymous, google }
@@ -906,9 +907,11 @@ class UnifiedUserService extends ChangeNotifier {
     final random = Random();
     final adjective = adjectives[random.nextInt(adjectives.length)];
     final noun = nouns[random.nextInt(nouns.length)];
-    final number = random.nextInt(9999) + 1;
-
-    return '${adjective}_${noun}_$number';
+    return UsernameService.composeGeneratedName(
+      adjective,
+      noun,
+      random,
+    );
   }
 
   Future<Map<String, dynamic>> _getDefaultPreferences() async {
@@ -1580,6 +1583,12 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<bool> updateUsername(String newUsername) async {
     if (_currentUser == null) return false;
+    // Validate BEFORE the round trip. Both username screens only ran the
+    // format check after the server had already refused, so every space,
+    // umlaut or hyphen a player typed went to the API and came back as a
+    // validation failure (SNAKE-CLASSIC-API-10). The callers re-run
+    // validateUsername on a false return to show the specific reason.
+    if (!UsernameService().validateUsername(newUsername).isValid) return false;
 
     try {
       // Update via backend API
@@ -1604,6 +1613,9 @@ class UnifiedUserService extends ChangeNotifier {
         _currentUser!.userType != UserType.anonymous) {
       return false;
     }
+    // Same rules as the server, so a guest never holds a name their
+    // account would be refused once it has a backend identity.
+    if (!UsernameService().validateUsername(newUsername).isValid) return false;
 
     try {
       _currentUser = _currentUser!.copyWith(
