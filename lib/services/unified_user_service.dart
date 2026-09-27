@@ -313,7 +313,9 @@ class UnifiedUserService extends ChangeNotifier {
 
       // Start listening to auth state changes
       AppLogger.user('Setting up auth state listener...');
-      _authSubscription = _auth.authStateChanges().listen(
+      // ??= : a retried initialize() after a failed one must not stack a
+      // second listener on the first.
+      _authSubscription ??= _auth.authStateChanges().listen(
         _handleAuthStateChange,
       );
       AppLogger.success('Auth state listener set up');
@@ -414,8 +416,11 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<void> _handleAuthStateChange(User? firebaseUser) async {
     if (firebaseUser != null) {
-      // Skip if initialize() is already handling the first load
-      if (_isInitializing) {
+      // Skip if initialize() is already handling the first load — for THAT
+      // user only. A different user arriving mid-init must still be loaded:
+      // the init load will see itself superseded and drop its result, so
+      // skipping here too would leave nobody loading the live session.
+      if (_isInitializing && firebaseUser.uid == _loadingUserId) {
         AppLogger.user(
           'Skipping auth state change during initialization for ${firebaseUser.uid}',
         );
@@ -663,9 +668,15 @@ class UnifiedUserService extends ChangeNotifier {
         notifyListeners();
       }
     } finally {
-      _isLoadingUser = false;
-      _loadingUserId = null;
-      _loadingFuture = null;
+      // Only clear the markers if they are still ours. A load for a newer
+      // session may have started while this one was awaiting; wiping its
+      // markers would let ensureBackendSession race it with a second
+      // /auth/firebase call.
+      if (identical(_loadingFuture, completer.future)) {
+        _isLoadingUser = false;
+        _loadingUserId = null;
+        _loadingFuture = null;
+      }
       if (!completer.isCompleted) completer.complete();
     }
   }
@@ -1109,14 +1120,21 @@ class UnifiedUserService extends ChangeNotifier {
   Future<bool> _signInAnonymously() async {
     try {
       // Firebase's signInAnonymously SIGNS OUT whatever non-anonymous user is
-      // current and replaces it. So with a session already on the device this
-      // must never run: refresh that session's backend JWT instead.
+      // current and replaces it. So over a real credential this must never
+      // run: refresh that session's backend JWT instead. (Over an ANONYMOUS
+      // user it is harmless — Firebase hands back the same user, offline
+      // too — and falling through keeps the load + notifyListeners below,
+      // which is what clears AuthCubit's isLoading after "Play as guest".)
       final existing = _auth.currentUser;
-      if (existing != null) {
+      if (existing != null && !existing.isAnonymous) {
         AppLogger.firebase(
-          'Anonymous sign-in skipped — Firebase session ${existing.uid} exists',
+          'Anonymous sign-in skipped — signed in as ${existing.uid}',
         );
-        return await ensureBackendSession();
+        await ensureBackendSession();
+        // The caller emitted isLoading and waits for a notification to clear
+        // it; nothing else will send one on this path.
+        notifyListeners();
+        return true;
       }
 
       AppLogger.firebase('Attempting anonymous sign-in...');
@@ -1305,6 +1323,10 @@ class UnifiedUserService extends ChangeNotifier {
       return false;
     }
 
+    // Re-checked here, not only at the top: every caller that arrived while
+    // initialize() was running resumes from the same wait, and without this
+    // each of them would start its own anonymous sign-in.
+    if (_ensuringPushIdentity) return false;
     _ensuringPushIdentity = true;
     try {
       AppLogger.user(
