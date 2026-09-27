@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart'
+    show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:snake_classic/services/storage_service.dart';
 
@@ -74,13 +76,74 @@ class AudioService {
     return _instance!;
   }
 
-  Future<void> initialize() async {
-    if (_initialized) return;
+  // The engine is released while the app is in the background and brought
+  // back on resume.
+  //
+  // Left running, SoLoud's mixer thread and its AAudio/AudioTrack stream
+  // outlive the Flutter engine. When Android destroys the activity (back out
+  // of the app, or the OS reclaiming a backgrounded process) the isolate goes
+  // away but the mixer does not, and the next voice-ended callback it fires
+  // lands on a NativeCallable whose isolate is gone. The Dart VM aborts in
+  // DLRT_GetFfiCallbackMetadata — Sentry SNAKE-CLASSIC-FLUTTER-3, a SIGABRT
+  // minutes to an hour after the app was backgrounded. The same open stream
+  // is behind the SIGABRT on android::Thread::_threadLoop
+  // (SNAKE-CLASSIC-FLUTTER-4): an audio callback thread asserting in the
+  // background under low memory. The plugin's 4.1.0 shutdown fix only covers
+  // an explicit deinit(), which nothing ever called.
+  //
+  // Nothing plays in the background anyway — gameplay pauses with the app —
+  // so there is no stream worth keeping open. Re-initialising costs ~100 ms
+  // (engine + the seven preloaded SFX) on the way back in.
+  AppLifecycleListener? _lifecycleListener;
+  bool _suspended = false;
+
+  /// Serialises init / suspend / resume. A quick background-foreground flip
+  /// must not start init() while deinitAsync() is still joining the audio
+  /// thread, nor preload into an engine that is being torn down.
+  Future<void> _engineOps = Future.value();
+
+  Future<void> _enqueue(Future<void> Function() op) {
+    final next = _engineOps.then((_) => op());
+    // Never let one failed step wedge every later one.
+    _engineOps = next.catchError((Object _) {});
+    return next;
+  }
+
+  Future<void> initialize() => _enqueue(_initialize);
+
+  Future<void> _initialize() async {
+    if (_initialized || _suspended) return;
+
+    // Registered before the first await: a cold start can be backgrounded
+    // while the engine is still coming up. The queued suspend then runs as
+    // soon as this finishes, instead of leaving the engine open until the
+    // next pause.
+    _lifecycleListener ??= AppLifecycleListener(
+      onPause: () => unawaited(_enqueue(_suspend)),
+      onDetach: () => unawaited(_enqueue(_suspend)),
+      onResume: () => unawaited(_enqueue(_resume)),
+    );
 
     _soundEnabled = await _storageService.isSoundEnabled();
     _musicEnabled = await _storageService.isMusicEnabled();
 
-    // Initialize SoLoud engine
+    await _startEngine();
+
+    _initialized = true;
+    debugPrint(
+      'AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded',
+    );
+
+    // Already in the background before the listener existed (it reports
+    // transitions, not the current state).
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      await _suspend();
+    }
+  }
+
+  Future<void> _startEngine() async {
     try {
       await _soloud.init();
       debugPrint('SoLoud engine initialized');
@@ -90,11 +153,35 @@ class AudioService {
     } catch (e) {
       debugPrint('Failed to initialize SoLoud: $e');
     }
+  }
 
+  /// Release the engine for the background. See [_lifecycleListener].
+  Future<void> _suspend() async {
+    if (!_initialized || _suspended) return;
+    _suspended = true;
+    // Gate every playback path first, so nothing reaches FFI mid-teardown.
+    _initialized = false;
+    // deinit() disposes every source and voice, so these references die
+    // with it. The music session flag survives: resumeGameplayMusic starts
+    // a fresh voice when the player unpauses.
+    _loadedSounds.clear();
+    _musicSource = null;
+    _musicHandle = null;
+    try {
+      // The async variant stops the device without blocking the UI isolate
+      // while the audio thread is joined — this runs on the way into the
+      // background, exactly where a blocked main thread becomes an ANR.
+      await _soloud.deinitAsync();
+    } catch (e) {
+      debugPrint('SoLoud suspend failed: $e');
+    }
+  }
+
+  Future<void> _resume() async {
+    if (!_suspended) return;
+    _suspended = false;
+    await _startEngine();
     _initialized = true;
-    debugPrint(
-      'AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded',
-    );
   }
 
   /// Pre-load all sound effects into SoLoud
@@ -346,7 +433,10 @@ class AudioService {
     // loop was redundant anyway: deinit() "stops the engine and disposes of
     // all resources, including sounds".
     //
-    // Nothing calls this today, which is the only reason it never fired.
+    // Nothing calls this today; the background release above is what
+    // actually stops the engine.
+    _lifecycleListener?.dispose();
+    _lifecycleListener = null;
     _soloud.deinit();
     _loadedSounds.clear();
     _musicSource = null;
