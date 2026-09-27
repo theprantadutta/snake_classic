@@ -533,8 +533,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                                         gameState: gameState,
                                         theme: theme,
                                         displayHighScore: displayHighScore,
+                                        // Reflect the rewarded double here too:
+                                        // the card is where the player looks to
+                                        // see that watching the ad paid out.
                                         coinsEarned:
-                                            gameCubitState.coinsEarnedThisGame,
+                                            gameCubitState.coinsEarnedThisGame *
+                                            (_doubledCoins ? 2 : 1),
                                         scoreController: _scoreController,
                                         compact: compact,
                                       ),
