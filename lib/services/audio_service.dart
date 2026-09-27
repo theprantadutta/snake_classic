@@ -159,6 +159,7 @@ class AudioService {
   Future<void> _suspend() async {
     if (!_initialized || _suspended) return;
     _suspended = true;
+    _engineGeneration++;
     // Gate every playback path first, so nothing reaches FFI mid-teardown.
     _initialized = false;
     // deinit() disposes every source and voice, so these references die
@@ -182,6 +183,13 @@ class AudioService {
     _suspended = false;
     await _startEngine();
     _initialized = true;
+    // A revive after a rewarded ad calls resumeGameplayMusic the moment the
+    // ad closes — usually before this re-init has finished, when the call
+    // can only record the intent. Honour it now, or the rest of the run
+    // plays in silence.
+    if (_musicSessionActive && _musicWanted) {
+      await startGameplayMusic();
+    }
   }
 
   /// Pre-load all sound effects into SoLoud
@@ -270,6 +278,21 @@ class AudioService {
   // playback immediately instead of waiting for the next game.
   bool _musicSessionActive = false;
 
+  /// Whether the game currently wants the music AUDIBLE (started or resumed,
+  /// and not paused or stopped since). Kept apart from the voice handle
+  /// because the handle dies with the engine on every trip to the
+  /// background — including every full-screen ad — and a start or resume
+  /// that lands while the engine is still coming back must not be lost.
+  bool _musicWanted = false;
+
+  /// The start in progress, so concurrent callers share it instead of each
+  /// loading the track and starting a second looping voice.
+  Future<void>? _musicStart;
+
+  /// Bumped on every suspend. A source loaded across one belongs to an
+  /// engine that no longer exists and must not be cached or played.
+  int _engineGeneration = 0;
+
   /// The streamed background track, loaded once and reused.
   AudioSource? _musicSource;
   SoundHandle? _musicHandle;
@@ -298,21 +321,33 @@ class AudioService {
   /// Start the looping background track for a game run. No-ops (but still
   /// marks the session active) when music is disabled, so enabling the
   /// setting mid-run picks the track up.
-  Future<void> startGameplayMusic() async {
+  Future<void> startGameplayMusic() {
     _musicSessionActive = true;
-    if (!_initialized || !_musicEnabled) return;
+    _musicWanted = true;
+    if (!_initialized || !_musicEnabled) return Future.value();
+    return _musicStart ??= _startMusicVoice().whenComplete(() {
+      _musicStart = null;
+    });
+  }
 
+  Future<void> _startMusicVoice() async {
     try {
       // LoadMode.disk streams the file instead of decompressing the whole
       // track into RAM. Right trade for a multi-minute loop; the SFX stay in
       // memory, where their latency matters.
-      _musicSource ??= await _soloud.loadAsset(
-        'assets/audio/background_music.mp3',
-        mode: LoadMode.disk,
-      );
+      final generation = _engineGeneration;
+      final source = _musicSource ??
+          await _soloud.loadAsset(
+            'assets/audio/background_music.mp3',
+            mode: LoadMode.disk,
+          );
+      if (generation != _engineGeneration) return;
+      _musicSource = source;
 
       // Already running — don't stack a second voice on top of it.
       if (_liveMusicHandle != null) return;
+      // Paused, stopped or backgrounded while the track was loading.
+      if (!_initialized || !_musicWanted || !_musicEnabled) return;
 
       final handle = _soloud.play(
         _musicSource!,
@@ -329,6 +364,7 @@ class AudioService {
 
   /// Freeze music with the game (pause overlay up, app backgrounded).
   Future<void> pauseGameplayMusic() async {
+    _musicWanted = false;
     final handle = _liveMusicHandle;
     if (handle == null) return;
     try {
@@ -343,6 +379,7 @@ class AudioService {
   /// of a run that began with it disabled.
   Future<void> resumeGameplayMusic() async {
     if (!_musicSessionActive || !_musicEnabled) return;
+    _musicWanted = true;
     final handle = _liveMusicHandle;
     if (handle != null) {
       try {
@@ -360,6 +397,7 @@ class AudioService {
   /// End-of-run stop (game over, quit to home). Closes the music session.
   Future<void> stopGameplayMusic() async {
     _musicSessionActive = false;
+    _musicWanted = false;
     await _stopMusicVoice();
   }
 
