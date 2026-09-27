@@ -31,6 +31,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this._userService, this._analytics) : super(AuthState.initial());
 
+  /// Whether the device holds a real (non-anonymous) credential, straight
+  /// from the Firebase session. Use this instead of importing FirebaseAuth
+  /// in a screen — all auth state flows through this cubit.
+  bool get hasRealCredential => _userService.hasRealCredential;
+
   /// Wait for local initialization (SharedPreferences check) to complete.
   /// This is fast and does not depend on network.
   Future<void> waitForLocalInit() => _localInitCompleter.future;

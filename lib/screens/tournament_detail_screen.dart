@@ -12,7 +12,7 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/tournament_service.dart';
-import 'package:snake_classic/services/auth_service.dart';
+import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/screens/game_screen.dart';
@@ -919,12 +919,12 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
     GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    // AuthService is a singleton (factory pattern in auth_service.dart),
-    // NOT a registered Provider. The previous context.read<AuthService>()
-    // threw ProviderNotFoundException because nothing in the widget tree
-    // exposes it. Call the singleton factory directly.
-    final authService = AuthService();
-    final isCurrentUser = participant.userId == authService.currentUser?.uid;
+    // participant.userId is the BACKEND account id, which is what
+    // AuthState.userId holds. The Firebase UID this used to compare against
+    // never matched, so the player's own row was never highlighted.
+    final currentUserId = context.read<AuthCubit>().state.userId;
+    final isCurrentUser =
+        currentUserId != null && participant.userId == currentUserId;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),

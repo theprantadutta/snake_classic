@@ -338,6 +338,12 @@ class ApiService {
   DateTime? _cachedCurrentUserAt;
   Future<Map<String, dynamic>?>? _currentUserInFlight;
 
+  /// The JWT the cached profile and the in-flight request were made with.
+  /// Both are reused only under that same token: invalidating on sign-in was
+  /// not enough, because a request already in flight for the previous account
+  /// could still be JOINED — or land in the cache — after the switch.
+  String? _currentUserToken;
+
   /// How long a fetched `/auth/me` payload is reused.
   ///
   /// Sized for the sign-in burst, not for freshness: three independent callers
@@ -356,6 +362,9 @@ class ApiService {
   /// use it whenever the point of the call is to observe a change (after a
   /// cloud restore, after a profile edit, on an explicit pull-to-refresh).
   Future<Map<String, dynamic>?> getCurrentUser({bool forceRefresh = false}) async {
+    if (_currentUserToken != _accessToken) {
+      invalidateCurrentUserCache();
+    }
     if (!forceRefresh) {
       final cachedAt = _cachedCurrentUserAt;
       if (_cachedCurrentUser != null &&
@@ -368,23 +377,26 @@ class ApiService {
       if (inFlight != null) return inFlight;
     }
 
-    final future = _fetchCurrentUser();
+    final token = _accessToken;
+    final future = _fetchCurrentUser(token);
     _currentUserInFlight = future;
+    _currentUserToken = token;
     try {
       return await future;
     } finally {
-      _currentUserInFlight = null;
+      if (identical(_currentUserInFlight, future)) _currentUserInFlight = null;
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchCurrentUser() async {
+  Future<Map<String, dynamic>?> _fetchCurrentUser(String? token) async {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/auth/me'), headers: _authHeaders)
           .timeout(_timeout);
 
       final data = _handleResponse(response);
-      if (data != null) {
+      // Only cache what still describes the live session.
+      if (data != null && token == _accessToken) {
         _cachedCurrentUser = data;
         _cachedCurrentUserAt = DateTime.now();
       }
@@ -402,6 +414,8 @@ class ApiService {
   void invalidateCurrentUserCache() {
     _cachedCurrentUser = null;
     _cachedCurrentUserAt = null;
+    _currentUserInFlight = null;
+    _currentUserToken = null;
   }
 
   Future<bool> logout() async {

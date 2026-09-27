@@ -22,7 +22,6 @@ void main() {
   const definitionLayer = {
     'lib/presentation/bloc/auth/auth_cubit.dart',
     'lib/services/unified_user_service.dart',
-    'lib/services/auth_service.dart',
   };
 
   const googleCalls = ['signInWithGoogle', 'connectAccountWithGoogle', 'linkAnonymousToGoogle'];
@@ -49,7 +48,7 @@ void main() {
       // Normalise separators before the allowlist check. listSync yields
       // backslashes on Windows, so a set written with forward slashes never
       // matched there: the whole definitionLayer was bypassed and
-      // auth_service.dart — which DEFINES signInWithGoogle rather than
+      // unified_user_service.dart — which DEFINES signInWithGoogle rather than
       // offering it — was reported as an offender on a developer machine
       // while CI stayed green.
       final path = entity.path.replaceAll(Platform.pathSeparator, '/');

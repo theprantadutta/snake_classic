@@ -35,7 +35,6 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/analytics/analytics_route_observer.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/services/auth_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
 import 'package:snake_classic/services/existing_install_probe.dart';
 import 'package:snake_classic/services/first_run_service.dart';
@@ -390,11 +389,13 @@ Future<void> _bootstrap() async {
     });
     AppLogger.info('Purchase service user ID getter wired');
 
-    // Wire ApiService.onUnauthorized to trigger re-authentication
+    // A 401 clears the JWT. Re-mint it for the same Firebase session right
+    // away rather than leaving the app unauthenticated until the next resume
+    // — an unauthenticated window is exactly when the push bootstrap used to
+    // mistake a signed-in player for a guest. Rate-limited inside.
     ApiService().onUnauthorized = () {
-      AppLogger.warning('JWT expired — will re-authenticate on next API call');
-      // AuthService.ensureBackendAuthentication() is called on app resume
-      // and before critical API calls, so we just clear the token here.
+      AppLogger.warning('JWT rejected — refreshing the backend session');
+      unawaited(UnifiedUserService().ensureBackendSession());
     };
 
     // Boot the outbox drain engine. It owns the SyncQueue → backend
@@ -641,7 +642,7 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // subscription expiry has already passed, drop to free right now —
       // don't wait on connectivity or a successful backend round-trip.
       await getIt<PremiumCubit>().recheckLocalExpiry();
-      await AuthService().ensureBackendAuthentication();
+      await UnifiedUserService().ensureBackendSession();
       // Retry any pending offline purchases
       await PurchaseService().retryPendingVerifications();
       // Deliver anything the store now reports as paid that we have not

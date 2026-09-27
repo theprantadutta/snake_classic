@@ -260,12 +260,42 @@ class UnifiedUserService extends ChangeNotifier {
   /// guests silently get "link failed" on every upgrade surface.
   bool get canLinkCredential => _auth.currentUser?.isAnonymous ?? false;
 
+  /// Whether this device holds a REAL credential (Google, Apple, email) —
+  /// read from the Firebase session, which owns the answer. Exposed so
+  /// screens never have to import `FirebaseAuth` themselves: every auth
+  /// question in the app goes through this service (via [AuthCubit]).
+  bool get hasRealCredential {
+    final user = _auth.currentUser;
+    return user != null && !user.isAnonymous;
+  }
+
+  /// Completes once [initialize] has resolved an identity (or failed).
+  /// Background identity work — the FCM bootstrap in particular — fires from
+  /// `main()` BEFORE [AuthCubit] calls [initialize], and must wait here
+  /// instead of deciding against a `_currentUser` that is merely not loaded
+  /// yet. See [ensureBackendIdentityForPush].
+  final Completer<void> _initDone = Completer<void>();
+
   String get displayName => _currentUser?.displayName ?? 'Player';
   String get username => _currentUser?.username ?? 'Guest';
   String? get photoURL => _currentUser?.photoURL;
   int get highScore => _currentUser?.highScore ?? 0;
 
-  Future<void> initialize() async {
+  Future<void>? _initFuture;
+
+  /// Single-flight: LoadingScreen and AuthCubit both call this at launch,
+  /// concurrently. `_isInitialized` only flips at the END, so both used to
+  /// run the whole body — two `authStateChanges` subscriptions and two
+  /// racing profile loads. A failed attempt clears the future so a later
+  /// call can retry.
+  Future<void> initialize() {
+    return _initFuture ??= _initialize().catchError((Object e, StackTrace s) {
+      _initFuture = null;
+      Error.throwWithStackTrace(e, s);
+    });
+  }
+
+  Future<void> _initialize() async {
     try {
       AppLogger.user('STARTING UnifiedUserService initialization...');
 
@@ -351,10 +381,12 @@ class UnifiedUserService extends ChangeNotifier {
       }
 
       _isInitialized = true;
+      if (!_initDone.isCompleted) _initDone.complete();
       AppLogger.success(
         'UnifiedUserService initialization complete. Current user: ${_currentUser?.username}',
       );
     } catch (e, stackTrace) {
+      if (!_initDone.isCompleted) _initDone.complete();
       AppLogger.error(
         'UnifiedUserService initialization failed',
         e,
@@ -458,6 +490,7 @@ class UnifiedUserService extends ChangeNotifier {
       if (idToken != null) {
         // Online path - authenticate with backend
         final authResult = await _apiService.authenticateWithFirebase(idToken);
+        if (_isSuperseded(firebaseUser)) return;
 
         if (authResult != null) {
           AppLogger.success('Backend authentication successful');
@@ -470,6 +503,7 @@ class UnifiedUserService extends ChangeNotifier {
 
           // Load user profile from backend
           final userProfile = await _apiService.getCurrentUser();
+          if (_isSuperseded(firebaseUser)) return;
           if (userProfile != null) {
             _currentUser = _withLocalCredentialTruth(
               UnifiedUser.fromJson(userProfile),
@@ -636,6 +670,22 @@ class UnifiedUserService extends ChangeNotifier {
     }
   }
 
+  /// True when the Firebase session moved to a different account while a
+  /// load for [firebaseUser] was awaiting the network. The late load must
+  /// then drop its result: two loads share one [ApiService] JWT and one
+  /// `_currentUser`, so letting the stale one land stitched one account's
+  /// profile (photo included) onto another account's session — the
+  /// "profile picture AND a Sign in with Google button" state.
+  bool _isSuperseded(User firebaseUser) {
+    final live = _auth.currentUser?.uid;
+    if (live == firebaseUser.uid) return false;
+    AppLogger.warning(
+      'Discarding load for ${firebaseUser.uid}: Firebase session is now '
+      '${live ?? "signed out"}',
+    );
+    return true;
+  }
+
   /// Backend-unreachable fallback. Prefers a cached UnifiedUser this account
   /// owns (preserving highScore, gamesPlayed, level, etc. from the last good
   /// fetch) over a blank rebuild via _createUserFromFirebase, which seeds from
@@ -702,12 +752,25 @@ class UnifiedUserService extends ChangeNotifier {
   /// repaired server-side.
   UnifiedUser _withLocalCredentialTruth(UnifiedUser user, User firebaseUser) {
     if (firebaseUser.isAnonymous) {
-      if (user.userType == UserType.anonymous) return user;
+      if (user.userType == UserType.anonymous &&
+          user.photoURL == null &&
+          user.email == null) {
+        return user;
+      }
       AppLogger.warning(
         'Backend reported ${user.userType.name} for an ANONYMOUS Firebase '
         'session — trusting the local session and treating it as anonymous',
       );
-      return user.copyWith(userType: UserType.anonymous);
+      // An anonymous session has no photo or email of its own, so any it
+      // carries came from another account's profile. Drop them rather than
+      // render a Google avatar next to a "Sign in with Google" prompt.
+      // (copyWith cannot null a field, hence the JSON round-trip.)
+      return UnifiedUser.fromJson({
+        ...user.toJson(),
+        'userType': UserType.anonymous.name,
+        'photoURL': null,
+        'email': null,
+      });
     }
 
     // The mirror case: a credential was linked and the backend has not caught
@@ -1045,6 +1108,17 @@ class UnifiedUserService extends ChangeNotifier {
 
   Future<bool> _signInAnonymously() async {
     try {
+      // Firebase's signInAnonymously SIGNS OUT whatever non-anonymous user is
+      // current and replaces it. So with a session already on the device this
+      // must never run: refresh that session's backend JWT instead.
+      final existing = _auth.currentUser;
+      if (existing != null) {
+        AppLogger.firebase(
+          'Anonymous sign-in skipped — Firebase session ${existing.uid} exists',
+        );
+        return await ensureBackendSession();
+      }
+
       AppLogger.firebase('Attempting anonymous sign-in...');
 
       final result = await _auth.signInAnonymously();
@@ -1196,12 +1270,35 @@ class UnifiedUserService extends ChangeNotifier {
   /// player never asked for and cannot recover, so every account-facing
   /// surface must keep describing them as not signed in
   /// (`AuthState.hasNoCredential`) until they attach a real credential.
+  ///
+  /// It used to be the reason Google users got "signed out after a while".
+  /// It fires from `main()` before [initialize] has loaded anyone, and the
+  /// backend JWT lasts 7 days: once it had expired, `isAuthenticated` was
+  /// false, `_currentUser` was still null mid-load, the old `user != null`
+  /// check let that through, and `signInAnonymously()` replaced the Google
+  /// session with a fresh anonymous one. So now it (1) waits for
+  /// [initialize], (2) refreshes an existing Firebase session instead of
+  /// replacing it, and (3) only ever upgrades a user that IS a local guest.
   Future<bool> ensureBackendIdentityForPush() async {
     if (_apiService.isAuthenticated) return true;
     if (_ensuringPushIdentity) return false;
 
+    try {
+      await _initDone.future.timeout(const Duration(seconds: 30));
+    } on TimeoutException {
+      // Nothing has initialized us yet; decide next launch, not blind.
+      return false;
+    }
+    if (_apiService.isAuthenticated) return true;
+
+    // A Firebase session exists: its JWT has merely expired. Re-mint it for
+    // THE SAME account.
+    if (_auth.currentUser != null) return ensureBackendSession();
+
+    // Only a local guest is upgraded. A null user means someone just signed
+    // out, and signOut() promises not to auto-create an account behind them.
     final user = _currentUser;
-    if (user != null && user.userType != UserType.guest) return false;
+    if (user == null || user.userType != UserType.guest) return false;
 
     if (GetIt.I.isRegistered<ConnectivityService>() &&
         !GetIt.I<ConnectivityService>().isOnline) {
@@ -1217,6 +1314,63 @@ class UnifiedUserService extends ChangeNotifier {
       return _apiService.isAuthenticated;
     } finally {
       _ensuringPushIdentity = false;
+    }
+  }
+
+  Future<bool>? _sessionRefresh;
+  DateTime? _lastSessionRefreshAt;
+
+  /// Make sure the backend JWT is valid for the CURRENT Firebase session,
+  /// re-minting it from a fresh Firebase ID token when it has expired or was
+  /// cleared by a 401. Never changes who is signed in.
+  ///
+  /// Called on app resume, after a 401, and by the push bootstrap. Concurrent
+  /// callers share one refresh, and a refresh that just ran is not repeated
+  /// within a minute, so a backend that keeps answering 401 cannot turn the
+  /// unauthorized hook into a request loop.
+  Future<bool> ensureBackendSession() async {
+    if (_apiService.isAuthenticated) return true;
+    if (_auth.currentUser == null) return false;
+
+    // A profile load is already authenticating this session.
+    final loading = _loadingFuture;
+    if (loading != null) {
+      await loading;
+      return _apiService.isAuthenticated;
+    }
+
+    final inFlight = _sessionRefresh;
+    if (inFlight != null) return inFlight;
+
+    final last = _lastSessionRefreshAt;
+    if (last != null &&
+        DateTime.now().difference(last) < const Duration(minutes: 1)) {
+      return false;
+    }
+    _lastSessionRefreshAt = DateTime.now();
+
+    final future = _refreshBackendSession();
+    _sessionRefresh = future;
+    try {
+      return await future;
+    } finally {
+      _sessionRefresh = null;
+    }
+  }
+
+  Future<bool> _refreshBackendSession() async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return false;
+    try {
+      final idToken = await firebaseUser.getIdToken();
+      if (idToken == null) return false;
+      final result = await _apiService.authenticateWithFirebase(idToken);
+      if (result == null) return false;
+      AppLogger.success('Backend session refreshed for ${firebaseUser.uid}');
+      return true;
+    } catch (e) {
+      AppLogger.warning('Backend session refresh failed: $e');
+      return false;
     }
   }
 
