@@ -2056,6 +2056,42 @@ abstract class AppLocalizations {
   /// **'MENU'**
   String get goMenu;
 
+  /// No description provided for @adIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus coins!'**
+  String get adIntroTitle;
+
+  /// No description provided for @adIntroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch a short ad and get +{count} coins.'**
+  String adIntroBody(Object count);
+
+  /// No description provided for @adIntroCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad starts in {seconds}s'**
+  String adIntroCountdown(Object seconds);
+
+  /// No description provided for @adIntroWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch now'**
+  String get adIntroWatch;
+
+  /// No description provided for @adIntroSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get adIntroSkip;
+
+  /// No description provided for @adBreakStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad starting…'**
+  String get adBreakStarting;
+
   /// No description provided for @storeTitle.
   ///
   /// In en, this message translates to:

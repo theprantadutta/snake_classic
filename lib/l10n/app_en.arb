@@ -461,6 +461,22 @@
   "goAdNoticeRewarded": "Short ad next · +{count} coins for watching",
   "goAdNoticeInterstitial": "A short ad plays next",
   "goMenu": "MENU",
+  "adIntroTitle": "Bonus coins!",
+  "adIntroBody": "Watch a short ad and get +{count} coins.",
+  "@adIntroBody": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "adIntroCountdown": "Ad starts in {seconds}s",
+  "@adIntroCountdown": {
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "adIntroWatch": "Watch now",
+  "adIntroSkip": "No thanks",
+  "adBreakStarting": "Ad starting…",
   "storeTitle": "Snake Store",
   "storeTabPro": "Pro",
   "storeTabCoins": "Coins",

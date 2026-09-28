@@ -46,8 +46,11 @@ class AdConfig {
   static const _appOpenIos = 'ca-app-pub-9242904787767394/9799285770';
 
   // Rewarded interstitial: a full-screen ad that appears WITHOUT an opt-in tap
-  // but still grants a reward. The SDK renders the mandatory intro screen with
-  // its opt-out itself — we don't build that UI. Used at game-over in place of
+  // but still grants a reward. Google requires US to show an intro screen
+  // before it — clear reward messaging, time to read it, and an unobstructed
+  // way to skip. The SDK does NOT provide one (an earlier comment here claimed
+  // it did, and the app shipped without it). Ours is RewardedInterstitialIntro,
+  // run from the game-over slot's confirm step. Used at game-over in place of
   // the plain interstitial when one is loaded (it earns rewarded-tier eCPM and
   // hands the player coins, so the same interruption pays more and stings less).
   static const _rewardedInterstitialAndroid =

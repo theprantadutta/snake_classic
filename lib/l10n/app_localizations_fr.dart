@@ -1125,6 +1125,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get goMenu => 'MENU';
 
   @override
+  String get adIntroTitle => 'Pièces bonus !';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'Regardez une courte pub et gagnez +$count pièces.';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'La pub commence dans $seconds s';
+  }
+
+  @override
+  String get adIntroWatch => 'Regarder';
+
+  @override
+  String get adIntroSkip => 'Non merci';
+
+  @override
+  String get adBreakStarting => 'La pub commence…';
+
+  @override
   String get storeTitle => 'Boutique Snake';
 
   @override

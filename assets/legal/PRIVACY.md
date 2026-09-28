@@ -1,9 +1,9 @@
 # Privacy Policy for Snake Classic
 
 **Legal Version: 3.0** *(shared acceptance version for our Privacy Policy and Terms of Use — when either document changes, this is bumped and you'll be asked to review and accept again)*  
-**Policy Version: 2.0**  
+**Policy Version: 2.1**  
 **Effective Date: July 1, 2026**  
-**Last Updated: July 1, 2026**
+**Last Updated: September 28, 2026**
 
 > **What changed in version 2.0 (May 29, 2026):** Snake Classic now shows
 > advertising in the free version of the app (banner, interstitial, and opt-in
@@ -218,12 +218,17 @@ We may disclose your information if required by law, regulation, legal process, 
 In the event of a merger, acquisition, or sale of assets, your information may be transferred to the new entity, subject to the same privacy protections.
 
 ### 5. Advertising (Google AdMob)
-We show ads to support the free version of the app using **Google AdMob**. Pro subscribers (and users in an active trial) see **no ads at all**.
+We show ads to support the free version of the app using **Google AdMob**. Pro subscribers see **no ads at all**.
 
-- **Ad partners:** Google AdMob and its mediation partners may collect device identifiers, approximate usage data, and an advertising ID to serve and measure ads (including banner, full-screen interstitial, and opt-in rewarded ads).
+- **Ad partners:** Google AdMob and its mediation partners may collect device identifiers, approximate usage data, and an advertising ID to serve and measure ads.
+- **Ad formats we use:**
+  - **Banner ads** at the edge of some screens, kept clear of game controls and buttons.
+  - **Full-screen ads between games**, which we announce on the game over screen before you continue. When the ad comes with a coin reward, an intro screen tells you what you'll get and lets you tap **No thanks** to skip it.
+  - **App open ads**, occasionally, when you come back to the app after a longer break. Never during a game.
+  - **Rewarded ads** that you choose to watch.
 - **Consent:** In regions where it's required (e.g. the EEA/UK), we present Google's UMP consent form before serving personalized ads. On iOS we also request **App Tracking Transparency** permission. If you decline, you'll see **non-personalized** ads (or no ads) instead.
 - **Your control:** You can review or change your ad/privacy choices any time from **Settings → Privacy & ad choices**, and reset your advertising ID in your device settings.
-- **Rewarded ads are optional:** rewarded ads (for coins, a revive, bonuses, etc.) are only shown when you choose to watch them.
+- **Rewarded ads are optional:** rewarded ads (for coins, a revive, bonuses, etc.) only play when you choose to watch them, and the between-games reward ad can always be skipped from its intro screen.
 - More on how Google uses data: https://policies.google.com/technologies/ads
 
 ## Data Storage and Security
@@ -303,8 +308,8 @@ Your information may be transferred to and processed in countries other than you
 ### 3. Advertising
 - Snake Classic displays third-party advertising in the free version of the app through **Google AdMob** (see *Information Sharing and Disclosure → Advertising (Google AdMob)* for full details)
 - Ads may use an advertising ID and device identifiers to serve and measure ads; in the EEA/UK we request consent first, and on iOS we request App Tracking Transparency permission
-- **Rewarded ads are entirely optional** — they only appear when you choose to watch them in exchange for in-game rewards
-- A **Pro subscription (or an active trial) removes all ads**
+- **Rewarded ads are entirely optional**: they play only when you choose to watch them in exchange for in-game rewards, and the between-games reward ad can always be skipped
+- A **Pro subscription removes all ads**
 
 ## Changes to This Privacy Policy
 
@@ -349,10 +354,11 @@ Privacy-related disputes are subject to the dispute resolution procedures outlin
 
 *This Privacy Policy is designed to comply with major app store policies and international privacy regulations including GDPR, CCPA, and other applicable laws.*
 
-**Document Version:** 2.0  
+**Document Version:** 2.1  
 **Compliance:** GDPR, CCPA, COPPA  
 **Language:** English (additional translations available in-app)
 
 ### Version History
+- **2.1 — September 28, 2026:** Clarified the ad formats the app uses (banner, between-games full-screen ads, occasional app open ads, and rewarded ads) and that the between-games reward ad can always be skipped. No change to what data is collected or who it's shared with, so no renewed acceptance is required.
 - **2.0 — May 29, 2026:** Disclosed in-app advertising via Google AdMob (banner, interstitial, and opt-in rewarded ads), UMP/GDPR consent and iOS App Tracking Transparency, and the ad-free Pro/trial experience. Aligned the "Cookies and Tracking → Advertising" section with the new ad integration. Introduced policy versioning so material changes prompt renewed acceptance.
 - **1.0 — January 17, 2025:** Initial privacy policy.

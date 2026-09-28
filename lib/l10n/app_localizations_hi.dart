@@ -1115,6 +1115,28 @@ class AppLocalizationsHi extends AppLocalizations {
   String get goMenu => 'मेनू';
 
   @override
+  String get adIntroTitle => 'बोनस सिक्के!';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'एक छोटा विज्ञापन देखें और +$count सिक्के पाएँ।';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'विज्ञापन $seconds सेकंड में शुरू होगा';
+  }
+
+  @override
+  String get adIntroWatch => 'अभी देखें';
+
+  @override
+  String get adIntroSkip => 'नहीं, धन्यवाद';
+
+  @override
+  String get adBreakStarting => 'विज्ञापन शुरू हो रहा है…';
+
+  @override
   String get storeTitle => 'स्नेक स्टोर';
 
   @override

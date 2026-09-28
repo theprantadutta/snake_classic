@@ -1121,6 +1121,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get goMenu => 'МЕНЮ';
 
   @override
+  String get adIntroTitle => 'Бонусные монеты!';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'Посмотрите короткую рекламу и получите +$count монет.';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'Реклама начнётся через $seconds с';
+  }
+
+  @override
+  String get adIntroWatch => 'Смотреть';
+
+  @override
+  String get adIntroSkip => 'Нет, спасибо';
+
+  @override
+  String get adBreakStarting => 'Сейчас начнётся реклама…';
+
+  @override
   String get storeTitle => 'Магазин Snake';
 
   @override

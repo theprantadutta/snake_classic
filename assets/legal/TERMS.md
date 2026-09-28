@@ -3,7 +3,7 @@
 **Legal Version: 3.0** *(shared acceptance version for our Privacy Policy and Terms of Use — when either document changes, this is bumped and you'll be asked to review and accept again)*  
 **Document Version: 1.0**  
 **Effective Date: July 1, 2026**  
-**Last Updated: July 1, 2026**
+**Last Updated: September 28, 2026**
 
 These Terms of Use ("Terms") form a legal agreement between you ("you" or "user")
 and Snake Classic ("we," "our," or "us") governing your use of the Snake Classic
@@ -86,8 +86,8 @@ and in-app virtual items (such as coins, themes, skins, trails, and power-ups).
 ## 5. Advertising
 
 The free version of the App displays advertising provided by Google AdMob. Pro
-subscribers and users in an active trial do not see ads. Advertising and your
-related choices are described in our Privacy Policy.
+subscribers do not see ads. Advertising and your related choices are described
+in our Privacy Policy.
 
 ## 6. User Conduct
 

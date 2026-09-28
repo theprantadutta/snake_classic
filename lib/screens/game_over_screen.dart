@@ -6,8 +6,11 @@ import 'package:snake_classic/utils/contrast.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
+import 'package:snake_classic/widgets/ads/ad_break_curtain.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
+import 'package:snake_classic/widgets/ads/rewarded_interstitial_intro.dart';
+import 'package:snake_classic/widgets/tap_arm_guard.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -434,7 +437,10 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                 .toList(growable: false);
 
             return Scaffold(
-              bottomNavigationBar: const SnakeBannerAd(),
+              // Separated from PLAY AGAIN / MENU, which sit right above it.
+              // Google's placement policy calls out ads next to play and
+              // navigation buttons by name.
+              bottomNavigationBar: const SnakeBannerAd(topGap: 20),
               body: AppBackground(
                 theme: theme,
                 child: SafeArea(
@@ -1692,10 +1698,35 @@ class _AchievementTile extends StatelessWidget {
 /// Sticky bottom action bar (Play Again / Menu).
 /// Lives outside the scroll view so the CTAs are always reachable.
 /// ─────────────────────────────────────────────────────────────────────
-class _BottomActionBar extends StatelessWidget {
+class _BottomActionBar extends StatefulWidget {
   final GameTheme theme;
   final bool compact;
   const _BottomActionBar({required this.theme, required this.compact});
+
+  @override
+  State<_BottomActionBar> createState() => _BottomActionBarState();
+}
+
+class _BottomActionBarState extends State<_BottomActionBar> {
+  GameTheme get theme => widget.theme;
+  bool get compact => widget.compact;
+
+  // One press at a time. Both buttons used to run the whole ad slot on every
+  // tap, so a double-tap on PLAY AGAIN started it twice. Deliberately not
+  // state: nothing is drawn from it, and a rebuild would re-ask
+  // peekGameOverAd() in the middle of the slot it is guarding.
+  bool _busy = false;
+
+  /// Run [action] for a button press, ignoring presses while one is running.
+  Future<void> _press(Future<void> Function() action) async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      await action();
+    } finally {
+      _busy = false;
+    }
+  }
 
   /// Run the game-over ad slot. AdService picks the format: a rewarded
   /// interstitial when one is loaded (the player earns coins for sitting
@@ -1707,6 +1738,11 @@ class _BottomActionBar extends StatelessWidget {
   ///
   /// [announced] is what this bar told the player when it built; the
   /// slot honours it, so the notice above the buttons is never a lie.
+  ///
+  /// Before anything plays, the confirm step puts up either the rewarded
+  /// interstitial's intro screen (Google-required, with a real skip) or a
+  /// short tap-absorbing "Ad starting…" curtain, so the ad never opens under
+  /// a thumb that is still tapping.
   Future<void> _showGameOverAd(
     BuildContext context, {
     required GameOverAdFormat announced,
@@ -1715,21 +1751,51 @@ class _BottomActionBar extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    await getIt<AdService>().maybeShowGameOverAd(
-      announced: announced,
-      onReward: () {
-        coins.earnCoins(
-          CoinEarningSource.watchedAd,
-          customAmount: AdService.freeCoinsPerAd,
-          itemName: 'Game over bonus',
-        );
-        showRewardToast(
-          messenger,
-          l10n.goAdBonusCoins(AdService.freeCoinsPerAd),
-          icon: Icons.monetization_on,
-        );
-      },
-    );
+    AdBreakCurtain? curtain;
+    try {
+      await getIt<AdService>().maybeShowGameOverAd(
+        announced: announced,
+        confirm: (format) async {
+          if (!context.mounted) return false;
+          if (format == GameOverAdFormat.rewarded) {
+            final watch = await showRewardedInterstitialIntro(
+              context,
+              theme: theme,
+              coins: AdService.freeCoinsPerAd,
+            );
+            if (!watch || !context.mounted) return false;
+            curtain = AdBreakCurtain.show(
+              context,
+              theme: theme,
+              label: l10n.adBreakStarting,
+            );
+            return true;
+          }
+          curtain = AdBreakCurtain.show(
+            context,
+            theme: theme,
+            label: l10n.adBreakStarting,
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 700));
+          return true;
+        },
+        onAdShowing: () => curtain?.dismiss(),
+        onReward: () {
+          coins.earnCoins(
+            CoinEarningSource.watchedAd,
+            customAmount: AdService.freeCoinsPerAd,
+            itemName: 'Game over bonus',
+          );
+          showRewardToast(
+            messenger,
+            l10n.goAdBonusCoins(AdService.freeCoinsPerAd),
+            icon: Icons.monetization_on,
+          );
+        },
+      );
+    } finally {
+      curtain?.dismiss();
+    }
   }
 
   @override
@@ -1768,13 +1834,18 @@ class _BottomActionBar extends StatelessWidget {
             ).gameZoomIn(delay: 550.ms),
             SizedBox(height: compact ? 8 : 10),
           ],
-          Row(
+          // Not live until the buttons have finished arriving: this bar
+          // appears the moment a run ends, often under a thumb that was still
+          // steering, and a stray tap here can start an ad.
+          TapArmGuard(
+            delay: const Duration(milliseconds: 900),
+            child: Row(
         children: [
           Expanded(
             child: GradientButton(
               width: double.infinity,
               height: compact ? 50 : 56,
-              onPressed: () async {
+              onPressed: () => _press(() async {
                 // Frequency-capped + Pro/connectivity-gated inside AdService;
                 // a no-op when an ad shouldn't show. May be a rewarded
                 // interstitial, in which case watching it through pays coins.
@@ -1788,7 +1859,7 @@ class _BottomActionBar extends StatelessWidget {
                 if (!context.mounted) return;
                 context.read<GameCubit>().resetGame();
                 context.go(AppRoutes.game);
-              },
+              }),
               text: l10n.goPlayAgain,
               primaryColor: theme.accentColor,
               secondaryColor: theme.foodColor,
@@ -1800,7 +1871,7 @@ class _BottomActionBar extends StatelessWidget {
             child: GradientButton(
               width: double.infinity,
               height: compact ? 50 : 56,
-              onPressed: () async {
+              onPressed: () => _press(() async {
                 await _showGameOverAd(context, announced: announced);
                 if (!context.mounted) return;
                 // Offered on this path too: a player heading back to the menu
@@ -1811,7 +1882,7 @@ class _BottomActionBar extends StatelessWidget {
                 if (!context.mounted) return;
                 context.read<GameCubit>().backToMenu();
                 context.go(AppRoutes.home);
-              },
+              }),
               text: l10n.goMenu,
               primaryColor: theme.snakeColor.withValues(alpha: 0.85),
               secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
@@ -1820,6 +1891,7 @@ class _BottomActionBar extends StatelessWidget {
             ).gameZoomIn(delay: 700.ms),
           ),
         ],
+            ),
           ),
         ],
       ),

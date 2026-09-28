@@ -1112,6 +1112,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get goMenu => 'القائمة';
 
   @override
+  String get adIntroTitle => 'عملات إضافية!';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'شاهد إعلانًا قصيرًا واحصل على +$count عملة.';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'يبدأ الإعلان خلال $seconds ث';
+  }
+
+  @override
+  String get adIntroWatch => 'شاهد الآن';
+
+  @override
+  String get adIntroSkip => 'لا، شكرًا';
+
+  @override
+  String get adBreakStarting => 'جارٍ بدء الإعلان…';
+
+  @override
   String get storeTitle => 'متجر Snake';
 
   @override

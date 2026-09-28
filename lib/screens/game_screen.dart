@@ -1106,10 +1106,23 @@ class _GameScreenState extends State<GameScreen>
                                 // Still OUTSIDE the SwipeDetector — which wraps
                                 // only the play area above — so it can never eat a
                                 // swipe or take a stray tap meant for the board.
-                                // The spacer keeps it clear of the d-pad's bottom
-                                // row for players using on-screen controls.
-                                const SizedBox(height: 6),
-                                const SnakeBannerAd(),
+                                //
+                                // NOT shown while on-screen controls are on. The
+                                // bar above is then a live touch zone — d-pad,
+                                // turn buttons, or a joystick that starts wherever
+                                // the thumb lands in it — and a 6px spacer was all
+                                // that separated it from the ad. Google's policy
+                                // names ads next to game controls as an
+                                // accidental-click placement. Swipe players steer
+                                // on the board, and their bar is a read-only stats
+                                // strip, so they keep the banner with a clear gap.
+                                BlocBuilder<GameSettingsCubit, GameSettingsState>(
+                                  buildWhen: (previous, current) =>
+                                      previous.dPadEnabled != current.dPadEnabled,
+                                  builder: (context, controls) => controls.dPadEnabled
+                                      ? const SizedBox.shrink()
+                                      : const SnakeBannerAd(topGap: 12),
+                                ),
                               ],
                             ),
                           ),

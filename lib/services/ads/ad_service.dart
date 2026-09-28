@@ -61,14 +61,17 @@ class AdService {
   // — so a quick app-switch (checking a message, a share sheet) never pops an
   // ad — and never more than once per [_appOpenMinGap].
   //
-  // These were 15min / 3min, which combined with the guards below produced 25
-  // impressions a WEEK across the whole user base — the format was effectively
-  // off. 4min / 45s still skips the app-switch case (a share sheet or a glance
-  // at a message is back well inside 45 seconds) while letting a genuine return
-  // actually count.
+  // History: 15min / 3min produced 25 impressions a week, but that was mostly
+  // the `inactive` lifecycle bug (see main.dart), not the thresholds. They were
+  // then cut to 45s / 4min, and the September 2026 AdMob audit showed what
+  // that cost: App Open had the highest CTR in the app (17-30%, most of it
+  // players tapping at a game they had just switched back to) while earning
+  // about $1.30 a month. An ad that ambushes a returning player is the most
+  // disruptive thing the app does, so it now only greets a genuinely new
+  // session — half an hour away — and at most once per half hour.
   static const Duration _appOpenExpiry = Duration(hours: 4);
-  static const Duration _appOpenMinGap = Duration(minutes: 4);
-  static const Duration _appOpenMinAway = Duration(seconds: 45);
+  static const Duration _appOpenMinGap = Duration(minutes: 30);
+  static const Duration _appOpenMinAway = Duration(minutes: 30);
 
   // Backoff for a failed load. AdMob no-fill is routine — especially without
   // mediation — and until this existed a single failure left that format empty
@@ -83,9 +86,13 @@ class AdService {
     Duration(minutes: 10),
   ];
 
-  // Keep two rewarded ads warm, so a second "watch for coins" straight after
-  // the first doesn't meet a disabled button while the replacement loads.
-  static const int _rewardedBufferTarget = 2;
+  // Keep one rewarded ad warm. This was 2, so a second "watch for coins" right
+  // after the first never waited — but it doubled the standing inventory, and
+  // the September 2026 audit showed 91K rewarded requests for 8K impressions
+  // (show rate ~8-11%): the second ad mostly expired unseen on the player's
+  // data plan. Every button goes through [showRewardedOrWait], which already
+  // waits up to [_rewardedOnDemandWait] for the replacement, so one is enough.
+  static const int _rewardedBufferTarget = 1;
 
   // One banner is kept loaded and handed to the next placement that mounts, so
   // the strip fills on its FIRST frame instead of a second or two later. Held
@@ -286,8 +293,7 @@ class AdService {
       timer.cancel();
     }
     _retryTimers.clear();
-    _loadInterstitial();
-    _loadRewardedInterstitial();
+    preloadGameOverAd();
     _loadRewarded();
     _loadAppOpen();
     _loadWarmBanner();
@@ -387,8 +393,7 @@ class AdService {
       _sdkReady = true;
       AppLogger.success('AdService initialized (ads ${adsEnabled ? 'on' : 'off'})');
       if (adsEnabled) {
-        _loadInterstitial();
-        _loadRewardedInterstitial();
+        preloadGameOverAd();
         _loadRewarded();
         _loadAppOpen();
         _loadWarmBanner();
@@ -405,12 +410,19 @@ class AdService {
   }
 
   /// Ask UMP whether ad requests are allowed under the current consent state.
-  /// Fail-open — a failed query never turns ads off.
+  ///
+  /// Fail-CLOSED. Google's rule is to request ads only when `canRequestAds()`
+  /// says so; this used to assume "yes" whenever the query threw, which for a
+  /// player in the EEA/UK could mean serving ads with no consent on record.
+  /// `canRequestAds()` reads consent cached from earlier sessions, so a failed
+  /// network update does NOT land here — only a genuine platform error does,
+  /// and then losing a session of ads is the right trade.
   Future<void> _refreshCanRequestAds() async {
     try {
       _canRequestAds = await ConsentInformation.instance.canRequestAds();
-    } catch (_) {
-      _canRequestAds = true;
+    } catch (e) {
+      AppLogger.warning('UMP canRequestAds failed — ads off this session: $e');
+      _canRequestAds = false;
     }
   }
 
@@ -557,6 +569,9 @@ class AdService {
               'Rewarded interstitial failed to load: ${error.message}');
           _scheduleRetry(
               _kLoadRewardedInterstitial, _loadRewardedInterstitial);
+          // Only now is the plain interstitial worth a request — see
+          // [preloadGameOverAd].
+          _loadInterstitial();
         },
       ),
     );
@@ -570,6 +585,7 @@ class AdService {
   Future<bool> _showRewardedInterstitial({
     required VoidCallback onReward,
     required String placement,
+    VoidCallback? onAdShowing,
   }) async {
     final ad = _rewardedInterstitial;
     if (ad == null) return false;
@@ -592,6 +608,7 @@ class AdService {
     }
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => onAdShowing?.call(),
       onAdDismissedFullScreenContent: (ad) {
         _fullScreenAdShowing = false;
         _lastFullScreenAdMs = DateTime.now().millisecondsSinceEpoch;
@@ -627,13 +644,22 @@ class AdService {
     return done.future;
   }
 
-  /// Warm an interstitial ahead of the moment it might show. Called when a
+  /// Warm the game-over slot ahead of the moment it might show. Called when a
   /// game STARTS: that buys a minute or two of load time before the game-over
   /// where the ad is actually offered, so a cold or failed startup load has
   /// recovered by then instead of being discovered empty at show time.
+  ///
+  /// The rewarded interstitial is the slot's first choice; the plain
+  /// interstitial is only requested when that one is neither loaded nor on
+  /// its way (it failed, and its failure handler asks for the fallback).
+  /// Loading both every game meant the plain one almost never showed —
+  /// September 2026: 19.7K requests for 155 impressions, a 1% show rate —
+  /// so nearly every request was a player's data spent on nothing.
   void preloadGameOverAd() {
     _loadRewardedInterstitial();
-    _loadInterstitial();
+    if (_rewardedInterstitial == null && !_rewardedInterstitialLoading) {
+      _loadInterstitial();
+    }
   }
 
   /// What the game-over slot would do RIGHT NOW, without changing anything.
@@ -681,9 +707,23 @@ class AdService {
   ///
   /// [onReward] is only invoked on the rewarded-interstitial path, and only
   /// when the player actually watched it through.
+  ///
+  /// [confirm] runs after the format is decided and before anything is shown.
+  /// The screen uses it for the two things the ad must never skip:
+  ///  * the rewarded interstitial's intro screen — Google requires one that
+  ///    states the reward, gives the player time to read it, and offers a
+  ///    clear way to skip. Returning `false` is that skip: nothing plays, and
+  ///    the slot counts as used so the offer isn't repeated next game over;
+  ///  * a short tap-absorbing "ad starting" beat before a plain interstitial,
+  ///    so the second half of a double-tap on PLAY AGAIN can't land on the ad.
+  ///
+  /// [onAdShowing] fires once the ad is actually on screen, so that beat can
+  /// be taken down at the right moment.
   Future<bool> maybeShowGameOverAd({
     VoidCallback? onReward,
     GameOverAdFormat? announced,
+    Future<bool> Function(GameOverAdFormat format)? confirm,
+    VoidCallback? onAdShowing,
   }) async {
     if (!adsEnabled) return false;
     final prefs = _prefs;
@@ -706,8 +746,7 @@ class AdService {
 
     if (format == GameOverAdFormat.none) {
       await prefs.setInt(_kGamesSinceInterstitial, games);
-      _loadInterstitial();
-      _loadRewardedInterstitial();
+      preloadGameOverAd();
       return false;
     }
 
@@ -715,9 +754,20 @@ class AdService {
     // as the plain one, so the slot fires at one cadence regardless of which
     // format filled it.
     if (format == GameOverAdFormat.rewarded) {
+      if (confirm != null && !await confirm(format)) {
+        // The player opted out on the intro screen. Honour it completely: no
+        // ad, no substitute, and the slot counts as used — otherwise the very
+        // next game over would ask again.
+        _analytics?.trackRewardedAbandoned('game_over_intro_skipped');
+        await prefs.setInt(_kGamesSinceInterstitial, 0);
+        await prefs.setInt(
+            _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
+        return false;
+      }
       final shown = await _showRewardedInterstitial(
         placement: 'game_over',
         onReward: onReward ?? () {},
+        onAdShowing: onAdShowing,
       );
       if (shown) {
         await prefs.setInt(_kGamesSinceInterstitial, 0);
@@ -733,23 +783,37 @@ class AdService {
       }
     }
 
-    final ad = _interstitial!;
+    // Only reached straight from the decision (not after a failed rewarded
+    // show) when the plain interstitial was the decided format, which is the
+    // one case its confirm step hasn't run yet.
+    if (format == GameOverAdFormat.interstitial &&
+        confirm != null &&
+        !await confirm(format)) {
+      await prefs.setInt(_kGamesSinceInterstitial, games);
+      return false;
+    }
+    final ad = _interstitial;
+    if (ad == null) {
+      await prefs.setInt(_kGamesSinceInterstitial, games);
+      preloadGameOverAd();
+      return false;
+    }
+    _interstitial = null;
     final shown = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => onAdShowing?.call(),
       onAdDismissedFullScreenContent: (ad) {
         _fullScreenAdShowing = false;
         _lastFullScreenAdMs = DateTime.now().millisecondsSinceEpoch;
         ad.dispose();
-        _interstitial = null;
         if (!shown.isCompleted) shown.complete(true);
-        _loadInterstitial();
+        preloadGameOverAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _fullScreenAdShowing = false;
         ad.dispose();
-        _interstitial = null;
         if (!shown.isCompleted) shown.complete(false);
-        _loadInterstitial();
+        preloadGameOverAd();
       },
     );
     _fullScreenAdShowing = true;
@@ -1018,6 +1082,14 @@ class AdService {
   }
 
   void _loadAppOpen() {
+    // A held ad past its 4h expiry can never be shown, but it used to block
+    // this load forever (the null check below) — so after one long break the
+    // format stayed dead until the process died. Drop it and fetch a fresh one.
+    final stale = _appOpenAd;
+    if (stale != null && !_appOpenAvailable) {
+      _appOpenAd = null;
+      stale.dispose();
+    }
     if (!adsEnabled || _appOpenAd != null || _appOpenLoading) return;
     if (!_hasInternet) return;
     _appOpenLoading = true;

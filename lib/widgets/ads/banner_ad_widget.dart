@@ -37,7 +37,14 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 ///   [AdService.rearmListenable] when the device regains internet (or consent
 ///   changes), and this widget starts over.
 class SnakeBannerAd extends StatefulWidget {
-  const SnakeBannerAd({super.key});
+  const SnakeBannerAd({super.key, this.topGap = 0});
+
+  /// Clear space (with a hairline at its foot) between the banner and whatever
+  /// sits above it. Use it where the banner would otherwise touch a button or
+  /// a game control. Google's placement policy forbids ads laid out so that
+  /// taps meant for the app land on them. Part of the reserved footprint, so a
+  /// Pro user, who gets no banner, gets no gap either.
+  final double topGap;
 
   @override
   State<SnakeBannerAd> createState() => _SnakeBannerAdState();
@@ -251,7 +258,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         final ad = _ad;
         final reservedHeight =
             (_adaptiveSize?.height ?? AdSize.banner.height).toDouble();
-        return SafeArea(
+        final banner = SafeArea(
           top: false,
           child: SizedBox(
             width: double.infinity,
@@ -266,6 +273,21 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
                   )
                 : const SizedBox.shrink(),
           ),
+        );
+        if (widget.topGap <= 0) return banner;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: widget.topGap,
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 1,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            banner,
+          ],
         );
       },
     );

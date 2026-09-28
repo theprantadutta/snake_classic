@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/tap_arm_guard.dart';
 import 'package:snake_classic/utils/typography.dart';
 
 /// Time-Attack "out of time" offer shown over the frozen board when the clock
@@ -134,7 +135,10 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
               ),
             ],
           ),
-          child: HudCorners(
+          // The offer lands while the player may still be mid-swipe; a tap
+          // meant for the board must not be taken as "watch an ad".
+          child: TapArmGuard(
+            child: HudCorners(
             color: kRewardGold,
             inset: 10,
             child: Column(
@@ -250,7 +254,7 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
                 ),
               ),
             ],
-          )),
+          ))),
         ),
       ),
     );

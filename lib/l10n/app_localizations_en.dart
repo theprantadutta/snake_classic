@@ -1114,6 +1114,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goMenu => 'MENU';
 
   @override
+  String get adIntroTitle => 'Bonus coins!';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'Watch a short ad and get +$count coins.';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'Ad starts in ${seconds}s';
+  }
+
+  @override
+  String get adIntroWatch => 'Watch now';
+
+  @override
+  String get adIntroSkip => 'No thanks';
+
+  @override
+  String get adBreakStarting => 'Ad starting…';
+
+  @override
   String get storeTitle => 'Snake Store';
 
   @override

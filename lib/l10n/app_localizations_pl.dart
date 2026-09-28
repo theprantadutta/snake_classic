@@ -1121,6 +1121,28 @@ class AppLocalizationsPl extends AppLocalizations {
   String get goMenu => 'MENU';
 
   @override
+  String get adIntroTitle => 'Bonusowe monety!';
+
+  @override
+  String adIntroBody(Object count) {
+    return 'Obejrzyj krótką reklamę i zdobądź +$count monet.';
+  }
+
+  @override
+  String adIntroCountdown(Object seconds) {
+    return 'Reklama za $seconds s';
+  }
+
+  @override
+  String get adIntroWatch => 'Oglądaj teraz';
+
+  @override
+  String get adIntroSkip => 'Nie, dziękuję';
+
+  @override
+  String get adBreakStarting => 'Reklama zaraz się zacznie…';
+
+  @override
   String get storeTitle => 'Sklep Snake';
 
   @override

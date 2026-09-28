@@ -76,7 +76,14 @@ class _LoadingScreenState extends State<LoadingScreen>
   /// to fill, measured from the start of init (the wait overlaps every other
   /// step, so it only extends the screen when the fill is slower than the
   /// rest of startup). Free users only — see [_beginRewardedAdWarmup].
-  static const Duration _rewardedWarmupBudget = Duration(seconds: 8);
+  ///
+  /// Was 8s. Holding a first-time player on a loading screen for up to 8
+  /// seconds so an ad is ready is the wrong trade for an app whose biggest
+  /// loss is players who leave before their first game, and the Free button
+  /// no longer needs it: it goes through showRewardedOrWait, which waits for
+  /// a fill on demand. 2s keeps the common case (fill lands during startup)
+  /// without letting a slow fill hold the door.
+  static const Duration _rewardedWarmupBudget = Duration(seconds: 2);
 
   /// Guards against a double navigation when the watchdog fires at the same
   /// moment init finishes.
