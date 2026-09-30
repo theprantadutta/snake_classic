@@ -1,5 +1,13 @@
 # Snake Classic - Flutter Game Project
 
+## Open in-app issues (TEMPORARY — remove these lines when done)
+
+Found 2026-09-30 while rewriting the Play listing; kept out of the store copy. When all three are fixed, delete this whole section.
+
+1. **Premium power-ups that do nothing are sold and promised.** Only the four basic types (and the Mega variants, which fold into them) activate in play. `PowerUpCubit.typeFromInventoryKey` (`lib/presentation/bloc/power_up/power_up_cubit.dart:230`) maps only `speed_boost` / `invincibility` / `score_multiplier` / `slow_motion`; every exclusive type (Teleport, Size Reducer, Score Shield, Ghost Mode, Magnetic Food, …) returns null, so arming one just logs a warning in `game_cubit.dart` (~line 499) and the docstring at `power_up_cubit.dart:249` admits they are "inert until gameplay logic is wired up". Yet the store sells the **Tactical Power Pack** (12,000 coins) and **Ultimate Power Pack** (25,000 coins) built from them (`lib/models/premium_power_up.dart:525-548`), and the Pro screen promises "5× Teleport, Ghost Mode, Magnetic Food, Score Shield…" every billing cycle (`pbFeatBundleDesc`, `lib/l10n/app_en.arb:1011`). Either implement the effects or stop selling/promising them (bundles, Pro copy in all 9 ARBs, backend `ProductCatalog.PowerUpBundles`).
+2. **Pro screen lists free boards as a Pro perk.** `pbFeatBoards` / `pbFeatBoardsDesc` ("Play on 35x35, 40x40 & 50x50 boards", `app_en.arb:1002-1003`) — every board size is free for everyone. Remove the row from `premium_benefits_screen.dart` and the strings from all ARBs.
+3. **Android guest note mentions Apple sign-in.** `faGuestNote` (`app_en.arb:1054`) says "Sign in with Apple, Google or Email", but the Apple button is hidden on Android (`first_time_auth_screen.dart`). Make the copy platform-aware (separate string or placeholder) in all ARBs.
+
 ## Project Requirements
 
 ### Core Objective
