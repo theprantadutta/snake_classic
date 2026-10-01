@@ -508,6 +508,10 @@ class PowerUpBundle {
     // bundlePrice values MUST match ProductCatalog.PowerUpBundles on the
     // backend — server validates against its own catalog and rejects any
     // tampered request.
+    //
+    // The Tactical and Ultimate packs were retired: they were built from
+    // power-ups that have no in-game effect. Mega variants fold into the
+    // four working types (see PowerUpCubit), so this pack still works.
     PowerUpBundle(
       id: 'mega_pack',
       name: 'Mega Power Pack',
@@ -521,29 +525,6 @@ class PowerUpBundle {
       originalPrice: 11000, // 4 mega power-ups at ~2,750 coins each individually
       bundlePrice: 8000,
       icon: '⚡',
-    ),
-    PowerUpBundle(
-      id: 'tactical_pack',
-      name: 'Tactical Power Pack',
-      description: 'Strategic power-ups for skilled players',
-      powerUps: [
-        PremiumPowerUpType.teleport,
-        PremiumPowerUpType.sizeReducer,
-        PremiumPowerUpType.scoreShield,
-        PremiumPowerUpType.ghostMode,
-      ],
-      originalPrice: 16000,
-      bundlePrice: 12000,
-      icon: '🎯',
-    ),
-    PowerUpBundle(
-      id: 'ultimate_pack',
-      name: 'Ultimate Power Pack',
-      description: 'Every premium power-up available',
-      powerUps: PremiumPowerUpType.values,
-      originalPrice: 35000, // Sum of all individual premium prices
-      bundlePrice: 25000,
-      icon: '👑',
     ),
   ];
 }

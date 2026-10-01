@@ -83,18 +83,18 @@ class PowerUpCubit extends Cubit<PowerUpState> {
       final dao = StorageService().storeDao;
       await _importLegacyPrefsInventory(dao);
       final row = await dao.getPowerUpInventoryRow();
-      emit(state.copyWith(
-        inventory: _decodeInventoryJson(row?.inventoryJson),
-        loading: false,
-      ));
+      final inventory = _decodeInventoryJson(row?.inventoryJson);
+      emit(state.copyWith(inventory: inventory, loading: false));
+      await _writeBackIfNormalised(row?.inventoryJson, inventory);
       // Keep the cubit in lock-step with Drift writes regardless of
       // where they came from — a purchase on this device, or the
       // SyncEngine's cold-start snapshot apply restoring another
       // device's inventory.
       _inventoryWatch ??= dao.watchPowerUpInventoryRow().listen((row) {
-        emit(state.copyWith(
-          inventory: _decodeInventoryJson(row?.inventoryJson),
-        ));
+        final inventory = _decodeInventoryJson(row?.inventoryJson);
+        emit(state.copyWith(inventory: inventory));
+        // A cloud snapshot can still carry legacy keys; convert and push.
+        unawaited(_writeBackIfNormalised(row?.inventoryJson, inventory));
       });
     } catch (e) {
       AppLogger.error('Failed to load power-up inventory', e);
@@ -245,8 +245,7 @@ class PowerUpCubit extends Cubit<PowerUpState> {
   /// Translate a premium power-up enum value to the inventory key the
   /// rest of the app uses. Mega-variants fold back into their basic
   /// counterparts so existing in-game activation handles them; the
-  /// truly exclusive types use their enum name verbatim and are
-  /// inert until gameplay logic is wired up.
+  /// exclusive types (no longer sold) fold into a working type too.
   static String _inventoryKeyForPremium(PremiumPowerUpType type) {
     switch (type) {
       case PremiumPowerUpType.megaSpeedBoost:
@@ -258,7 +257,7 @@ class PowerUpCubit extends Cubit<PowerUpState> {
       case PremiumPowerUpType.megaSlowMotion:
         return 'slow_motion';
       default:
-        return type.name;
+        return normaliseInventoryKey(type.name);
     }
   }
 
@@ -301,11 +300,62 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     final out = <String, int>{};
     raw.forEach((key, value) {
       if (key is String && value is int && value > 0) {
-        out[key] = value;
+        final k = normaliseInventoryKey(key);
+        out[k] = (out[k] ?? 0) + value;
       }
     });
     return out;
   }
+
+  /// Persist the converted inventory when decoding changed it (a legacy
+  /// key was folded into a working one). Goes through
+  /// [StoreDao.savePowerUpInventory], which enqueues the sync outbox row,
+  /// so the backend mirror converges on the converted inventory too.
+  Future<void> _writeBackIfNormalised(String? raw, Map<String, int> decoded) async {
+    if (raw == null || raw.isEmpty) return;
+    Map<String, dynamic> stored;
+    try {
+      final parsed = jsonDecode(raw);
+      if (parsed is! Map<String, dynamic>) return;
+      stored = parsed;
+    } catch (_) {
+      return;
+    }
+    final hasLegacy = stored.keys.any((k) => normaliseInventoryKey(k) != k);
+    if (!hasLegacy) return;
+    AppLogger.info('Converting legacy power-up inventory keys: ${stored.keys.toList()}');
+    await _persistInventory(decoded);
+  }
+
+  /// Inventory keys that no gameplay ever activated, folded into the four
+  /// that work. Past Pro grants, the two retired power-up packs and old
+  /// battle-pass tiers put these into players' inventories; they are
+  /// converted one for one rather than lost. Unknown keys are left alone.
+  static const Map<String, String> legacyInventoryKeys = {
+    'teleport': 'speed_boost',
+    'powerSurge': 'speed_boost',
+    'power_surge': 'speed_boost',
+    'megaSpeedBoost': 'speed_boost',
+    'ghostMode': 'invincibility',
+    'ghost_mode': 'invincibility',
+    'scoreShield': 'invincibility',
+    'score_shield': 'invincibility',
+    'megaInvincibility': 'invincibility',
+    'magneticFood': 'score_multiplier',
+    'magnetic_food': 'score_multiplier',
+    'comboMultiplier': 'score_multiplier',
+    'doubleTrouble': 'score_multiplier',
+    'luckyCharm': 'score_multiplier',
+    'megaScoreMultiplier': 'score_multiplier',
+    'sizeReducer': 'slow_motion',
+    'size_reducer': 'slow_motion',
+    'timeWarp': 'slow_motion',
+    'megaSlowMotion': 'slow_motion',
+  };
+
+  /// The working inventory key for [key] (itself if it already works or
+  /// is unknown).
+  static String normaliseInventoryKey(String key) => legacyInventoryKeys[key] ?? key;
 
   @override
   Future<void> close() async {
