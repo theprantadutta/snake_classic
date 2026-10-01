@@ -1,9 +1,5 @@
 {
   "@@locale": "en",
-  "appTitle": "Snake Classic",
-  "@appTitle": {
-    "description": "App title shown in the OS task switcher. Brand name — keep as-is in every language."
-  },
   "settingsSectionLanguage": "LANGUAGE",
   "@settingsSectionLanguage": {
     "description": "Settings section header for the app language picker. Uppercase like the other section headers."
@@ -20,23 +16,7 @@
   "@commonCancel": {
     "description": "Generic cancel action in dialogs."
   },
-  "mpVictory": "VICTORY!",
-  "@mpVictory": {
-    "description": "Match result dialog title when the player won. Uppercase, celebratory."
-  },
-  "mpDraw": "DRAW",
-  "mpDefeat": "DEFEAT",
-  "mpYou": "You",
-  "@mpYou": {
-    "description": "Label for the local player's own score/snake."
-  },
-  "mpVs": "VS",
-  "@mpVs": {
-    "description": "The 'versus' medallion between the two players. Short — 2-3 characters."
-  },
   "mpOpponent": "Opponent",
-  "mpBackToLobby": "Back to Lobby",
-  "mpPlayAgain": "Play Again",
   "mpTimeUpDraw": "Time's up — dead even!",
   "mpTimeUpYouWon": "Time's up — you had the higher score.",
   "mpTimeUpYouLost": "Time's up — your opponent had the higher score.",
@@ -80,54 +60,14 @@
   "@mpLength": {
     "description": "Stat pill label for the snake's body length. Uppercase, short."
   },
-  "mpSwipe": "Swipe",
-  "@mpSwipe": {
-    "description": "Label on the swipe input indicator."
-  },
   "mpReconnectingInline": "reconnecting…",
   "@mpReconnectingInline": {
     "description": "Small inline status under an opponent who lost connection. Lowercase."
-  },
-  "homePlay": "PLAY",
-  "@homePlay": {
-    "description": "The big main-menu play button. Uppercase, punchy."
-  },
-  "homeHighScore": "HIGH SCORE",
-  "homeArmedPowerUp": "Armed: {name}",
-  "@homeArmedPowerUp": {
-    "description": "Loadout chip when a power-up is pre-loaded for the next game.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "homeLoadoutCount": "Loadout ({count})",
-  "@homeLoadoutCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "puSpeedBoost": "Speed Boost",
   "puInvincibility": "Invincibility",
   "puScoreMultiplier": "Score Multiplier",
   "puSlowMotion": "Slow Motion",
-  "homeTilePro": "PRO",
-  "homeTileStore": "STORE",
-  "homeTileFree": "FREE",
-  "homeTileDaily": "DAILY",
-  "homeTileBattle": "BATTLE",
-  "homeTileEvents": "EVENTS",
-  "homeTileBoard": "BOARD",
-  "homeTileFriends": "FRIENDS",
-  "homeTileCosmetics": "COSMETICS",
-  "homeTileAwards": "AWARDS",
-  "homeTileVersus": "VERSUS",
-  "@homeTileVersus": {
-    "description": "Home grid tile labels — very short, they sit under icons in a fixed-size tile."
-  },
   "homeNoAdReady": "No ad ready just yet — try again in a few seconds.",
   "homeFreeSpeedBoostTitle": "Free Speed Boost",
   "homeFreeSpeedBoostBody": "Watch a short ad to add a free Speed Boost power-up to your loadout. It activates 5 seconds into your next game.",
@@ -135,36 +75,13 @@
   "homeWatchAd": "Watch ad",
   "homeFreeSpeedBoostAdded": "Free Speed Boost added to your loadout!",
   "homeAdNotFinished": "Ad not finished — watch the full ad to earn your reward.",
-  "homePickGameMode": "Pick a Game Mode",
-  "homePickGameModeSubtitle": "You can change this anytime in Settings",
   "homeStartPlaying": "START PLAYING",
-  "homeLoadoutTitle": "Power-Up Loadout",
-  "homeLoadoutSubtitle": "Pre-load one power-up — it activates 5 seconds into your next game.",
-  "homeWatchAdFreeSpeedBoost": "Watch ad — free Speed Boost",
-  "homeNoPowerUps": "You have no power-ups.\nVisit the store to buy some!",
-  "homeOwnedCount": "Owned: {count}",
-  "@homeOwnedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "homeArmed": "ARMED",
-  "homeDone": "DONE",
-  "settingsTitle": "SETTINGS",
-  "settingsBackToGame": "BACK TO GAME",
-  "settingsSectionControls": "CONTROLS",
-  "settingsSectionGameplay": "GAMEPLAY",
-  "settingsSectionAudio": "AUDIO",
   "settingsSectionVisual": "VISUAL",
   "settingsSectionNotifications": "NOTIFICATIONS",
   "settingsSectionUserProfile": "USER PROFILE",
   "settingsSectionHelp": "HELP & TUTORIAL",
   "settingsSectionLegal": "LEGAL",
   "settingsSectionPremium": "PREMIUM FEATURES",
-  "settingsDPadControls": "D-Pad Controls",
-  "settingsDPadSubtitle": "Show on-screen directional buttons during gameplay",
   "settingsSnapMovement": "Snap Movement",
   "settingsSnapMovementSubtitle": "Move cell by cell like the original. Turns land the instant you press.",
   "settingsControlLayout": "Button Layout",
@@ -177,7 +94,6 @@
   "gameTurnControls": "Turn buttons",
   "settingsControlLayoutStick": "Joystick",
   "settingsControlLayoutStickDesc": "Push anywhere in the bar toward where you want to go. Keep pressing to keep steering.",
-  "poLayoutStick": "STICK",
   "gameJoystick": "Joystick",
   "gameJoystickHint": "Push to steer",
   "wtControlOptionsTitle": "Not a swiper?",
@@ -210,29 +126,17 @@
   "settingsMoveSnakeDown": "Move snake down",
   "settingsMoveSnakeLeft": "Move snake left",
   "settingsMoveSnakeRight": "Move snake right",
-  "settingsGameMode": "Game Mode",
   "settingsGameModeLocked": "Complete current game to change game mode",
-  "settingsDifficulty": "Difficulty",
-  "settingsDifficultySubtitle": "Sets how fast the snake starts. Each mode still speeds up as you level.",
   "settingsEasyNote": "Coins, XP and achievements still count on Easy — only high scores and leaderboards are paused.",
   "settingsDifficultyLocked": "Finish your current game to change difficulty.",
-  "settingsCurrentSize": "Current Size",
   "settingsBoardSizeLocked": "Complete current game to change board size",
-  "settingsCurrentDuration": "Current Duration",
   "settingsCrashFeedbackSubtitle": "How long to show crash explanation",
   "settingsScreenShake": "Screen Shake",
   "settingsScreenShakeSubtitle": "Shake the screen on collisions and game events",
-  "settingsVibration": "Vibration",
-  "settingsVibrationSubtitle": "Vibrate on game events and button presses",
-  "settingsSoundEffects": "Sound Effects",
-  "settingsBackgroundMusic": "Background Music",
-  "settingsCurrentTheme": "Current Theme",
   "settingsBrowseThemes": "BROWSE THEMES",
   "settingsSnakeTrail": "Snake Trail Effects",
   "settingsSnakeTrailSubtitle": "Enable particle trails behind the snake",
   "settingsSectionDisplay": "DISPLAY",
-  "settingsSmoothMotion": "Smooth Motion",
-  "settingsSmoothMotionSubtitle": "Use the highest refresh rate this screen supports",
   "settingsDisplayHz": "Hz",
   "settingsDisplayUpTo": "up to {rate} Hz",
   "@settingsDisplayUpTo": {
@@ -376,22 +280,13 @@
   "mpLobbyInviteSent": "🎮 Invite sent to {name}!",
   "mpLobbyInviteFailed": "Could not send the invite — try again",
   "mpLobbyOffline": "You're offline. Multiplayer requires an internet connection.",
-  "mpLobbyDismiss": "DISMISS",
   "mpLobbyGo": "GO!",
   "mpLobbyGetReady": "Get Ready!",
-  "mpLobbyTitle": "MULTIPLAYER",
-  "mpLobbySubtitle": "Play with friends online",
-  "mpLobbyRoomCode": "Room: {code}",
   "mpLobbyRoomCodeCopied": "Room code copied!",
-  "mpLobbyQuickMatch": "QUICK MATCH",
-  "mpLobbyQuickMatchSubtitle": "1v1 Classic — find an opponent automatically",
   "mpLobbyFinding": "FINDING...",
-  "mpLobbyFindMatch": "FIND MATCH",
-  "mpLobbySeconds": "sec",
   "mpLobbySearching": "SEARCHING FOR PLAYERS...",
   "mpLobbyModePlayers": "{mode} • {count, plural, one{{count} Player} other{{count} Players}}",
   "mpLobbyQueuePosition": "Queue Position: {position}",
-  "mpLobbyCancelUpper": "CANCEL",
   "mpLobbyConnectionLostTitle": "CONNECTION LOST",
   "mpLobbyConnectionLostBody": "Your connection dropped while we were searching.\nCheck Wi-Fi or mobile data and try again.",
   "mpLobbyTimedOutTitle": "NO MATCH YET",
@@ -404,26 +299,12 @@
   },
   "mpLobbyGoBack": "GO BACK",
   "mpLobbyTryAgain": "TRY AGAIN",
-  "mpLobbyWinsChip": "{count} W",
-  "mpLobbyLossesChip": "{count} L",
-  "mpLobbyDrawsChip": "{count} D",
-  "mpLobbyWinsLabel": "Wins",
-  "mpLobbyLossesLabel": "Losses",
-  "mpLobbyDrawsLabel": "Draws",
-  "mpLobbyRatingLabel": "Rating",
   "mpLobbyJoinRoom": "JOIN ROOM",
-  "mpLobbyJoinSubtitle": "Enter room code to join",
   "mpLobbyEnterRoomCode": "Enter room code",
-  "mpLobbyCreateRoom": "CREATE ROOM",
-  "mpLobbyCreateSubtitle": "Start a 1v1 room and invite a friend",
-  "mpLobbyPlayersHeader": "PLAYERS ({current}/{max})",
-  "mpLobbyYouBadge": "YOU",
   "mpLobbyWaitingForPlayer": "Waiting for player...",
   "mpLobbyStartGame": "START GAME",
   "mpLobbyWaitingForHost": "Waiting for host to start...",
-  "mpLobbyLeave": "LEAVE",
   "mpLobbyReadyDone": "READY!",
-  "mpLobbyReady": "READY",
   "mpModeClassicDesc": "Traditional Snake battle",
   "mpModeSpeedDesc": "Speed increases over time",
   "mpModeSurvivalDesc": "Last snake standing wins",
@@ -436,72 +317,30 @@
   "goNoAdAvailable": "No ad available right now, try again shortly",
   "goCoinsDoubled": "🎉 Coins doubled — +{count} bonus coins!",
   "goAdBonusCoins": "🎉 +{count} bonus coins for watching!",
-  "goWatchToDouble": "Watch to double your {count} coins",
-  "goRewardClaimLine": "+{coins} coins  •  +{xp} XP",
   "goClaimedTotal": "Claimed {count} coins from daily challenges!",
-  "goRibbonNewHighScore": "NEW HIGH SCORE!",
   "goRibbonTournamentSubmitted": "TOURNAMENT SCORE SUBMITTED!",
   "goRibbonTournamentFailed": "SCORE NOT SUBMITTED — CHECK CONNECTION",
   "goRibbonTournamentSubmitting": "SUBMITTING TOURNAMENT SCORE…",
-  "goVictory": "VICTORY!",
-  "goGameOver": "GAME OVER",
-  "goFinalScore": "FINAL SCORE",
-  "goLevel": "LEVEL",
-  "goBest": "BEST",
-  "goCoinsEarned": "Coins Earned",
-  "goDailyRewardsReady": "DAILY REWARDS READY",
-  "goRewardsSummary": "{count, plural, one{{count} reward} other{{count} rewards}}  •  +{coins} coins  •  +{xp} XP",
-  "goClaimAll": "CLAIM ALL",
-  "goXpAmount": "{xp} XP",
-  "goClaim": "Claim",
-  "goAchievements": "ACHIEVEMENTS",
-  "goRecentlyUnlocked": "Recently Unlocked",
-  "goInProgress": "In Progress",
-  "goPlayAgain": "PLAY AGAIN",
   "goAdNoticeRewarded": "Short ad next · +{count} coins for watching",
   "goAdNoticeInterstitial": "A short ad plays next",
-  "goMenu": "MENU",
-  "adIntroTitle": "Bonus coins!",
-  "adIntroBody": "Watch a short ad and get +{count} coins.",
-  "@adIntroBody": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-  "adIntroCountdown": "Ad starts in {seconds}s",
-  "@adIntroCountdown": {
-    "placeholders": {
-      "seconds": {}
-    }
-  },
-  "adIntroWatch": "Watch now",
-  "adIntroSkip": "No thanks",
   "adBreakStarting": "Ad starting…",
-  "storeTitle": "Snake Store",
   "storeTabPro": "Pro",
   "storeTabCoins": "Coins",
   "storeTabThemes": "Themes",
   "storeTabSkins": "Skins",
   "storeTabTrails": "Trails",
   "storeTabPowerUps": "Power-Ups",
-  "storeYourCoins": "Your Snake Coins",
   "storeBonusMultiplier": "{multiplier}x BONUS",
   "storeSubscribeBeforePromoEnds": "Subscribe before your free Pro ends",
-  "storeChooseYourPlan": "Choose your plan",
-  "storeWhatYouGet": "What you get",
-  "storeProHeroSubtitle": "All premium themes, skins & trails · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium",
   "storeMonthly": "Monthly",
   "storeYearly": "Yearly",
   "storePerMonth": "/month",
   "storePerYear": "/year",
-  "storeSave17": "Save 17%",
   "storeFreeTrialBadge": "{days}-day free trial",
   "storeStartFreeTrial": "Start free trial",
   "storePlanDisplayName": "{title} plan",
   "storeVerifyingEllipsis": "Verifying…",
-  "storeSubscribe": "Subscribe",
   "storeYoureOnFreePro": "You're on free Pro!",
-  "storeYourePro": "You're Pro!",
   "storeFreePro": "Free Pro",
   "storeProMonthly": "Pro Monthly",
   "storeKeepPro": "Keep Pro — Subscribe",
@@ -510,16 +349,6 @@
   "storeEndsInDh": "Ends in {days}d {hours}h",
   "storeEndsInHm": "Ends in {hours}h {minutes}m",
   "storeEndsInM": "Ends in {minutes}m",
-  "storeFeatureExtraLife": "Always-free extra life — revive every game, no ad, no coins",
-  "storeFeatureNoAds": "No ads — play completely ad-free",
-  "storeFeatureThemes": "All 6 premium themes",
-  "storeFeatureSkins": "All 11 premium snake skins",
-  "storeFeatureTrails": "All 11 premium trail effects",
-  "storeFeatureBoards": "Premium board sizes (35×35, 40×40, 50×50)",
-  "storeFeatureCoins": "2× coin earnings",
-  "storeFeaturePowerUps": "5× premium power-ups every cycle",
-  "storeFeatureTournaments": "Bronze + Silver + Gold tournament entries each cycle",
-  "storeFeatureBattlePass": "Battle Pass Premium track every season",
   "storeInitiatingPurchase": "Initiating {name} purchase...",
   "storeSubNotAvailable": "Subscription not available. Please try again later.",
   "storePurchaseFailed": "Purchase failed. Please try again.",
@@ -558,8 +387,6 @@
   "storePillFree": "FREE",
   "storePillActive": "ACTIVE",
   "storePillApply": "APPLY",
-  "storePillEquipped": "EQUIPPED",
-  "storePillEquip": "EQUIP",
   "storeThemeDescClassic": "The original look",
   "storeThemeDescModern": "Clean and minimal",
   "storeThemeDescNeon": "Glowing neon nights",
@@ -637,21 +464,11 @@
   "mpModeSurvivalMode": "Survival Mode",
   "mpModePowerUpMadnessName": "Power-up Madness",
   "commonClose": "Close",
-  "commonViewAll": "View All",
   "commonRetry": "Retry",
-  "pfTitle": "Profile",
   "pfSigningOut": "Signing out...",
-  "pfGuestPlayer": "Guest Player",
-  "pfVerifiedAccount": "Verified Account",
   "pfStatistics": "Statistics",
   "pfReplays": "Replays",
-  "pfAchievements": "Achievements",
   "pfLoadingStats": "Loading stats...",
-  "pfHighScore": "High Score",
-  "pfGamesPlayed": "Games Played",
-  "pfPlayTime": "Play Time",
-  "pfAverageScore": "Average Score",
-  "pfFoodConsumed": "Food Consumed",
   "pfPowerUps": "Power-ups",
   "pfUpgradeTitle": "Upgrade to Google Account",
   "pfUpgradeSubtitle": "Save your progress and sync across devices",
@@ -663,7 +480,6 @@
   "pfBenefitSocialSub": "connect with others",
   "pfSignInGoogle": "Sign in with Google",
   "pfSignInApple": "Sign in with Apple",
-  "pfNoReplays": "No replays yet. Play some games!",
   "pfReplaysSaved": "{count, plural, one{{count} replay saved} other{{count} replays saved}}",
   "pfAccountManagement": "Account Management",
   "pfSignOut": "Sign Out",
@@ -699,16 +515,11 @@
   "stRecentAverage": "Recent Average",
   "stBestRecent": "Best Recent",
   "stConsistency": "Consistency",
-  "stScores": "Scores",
-  "stTrendLine": "Trend Line",
   "stPlayPatterns": "Play Patterns (Last 7 Days)",
   "stWeeklyTime": "Weekly Time",
   "stMostActiveDay": "Most Active Day",
   "stDailyActivity": "Daily Activity",
   "stAchievementProgress": "Achievement Progress",
-  "stViewAllAchievements": "View All Achievements →",
-  "stViewAchievements": "VIEW ACHIEVEMENTS",
-  "stReplaysUpper": "REPLAYS",
   "stResetStatistics": "RESET STATISTICS",
   "stResetTitle": "Reset Statistics?",
   "stResetBody": "This will permanently delete all your game statistics. This action cannot be undone.",
@@ -718,7 +529,6 @@
   "stGood": "Good",
   "stFair": "Fair",
   "stPoor": "Poor",
-  "stNoData": "No data",
   "stNone": "None",
   "stProgressLastGames": "Progress (Last {count, plural, one{{count} Game} other{{count} Games}})",
   "stPercentComplete": "{percent} Complete",
@@ -795,11 +605,9 @@
   "frStatusLine": "Status: \"{status}\"",
   "frRemoveBody": "Remove {name} from your friends list?",
   "frRemove": "Remove",
-  "frLeaderboardTitle": "Friends Leaderboard",
   "frLeaderboardSubtitle": "Compete with your friends",
   "frLoadingLeaderboard": "Loading leaderboard...",
   "frRankBadge": "#{rank}",
-  "frYou": "YOU",
   "frLeaderboardEmptySub": "Add friends to see your private leaderboard!",
   "frAddFriends": "Add Friends",
   "tnTitle": "Tournaments",
@@ -879,19 +687,10 @@
   "tnFreeBronzeAdded": "🎉 Free Bronze tournament entry added!",
   "tnFreeEntryAd": "Free entry (ad)",
   "tnBuyEntry": "Buy {tier} Entry - {price}",
-  "acAll": "All",
-  "acUnlocked": "Unlocked",
   "acLocked": "Locked",
-  "acTotalUpper": "TOTAL",
-  "acUnlockedUpper": "UNLOCKED",
-  "acClaimedUpper": "CLAIMED",
-  "acPendingUpper": "PENDING",
   "acPercentComplete": "{percent}% complete",
-  "acPercentOfUnlocked": "{percent}% of unlocked",
   "acEmpty": "No achievements here",
   "acXpReward": "+{xp} XP",
-  "acUnlockedDate": "Unlocked {date}",
-  "rpTitle": "Game Replays",
   "rpRecent": "Recent",
   "rpBest": "Best",
   "rpCrashes": "Crashes",
@@ -912,45 +711,25 @@
   "rpDelete": "Delete",
   "rpDeleted": "Replay deleted",
   "rpDeleteFailed": "Failed to delete replay",
-  "lbTitle": "Leaderboards",
-  "lbGlobal": "Global",
-  "lbWeekly": "Weekly",
   "lbWeeklySub": "Ranked by your best single-game score this week (resets Sunday)",
-  "lbGlobalSub": "Ranked by your highest single-game score ever",
-  "lbScoreLine": "Score: {score}",
   "lbLoadingGlobal": "Loading global leaderboard...",
   "lbLoadingWeekly": "Loading weekly leaderboard...",
   "lbNoScores": "No scores yet",
-  "lbBeFirst": "Be the first to set a high score!",
   "lbNoWeekly": "No weekly scores yet",
   "lbPlayThisWeek": "Play this week to appear here!",
   "lbAnonymous": "Anonymous",
-  "lbGuestBadge": "GUEST",
   "lbPts": "pts",
-  "lbGamesPlayed": "{count, plural, one{{count} game played} other{{count} games played}}",
   "bpClaimedToast": "{name} claimed!",
-  "bpTitle": "Battle Pass",
-  "bpTitleUpper": "BATTLE PASS",
   "bpLoading": "Loading battle pass...",
-  "bpWatchAdXp": "Watch ad — +50 Battle Pass XP",
   "bpXpEarned": "+50 Battle Pass XP earned!",
-  "bpSeasonEnded": "Season ended",
   "bpHoursLeft": "{hours}h left",
-  "bpDaysLeft": "{days}d left",
-  "bpTierUpper": "TIER",
-  "bpTierMax": " / {max}",
-  "bpSeasonComplete": "Season complete",
   "bpSeasonCompleteUpper": "SEASON COMPLETE",
-  "bpXpProgress": "{xp} / {next} XP to Tier {tier}",
-  "bpPremiumBadge": "PREMIUM",
   "bpSeasonCosmicSerpent": "Cosmic Serpent Season",
   "@bpSeasonCosmicSerpent": {
     "description": "Name of the launch battle-pass season, shown as the screen's page title (uppercased at render). Keyed on the exact English season name because seasons can also arrive from the backend — an unrecognised server season falls through untranslated. Flavour text: translate for feel, not literally."
   },
   "bpUnlockedEverything": "You've unlocked every tier in this season.",
-  "bpComingNext": "COMING NEXT",
   "bpTierN": "Tier {tier}",
-  "bpTiersAway": "{count, plural, one{{count} tier away} other{{count} tiers away}}",
   "bpUnlockWithPro": "UNLOCK WITH PRO",
   "bpAvailableNow": "AVAILABLE NOW",
   "bpTierAbbrev": "T{tier}",
@@ -959,16 +738,12 @@
   "bpSubscribeToClaim": "Subscribe to Pro to claim them.",
   "bpHideTiers": "Hide tiers",
   "bpViewAllTiers": "View all {count} tiers",
-  "bpCollapse": "COLLAPSE",
-  "bpExpand": "EXPAND",
-  "bpNow": "NOW",
   "bpTierUpperN": "TIER {tier}",
   "bpUnlocked": "Unlocked",
   "bpReachTier": "Reach Tier {tier} to unlock",
   "bpBetweenSeasons": "Between Seasons",
   "bpNoSeasonBody": "No Battle Pass is running right now — the next season will start automatically. Check back soon.",
   "bpCheckNewSeason": "Check for new season",
-  "pbActive": "Premium Active!",
   "pbActiveSub": "You have access to all premium features",
   "pbYourPlan": "Your plan",
   "pbPlanMonthly": "Monthly",
@@ -983,40 +758,13 @@
   "pbSwitchedToYearly": "Switched to yearly",
   "pbSwitchedToMonthly": "Monthly starts when this period ends",
   "pbAllUnlocked": "Everything below is yours",
-  "pbKeepProCta": "Keep Pro",
-  "pbHeaderSub": "Unlock everything the game has to offer",
-  "pbMonthlyPlan": "Monthly Plan",
-  "pbYearlyPlan": "Yearly Plan",
-  "pbSave33": "Save 33%",
-  "pbMostPopular": "MOST POPULAR",
-  "pbFeatExtraLife": "Always-Free Extra Life",
-  "pbFeatExtraLifeDesc": "Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game",
-  "pbFeatNoAds": "Remove All Ads",
-  "pbFeatNoAdsDesc": "No banners, no interstitials — play completely ad-free, forever",
-  "pbFeatThemes": "All Premium Themes",
-  "pbFeatThemesDesc": "Crystal, Cyberpunk, Space, Ocean, Desert, Forest",
-  "pbFeatSkins": "All Premium Snake Skins",
-  "pbFeatSkinsDesc": "Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more",
-  "pbFeatTrails": "All Premium Trail Effects",
-  "pbFeatTrailsDesc": "Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more",
-  "pbFeatBoards": "Large Game Boards",
-  "pbFeatBoardsDesc": "Play on 35x35, 40x40 & 50x50 boards",
-  "pbFeatCoins": "2x Coin Rewards",
-  "pbFeatCoinsDesc": "Double Snake Coins from every game",
   "pbFeatLucky": "Lucky Forager — More Special Foods",
   "pbFeatLuckyDesc": "+50% chance to spawn the rare 50-point special food in every game",
   "pbFeatPowerUps": "More In-Game Power-ups",
   "pbFeatPowerUpsDesc": "+30% spawn rate for on-board power-ups during gameplay",
-  "pbFeatBundle": "Premium Power-up Bundle",
-  "pbFeatBundleDesc": "5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle",
   "pbFeatTournament": "Tournament Entries",
   "pbFeatTournamentDesc": "1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle",
-  "pbIncludes": "Premium Includes:",
-  "pbProPerk": "PRO PERK",
-  "pbSubscribeCta": "Subscribe — {price}{period}",
-  "pbReassurance": "No commitment • Cancel anytime • Secure payment",
   "pbNotAvailable": "Premium subscription not available",
-  "eaTitleLink": "Save Your Progress",
   "eaTitleSignIn": "Email Sign-In",
   "eaExplainer": "Add an email and password to your account so you can buy items, restore on reinstall, and sign in from any device.",
   "eaLinkExisting": "Link Existing",
@@ -1046,77 +794,30 @@
   "eaErrAlreadyLinked": "This account is already linked to email/password.",
   "eaErrRecentLogin": "For security, please sign in again before linking.",
   "eaErrGeneric": "Something went wrong. Please try again.",
-  "faWelcome": "Welcome to\nSnake Classic!",
   "faChooseHow": "Choose how you'd like to play:",
   "faSigningIn": "Signing you in...",
   "faSignInEmail": "Sign in with Email",
   "faContinueGuest": "Continue as Guest",
-  "faGuestNote": "Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.",
-  "faPrivacyTerms": "Privacy & Terms",
   "faReviewNote": "Please review our Privacy Policy and Terms of Use before continuing",
   "faAgreeCheckbox": "I have read and agree to the Privacy Policy and Terms of Use",
   "faContinueToSignIn": "Continue to Sign In",
-  "faHeadsUp": "Heads up",
-  "faGuestBullet1": "Guest data is automatically deleted from our servers after 90 days of inactivity.",
-  "faGuestBullet2": "To save your progress permanently and play across devices, sign in with Apple, Google or Email instead.",
-  "faGuestBullet3": "Guest accounts cannot purchase products or subscriptions. Sign in if you want to upgrade to Pro or buy cosmetics.",
-  "faChangedMind": "I changed my mind",
-  "faProceedAnyway": "Proceed anyway",
   "faAppleFailed": "Failed to sign in with Apple. Please try again.",
   "faGoogleFailed": "Failed to sign in with Google. Please try again.",
   "faUnexpected": "An unexpected error occurred. Please try again.",
   "faGuestFailed": "Failed to continue as guest. Please try again.",
   "ldInitializing": "Initializing Snake Classic...",
-  "ldTip1": "Plan two moves ahead — your tail follows wherever the head just went.",
-  "ldTip2": "Bonus food is worth more points, but it disappears fast. Grab it quick!",
-  "ldTip3": "Crashed? Watch a quick ad or spend coins to revive and keep your score.",
-  "ldTip4": "Chain food without pausing to build a combo multiplier.",
-  "ldTip5": "Stuck in a tight spot? Hug the walls to buy yourself a moment.",
-  "ldTip6": "Daily challenges and weekly quests stack up coins fast.",
-  "ldTip7": "Snake Classic Pro unlocks bigger boards and removes all ads.",
-  "ldTip8": "Time Attack rewards speed — and you can watch an ad for +30 seconds.",
-  "ldTip9": "Power-ups stack: arm a shield before squeezing through a gap.",
-  "ldTip10": "Switch themes, skins, and trails anytime in the store for a fresh look.",
   "ldStepCore": "Initializing core systems...",
-  "ldStepCoreSub": "Setting up Server connection",
   "ldStepProfile": "Creating your player profile...",
-  "ldStepProfileSub": "Generating unique username",
   "ldStepPrefs": "Loading your preferences...",
-  "ldStepPrefsSub": "Syncing themes and settings",
   "ldStepCloud": "Syncing with cloud...",
-  "ldStepCloudSub": "Ensuring data is up to date",
   "ldStepGameData": "Loading game data...",
-  "ldStepGameDataSub": "Fetching Game Data",
   "ldStepAudio": "Configuring audio system...",
-  "ldStepAudioSub": "Loading sound effects",
   "ldStepAds": "Warming up rewards...",
-  "ldStepAdsSub": "Getting your free power-up ad ready",
   "ldStepSetup": "Checking setup status...",
-  "ldStepSetupSub": "Almost ready!",
   "ldWelcome": "Welcome!",
-  "ldWelcomeSub": "Choose how to continue",
   "ldReady": "Ready to play!",
-  "ldReadySub": "Welcome back to Snake Classic",
   "ldInitFailed": "Initialization failed: {error}",
   "ldRetrying": "Retrying initialization...",
-  "ldTagline": "PREMIUM SNAKE EXPERIENCE",
-  "ldLoadingUpper": "LOADING",
-  "ldDidYouKnow": "DID YOU KNOW?",
-  "ldGameFeatures": "GAME FEATURES",
-  "ldFeatFps": "60FPS",
-  "ldFeatFpsSub": "Smooth Gameplay",
-  "ldFeatEffects": "EFFECTS",
-  "ldFeatEffectsSub": "Visual Particles",
-  "ldFeatLevels": "LEVELS",
-  "ldFeatLevelsSub": "Progressive Fun",
-  "ldFeatAudio": "AUDIO",
-  "ldFeatAudioSub": "Immersive Sound",
-  "ldFeatScores": "SCORES",
-  "ldFeatScoresSub": "Global Rankings",
-  "ldFeatThemes": "THEMES",
-  "ldFeatThemesSub": "Multiple Styles",
-  "ldDevelopedBy": "DEVELOPED & MAINTAINED BY",
-  "ldDevTagline": "Crafting premium mobile experiences",
   "ldInitFailedUpper": "INITIALIZATION FAILED",
   "ldRetryUpper": "RETRY",
   "pgArena": "Initializing arena...",
@@ -1184,71 +885,21 @@
   "wtNext": "Next",
   "wtSkip": "Skip",
   "wtWaiting": "Waiting...",
-  "hwPlayTitle": "Welcome to Snake Classic!",
-  "hwPlayMsg": "Tap the PLAY button to start a game. Swipe to control your snake and eat food to grow!",
-  "hwCoinsTitle": "Your Coins",
-  "hwCoinsMsg": "Earn coins by playing games, completing challenges, and daily bonuses. Use them in the store!",
   "hwDailyTitle": "Daily Challenges",
   "hwDailyMsg": "Complete daily challenges for bonus coins and rewards. New challenges every day!",
-  "hwStoreTitle": "The Store",
-  "hwStoreMsg": "Buy themes, snake skins, trails, and power-ups with your coins. Unlock Pro for premium boards and exclusive cosmetics.",
-  "hwCosmeticsTitle": "Skins & Trails",
-  "hwCosmeticsMsg": "Customize your snake here. Skins change how the snake itself looks; trails leave a glow behind it. Earn with coins or unlock with Pro.",
-  "hwProfileTitle": "Your Profile",
-  "hwProfileMsg": "Stats, achievements, and high scores live here. Achievements unlock as you hit milestones — some require a specific mode (Classic, Hard, etc.). Sign in to sync across devices.",
-  "hwSettingsTitle": "Settings",
-  "hwSettingsMsg": "Customize your game experience - change themes, controls, audio, and more!",
   "hudScoreUpper": "SCORE",
   "hudScoreSemantics": "Score {value}",
   "hudLevelBadge": "LV{level}",
   "hudTournamentBadge": "TOURNAMENT",
   "hudComboMultiplier": "{multiplier}x",
-  "poPaused": "PAUSED",
-  "poPremium": "Premium",
   "poStore": "Store",
-  "poResume": "RESUME",
-  "poRestart": "RESTART",
-  "poHome": "HOME",
-  "poDPadOn": "D-PAD: ON",
-  "poDPadOff": "D-PAD: OFF",
   "poSnapOn": "SNAP: ON",
   "poSnapOff": "SNAP: OFF",
-  "poLayoutDPad": "D-PAD",
-  "poLayoutTurn": "TURN",
   "updateReadyTitle": "Update ready",
   "updateReadyRestart": "Restart",
   "poUpdateReady": "RESTART TO UPDATE",
-  "poSound": "SOUND",
-  "poMusic": "MUSIC",
   "poHowToPlay": "HOW TO PLAY",
   "poGameGuide": "GAME GUIDE",
-  "poFoodUpper": "FOOD",
-  "poPts10": "10 pts",
-  "poPts25": "25 pts",
-  "poPts50": "50 pts",
-  "poComboUpper": "COMBO",
-  "poBites5": "5 bites",
-  "poBites10": "10 bites",
-  "poBites20": "20 bites",
-  "poComboHint": "The fire chip near your score heats up and pulses on each tier crossing.",
-  "poPowerUpsUpper": "POWER-UPS",
-  "poDur7s": "7s",
-  "poDur6s": "6s",
-  "poDur10s": "10s",
-  "poDur8s": "8s",
-  "poScore2x": "Score 2×",
-  "poPowerUpHint": "The ring around the icon drains as it expires. Timer freezes on pause.",
-  "poCrashUpper": "CRASH",
-  "poCrashHint": "A red shockwave fires at the cell you died on. Self-collision also highlights the body segment you hit in yellow.",
-  "poModesUpper": "MODES",
-  "poModeWallsOn": "walls on",
-  "poModeWallsOff": "walls off",
-  "poModeFastTick": "fast tick",
-  "poModeThreeFoods": "3 foods at once",
-  "poModeThreeLives": "3 lives, ramps up",
-  "poModeThreeMin": "3 min total",
-  "poModeFrequentPowerUps": "frequent power-ups",
-  "poModeDontCross": "don't cross your trail",
   "dcTitle": "Daily Challenges",
   "dcNoChallenges": "No challenges available",
   "dcAllComplete": "All Complete!",
@@ -1270,7 +921,6 @@
   "gbSpeedMax": "MAX",
   "gbLength": "Length",
   "gbSpeed": "Speed",
-  "gbLevel": "Level",
   "rarityCommon": "Common",
   "rarityRare": "Rare",
   "rarityEpic": "Epic",
@@ -1506,10 +1156,6 @@
   "ppuPowerSurge": "Power Surge",
   "bundleMegaPack": "Mega Power Pack",
   "bundleMegaPackDesc": "Enhanced versions of classic power-ups",
-  "bundleTacticalPack": "Tactical Power Pack",
-  "bundleTacticalPackDesc": "Strategic power-ups for skilled players",
-  "bundleUltimatePack": "Ultimate Power Pack",
-  "bundleUltimatePackDesc": "Every premium power-up available",
   "skinClassic": "Classic",
   "skinGolden": "Golden Snake",
   "skinRainbow": "Rainbow Snake",
@@ -1625,8 +1271,6 @@
   "bprTitle": "Player Title",
   "bprAvatar": "Avatar",
   "bprSpecial": "Special Reward",
-  "bprFree": "Free",
-  "bprPremium": "Premium",
   "bprnStarDust": "Star Dust",
   "bprnEnergyPack": "Energy Pack",
   "bprnBronzeEntry": "Bronze Entry",
@@ -1707,7 +1351,6 @@
   "insTip2": "Use edges to create safe spaces",
   "insTip3": "Watch for visual swipe feedback",
   "insTip4": "Practice different difficulty levels",
-  "insBackToGame": "BACK TO GAME",
   "dchClaimedReward": "Claimed {coins} coins and {xp} XP!",
   "@dchClaimedReward": {
     "placeholders": {
@@ -1728,14 +1371,9 @@
       "coins": {}
     }
   },
-  "dchClaimAll": "Claim All",
-  "dchTodaysProgress": "Today's Progress",
-  "dchClaim": "Claim",
-  "dchClaimed": "Claimed",
   "dchAllCompleteTitle": "All Challenges Complete!",
   "dchBonusClaimed": "Bonus reward claimed",
   "dchBonusPending": "Bonus reward pending — claim any challenge",
-  "dchLoading": "Loading challenges...",
   "dchCheckBack": "Check back later for new daily challenges!",
   "dchAbout": "About Daily Challenges",
   "dchAbout1": "New challenges every day at midnight",
@@ -1746,15 +1384,8 @@
   "dchAllBonusDesc": "Completed every daily challenge today.",
   "wqNoQuests": "No weekly quests yet — check back Monday",
   "wqTitle": "Weekly Quests",
-  "wqClaimReward": "Claim Reward",
   "rvNotFound": "Replay not found",
   "rvLoadFailed": "Failed to load replay",
-  "rvTitle": "Replay: {name}",
-  "@rvTitle": {
-    "placeholders": {
-      "name": {}
-    }
-  },
   "rvLoadingTitle": "Loading Replay...",
   "rvLoading": "Loading replay...",
   "rvGoBack": "Go Back",
@@ -1800,7 +1431,6 @@
   "unReserved": "This username is reserved and cannot be used",
   "unTaken": "This username is already taken",
   "unUpdateFailed": "Failed to update username",
-  "pcTitle": "Privacy & Terms Updated",
   "pcVersionLine": "Version {version} · please review and accept to continue",
   "@pcVersionLine": {
     "placeholders": {
@@ -1861,24 +1491,7 @@
     }
   },
   "ssiOffline": "Offline",
-  "rvoContinue": "CONTINUE?",
-  "rvoSubtitlePro": "Thanks for being Pro — here's your free life",
-  "rvoSubtitleTimer": "Revive and keep your score · {seconds}s",
-  "@rvoSubtitleTimer": {
-    "placeholders": {
-      "seconds": {}
-    }
-  },
-  "rvoGetLifePro": "Get Life · Free for Pro",
-  "rvoWatchAd": "Watch ad to revive",
   "rvoLoadingAd": "Loading ad…",
-  "rvoUseCoins": "Use {coins} coins",
-  "@rvoUseCoins": {
-    "placeholders": {
-      "coins": {}
-    }
-  },
-  "rvoNoThanks": "No thanks",
   "tbTimesUp": "TIME'S UP!",
   "tbKeepGoing": "Keep going · {seconds}s",
   "@tbKeepGoing": {
@@ -2035,20 +1648,6 @@
     "placeholders": {
       "h": {},
       "m": {}
-    }
-  },
-  "dchProgressSummary": "{completed} of {total} challenges completed",
-  "@dchProgressSummary": {
-    "placeholders": {
-      "completed": {},
-      "total": {}
-    }
-  },
-  "wqProgressSummary": "{completed} / {total} complete",
-  "@wqProgressSummary": {
-    "placeholders": {
-      "completed": {},
-      "total": {}
     }
   },
   "wqClaimable": "{count} claimable",
@@ -2396,21 +1995,6 @@
   "settingsSectionYourGame": "YOUR GAME",
   "settingsStatisticsSubtitle": "Every run you have played, counted up",
   "settingsReplaysSubtitle": "Watch your saved runs back",
-  "homeTapToPlay": "Tap to play",
-  "homeTileMe": "Me",
-  "dchSectionChallenges": "Challenges",
-  "dchRewardLine": "{coins} coins · {xp} XP",
-  "@dchRewardLine": {
-    "description": "Reward summary on a daily challenge row",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      },
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "updateAvailableTitle": "Update available",
   "updateAvailableBody": "Snake Classic {version} is on the App Store. Update for the latest features and fixes.",
   "updateRequiredTitle": "Update required",
@@ -3383,10 +2967,6 @@
       }
     }
   },
-  "lbSecret": "SECRET",
-  "@lbSecret": {
-    "description": "Hidden achievement"
-  },
   "lbSeasonTitle": "SEASON",
   "@lbSeasonTitle": {
     "description": "Battle pass screen title"
@@ -3787,14 +3367,6 @@
   "@lbPerMonth": {
     "description": "Under the monthly price"
   },
-  "lbPerYear": "per year",
-  "@lbPerYear": {
-    "description": "Under the yearly price"
-  },
-  "lbBestValue": "best value",
-  "@lbBestValue": {
-    "description": "Under the yearly price"
-  },
   "lbGoPro": "GO PRO",
   "@lbGoPro": {
     "description": "Subscribe button"
@@ -3841,17 +3413,9 @@
   "@lbEquipped": {
     "description": "Item in use"
   },
-  "lbOwned": "OWNED",
-  "@lbOwned": {
-    "description": "Item owned"
-  },
   "lbEquip": "EQUIP",
   "@lbEquip": {
     "description": "Equip an owned item"
-  },
-  "lbIncludedWithPro": "INCLUDED WITH PRO",
-  "@lbIncludedWithPro": {
-    "description": "Item unlocked by the subscription"
   },
   "lbSkinTagGolden": "Rich. Famous. A little smug.",
   "@lbSkinTagGolden": {
@@ -3941,14 +3505,6 @@
   "@lbCtrlStickSub": {
     "description": "Control layout subline"
   },
-  "lbSwipeFeel": "SWIPE FEEL",
-  "@lbSwipeFeel": {
-    "description": "Swipe sensitivity setting"
-  },
-  "lbSwipeFeelSub": "lazy ←→ twitchy",
-  "@lbSwipeFeelSub": {
-    "description": "Swipe sensitivity subline"
-  },
   "lbGameplay": "GAMEPLAY",
   "@lbGameplay": {
     "description": "Section label"
@@ -4031,10 +3587,6 @@
   "lbPrivacy": "PRIVACY",
   "@lbPrivacy": {
     "description": "Footer link"
-  },
-  "lbOpenRunSetup": "Run setup",
-  "@lbOpenRunSetup": {
-    "description": "Settings shortcut to the run setup screen"
   },
   "lbVersusTitle": "VERSUS",
   "@lbVersusTitle": {
@@ -4316,10 +3868,6 @@
   "@lbAdBackHint": {
     "description": "Back gesture skips"
   },
-  "lbAdGoProLine": "and never see this screen again.",
-  "@lbAdGoProLine": {
-    "description": "Pro upsell under GO PRO"
-  },
   "lbAdStarting": "AD STARTING…",
   "@lbAdStarting": {
     "description": "Tap-absorbing curtain before a full-screen ad"
@@ -4328,21 +3876,9 @@
   "@lbNoAdNow": {
     "description": "Rewarded ad not filled"
   },
-  "lbOffline": "NO SIGNAL. Single-player still works.",
-  "@lbOffline": {
-    "description": "Offline banner"
-  },
   "lbServerDown": "Our servers bonked. Your progress is safe on this phone.",
   "@lbServerDown": {
     "description": "Server error"
-  },
-  "lbPurchaseFailed": "Purchase didn't go through. You weren't charged.",
-  "@lbPurchaseFailed": {
-    "description": "Purchase failed"
-  },
-  "lbMatchTimeout": "No rival found. The house snake is warming up.",
-  "@lbMatchTimeout": {
-    "description": "Matchmaking timeout"
   },
   "lbHomeVersusSubOffline": "1v1 · real rivals",
   "@lbHomeVersusSubOffline": {

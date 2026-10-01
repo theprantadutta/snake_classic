@@ -10,9 +10,6 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'Snake Classic';
-
-  @override
   String get settingsSectionLanguage => 'IDIOMA';
 
   @override
@@ -26,28 +23,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonCancel => 'Cancelar';
 
   @override
-  String get mpVictory => '¡VICTORIA!';
-
-  @override
-  String get mpDraw => 'EMPATE';
-
-  @override
-  String get mpDefeat => 'DERROTA';
-
-  @override
-  String get mpYou => 'Tú';
-
-  @override
-  String get mpVs => 'VS';
-
-  @override
   String get mpOpponent => 'Oponente';
-
-  @override
-  String get mpBackToLobby => 'Volver al lobby';
-
-  @override
-  String get mpPlayAgain => 'Jugar otra vez';
 
   @override
   String get mpTimeUpDraw => '¡Se acabó el tiempo — empate total!';
@@ -143,26 +119,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mpLength => 'LONGITUD';
 
   @override
-  String get mpSwipe => 'Desliza';
-
-  @override
   String get mpReconnectingInline => 'reconectando…';
-
-  @override
-  String get homePlay => 'JUGAR';
-
-  @override
-  String get homeHighScore => 'RÉCORD';
-
-  @override
-  String homeArmedPowerUp(String name) {
-    return 'Equipado: $name';
-  }
-
-  @override
-  String homeLoadoutCount(int count) {
-    return 'Equipamiento ($count)';
-  }
 
   @override
   String get puSpeedBoost => 'Impulso de Velocidad';
@@ -175,39 +132,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get puSlowMotion => 'Cámara Lenta';
-
-  @override
-  String get homeTilePro => 'PRO';
-
-  @override
-  String get homeTileStore => 'TIENDA';
-
-  @override
-  String get homeTileFree => 'GRATIS';
-
-  @override
-  String get homeTileDaily => 'DIARIO';
-
-  @override
-  String get homeTileBattle => 'BATALLA';
-
-  @override
-  String get homeTileEvents => 'EVENTOS';
-
-  @override
-  String get homeTileBoard => 'RANKING';
-
-  @override
-  String get homeTileFriends => 'AMIGOS';
-
-  @override
-  String get homeTileCosmetics => 'COSMÉTICOS';
-
-  @override
-  String get homeTileAwards => 'PREMIOS';
-
-  @override
-  String get homeTileVersus => 'VERSUS';
 
   @override
   String get homeNoAdReady =>
@@ -235,55 +159,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Anuncio incompleto — míralo entero para ganar tu recompensa.';
 
   @override
-  String get homePickGameMode => 'Elige un modo de juego';
-
-  @override
-  String get homePickGameModeSubtitle =>
-      'Puedes cambiarlo en Ajustes cuando quieras';
-
-  @override
   String get homeStartPlaying => 'EMPEZAR A JUGAR';
-
-  @override
-  String get homeLoadoutTitle => 'Equipamiento de potenciadores';
-
-  @override
-  String get homeLoadoutSubtitle =>
-      'Precarga un potenciador — se activa 5 segundos después de empezar tu próxima partida.';
-
-  @override
-  String get homeWatchAdFreeSpeedBoost =>
-      'Ver anuncio — Impulso de Velocidad gratis';
-
-  @override
-  String get homeNoPowerUps =>
-      'No tienes potenciadores.\n¡Visita la tienda para comprar!';
-
-  @override
-  String homeOwnedCount(int count) {
-    return 'Tienes: $count';
-  }
-
-  @override
-  String get homeArmed => 'EQUIPADO';
-
-  @override
-  String get homeDone => 'LISTO';
-
-  @override
-  String get settingsTitle => 'AJUSTES';
-
-  @override
-  String get settingsBackToGame => 'VOLVER AL JUEGO';
-
-  @override
-  String get settingsSectionControls => 'CONTROLES';
-
-  @override
-  String get settingsSectionGameplay => 'JUGABILIDAD';
-
-  @override
-  String get settingsSectionAudio => 'AUDIO';
 
   @override
   String get settingsSectionVisual => 'VISUAL';
@@ -302,13 +178,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsSectionPremium => 'FUNCIONES PREMIUM';
-
-  @override
-  String get settingsDPadControls => 'Controles de cruceta';
-
-  @override
-  String get settingsDPadSubtitle =>
-      'Mostrar botones direccionales en pantalla durante el juego';
 
   @override
   String get settingsSnapMovement => 'Movimiento por casillas';
@@ -349,9 +218,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsControlLayoutStickDesc =>
       'Empuja en cualquier parte de la barra hacia donde quieras ir. Mantén pulsado para seguir girando.';
-
-  @override
-  String get poLayoutStick => 'STICK';
 
   @override
   String get gameJoystick => 'Joystick';
@@ -456,18 +322,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsMoveSnakeRight => 'Mover la serpiente a la derecha';
 
   @override
-  String get settingsGameMode => 'Modo de juego';
-
-  @override
   String get settingsGameModeLocked =>
       'Completa la partida actual para cambiar el modo';
-
-  @override
-  String get settingsDifficulty => 'Dificultad';
-
-  @override
-  String get settingsDifficultySubtitle =>
-      'Define la velocidad inicial de la serpiente. Cada modo sigue acelerando al subir de nivel.';
 
   @override
   String get settingsEasyNote =>
@@ -478,14 +334,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Termina la partida actual para cambiar la dificultad.';
 
   @override
-  String get settingsCurrentSize => 'Tamaño actual';
-
-  @override
   String get settingsBoardSizeLocked =>
       'Completa la partida actual para cambiar el tamaño del tablero';
-
-  @override
-  String get settingsCurrentDuration => 'Duración actual';
 
   @override
   String get settingsCrashFeedbackSubtitle =>
@@ -499,22 +349,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sacudir la pantalla en choques y eventos del juego';
 
   @override
-  String get settingsVibration => 'Vibración';
-
-  @override
-  String get settingsVibrationSubtitle =>
-      'Vibrar en eventos del juego y al pulsar botones';
-
-  @override
-  String get settingsSoundEffects => 'Efectos de sonido';
-
-  @override
-  String get settingsBackgroundMusic => 'Música de fondo';
-
-  @override
-  String get settingsCurrentTheme => 'Tema actual';
-
-  @override
   String get settingsBrowseThemes => 'VER TEMAS';
 
   @override
@@ -526,13 +360,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsSectionDisplay => 'PANTALLA';
-
-  @override
-  String get settingsSmoothMotion => 'Movimiento fluido';
-
-  @override
-  String get settingsSmoothMotionSubtitle =>
-      'Usa la frecuencia de actualización más alta que admita esta pantalla';
 
   @override
   String get settingsDisplayHz => 'Hz';
@@ -830,43 +657,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'Estás sin conexión. El multijugador requiere internet.';
 
   @override
-  String get mpLobbyDismiss => 'CERRAR';
-
-  @override
   String get mpLobbyGo => '¡YA!';
 
   @override
   String get mpLobbyGetReady => '¡Prepárate!';
 
   @override
-  String get mpLobbyTitle => 'MULTIJUGADOR';
-
-  @override
-  String get mpLobbySubtitle => 'Juega online con amigos';
-
-  @override
-  String mpLobbyRoomCode(Object code) {
-    return 'Sala: $code';
-  }
-
-  @override
   String get mpLobbyRoomCodeCopied => '¡Código de sala copiado!';
 
   @override
-  String get mpLobbyQuickMatch => 'PARTIDA RÁPIDA';
-
-  @override
-  String get mpLobbyQuickMatchSubtitle =>
-      '1v1 Clásico — encuentra un oponente automáticamente';
-
-  @override
   String get mpLobbyFinding => 'BUSCANDO...';
-
-  @override
-  String get mpLobbyFindMatch => 'BUSCAR PARTIDA';
-
-  @override
-  String get mpLobbySeconds => 'seg';
 
   @override
   String get mpLobbySearching => 'BUSCANDO JUGADORES...';
@@ -886,9 +686,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String mpLobbyQueuePosition(Object position) {
     return 'Posición en la cola: $position';
   }
-
-  @override
-  String get mpLobbyCancelUpper => 'CANCELAR';
 
   @override
   String get mpLobbyConnectionLostTitle => 'CONEXIÓN PERDIDA';
@@ -922,54 +719,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mpLobbyTryAgain => 'REINTENTAR';
 
   @override
-  String mpLobbyWinsChip(Object count) {
-    return '$count V';
-  }
-
-  @override
-  String mpLobbyLossesChip(Object count) {
-    return '$count D';
-  }
-
-  @override
-  String mpLobbyDrawsChip(Object count) {
-    return '$count E';
-  }
-
-  @override
-  String get mpLobbyWinsLabel => 'Victorias';
-
-  @override
-  String get mpLobbyLossesLabel => 'Derrotas';
-
-  @override
-  String get mpLobbyDrawsLabel => 'Empates';
-
-  @override
-  String get mpLobbyRatingLabel => 'Puntos';
-
-  @override
   String get mpLobbyJoinRoom => 'UNIRSE A SALA';
 
   @override
-  String get mpLobbyJoinSubtitle => 'Introduce el código de sala para unirte';
-
-  @override
   String get mpLobbyEnterRoomCode => 'Introduce el código de sala';
-
-  @override
-  String get mpLobbyCreateRoom => 'CREAR SALA';
-
-  @override
-  String get mpLobbyCreateSubtitle => 'Crea una sala 1v1 e invita a un amigo';
-
-  @override
-  String mpLobbyPlayersHeader(Object current, Object max) {
-    return 'JUGADORES ($current/$max)';
-  }
-
-  @override
-  String get mpLobbyYouBadge => 'TÚ';
 
   @override
   String get mpLobbyWaitingForPlayer => 'Esperando jugador...';
@@ -981,13 +734,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mpLobbyWaitingForHost => 'Esperando a que el anfitrión empiece...';
 
   @override
-  String get mpLobbyLeave => 'SALIR';
-
-  @override
   String get mpLobbyReadyDone => '¡LISTO!';
-
-  @override
-  String get mpLobbyReady => 'LISTO';
 
   @override
   String get mpModeClassicDesc => 'Batalla de serpientes tradicional';
@@ -1031,22 +778,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String goWatchToDouble(Object count) {
-    return 'Mira un anuncio para duplicar tus $count monedas';
-  }
-
-  @override
-  String goRewardClaimLine(Object coins, Object xp) {
-    return '+$coins monedas  •  +$xp XP';
-  }
-
-  @override
   String goClaimedTotal(Object count) {
     return '¡Reclamaste $count monedas de los desafíos diarios!';
   }
-
-  @override
-  String get goRibbonNewHighScore => '¡NUEVO RÉCORD!';
 
   @override
   String get goRibbonTournamentSubmitted => '¡PUNTUACIÓN DE TORNEO ENVIADA!';
@@ -1059,61 +793,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get goRibbonTournamentSubmitting => 'ENVIANDO PUNTUACIÓN DE TORNEO…';
 
   @override
-  String get goVictory => '¡VICTORIA!';
-
-  @override
-  String get goGameOver => 'FIN DEL JUEGO';
-
-  @override
-  String get goFinalScore => 'PUNTUACIÓN FINAL';
-
-  @override
-  String get goLevel => 'NIVEL';
-
-  @override
-  String get goBest => 'RÉCORD';
-
-  @override
-  String get goCoinsEarned => 'Monedas ganadas';
-
-  @override
-  String get goDailyRewardsReady => 'RECOMPENSAS DIARIAS LISTAS';
-
-  @override
-  String goRewardsSummary(Object coins, num count, Object xp) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count recompensas',
-      one: '$count recompensa',
-    );
-    return '$_temp0  •  +$coins monedas  •  +$xp XP';
-  }
-
-  @override
-  String get goClaimAll => 'RECLAMAR TODO';
-
-  @override
-  String goXpAmount(Object xp) {
-    return '$xp XP';
-  }
-
-  @override
-  String get goClaim => 'Reclamar';
-
-  @override
-  String get goAchievements => 'LOGROS';
-
-  @override
-  String get goRecentlyUnlocked => 'Desbloqueados recientemente';
-
-  @override
-  String get goInProgress => 'En progreso';
-
-  @override
-  String get goPlayAgain => 'JUGAR OTRA VEZ';
-
-  @override
   String goAdNoticeRewarded(Object count) {
     return 'Anuncio breve a continuación · +$count monedas por verlo';
   }
@@ -1123,32 +802,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'A continuación se reproduce un anuncio breve';
 
   @override
-  String get goMenu => 'MENÚ';
-
-  @override
-  String get adIntroTitle => '¡Monedas extra!';
-
-  @override
-  String adIntroBody(Object count) {
-    return 'Mira un anuncio breve y consigue +$count monedas.';
-  }
-
-  @override
-  String adIntroCountdown(Object seconds) {
-    return 'El anuncio empieza en $seconds s';
-  }
-
-  @override
-  String get adIntroWatch => 'Ver ahora';
-
-  @override
-  String get adIntroSkip => 'No, gracias';
-
-  @override
   String get adBreakStarting => 'Empieza el anuncio…';
-
-  @override
-  String get storeTitle => 'Tienda Snake';
 
   @override
   String get storeTabPro => 'Pro';
@@ -1169,9 +823,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get storeTabPowerUps => 'Potenciadores';
 
   @override
-  String get storeYourCoins => 'Tus Monedas Snake';
-
-  @override
   String storeBonusMultiplier(Object multiplier) {
     return 'BONO ${multiplier}x';
   }
@@ -1179,16 +830,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get storeSubscribeBeforePromoEnds =>
       'Suscríbete antes de que acabe tu Pro gratis';
-
-  @override
-  String get storeChooseYourPlan => 'Elige tu plan';
-
-  @override
-  String get storeWhatYouGet => 'Lo que obtienes';
-
-  @override
-  String get storeProHeroSubtitle =>
-      'Todos los temas, aspectos y estelas premium · tableros grandes · 2× monedas · potenciadores premium · entradas de torneo · Pase de Batalla Premium';
 
   @override
   String get storeMonthly => 'Mensual';
@@ -1201,9 +842,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get storePerYear => '/año';
-
-  @override
-  String get storeSave17 => 'Ahorra un 17%';
 
   @override
   String storeFreeTrialBadge(Object days) {
@@ -1222,13 +860,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get storeVerifyingEllipsis => 'Verificando…';
 
   @override
-  String get storeSubscribe => 'Suscribirse';
-
-  @override
   String get storeYoureOnFreePro => '¡Tienes Pro gratis!';
-
-  @override
-  String get storeYourePro => '¡Eres Pro!';
 
   @override
   String get storeFreePro => 'Pro gratis';
@@ -1259,40 +891,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String storeEndsInM(Object minutes) {
     return 'Termina en ${minutes}min';
   }
-
-  @override
-  String get storeFeatureExtraLife =>
-      'Vida extra siempre gratis — revive en cada partida, sin anuncio, sin monedas';
-
-  @override
-  String get storeFeatureNoAds =>
-      'Sin anuncios — juega totalmente libre de publicidad';
-
-  @override
-  String get storeFeatureThemes => 'Los 6 temas premium';
-
-  @override
-  String get storeFeatureSkins => 'Los 11 aspectos premium';
-
-  @override
-  String get storeFeatureTrails => 'Las 11 estelas premium';
-
-  @override
-  String get storeFeatureBoards => 'Tableros premium (35×35, 40×40, 50×50)';
-
-  @override
-  String get storeFeatureCoins => 'Ganancia de monedas 2×';
-
-  @override
-  String get storeFeaturePowerUps => '5× potenciadores premium por ciclo';
-
-  @override
-  String get storeFeatureTournaments =>
-      'Entradas de torneo Bronce + Plata + Oro por ciclo';
-
-  @override
-  String get storeFeatureBattlePass =>
-      'Vía Premium del Pase de Batalla cada temporada';
 
   @override
   String storeInitiatingPurchase(Object name) {
@@ -1428,12 +1026,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get storePillApply => 'APLICAR';
-
-  @override
-  String get storePillEquipped => 'EQUIPADO';
-
-  @override
-  String get storePillEquip => 'EQUIPAR';
 
   @override
   String get storeThemeDescClassic => 'El aspecto original';
@@ -1700,22 +1292,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonClose => 'Cerrar';
 
   @override
-  String get commonViewAll => 'Ver todo';
-
-  @override
   String get commonRetry => 'Reintentar';
 
   @override
-  String get pfTitle => 'Perfil';
-
-  @override
   String get pfSigningOut => 'Cerrando sesión...';
-
-  @override
-  String get pfGuestPlayer => 'Jugador invitado';
-
-  @override
-  String get pfVerifiedAccount => 'Cuenta verificada';
 
   @override
   String get pfStatistics => 'Estadísticas';
@@ -1724,25 +1304,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pfReplays => 'Repeticiones';
 
   @override
-  String get pfAchievements => 'Logros';
-
-  @override
   String get pfLoadingStats => 'Cargando estadísticas...';
-
-  @override
-  String get pfHighScore => 'Récord';
-
-  @override
-  String get pfGamesPlayed => 'Partidas jugadas';
-
-  @override
-  String get pfPlayTime => 'Tiempo de juego';
-
-  @override
-  String get pfAverageScore => 'Puntuación media';
-
-  @override
-  String get pfFoodConsumed => 'Comida consumida';
 
   @override
   String get pfPowerUps => 'Potenciadores';
@@ -1777,9 +1339,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pfSignInApple => 'Iniciar sesión con Apple';
-
-  @override
-  String get pfNoReplays => 'Aún no hay repeticiones. ¡Juega algunas partidas!';
 
   @override
   String pfReplaysSaved(num count) {
@@ -1903,12 +1462,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get stConsistency => 'Consistencia';
 
   @override
-  String get stScores => 'Puntuaciones';
-
-  @override
-  String get stTrendLine => 'Línea de tendencia';
-
-  @override
   String get stPlayPatterns => 'Patrones de juego (últimos 7 días)';
 
   @override
@@ -1922,15 +1475,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stAchievementProgress => 'Progreso de logros';
-
-  @override
-  String get stViewAllAchievements => 'Ver todos los logros →';
-
-  @override
-  String get stViewAchievements => 'VER LOGROS';
-
-  @override
-  String get stReplaysUpper => 'REPETICIONES';
 
   @override
   String get stResetStatistics => 'RESTABLECER ESTADÍSTICAS';
@@ -1959,9 +1503,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get stPoor => 'Flojo';
-
-  @override
-  String get stNoData => 'Sin datos';
 
   @override
   String get stNone => 'Ninguno';
@@ -2264,9 +1805,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get frRemove => 'Eliminar';
 
   @override
-  String get frLeaderboardTitle => 'Clasificación de amigos';
-
-  @override
   String get frLeaderboardSubtitle => 'Compite con tus amigos';
 
   @override
@@ -2276,9 +1814,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String frRankBadge(Object rank) {
     return 'n.º $rank';
   }
-
-  @override
-  String get frYou => 'TÚ';
 
   @override
   String get frLeaderboardEmptySub =>
@@ -2567,34 +2102,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get acAll => 'Todos';
-
-  @override
-  String get acUnlocked => 'Desbloqueados';
-
-  @override
   String get acLocked => 'Bloqueados';
-
-  @override
-  String get acTotalUpper => 'TOTAL';
-
-  @override
-  String get acUnlockedUpper => 'DESBLOQUEADOS';
-
-  @override
-  String get acClaimedUpper => 'RECLAMADOS';
-
-  @override
-  String get acPendingUpper => 'PENDIENTES';
 
   @override
   String acPercentComplete(Object percent) {
     return '$percent% completado';
-  }
-
-  @override
-  String acPercentOfUnlocked(Object percent) {
-    return '$percent% de los desbloqueados';
   }
 
   @override
@@ -2604,14 +2116,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String acXpReward(Object xp) {
     return '+$xp XP';
   }
-
-  @override
-  String acUnlockedDate(Object date) {
-    return 'Desbloqueado $date';
-  }
-
-  @override
-  String get rpTitle => 'Repeticiones';
 
   @override
   String get rpRecent => 'Recientes';
@@ -2676,25 +2180,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rpDeleteFailed => 'No se pudo eliminar la repetición';
 
   @override
-  String get lbTitle => 'Clasificaciones';
-
-  @override
-  String get lbGlobal => 'Global';
-
-  @override
-  String get lbWeekly => 'Semanal';
-
-  @override
   String get lbWeeklySub =>
       'Según tu mejor puntuación de la semana (se reinicia el domingo)';
-
-  @override
-  String get lbGlobalSub => 'Según tu puntuación más alta de todos los tiempos';
-
-  @override
-  String lbScoreLine(Object score) {
-    return 'Puntos: $score';
-  }
 
   @override
   String get lbLoadingGlobal => 'Cargando clasificación global...';
@@ -2706,9 +2193,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get lbNoScores => 'Aún no hay puntuaciones';
 
   @override
-  String get lbBeFirst => '¡Sé el primero en marcar un récord!';
-
-  @override
   String get lbNoWeekly => 'Sin puntuaciones esta semana';
 
   @override
@@ -2718,21 +2202,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get lbAnonymous => 'Anónimo';
 
   @override
-  String get lbGuestBadge => 'INVITADO';
-
-  @override
   String get lbPts => 'pts';
-
-  @override
-  String lbGamesPlayed(num count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count partidas jugadas',
-      one: '$count partida jugada',
-    );
-    return '$_temp0';
-  }
 
   @override
   String bpClaimedToast(Object name) {
@@ -2740,22 +2210,10 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get bpTitle => 'Pase de Batalla';
-
-  @override
-  String get bpTitleUpper => 'PASE DE BATALLA';
-
-  @override
   String get bpLoading => 'Cargando pase de batalla...';
 
   @override
-  String get bpWatchAdXp => 'Ver anuncio — +50 XP del Pase';
-
-  @override
   String get bpXpEarned => '¡+50 XP del Pase de Batalla!';
-
-  @override
-  String get bpSeasonEnded => 'Temporada terminada';
 
   @override
   String bpHoursLeft(Object hours) {
@@ -2763,31 +2221,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String bpDaysLeft(Object days) {
-    return '${days}d restantes';
-  }
-
-  @override
-  String get bpTierUpper => 'NIVEL';
-
-  @override
-  String bpTierMax(Object max) {
-    return ' / $max';
-  }
-
-  @override
-  String get bpSeasonComplete => 'Temporada completa';
-
-  @override
   String get bpSeasonCompleteUpper => 'TEMPORADA COMPLETA';
-
-  @override
-  String bpXpProgress(Object next, Object tier, Object xp) {
-    return '$xp / $next XP para el nivel $tier';
-  }
-
-  @override
-  String get bpPremiumBadge => 'PREMIUM';
 
   @override
   String get bpSeasonCosmicSerpent => 'Temporada Serpiente Cósmica';
@@ -2797,22 +2231,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Has desbloqueado todos los niveles de esta temporada.';
 
   @override
-  String get bpComingNext => 'A CONTINUACIÓN';
-
-  @override
   String bpTierN(Object tier) {
     return 'Nivel $tier';
-  }
-
-  @override
-  String bpTiersAway(num count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'a $count niveles',
-      one: 'a $count nivel',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -2844,15 +2264,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get bpCollapse => 'CONTRAER';
-
-  @override
-  String get bpExpand => 'EXPANDIR';
-
-  @override
-  String get bpNow => 'AHORA';
-
-  @override
   String bpTierUpperN(Object tier) {
     return 'NIVEL $tier';
   }
@@ -2874,9 +2285,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get bpCheckNewSeason => 'Buscar nueva temporada';
-
-  @override
-  String get pbActive => '¡Premium activo!';
 
   @override
   String get pbActiveSub => 'Tienes acceso a todas las funciones premium';
@@ -2926,71 +2334,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pbAllUnlocked => 'Todo esto es tuyo';
 
   @override
-  String get pbKeepProCta => 'Mantener Pro';
-
-  @override
-  String get pbHeaderSub => 'Desbloquea todo lo que ofrece el juego';
-
-  @override
-  String get pbMonthlyPlan => 'Plan mensual';
-
-  @override
-  String get pbYearlyPlan => 'Plan anual';
-
-  @override
-  String get pbSave33 => 'Ahorra un 33%';
-
-  @override
-  String get pbMostPopular => 'MÁS POPULAR';
-
-  @override
-  String get pbFeatExtraLife => 'Vida extra siempre gratis';
-
-  @override
-  String get pbFeatExtraLifeDesc =>
-      'Choca y sigue — los miembros Pro reviven al instante gratis, sin anuncio y sin monedas, una vez por partida';
-
-  @override
-  String get pbFeatNoAds => 'Elimina todos los anuncios';
-
-  @override
-  String get pbFeatNoAdsDesc =>
-      'Sin banners ni intersticiales — juega sin anuncios, para siempre';
-
-  @override
-  String get pbFeatThemes => 'Todos los temas premium';
-
-  @override
-  String get pbFeatThemesDesc =>
-      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
-
-  @override
-  String get pbFeatSkins => 'Todos los aspectos premium';
-
-  @override
-  String get pbFeatSkinsDesc =>
-      'Golden, Galaxy, Dragon, Electric, Fire, Ice y 5 más';
-
-  @override
-  String get pbFeatTrails => 'Todas las estelas premium';
-
-  @override
-  String get pbFeatTrailsDesc =>
-      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal y 5 más';
-
-  @override
-  String get pbFeatBoards => 'Tableros grandes';
-
-  @override
-  String get pbFeatBoardsDesc => 'Juega en tableros de 35x35, 40x40 y 50x50';
-
-  @override
-  String get pbFeatCoins => 'Recompensas de monedas 2x';
-
-  @override
-  String get pbFeatCoinsDesc => 'El doble de Monedas Snake en cada partida';
-
-  @override
   String get pbFeatLucky => 'Suerte — más comidas especiales';
 
   @override
@@ -3005,13 +2348,6 @@ class AppLocalizationsEs extends AppLocalizations {
       '+30% de aparición de potenciadores en el tablero';
 
   @override
-  String get pbFeatBundle => 'Pack de potenciadores premium';
-
-  @override
-  String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield y Mega Invincibility por ciclo de facturación';
-
-  @override
   String get pbFeatTournament => 'Entradas de torneo';
 
   @override
@@ -3019,25 +2355,7 @@ class AppLocalizationsEs extends AppLocalizations {
       '1× Bronce + 1× Plata + 1× Oro por ciclo de facturación';
 
   @override
-  String get pbIncludes => 'Premium incluye:';
-
-  @override
-  String get pbProPerk => 'VENTAJA PRO';
-
-  @override
-  String pbSubscribeCta(Object period, Object price) {
-    return 'Suscribirse — $price$period';
-  }
-
-  @override
-  String get pbReassurance =>
-      'Sin compromiso • Cancela cuando quieras • Pago seguro';
-
-  @override
   String get pbNotAvailable => 'Suscripción premium no disponible';
-
-  @override
-  String get eaTitleLink => 'Guarda tu progreso';
 
   @override
   String get eaTitleSignIn => 'Acceso con correo';
@@ -3139,9 +2457,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get eaErrGeneric => 'Algo salió mal. Inténtalo de nuevo.';
 
   @override
-  String get faWelcome => '¡Bienvenido a\nSnake Classic!';
-
-  @override
   String get faChooseHow => 'Elige cómo quieres jugar:';
 
   @override
@@ -3154,13 +2469,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get faContinueGuest => 'Continuar como invitado';
 
   @override
-  String get faGuestNote =>
-      'Los invitados pueden jugar y guardar el progreso localmente, pero no comprar. Inicia sesión con Apple, Google o correo cuando quieras suscribirte o comprar.';
-
-  @override
-  String get faPrivacyTerms => 'Privacidad y Términos';
-
-  @override
   String get faReviewNote =>
       'Revisa nuestra Política de Privacidad y los Términos de Uso antes de continuar';
 
@@ -3170,27 +2478,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get faContinueToSignIn => 'Continuar al inicio de sesión';
-
-  @override
-  String get faHeadsUp => 'Atención';
-
-  @override
-  String get faGuestBullet1 =>
-      'Los datos de invitado se eliminan automáticamente de nuestros servidores tras 90 días de inactividad.';
-
-  @override
-  String get faGuestBullet2 =>
-      'Para guardar tu progreso de forma permanente y jugar en varios dispositivos, inicia sesión con Apple, Google o correo.';
-
-  @override
-  String get faGuestBullet3 =>
-      'Las cuentas de invitado no pueden comprar productos ni suscripciones. Inicia sesión si quieres pasarte a Pro o comprar cosméticos.';
-
-  @override
-  String get faChangedMind => 'He cambiado de opinión';
-
-  @override
-  String get faProceedAnyway => 'Continuar igualmente';
 
   @override
   String get faAppleFailed =>
@@ -3211,104 +2498,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ldInitializing => 'Inicializando Snake Classic...';
 
   @override
-  String get ldTip1 =>
-      'Planifica dos movimientos por delante — tu cola sigue por donde acaba de pasar la cabeza.';
-
-  @override
-  String get ldTip2 =>
-      'La comida extra vale más puntos, pero desaparece rápido. ¡Cógela ya!';
-
-  @override
-  String get ldTip3 =>
-      '¿Chocaste? Mira un anuncio rápido o gasta monedas para revivir y conservar tu puntuación.';
-
-  @override
-  String get ldTip4 =>
-      'Encadena comidas sin pausa para construir un multiplicador de combo.';
-
-  @override
-  String get ldTip5 =>
-      '¿Atascado en un hueco? Pégate a las paredes para ganar un instante.';
-
-  @override
-  String get ldTip6 =>
-      'Los desafíos diarios y las misiones semanales acumulan monedas rápido.';
-
-  @override
-  String get ldTip7 =>
-      'Snake Classic Pro desbloquea tableros más grandes y elimina todos los anuncios.';
-
-  @override
-  String get ldTip8 =>
-      'El Contrarreloj premia la velocidad — y puedes ver un anuncio por +30 segundos.';
-
-  @override
-  String get ldTip9 =>
-      'Los potenciadores se acumulan: arma un escudo antes de pasar por un hueco.';
-
-  @override
-  String get ldTip10 =>
-      'Cambia temas, aspectos y estelas cuando quieras en la tienda para renovar el look.';
-
-  @override
   String get ldStepCore => 'Inicializando sistemas principales...';
-
-  @override
-  String get ldStepCoreSub => 'Configurando conexión con el servidor';
 
   @override
   String get ldStepProfile => 'Creando tu perfil de jugador...';
 
   @override
-  String get ldStepProfileSub => 'Generando nombre de usuario único';
-
-  @override
   String get ldStepPrefs => 'Cargando tus preferencias...';
-
-  @override
-  String get ldStepPrefsSub => 'Sincronizando temas y ajustes';
 
   @override
   String get ldStepCloud => 'Sincronizando con la nube...';
 
   @override
-  String get ldStepCloudSub => 'Comprobando que los datos estén al día';
-
-  @override
   String get ldStepGameData => 'Cargando datos del juego...';
-
-  @override
-  String get ldStepGameDataSub => 'Obteniendo datos del juego';
 
   @override
   String get ldStepAudio => 'Configurando el sistema de audio...';
 
   @override
-  String get ldStepAudioSub => 'Cargando efectos de sonido';
-
-  @override
   String get ldStepAds => 'Preparando recompensas...';
-
-  @override
-  String get ldStepAdsSub => 'Preparando tu anuncio de potenciador gratis';
 
   @override
   String get ldStepSetup => 'Comprobando el estado de configuración...';
 
   @override
-  String get ldStepSetupSub => '¡Casi listo!';
-
-  @override
   String get ldWelcome => '¡Bienvenido!';
 
   @override
-  String get ldWelcomeSub => 'Elige cómo continuar';
-
-  @override
   String get ldReady => '¡Listo para jugar!';
-
-  @override
-  String get ldReadySub => 'Bienvenido de nuevo a Snake Classic';
 
   @override
   String ldInitFailed(Object error) {
@@ -3317,60 +2534,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ldRetrying => 'Reintentando la inicialización...';
-
-  @override
-  String get ldTagline => 'EXPERIENCIA SNAKE PREMIUM';
-
-  @override
-  String get ldLoadingUpper => 'CARGANDO';
-
-  @override
-  String get ldDidYouKnow => '¿SABÍAS QUE...?';
-
-  @override
-  String get ldGameFeatures => 'CARACTERÍSTICAS';
-
-  @override
-  String get ldFeatFps => '60FPS';
-
-  @override
-  String get ldFeatFpsSub => 'Juego fluido';
-
-  @override
-  String get ldFeatEffects => 'EFECTOS';
-
-  @override
-  String get ldFeatEffectsSub => 'Partículas visuales';
-
-  @override
-  String get ldFeatLevels => 'NIVELES';
-
-  @override
-  String get ldFeatLevelsSub => 'Diversión progresiva';
-
-  @override
-  String get ldFeatAudio => 'AUDIO';
-
-  @override
-  String get ldFeatAudioSub => 'Sonido envolvente';
-
-  @override
-  String get ldFeatScores => 'PUNTOS';
-
-  @override
-  String get ldFeatScoresSub => 'Rankings globales';
-
-  @override
-  String get ldFeatThemes => 'TEMAS';
-
-  @override
-  String get ldFeatThemesSub => 'Varios estilos';
-
-  @override
-  String get ldDevelopedBy => 'DESARROLLADO Y MANTENIDO POR';
-
-  @override
-  String get ldDevTagline => 'Creando experiencias móviles premium';
 
   @override
   String get ldInitFailedUpper => 'ERROR DE INICIALIZACIÓN';
@@ -3593,53 +2756,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wtWaiting => 'Esperando...';
 
   @override
-  String get hwPlayTitle => '¡Bienvenido a Snake Classic!';
-
-  @override
-  String get hwPlayMsg =>
-      'Toca el botón JUGAR para empezar. ¡Desliza para controlar la serpiente y come para crecer!';
-
-  @override
-  String get hwCoinsTitle => 'Tus monedas';
-
-  @override
-  String get hwCoinsMsg =>
-      'Gana monedas jugando, completando desafíos y con bonos diarios. ¡Úsalas en la tienda!';
-
-  @override
   String get hwDailyTitle => 'Desafíos diarios';
 
   @override
   String get hwDailyMsg =>
       'Completa desafíos diarios para conseguir monedas y recompensas. ¡Desafíos nuevos cada día!';
-
-  @override
-  String get hwStoreTitle => 'La tienda';
-
-  @override
-  String get hwStoreMsg =>
-      'Compra temas, aspectos, estelas y potenciadores con tus monedas. Desbloquea Pro para tableros premium y cosméticos exclusivos.';
-
-  @override
-  String get hwCosmeticsTitle => 'Aspectos y estelas';
-
-  @override
-  String get hwCosmeticsMsg =>
-      'Personaliza tu serpiente aquí. Los aspectos cambian su look; las estelas dejan un brillo detrás. Consíguelos con monedas o desbloquéalos con Pro.';
-
-  @override
-  String get hwProfileTitle => 'Tu perfil';
-
-  @override
-  String get hwProfileMsg =>
-      'Aquí viven tus estadísticas, logros y récords. Los logros se desbloquean al alcanzar hitos — algunos requieren un modo concreto (Clásico, Difícil, etc.). Inicia sesión para sincronizar entre dispositivos.';
-
-  @override
-  String get hwSettingsTitle => 'Ajustes';
-
-  @override
-  String get hwSettingsMsg =>
-      'Personaliza tu experiencia - ¡cambia temas, controles, audio y más!';
 
   @override
   String get hudScoreUpper => 'PUNTOS';
@@ -3663,40 +2784,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get poPaused => 'EN PAUSA';
-
-  @override
-  String get poPremium => 'Premium';
-
-  @override
   String get poStore => 'Tienda';
-
-  @override
-  String get poResume => 'REANUDAR';
-
-  @override
-  String get poRestart => 'REINICIAR';
-
-  @override
-  String get poHome => 'INICIO';
-
-  @override
-  String get poDPadOn => 'CRUCETA: SÍ';
-
-  @override
-  String get poDPadOff => 'CRUCETA: NO';
 
   @override
   String get poSnapOn => 'CASILLAS: SÍ';
 
   @override
   String get poSnapOff => 'CASILLAS: NO';
-
-  @override
-  String get poLayoutDPad => 'CRUCETA';
-
-  @override
-  String get poLayoutTurn => 'GIRO';
 
   @override
   String get updateReadyTitle => 'Actualización lista';
@@ -3708,100 +2802,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get poUpdateReady => 'REINICIAR PARA ACTUALIZAR';
 
   @override
-  String get poSound => 'SONIDO';
-
-  @override
-  String get poMusic => 'MÚSICA';
-
-  @override
   String get poHowToPlay => 'CÓMO JUGAR';
 
   @override
   String get poGameGuide => 'GUÍA DEL JUEGO';
-
-  @override
-  String get poFoodUpper => 'COMIDA';
-
-  @override
-  String get poPts10 => '10 pts';
-
-  @override
-  String get poPts25 => '25 pts';
-
-  @override
-  String get poPts50 => '50 pts';
-
-  @override
-  String get poComboUpper => 'COMBO';
-
-  @override
-  String get poBites5 => '5 bocados';
-
-  @override
-  String get poBites10 => '10 bocados';
-
-  @override
-  String get poBites20 => '20 bocados';
-
-  @override
-  String get poComboHint =>
-      'El chip de fuego junto a tu puntuación se calienta y late en cada nivel superado.';
-
-  @override
-  String get poPowerUpsUpper => 'POTENCIADORES';
-
-  @override
-  String get poDur7s => '7 s';
-
-  @override
-  String get poDur6s => '6 s';
-
-  @override
-  String get poDur10s => '10 s';
-
-  @override
-  String get poDur8s => '8 s';
-
-  @override
-  String get poScore2x => 'Puntos 2×';
-
-  @override
-  String get poPowerUpHint =>
-      'El anillo del icono se vacía al expirar. El temporizador se congela en pausa.';
-
-  @override
-  String get poCrashUpper => 'CHOQUE';
-
-  @override
-  String get poCrashHint =>
-      'Una onda roja estalla en la celda donde moriste. Al chocar contigo mismo también se resalta en amarillo el segmento golpeado.';
-
-  @override
-  String get poModesUpper => 'MODOS';
-
-  @override
-  String get poModeWallsOn => 'con paredes';
-
-  @override
-  String get poModeWallsOff => 'sin paredes';
-
-  @override
-  String get poModeFastTick => 'ritmo rápido';
-
-  @override
-  String get poModeThreeFoods => '3 comidas a la vez';
-
-  @override
-  String get poModeThreeLives => '3 vidas, acelera';
-
-  @override
-  String get poModeThreeMin => '3 min en total';
-
-  @override
-  String get poModeFrequentPowerUps => 'potenciadores frecuentes';
-
-  @override
-  String get poModeDontCross => 'no cruces tu estela';
 
   @override
   String get dcTitle => 'Desafíos diarios';
@@ -3871,9 +2875,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gbSpeed => 'Velocidad';
-
-  @override
-  String get gbLevel => 'Nivel';
 
   @override
   String get rarityCommon => 'Común';
@@ -4598,20 +3599,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Versiones mejoradas de los potenciadores clásicos';
 
   @override
-  String get bundleTacticalPack => 'Pack Táctico';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Potenciadores estratégicos para jugadores hábiles';
-
-  @override
-  String get bundleUltimatePack => 'Pack Definitivo';
-
-  @override
-  String get bundleUltimatePackDesc =>
-      'Todos los potenciadores premium disponibles';
-
-  @override
   String get skinClassic => 'Clásica';
 
   @override
@@ -4937,12 +3924,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get bprSpecial => 'Recompensa Especial';
 
   @override
-  String get bprFree => 'Gratis';
-
-  @override
-  String get bprPremium => 'Premium';
-
-  @override
   String get bprnStarDust => 'Polvo de Estrellas';
 
   @override
@@ -5130,9 +4111,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get insTip4 => 'Practica en distintos niveles de dificultad';
 
   @override
-  String get insBackToGame => 'VOLVER AL JUEGO';
-
-  @override
   String dchClaimedReward(Object coins, Object xp) {
     return '¡Recibiste $coins monedas y $xp XP!';
   }
@@ -5151,18 +4129,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get dchClaimAll => 'Reclamar Todo';
-
-  @override
-  String get dchTodaysProgress => 'Progreso de Hoy';
-
-  @override
-  String get dchClaim => 'Reclamar';
-
-  @override
-  String get dchClaimed => 'Reclamado';
-
-  @override
   String get dchAllCompleteTitle => '¡Todos los Desafíos Completados!';
 
   @override
@@ -5170,9 +4136,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dchBonusPending => 'Bonus pendiente — reclama cualquier desafío';
-
-  @override
-  String get dchLoading => 'Cargando desafíos...';
 
   @override
   String get dchCheckBack => '¡Vuelve más tarde para nuevos desafíos diarios!';
@@ -5206,18 +4169,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wqTitle => 'Misiones Semanales';
 
   @override
-  String get wqClaimReward => 'Reclamar Recompensa';
-
-  @override
   String get rvNotFound => 'Repetición no encontrada';
 
   @override
   String get rvLoadFailed => 'Error al cargar la repetición';
-
-  @override
-  String rvTitle(Object name) {
-    return 'Repetición: $name';
-  }
 
   @override
   String get rvLoadingTitle => 'Cargando Repetición...';
@@ -5305,9 +4260,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get unUpdateFailed => 'No se pudo actualizar el nombre de usuario';
-
-  @override
-  String get pcTitle => 'Privacidad y Términos Actualizados';
 
   @override
   String pcVersionLine(Object version) {
@@ -5463,33 +4415,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ssiOffline => 'Sin conexión';
 
   @override
-  String get rvoContinue => '¿CONTINUAR?';
-
-  @override
-  String get rvoSubtitlePro =>
-      'Gracias por ser Pro: aquí tienes tu vida gratis';
-
-  @override
-  String rvoSubtitleTimer(Object seconds) {
-    return 'Revive y conserva tu puntuación · ${seconds}s';
-  }
-
-  @override
-  String get rvoGetLifePro => 'Conseguir Vida · Gratis para Pro';
-
-  @override
-  String get rvoWatchAd => 'Ver anuncio para revivir';
-
-  @override
   String get rvoLoadingAd => 'Cargando anuncio…';
-
-  @override
-  String rvoUseCoins(Object coins) {
-    return 'Usar $coins monedas';
-  }
-
-  @override
-  String get rvoNoThanks => 'No, gracias';
 
   @override
   String get tbTimesUp => '¡TIEMPO AGOTADO!';
@@ -5761,16 +4687,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String stDurHourMin(Object h, Object m) {
     return '${h}h ${m}min';
-  }
-
-  @override
-  String dchProgressSummary(Object completed, Object total) {
-    return '$completed de $total desafíos completados';
-  }
-
-  @override
-  String wqProgressSummary(Object completed, Object total) {
-    return '$completed / $total completadas';
   }
 
   @override
@@ -6413,20 +5329,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsReplaysSubtitle => 'Vuelve a ver tus partidas guardadas';
 
   @override
-  String get homeTapToPlay => 'Toca para jugar';
-
-  @override
-  String get homeTileMe => 'Yo';
-
-  @override
-  String get dchSectionChallenges => 'Desafíos';
-
-  @override
-  String dchRewardLine(int coins, int xp) {
-    return '$coins monedas · $xp XP';
-  }
-
-  @override
   String get updateAvailableTitle => 'Actualización disponible';
 
   @override
@@ -6452,30 +5354,30 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lbHomeGreeting(String name) {
-    return 'Hey, $name. Apples missed you.';
+    return 'Hola, $name. Las manzanas te echaban de menos.';
   }
 
   @override
-  String get lbHomeHint => 'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.';
+  String get lbHomeHint => 'GUÍA HACIA UN BLOQUE. O TÓCALO. NO JUZGAMOS.';
 
   @override
   String lbDailyNag(String done, String total) {
-    return 'DAILY $done/$total · ONE MORE SNACK, PLEASE';
+    return 'DIARIO $done/$total · OTRO BOCADO, PORFA';
   }
 
   @override
-  String get lbDailyAllFed => 'ALL FED. COME BACK TOMORROW.';
+  String get lbDailyAllFed => 'TODO COMIDO. VUELVE MAÑANA.';
 
   @override
   String lbModeRow(String index, String count, String mode) {
-    return 'MODE $index/$count · $mode';
+    return 'MODO $index/$count · $mode';
   }
 
   @override
-  String get lbYourBest => 'YOUR BEST';
+  String get lbYourBest => 'TU RÉCORD';
 
   @override
-  String get lbPlay => 'PLAY';
+  String get lbPlay => 'JUGAR';
 
   @override
   String lbModeBoard(String mode, String board) {
@@ -6492,342 +5394,345 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lbHomeDaily(String done, String total) {
-    return 'DAILY $done/$total';
+    return 'DIARIO $done/$total';
   }
 
   @override
   String lbHomeDailySub(String time, String coins) {
-    return 'resets in $time · +$coins¢';
+    return 'se reinicia en $time · +$coins¢';
   }
 
   @override
-  String get lbHomeSeason => 'SEASON';
+  String get lbHomeSeason => 'TEMPORADA';
 
   @override
   String lbHomeSeasonSub(String tier, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
+      other: 'quedan $days días',
+      one: 'queda 1 día',
     );
-    return 'Tier $tier · $_temp0';
+    return 'Nivel $tier · $_temp0';
   }
 
   @override
-  String get lbHomeRanks => 'RANKS';
+  String get lbHomeRanks => 'RANKING';
 
   @override
   String lbHomeRanksSub(String rank) {
-    return '#$rank · climbing';
+    return '#$rank · subiendo';
   }
 
   @override
   String lbHomeRanksSubNone(String score) {
-    return 'Best run: $score';
+    return 'Mejor partida: $score';
   }
 
   @override
-  String get lbHomeStore => 'STORE';
+  String get lbHomeStore => 'TIENDA';
 
   @override
-  String get lbHomeStoreSub => 'Skins, themes, trails';
+  String get lbHomeStoreSub => 'Aspectos, temas, estelas';
 
   @override
-  String get lbHomeProfile => 'PROFILE';
+  String get lbHomeProfile => 'PERFIL';
 
   @override
   String lbHomeProfileSub(String level, String runs) {
-    return 'LV $level · $runs runs';
+    return 'NV $level · $runs partidas';
   }
 
   @override
-  String get lbHomeMenu => 'MENU';
+  String get lbHomeMenu => 'MENÚ';
 
   @override
-  String get lbFreePowerUp => 'FREE POWER-UP · AD';
+  String get lbFreePowerUp => 'POTENCIADOR GRATIS · ANUNCIO';
 
   @override
-  String get lbTipLabel => 'TIP';
+  String get lbTipLabel => 'CONSEJO';
 
   @override
-  String get lbTip1 => 'The wall doesn\'t move. You do.';
+  String get lbTip1 => 'La pared no se mueve. Tú sí.';
 
   @override
-  String get lbTip2 => 'Combos decay after 6 seconds. Keep chewing.';
+  String get lbTip2 => 'Los combos caducan a los 6 segundos. Sigue masticando.';
 
   @override
-  String get lbTip3 => 'Zen mode has no walls. It still has you.';
+  String get lbTip3 => 'El modo Zen no tiene paredes. Pero te tiene a ti.';
 
   @override
-  String get lbTip4 => 'Easy runs stay off the leaderboard. No shame.';
+  String get lbTip4 =>
+      'Las partidas en Fácil no puntúan en la clasificación. Sin vergüenza.';
 
   @override
-  String get lbTip5 => 'Bonus food is worth 25. Special is 50. Greed is free.';
+  String get lbTip5 =>
+      'La comida bonus vale 25. La especial, 50. La avaricia es gratis.';
 
   @override
-  String get lbTip6 => 'Swipe early. The snake doesn\'t do sudden.';
+  String get lbTip6 =>
+      'Desliza con antelación. La serpiente no hace giros bruscos.';
 
   @override
   String get lbTip7 =>
-      'Perfect Game: never step on the same cell twice. Good luck.';
+      'Partida Perfecta: nunca pises la misma casilla dos veces. Suerte.';
 
   @override
-  String get lbTip8 => 'Pro players revive free. Just saying.';
+  String get lbTip8 => 'Con Pro revives gratis. Solo lo decimos.';
 
   @override
   String lbSplashStatus(String pct) {
-    return 'WARMING UP THE APPLES… $pct%';
+    return 'CALENTANDO LAS MANZANAS… $pct%';
   }
 
   @override
   String lbSplashFooter(String version) {
-    return 'v$version · NO SNAKES WERE HARMED';
+    return 'v$version · NINGUNA SERPIENTE SUFRIÓ DAÑOS';
   }
 
   @override
-  String get lbSetupTitle => 'SETUP';
+  String get lbSetupTitle => 'PREPARACIÓN';
 
   @override
   String get lbSetupSubtitle =>
-      'Pick your poison. Every mode is free. Forever.';
+      'Elige tu veneno. Todos los modos son gratis. Para siempre.';
 
   @override
-  String get lbSetupMode => 'MODE';
+  String get lbSetupMode => 'MODO';
 
   @override
   String lbSetupModesAside(String count) {
-    return '$count MODES · 0 PAYWALLS';
+    return '$count MODOS · 0 MUROS DE PAGO';
   }
 
   @override
-  String get lbSetupBoard => 'BOARD';
+  String get lbSetupBoard => 'TABLERO';
 
   @override
-  String get lbSetupDifficulty => 'DIFFICULTY';
+  String get lbSetupDifficulty => 'DIFICULTAD';
 
   @override
-  String get lbSetupLoadout => 'LOADOUT';
+  String get lbSetupLoadout => 'EQUIPAMIENTO';
 
   @override
-  String get lbSetupGet => 'GET';
+  String get lbSetupGet => 'CONSEGUIR';
 
   @override
-  String get lbBoardTall => 'TALL';
+  String get lbBoardTall => 'ALTO';
 
   @override
-  String get lbModeLineClassic => 'Walls bite.';
+  String get lbModeLineClassic => 'Las paredes muerden.';
 
   @override
-  String get lbModeLineZen => 'No walls. Just vibes.';
+  String get lbModeLineZen => 'Sin paredes. Solo buen rollo.';
 
   @override
-  String get lbModeLineSpeed => 'Fast. Then faster.';
+  String get lbModeLineSpeed => 'Rápido. Y luego más.';
 
   @override
-  String get lbModeLineMultiFood => 'The buffet is open.';
+  String get lbModeLineMultiFood => 'Barra libre de comida.';
 
   @override
-  String get lbModeLineSurvival => '3 lives. Spend wisely.';
+  String get lbModeLineSurvival => '3 vidas. Gástalas bien.';
 
   @override
-  String get lbModeLineTimeAttack => '3 minutes. Eat it all.';
+  String get lbModeLineTimeAttack => '3 minutos. Cómetelo todo.';
 
   @override
-  String get lbModeLinePowerUp => 'Power-ups. So many.';
+  String get lbModeLinePowerUp => 'Potenciadores. Muchísimos.';
 
   @override
-  String get lbModeLinePerfect => 'Never step twice.';
+  String get lbModeLinePerfect => 'Nunca pises dos veces.';
 
   @override
-  String get lbDiffEasyLine => 'practice · unranked';
+  String get lbDiffEasyLine => 'práctica · sin ranking';
 
   @override
-  String get lbDiffNormalLine => 'the classic pace';
+  String get lbDiffNormalLine => 'el ritmo clásico';
 
   @override
-  String get lbDiffHardLine => 'for show-offs';
+  String get lbDiffHardLine => 'para fanfarrones';
 
   @override
   String lbComboWarm(String mult) {
-    return '×$mult WARM';
+    return '×$mult TIBIO';
   }
 
   @override
   String lbComboHot(String mult) {
-    return '×$mult HOT · KEEP EATING';
+    return '×$mult CALIENTE · SIGUE COMIENDO';
   }
 
   @override
   String lbComboFire(String mult) {
-    return '×$mult ON FIRE';
+    return '×$mult EN LLAMAS';
   }
 
   @override
-  String get lbComboDecay => 'EAT SOMETHING. NOW.';
+  String get lbComboDecay => 'COME ALGO. YA.';
 
   @override
-  String get lbComboBroken => 'combo dropped. it happens.';
+  String get lbComboBroken => 'combo perdido. pasa.';
 
   @override
   String lbLevelUp(String level) {
-    return 'LV $level · FASTER NOW';
+    return 'NV $level · MÁS RÁPIDO';
   }
 
   @override
   String lbLevelShort(String level) {
-    return 'LV $level';
+    return 'NV $level';
   }
 
   @override
   String lbPowerInvincible(String secs) {
-    return 'INVINCIBLE · ${secs}s';
+    return 'INVENCIBLE · ${secs}s';
   }
 
   @override
-  String get lbPowerInvincibleLine => 'walls are more of a suggestion';
+  String get lbPowerInvincibleLine => 'las paredes son más bien una sugerencia';
 
   @override
   String lbPowerSpeed(String secs) {
-    return 'SPEED · ${secs}s';
+    return 'VELOCIDAD · ${secs}s';
   }
 
   @override
-  String get lbPowerSpeedLine => 'hold on';
+  String get lbPowerSpeedLine => 'agárrate';
 
   @override
   String lbPowerSlow(String secs) {
-    return 'SLOW-MO · ${secs}s';
+    return 'CÁMARA LENTA · ${secs}s';
   }
 
   @override
-  String get lbPowerSlowLine => 'savor it';
+  String get lbPowerSlowLine => 'saboréalo';
 
   @override
   String lbPowerScore(String secs) {
-    return '2× SCORE · ${secs}s';
+    return '2× PUNTOS · ${secs}s';
   }
 
   @override
   String lbPowerEnding(String name, String secs) {
-    return '$name ENDING · $secs';
+    return '$name ACABA · $secs';
   }
 
   @override
-  String get lbTimeAttackPanic => '10 SECONDS. PANIC RESPONSIBLY.';
+  String get lbTimeAttackPanic => '10 SEGUNDOS. ENTRA EN PÁNICO CON CABEZA.';
 
   @override
   String lbLifeLost(String left) {
-    return '1 LIFE DOWN · $left TO GO';
+    return '1 VIDA MENOS · QUEDAN $left';
   }
 
   @override
   String lbHudLen(String len) {
-    return 'LEN $len';
+    return 'LARGO $len';
   }
 
   @override
-  String get lbScoreLabel => 'SCORE';
+  String get lbScoreLabel => 'PUNTOS';
 
   @override
-  String get lbTurnLeft => 'TURN LEFT';
+  String get lbTurnLeft => 'GIRAR IZQ.';
 
   @override
-  String get lbTurnRight => 'TURN RIGHT';
+  String get lbTurnRight => 'GIRAR DCHA.';
 
   @override
-  String get lbSwipeToSteer => 'SWIPE TO STEER';
+  String get lbSwipeToSteer => 'DESLIZA PARA GUIAR';
 
   @override
-  String get lbPauseTitle => 'PAUSED';
+  String get lbPauseTitle => 'PAUSA';
 
   @override
-  String get lbPauseLine => 'The apple will wait. Probably.';
+  String get lbPauseLine => 'La manzana esperará. Seguramente.';
 
   @override
-  String get lbResume => 'RESUME';
+  String get lbResume => 'SEGUIR';
 
   @override
-  String get lbResumeSub => '3 · 2 · 1, THEN GO';
+  String get lbResumeSub => '3 · 2 · 1, Y A JUGAR';
 
   @override
-  String get lbRestart => 'RESTART';
+  String get lbRestart => 'REINICIAR';
 
   @override
-  String get lbRestartSub => 'same mode';
+  String get lbRestartSub => 'mismo modo';
 
   @override
-  String get lbPauseSettings => 'SETTINGS';
+  String get lbPauseSettings => 'AJUSTES';
 
   @override
-  String get lbPauseSettingsSub => 'controls · sound';
+  String get lbPauseSettingsSub => 'controles · sonido';
 
   @override
-  String get lbQuit => 'QUIT TO MENU';
+  String get lbQuit => 'SALIR AL MENÚ';
 
   @override
-  String get lbQuitSub => 'run ends here';
+  String get lbQuitSub => 'la partida acaba aquí';
 
   @override
   String lbPauseSoFar(String score, String len, String time) {
-    return 'SO FAR · $score PTS · LEN $len · $time';
+    return 'DE MOMENTO · $score PTS · LARGO $len · $time';
   }
 
   @override
-  String get lbCrashWallTitle => 'BONK!';
+  String get lbCrashWallTitle => '¡PLAF!';
 
   @override
   String lbCrashWall1(String len) {
-    return 'You kissed the wall at length $len.';
+    return 'Besaste la pared con largo $len.';
   }
 
   @override
-  String get lbCrashWall2 => 'The wall was there first.';
+  String get lbCrashWall2 => 'La pared estaba primero.';
 
   @override
-  String get lbCrashWall3 => 'Walls: undefeated since forever.';
+  String get lbCrashWall3 => 'Paredes: invictas desde siempre.';
 
   @override
-  String get lbCrashWallScore => 'THE WALL: 1 · YOU: 0';
+  String get lbCrashWallScore => 'LA PARED: 1 · TÚ: 0';
 
   @override
-  String get lbCrashSelfTitle => 'OUCH.';
+  String get lbCrashSelfTitle => 'AY.';
 
   @override
-  String get lbCrashSelf1 => 'You bit yourself. Why?';
+  String get lbCrashSelf1 => 'Te mordiste a ti mismo. ¿Por qué?';
 
   @override
-  String get lbCrashSelf2 => 'Tail: delicious, apparently.';
+  String get lbCrashSelf2 => 'Cola: deliciosa, al parecer.';
 
   @override
-  String get lbCrashSelf3 => 'Self-snack detected.';
+  String get lbCrashSelf3 => 'Autobocado detectado.';
 
   @override
-  String get lbCrashTimeTitle => 'TIME!';
+  String get lbCrashTimeTitle => '¡TIEMPO!';
 
   @override
-  String get lbCrashTime1 => 'Out of time. The apples got away.';
+  String get lbCrashTime1 => 'Se acabó el tiempo. Las manzanas escaparon.';
 
   @override
   String lbCrashTime2(String food) {
-    return 'Three minutes, $food apples. Respect.';
+    return 'Tres minutos, $food manzanas. Respeto.';
   }
 
   @override
-  String get lbCrashStepTitle => 'STEPPED.';
+  String get lbCrashStepTitle => 'PISADO.';
 
   @override
   String get lbCrashStep1 =>
-      'You walked on your own path. Perfect Game is not forgiving.';
+      'Pisaste tu propio camino. Partida Perfecta no perdona.';
 
   @override
-  String get lbCrashQuitTitle => 'BAILED.';
+  String get lbCrashQuitTitle => 'ABANDONO.';
 
   @override
-  String get lbCrashQuit1 => 'Run ended by you. We saw nothing.';
+  String get lbCrashQuit1 => 'Partida terminada por ti. No vimos nada.';
 
   @override
-  String get lbCrashGeneric => 'Game over.';
+  String get lbCrashGeneric => 'Fin de la partida.';
 
   @override
   String lbGameOverHeadline(String line) {
@@ -6835,7 +5740,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbReviveTitle => 'SECOND CHANCE?';
+  String get lbReviveTitle => '¿SEGUNDA OPORTUNIDAD?';
 
   @override
   String lbSeconds(String secs) {
@@ -6844,33 +5749,33 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lbReviveLine(String len, String score) {
-    return 'Keep length $len and all $score points.';
+    return 'Conserva el largo $len y los $score puntos.';
   }
 
   @override
-  String get lbReviveWatch => 'WATCH AD · FREE';
+  String get lbReviveWatch => 'VER ANUNCIO · GRATIS';
 
   @override
   String lbRevivePay(String cost) {
-    return 'PAY $cost¢';
+    return 'PAGAR $cost¢';
   }
 
   @override
   String lbReviveYouHave(String coins) {
-    return 'you have $coins';
+    return 'tienes $coins';
   }
 
   @override
-  String get lbReviveDecline => 'NAH, SHOW ME MY SCORE';
+  String get lbReviveDecline => 'NAH, ENSÉÑAME MI PUNTUACIÓN';
 
   @override
-  String get lbRevivePro => 'REVIVE · FREE WITH PRO';
+  String get lbRevivePro => 'REVIVIR · GRATIS CON PRO';
 
   @override
-  String get lbReviveProHint => 'Pro players revive free. Just saying.';
+  String get lbReviveProHint => 'Con Pro revives gratis. Solo lo decimos.';
 
   @override
-  String get lbGoBest => 'BEST';
+  String get lbGoBest => 'RÉCORD';
 
   @override
   String lbGoBehind(String gap) {
@@ -6878,80 +5783,80 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbGoBehindLine => 'so close. (not really.)';
+  String get lbGoBehindLine => 'casi. (bueno, no.)';
 
   @override
-  String get lbGoNewBest => 'NEW BEST!';
+  String get lbGoNewBest => '¡NUEVO RÉCORD!';
 
   @override
-  String get lbGoNewBestLine => 'Frame this one.';
+  String get lbGoNewBestLine => 'Esta, para enmarcar.';
 
   @override
   String lbGoRun(String run) {
-    return 'RUN $run';
+    return 'PARTIDA $run';
   }
 
   @override
-  String get lbGoChartTitle => 'YOUR RUN, UNCOILED';
+  String get lbGoChartTitle => 'TU PARTIDA, DESENROSCADA';
 
   @override
   String lbGoChartStats(String food, String combo) {
-    return '$food FOOD · PEAK ×$combo';
+    return '$food COMIDAS · PICO ×$combo';
   }
 
   @override
-  String get lbGoChartCaption => '1 COLUMN = 1 FOOD · TALLER = TASTIER';
+  String get lbGoChartCaption => '1 COLUMNA = 1 COMIDA · MÁS ALTA = MÁS RICA';
 
   @override
-  String get lbAgain => 'AGAIN';
+  String get lbAgain => 'OTRA VEZ';
 
   @override
-  String get lbGoContinue => 'CONTINUE';
+  String get lbGoContinue => 'CONTINUAR';
 
   @override
   String lbGoContinueSub(String cost, String len) {
-    return '$cost¢ or ad · keep len $len';
+    return '$cost¢ o anuncio · conserva largo $len';
   }
 
   @override
   String lbGoContinueProSub(String len) {
-    return 'free with Pro · keep len $len';
+    return 'gratis con Pro · conserva largo $len';
   }
 
   @override
   String lbGoEarned(String coins) {
-    return '+$coins¢ EARNED';
+    return '+$coins¢ GANADAS';
   }
 
   @override
   String lbGoRewardsLine(String ready, String coins, String xp) {
-    return '$ready daily ready · +$coins¢ · +$xp XP';
+    return '$ready diarios listos · +$coins¢ · +$xp XP';
   }
 
   @override
-  String get lbGoNothingToClaim => 'nothing to claim yet · keep playing';
+  String get lbGoNothingToClaim => 'nada que reclamar aún · sigue jugando';
 
   @override
-  String get lbClaim => 'CLAIM';
+  String get lbClaim => 'RECLAMAR';
 
   @override
-  String get lbGoDoubleCoins => '2× COINS · AD';
+  String get lbGoDoubleCoins => '2× MONEDAS · ANUNCIO';
 
   @override
-  String get lbGoWatchReplay => 'WATCH REPLAY';
+  String get lbGoWatchReplay => 'VER REPETICIÓN';
 
   @override
-  String get lbHome => 'HOME';
+  String get lbHome => 'INICIO';
 
   @override
-  String get lbDailyTitle => 'DAILY';
+  String get lbDailyTitle => 'DIARIO';
 
   @override
-  String get lbDailySubtitle => 'Three snacks a day. Doctor\'s orders.';
+  String get lbDailySubtitle => 'Tres bocados al día. Órdenes del médico.';
 
   @override
   String lbDailyProgress(String done, String total) {
-    return '$done OF $total DONE';
+    return '$done DE $total HECHOS';
   }
 
   @override
@@ -6959,39 +5864,40 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: 'streak: $days days',
-      one: 'streak: 1 day',
+      other: 'racha: $days días',
+      one: 'racha: 1 día',
     );
-    return '$_temp0 · resets in $time';
+    return '$_temp0 · se reinicia en $time';
   }
 
   @override
   String lbResetsIn(String time) {
-    return 'resets in $time';
+    return 'se reinicia en $time';
   }
 
   @override
-  String get lbClaimAll => 'CLAIM ALL';
+  String get lbClaimAll => 'RECLAMAR TODO';
 
   @override
-  String get lbClaimAllDouble => 'CLAIM ALL ×2';
+  String get lbClaimAllDouble => 'RECLAMAR TODO ×2';
 
   @override
-  String get lbClaimAllDoubleLine => 'one short ad, double the loot';
+  String get lbClaimAllDoubleLine => 'un anuncio corto, botín doble';
 
   @override
   String lbWeeklyTeaser(String done, String total) {
-    return 'WEEKLY QUESTS · $done/$total';
+    return 'MISIONES SEMANALES · $done/$total';
   }
 
   @override
-  String get lbWeeklyTeaserLine => 'the big loot drops Sunday';
+  String get lbWeeklyTeaserLine => 'el gran botín llega el domingo';
 
   @override
-  String get lbWeeklyTitle => 'WEEKLY';
+  String get lbWeeklyTitle => 'SEMANAL';
 
   @override
-  String get lbWeeklySubtitle => 'Bigger snacks. Seven days to finish them.';
+  String get lbWeeklySubtitle =>
+      'Bocados más grandes. Siete días para acabarlos.';
 
   @override
   String lbRewardCoinsXp(String coins, String xp) {
@@ -7000,37 +5906,37 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lbPlayMode(String mode) {
-    return 'PLAY $mode';
+    return 'JUGAR $mode';
   }
 
   @override
-  String get lbTrophiesTitle => 'TROPHIES';
+  String get lbTrophiesTitle => 'TROFEOS';
 
   @override
   String lbTrophiesSubtitle(String unlocked, String total, String locked) {
-    return '$unlocked of $total. The other $locked are judging you.';
+    return '$unlocked de $total. Los otros $locked te juzgan.';
   }
 
   @override
-  String get lbFilterAll => 'ALL';
+  String get lbFilterAll => 'TODOS';
 
   @override
   String lbFilterUnlocked(String count) {
-    return 'UNLOCKED $count';
+    return 'LOGRADOS $count';
   }
 
   @override
   String lbFilterLocked(String count) {
-    return 'LOCKED $count';
+    return 'BLOQUEADOS $count';
   }
 
   @override
   String lbTrophiesSummary(String pct, String claimed, String waiting) {
-    return '$pct% COMPLETE · $claimed CLAIMED · $waiting WAITING';
+    return '$pct% COMPLETO · $claimed RECLAMADOS · $waiting PENDIENTES';
   }
 
   @override
-  String get lbClaimed => 'CLAIMED';
+  String get lbClaimed => 'RECLAMADO';
 
   @override
   String lbCoinsReward(String coins) {
@@ -7038,29 +5944,26 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbSecret => 'SECRET';
-
-  @override
-  String get lbSeasonTitle => 'SEASON';
+  String get lbSeasonTitle => 'TEMPORADA';
 
   @override
   String lbSeasonSubtitle(String season, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
+      other: 'quedan $days días',
+      one: 'queda 1 día',
     );
-    return '$season · $_temp0. Make them count.';
+    return '$season · $_temp0. Aprovéchalos.';
   }
 
   @override
   String lbSeasonEnded(String season) {
-    return '$season · season over. A new one is coming.';
+    return '$season · temporada terminada. Viene una nueva.';
   }
 
   @override
-  String get lbTier => 'TIER';
+  String get lbTier => 'NIVEL';
 
   @override
   String lbTierOf(String max) {
@@ -7068,16 +5971,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbProTrack => 'PRO TRACK';
+  String get lbProTrack => 'PASE PRO';
 
   @override
   String lbXpToTier(String xp, String need, String tier) {
-    return '$xp / $need XP TO TIER $tier';
+    return '$xp / $need XP PARA NIVEL $tier';
   }
 
   @override
   String lbNextUp(String tier, String track) {
-    return 'NEXT UP · TIER $tier · $track';
+    return 'SIGUIENTE · NIVEL $tier · $track';
   }
 
   @override
@@ -7085,8 +5988,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n tiers away. Eat faster.',
-      one: '1 tier away. Eat faster.',
+      other: 'A $n niveles. Come más rápido.',
+      one: 'A 1 nivel. Come más rápido.',
     );
     return '$_temp0';
   }
@@ -7096,97 +5999,97 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n TIERS',
-      one: '1 TIER',
+      other: '$n NIVELES',
+      one: '1 NIVEL',
     );
     return '$_temp0';
   }
 
   @override
   String lbXpAd(String xp) {
-    return '+$xp XP · WATCH AD';
+    return '+$xp XP · VER ANUNCIO';
   }
 
   @override
-  String get lbYouAreHere => 'YOU ARE HERE';
+  String get lbYouAreHere => 'ESTÁS AQUÍ';
 
   @override
-  String get lbFree => 'FREE';
+  String get lbFree => 'GRATIS';
 
   @override
   String get lbPro => 'PRO';
 
   @override
-  String get lbRanksTitle => 'RANKS';
+  String get lbRanksTitle => 'RANKING';
 
   @override
-  String get lbRanksSubtitle => 'Ranked by your best single run. No pressure.';
+  String get lbRanksSubtitle => 'Según tu mejor partida. Sin presión.';
 
   @override
   String get lbTabGlobal => 'GLOBAL';
 
   @override
-  String get lbTabWeekly => 'WEEKLY';
+  String get lbTabWeekly => 'SEMANAL';
 
   @override
-  String get lbTabFriends => 'FRIENDS';
+  String get lbTabFriends => 'AMIGOS';
 
   @override
   String lbRanksYouRow(String rank, String name) {
-    return '#$rank · YOU · $name';
+    return '#$rank · TÚ · $name';
   }
 
   @override
   String lbRanksYouUnranked(String name) {
-    return 'YOU · $name';
+    return 'TÚ · $name';
   }
 
   @override
   String lbRanksGap(String gap, String leader) {
-    return '$gap behind $leader. Snack harder.';
+    return 'A $gap de $leader. Come con más ganas.';
   }
 
   @override
-  String get lbRanksLeader => 'You\'re #1. Everyone\'s chasing you.';
+  String get lbRanksLeader => 'Eres el #1. Todos van a por ti.';
 
   @override
-  String get lbRanksEasyOnly => 'Easy runs don\'t rank. Normal is waiting.';
+  String get lbRanksEasyOnly => 'Fácil no puntúa. Normal te espera.';
 
   @override
-  String get lbRanksOffline => 'Ranks need the internet. Your snake doesn\'t.';
+  String get lbRanksOffline => 'El ranking necesita internet. Tu serpiente no.';
 
   @override
-  String get lbRanksEmpty => 'Nobody here yet. Be the first.';
+  String get lbRanksEmpty => 'Aún no hay nadie. Sé el primero.';
 
   @override
   String lbRunsCount(int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n runs',
-      one: '1 run',
+      other: '$n partidas',
+      one: '1 partida',
     );
     return '$_temp0';
   }
 
   @override
-  String get lbProfileTitle => 'PROFILE';
+  String get lbProfileTitle => 'PERFIL';
 
   @override
-  String get lbProfileSubtitle => 'Your snake, by the numbers.';
+  String get lbProfileSubtitle => 'Tu serpiente, en números.';
 
   @override
-  String get lbFunFact => 'FUN FACT';
+  String get lbFunFact => 'DATO CURIOSO';
 
   @override
   String lbFunApples(String apples, int pies) {
     String _temp0 = intl.Intl.pluralLogic(
       pies,
       locale: localeName,
-      other: '$pies pies',
-      one: '1 pie',
+      other: '$pies tartas',
+      one: '1 tarta',
     );
-    return '$apples apples eaten. That\'s about $_temp0.';
+    return '$apples manzanas comidas. Eso son unas $_temp0.';
   }
 
   @override
@@ -7194,10 +6097,10 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       minutes,
       locale: localeName,
-      other: '$minutes minutes',
-      one: '1 minute',
+      other: '$minutes minutos',
+      one: '1 minuto',
     );
-    return '$_temp0 of slithering. Hydrate.';
+    return '$_temp0 reptando. Bebe agua.';
   }
 
   @override
@@ -7205,550 +6108,518 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       powerups,
       locale: localeName,
-      other: '$powerups power-ups',
-      one: '1 power-up',
+      other: '$powerups potenciadores atrapados',
+      one: '1 potenciador atrapado',
     );
-    return '$_temp0 grabbed. Greedy, love it.';
+    return '$_temp0. Qué glotón, nos encanta.';
   }
 
   @override
-  String get lbSynced => 'PROGRESS SYNCED';
+  String get lbSynced => 'PROGRESO SINCRONIZADO';
 
   @override
-  String get lbSyncedLine => 'Offline? Play anyway. We\'ll catch up later.';
+  String get lbSyncedLine =>
+      '¿Sin conexión? Juega igual. Ya nos pondremos al día.';
 
   @override
-  String get lbSyncPending => 'SYNC PENDING';
+  String get lbSyncPending => 'SINCRO PENDIENTE';
 
   @override
-  String get lbGuest => 'PLAYING AS GUEST';
+  String get lbGuest => 'JUGANDO COMO INVITADO';
 
   @override
-  String get lbGuestLine => 'Link an account to keep this snake forever.';
+  String get lbGuestLine =>
+      'Vincula una cuenta para conservar esta serpiente para siempre.';
 
   @override
   String lbSignedInWith(String provider) {
-    return 'SIGNED IN · $provider';
+    return 'CONECTADO · $provider';
   }
 
   @override
-  String get lbStatBest => 'BEST';
+  String get lbStatBest => 'RÉCORD';
 
   @override
-  String get lbStatGames => 'GAMES';
+  String get lbStatGames => 'PARTIDAS';
 
   @override
-  String get lbStatPlayTime => 'PLAY TIME';
+  String get lbStatPlayTime => 'TIEMPO JUGADO';
 
   @override
-  String get lbStatAverage => 'AVERAGE';
+  String get lbStatAverage => 'MEDIA';
 
   @override
-  String get lbStatFood => 'FOOD EATEN';
+  String get lbStatFood => 'COMIDA';
 
   @override
-  String get lbStatPowerups => 'POWER-UPS';
+  String get lbStatPowerups => 'POTENCIADORES';
 
   @override
-  String get lbStats => 'STATS';
+  String get lbStats => 'ESTADÍSTICAS';
 
   @override
-  String get lbReplays => 'REPLAYS';
+  String get lbReplays => 'REPETICIONES';
 
   @override
-  String get lbFriends => 'FRIENDS';
+  String get lbFriends => 'AMIGOS';
 
   @override
-  String get lbTrophies => 'TROPHIES';
+  String get lbTrophies => 'TROFEOS';
 
   @override
   String lbFriendsOn(String count) {
-    return '$count ON';
+    return '$count EN LÍNEA';
   }
 
   @override
-  String get lbStoreTitle => 'STORE';
+  String get lbStoreTitle => 'TIENDA';
 
   @override
-  String get lbStoreSubPro => 'No ads. All the drip. Your call.';
+  String get lbStoreSubPro => 'Sin anuncios. Todo el estilo. Tú decides.';
 
   @override
-  String get lbStoreSubCoins => 'Coins for the impatient.';
+  String get lbStoreSubCoins => 'Monedas para impacientes.';
 
   @override
-  String get lbStoreSubThemes => 'New board, same bad habits.';
+  String get lbStoreSubThemes => 'Tablero nuevo, malos hábitos de siempre.';
 
   @override
-  String get lbStoreSubSkins => 'Same snake. Way more drip.';
+  String get lbStoreSubSkins => 'La misma serpiente. Mucho más estilo.';
 
   @override
-  String get lbStoreSubTrails => 'Leave a mark.';
+  String get lbStoreSubTrails => 'Deja huella.';
 
   @override
-  String get lbStoreSubPowerups => 'Tiny cheats. Fully legal.';
+  String get lbStoreSubPowerups => 'Trampitas. Totalmente legales.';
 
   @override
-  String get lbSnakeCoins => 'SNAKE COINS';
+  String get lbSnakeCoins => 'MONEDAS SNAKE';
 
   @override
   String lbFreeCoins(String coins) {
-    return '+$coins¢ FREE';
+    return '+$coins¢ GRATIS';
   }
 
   @override
-  String get lbFreeCoinsLine => 'watch a short ad';
+  String get lbFreeCoinsLine => 'mira un anuncio corto';
 
   @override
   String get lbProName => 'SNAKE CLASSIC PRO';
 
   @override
-  String get lbProPerkNoAds => 'No ads. Not one. Ever.';
+  String get lbProPerkNoAds => 'Sin anuncios. Ni uno. Nunca.';
 
   @override
-  String get lbProPerkRevive => 'A free revive, every single run';
+  String get lbProPerkRevive => 'Una resurrección gratis en cada partida';
 
   @override
   String lbProPerkThemes(String count) {
-    return 'All $count premium themes';
+    return 'Los $count temas premium';
   }
 
   @override
   String lbProPerkCosmetics(String skins, String trails) {
-    return 'All $skins skins + all $trails trails';
+    return 'Los $skins aspectos + las $trails estelas';
   }
 
   @override
-  String get lbProPerkCoins => '2× coins from every run';
+  String get lbProPerkCoins => '2× monedas en cada partida';
 
   @override
-  String get lbMonthly => 'MONTHLY';
+  String get lbMonthly => 'MENSUAL';
 
   @override
-  String get lbYearly => 'YEARLY';
+  String get lbYearly => 'ANUAL';
 
   @override
-  String get lbPerMonth => 'per month';
+  String get lbPerMonth => 'al mes';
 
   @override
-  String get lbPerYear => 'per year';
+  String get lbGoPro => 'PÁSATE A PRO';
 
   @override
-  String get lbBestValue => 'best value';
+  String get lbProActive => 'PRO ACTIVO';
 
   @override
-  String get lbGoPro => 'GO PRO';
-
-  @override
-  String get lbProActive => 'PRO IS ON';
-
-  @override
-  String get lbProActiveLine => 'Thanks for backing the snake.';
+  String get lbProActiveLine => 'Gracias por apoyar a la serpiente.';
 
   @override
   String get lbStoreFooter =>
-      'Prices come from your app store. Cancel anytime.';
+      'Precios de tu tienda de apps. Cancela cuando quieras.';
 
   @override
-  String get lbRestorePurchases => 'RESTORE PURCHASES';
+  String get lbRestorePurchases => 'RESTAURAR COMPRAS';
 
   @override
   String lbBuyPrice(String price) {
-    return 'BUY · $price';
+    return 'COMPRAR · $price';
   }
 
   @override
   String lbBuyCoins(String coins) {
-    return 'BUY · $coins¢';
+    return 'COMPRAR · $coins¢';
   }
 
   @override
-  String get lbOrFreeWithPro => 'or free with Pro';
+  String get lbOrFreeWithPro => 'o gratis con Pro';
 
   @override
-  String get lbEquipped => 'EQUIPPED';
+  String get lbEquipped => 'EQUIPADO';
 
   @override
-  String get lbOwned => 'OWNED';
+  String get lbEquip => 'EQUIPAR';
 
   @override
-  String get lbEquip => 'EQUIP';
+  String get lbSkinTagGolden => 'Rica. Famosa. Algo creída.';
 
   @override
-  String get lbIncludedWithPro => 'INCLUDED WITH PRO';
+  String get lbSkinTagFire => 'Quema al tacto.';
 
   @override
-  String get lbSkinTagGolden => 'Rich. Famous. A little smug.';
+  String get lbSkinTagIce => 'Fría bajo presión.';
 
   @override
-  String get lbSkinTagFire => 'Hot to the touch.';
+  String get lbSkinTagElectric => 'De una rapidez electrizante.';
 
   @override
-  String get lbSkinTagIce => 'Cool under pressure.';
+  String get lbSkinTagRainbow => 'Todos. A la vez.';
 
   @override
-  String get lbSkinTagElectric => 'Shockingly fast.';
+  String get lbSkinTagNeon => 'Visible desde el espacio.';
 
   @override
-  String get lbSkinTagRainbow => 'All of them. At once.';
+  String get lbSkinTagShadow => 'Ahora la ves.';
 
   @override
-  String get lbSkinTagNeon => 'Visible from space.';
+  String get lbSkinTagGalaxy => 'Contiene multitudes.';
 
   @override
-  String get lbSkinTagShadow => 'Now you see it.';
+  String get lbSkinTagCrystal => 'Manéjese con cuidado.';
 
   @override
-  String get lbSkinTagGalaxy => 'Contains multitudes.';
+  String get lbSkinTagCosmic => 'Energía de universo grande.';
 
   @override
-  String get lbSkinTagCrystal => 'Handle with care.';
+  String get lbSkinTagDragon => 'Legalmente, no es un dragón.';
 
   @override
-  String get lbSkinTagCosmic => 'Big universe energy.';
+  String get lbSettingsTitle => 'AJUSTES';
 
   @override
-  String get lbSkinTagDragon => 'Legally not a dragon.';
+  String get lbSettingsSubtitle => 'Ajústalo hasta que se sienta bien.';
 
   @override
-  String get lbSettingsTitle => 'SETTINGS';
+  String get lbControls => 'CONTROLES';
 
   @override
-  String get lbSettingsSubtitle => 'Tweak it till it feels right.';
+  String get lbCtrlSwipe => 'DESLIZAR';
 
   @override
-  String get lbControls => 'CONTROLS';
+  String get lbCtrlSwipeSub => 'donde sea';
 
   @override
-  String get lbCtrlSwipe => 'SWIPE';
+  String get lbCtrlDpad => 'CRUCETA';
 
   @override
-  String get lbCtrlSwipeSub => 'anywhere';
+  String get lbCtrlDpadSub => '4 flechas';
 
   @override
-  String get lbCtrlDpad => 'D-PAD';
+  String get lbCtrlTurn => 'GIRAR';
 
   @override
-  String get lbCtrlDpadSub => '4 arrows';
-
-  @override
-  String get lbCtrlTurn => 'TURN';
-
-  @override
-  String get lbCtrlTurnSub => 'left · right';
+  String get lbCtrlTurnSub => 'izq. · dcha.';
 
   @override
   String get lbCtrlStick => 'STICK';
 
   @override
-  String get lbCtrlStickSub => 'floating';
+  String get lbCtrlStickSub => 'flotante';
 
   @override
-  String get lbSwipeFeel => 'SWIPE FEEL';
+  String get lbGameplay => 'JUEGO';
 
   @override
-  String get lbSwipeFeelSub => 'lazy ←→ twitchy';
+  String get lbMode => 'MODO';
 
   @override
-  String get lbGameplay => 'GAMEPLAY';
+  String get lbBoard => 'TABLERO';
 
   @override
-  String get lbMode => 'MODE';
+  String get lbDifficulty => 'DIFICULTAD';
 
   @override
-  String get lbBoard => 'BOARD';
+  String get lbCrashReplay => 'REPETICIÓN DEL CHOQUE';
 
   @override
-  String get lbDifficulty => 'DIFFICULTY';
+  String get lbCrashReplaySub => 'cuánto te lo restregamos';
 
   @override
-  String get lbCrashReplay => 'CRASH REPLAY';
-
-  @override
-  String get lbCrashReplaySub => 'how long we rub it in';
-
-  @override
-  String get lbTheme => 'THEME';
+  String get lbTheme => 'TEMA';
 
   @override
   String lbThemeAside(String theme, String free, String premium) {
-    return '$theme · $free FREE · $premium PREMIUM';
+    return '$theme · $free GRATIS · $premium PREMIUM';
   }
 
   @override
-  String get lbSoundFeel => 'SOUND & FEEL';
+  String get lbSoundFeel => 'SONIDO Y TACTO';
 
   @override
-  String get lbSoundFx => 'SOUND FX';
+  String get lbSoundFx => 'EFECTOS';
 
   @override
-  String get lbSoundFxSub => 'crunchy, as intended';
+  String get lbSoundFxSub => 'crujientes, como debe ser';
 
   @override
-  String get lbMusic => 'MUSIC';
+  String get lbMusic => 'MÚSICA';
 
   @override
-  String get lbHaptics => 'HAPTICS';
+  String get lbHaptics => 'VIBRACIÓN';
 
   @override
-  String get lbHapticsSub => 'tiny buzz on every bite';
+  String get lbHapticsSub => 'un zumbidito en cada mordisco';
 
   @override
   String get lb120Hz => '120 HZ';
 
   @override
-  String get lb120HzSub => 'smooth like butter (if your phone is)';
+  String get lb120HzSub => 'suave como la seda (si tu móvil lo es)';
 
   @override
-  String get lbReplayTutorial => 'REPLAY TUTORIAL';
+  String get lbReplayTutorial => 'REPETIR TUTORIAL';
 
   @override
-  String get lbPrivacy => 'PRIVACY';
-
-  @override
-  String get lbOpenRunSetup => 'Run setup';
+  String get lbPrivacy => 'PRIVACIDAD';
 
   @override
   String get lbVersusTitle => 'VERSUS';
 
   @override
-  String get lbVersusSubtitle => 'Real people. Real snakes. Real beef.';
+  String get lbVersusSubtitle => 'Gente real. Serpientes reales. Pique real.';
 
   @override
-  String get lbWins => 'WINS';
+  String get lbWins => 'VICTORIAS';
 
   @override
-  String get lbLosses => 'LOSSES';
+  String get lbLosses => 'DERROTAS';
 
   @override
-  String get lbDraws => 'DRAWS';
+  String get lbDraws => 'EMPATES';
 
   @override
   String get lbRating => 'RATING';
 
   @override
-  String get lbQuickMatch => 'QUICK MATCH';
+  String get lbQuickMatch => 'PARTIDA RÁPIDA';
 
   @override
-  String get lbQuickMatchLine => '1v1 Classic. We find you a rival in seconds.';
+  String get lbQuickMatchLine => '1v1 Clásico. Te buscamos rival en segundos.';
 
   @override
-  String get lbFindMatch => 'FIND MATCH';
+  String get lbFindMatch => 'BUSCAR PARTIDA';
 
   @override
   String lbSearching(String secs) {
-    return 'SNIFFING OUT A RIVAL… ${secs}s';
+    return 'OLFATEANDO UN RIVAL… ${secs}s';
   }
 
   @override
-  String get lbCancel => 'CANCEL';
+  String get lbCancel => 'CANCELAR';
 
   @override
-  String get lbGotCode => 'GOT A CODE?';
+  String get lbGotCode => '¿TIENES CÓDIGO?';
 
   @override
   String get lbGotCodeLine =>
-      'Six letters. Case doesn\'t matter. Friendship might.';
+      'Seis letras. Mayúsculas, da igual. La amistad, quizá no.';
 
   @override
-  String get lbCreateRoom => 'CREATE ROOM';
+  String get lbCreateRoom => 'CREAR SALA';
 
   @override
-  String get lbCreateRoomLine => 'Invite a friend. Or a frenemy.';
+  String get lbCreateRoomLine => 'Invita a un amigo. O a un amienemigo.';
 
   @override
   String get lbHouseSnake =>
-      'Nobody brave online? The house snake joins after 30s. It doesn\'t trash talk.';
+      '¿Nadie valiente en línea? La serpiente de la casa entra a los 30s. No se burla de ti.';
 
   @override
-  String get lbTournamentsLive => 'TOURNAMENTS · LIVE';
+  String get lbTournamentsLive => 'TORNEOS · EN VIVO';
 
   @override
-  String get lbTournamentsLine => 'Bronze free · Silver & Gold entries';
+  String get lbTournamentsLine => 'Bronce gratis · entradas de Plata y Oro';
 
   @override
-  String get lbRoomTitle => 'ROOM';
+  String get lbRoomTitle => 'SALA';
 
   @override
-  String get lbRoomSubtitle => 'Share the code. Wait nervously.';
+  String get lbRoomSubtitle => 'Comparte el código. Espera con nervios.';
 
   @override
   String lbPlayersCount(String count, String max) {
-    return 'PLAYERS $count/$max';
+    return 'JUGADORES $count/$max';
   }
 
   @override
-  String get lbYou => 'YOU';
+  String get lbYou => 'TÚ';
 
   @override
   String get lbRival => 'RIVAL';
 
   @override
-  String get lbWaitingYou => 'WAITING · tap ready, hero';
+  String get lbWaitingYou => 'ESPERANDO · pulsa listo, héroe';
 
   @override
-  String get lbWaiting => 'WAITING';
+  String get lbWaiting => 'ESPERANDO';
 
   @override
-  String get lbReadyThem => 'READY · stretching menacingly';
+  String get lbReadyThem => 'LISTO · estirándose amenazante';
 
   @override
-  String get lbReadyYou => 'READY · nerves of steel';
+  String get lbReadyYou => 'LISTO · nervios de acero';
 
   @override
-  String get lbReadyCheck => 'READY CHECK';
+  String get lbReadyCheck => '¿LISTOS?';
 
   @override
-  String get lbReady => 'READY';
+  String get lbReady => 'LISTO';
 
   @override
-  String get lbLeaveRoom => 'LEAVE ROOM';
+  String get lbLeaveRoom => 'SALIR DE LA SALA';
 
   @override
   String get lbVs => 'VS';
 
   @override
-  String get lbLive => 'LIVE';
+  String get lbLive => 'EN VIVO';
 
   @override
   String lbMatchBehind(String rival, String gap) {
-    return '$rival is $gap points ahead. Rude.';
+    return '$rival te saca $gap puntos. Qué grosero.';
   }
 
   @override
   String lbMatchAhead(String gap) {
-    return 'You\'re $gap ahead. Don\'t get cocky.';
+    return 'Vas $gap por delante. No te confíes.';
   }
 
   @override
-  String get lbMatchTied => 'Dead even. Eat something.';
+  String get lbMatchTied => 'Empate exacto. Come algo.';
 
   @override
-  String get lbVictory => 'VICTORY';
+  String get lbVictory => 'VICTORIA';
 
   @override
   String lbVictoryLine(String rival) {
-    return 'You out-snaked $rival.';
+    return 'Fuiste más serpiente que $rival.';
   }
 
   @override
-  String get lbDefeat => 'DEFEAT';
+  String get lbDefeat => 'DERROTA';
 
   @override
   String lbDefeatLine(String rival) {
-    return '$rival took this one.';
+    return '$rival se llevó esta.';
   }
 
   @override
   String get lbDefeatBothCrashed =>
-      'Both snakes crashed. Their score decided it.';
+      'Las dos serpientes chocaron. Decidió la puntuación.';
 
   @override
   String lbDefeatLine2(String rival) {
-    return '$rival will be insufferable now.';
+    return '$rival va a estar insoportable.';
   }
 
   @override
-  String get lbDraw => 'DRAW';
+  String get lbDraw => 'EMPATE';
 
   @override
-  String get lbDrawLine => 'Perfectly balanced. Rematch?';
+  String get lbDrawLine => 'Perfectamente equilibrado. ¿Revancha?';
 
   @override
-  String get lbVersusFooter =>
-      'Every loss is just a rematch waiting to happen.';
+  String get lbVersusFooter => 'Cada derrota es solo una revancha pendiente.';
 
   @override
-  String get lbLength => 'LENGTH';
+  String get lbLength => 'LARGO';
 
   @override
-  String get lbSurvived => 'SURVIVED';
+  String get lbSurvived => 'AGUANTASTE';
 
   @override
-  String get lbRematch => 'REMATCH';
+  String get lbRematch => 'REVANCHA';
 
   @override
-  String get lbBackToLobby => 'BACK TO LOBBY';
+  String get lbBackToLobby => 'VOLVER AL LOBBY';
 
   @override
-  String get lbAdBreak => 'AD BREAK';
+  String get lbAdBreak => 'PAUSA PUBLICITARIA';
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'A short ad. $coins coins for you.';
+    return 'Un anuncio corto. $coins monedas para ti.';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Fair trade? Your call either way.';
+  String get lbAdBreakLine2 => '¿Trato justo? Tú decides.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'STARTS IN $secs · OR SKIP, NO HARD FEELINGS';
+    return 'EMPIEZA EN $secs · O SÁLTALO, SIN RENCORES';
   }
 
   @override
   String lbAdRewardWhenEnds(String coins) {
-    return '+$coins¢ WHEN IT ENDS';
+    return '+$coins¢ AL TERMINAR';
   }
 
   @override
-  String get lbWatchNow => 'WATCH NOW';
+  String get lbWatchNow => 'VER AHORA';
 
   @override
-  String get lbNoThanks => 'NO THANKS';
+  String get lbNoThanks => 'NO, GRACIAS';
 
   @override
-  String get lbAdBackHint => 'The back gesture counts as no thanks, too.';
+  String get lbAdBackHint =>
+      'El gesto de volver también cuenta como no, gracias.';
 
   @override
-  String get lbAdGoProLine => 'and never see this screen again.';
+  String get lbAdStarting => 'EMPIEZA EL ANUNCIO…';
 
   @override
-  String get lbAdStarting => 'AD STARTING…';
-
-  @override
-  String get lbNoAdNow => 'No ad right now. Try again in a sec.';
-
-  @override
-  String get lbOffline => 'NO SIGNAL. Single-player still works.';
+  String get lbNoAdNow => 'No hay anuncio ahora. Prueba en un momento.';
 
   @override
   String get lbServerDown =>
-      'Our servers bonked. Your progress is safe on this phone.';
+      'Nuestros servidores se estrellaron. Tu progreso está a salvo en este móvil.';
 
   @override
-  String get lbPurchaseFailed =>
-      'Purchase didn\'t go through. You weren\'t charged.';
+  String get lbHomeVersusSubOffline => '1v1 · rivales reales';
 
   @override
-  String get lbMatchTimeout => 'No rival found. The house snake is warming up.';
+  String get lbHomeSeasonSubNone => 'Gana XP en cada partida';
 
   @override
-  String get lbHomeVersusSubOffline => '1v1 · real rivals';
+  String get lbMenuHowToPlay => 'CÓMO JUGAR';
 
   @override
-  String get lbHomeSeasonSubNone => 'Earn XP every run';
+  String get lbMenuTournaments => 'TORNEOS';
 
   @override
-  String get lbMenuHowToPlay => 'HOW TO PLAY';
+  String get lbMenuAbout => 'ACERCA DE';
 
   @override
-  String get lbMenuTournaments => 'TOURNAMENTS';
+  String get lbMenuHowToPlaySub => 'gestos, modos, potenciadores';
 
   @override
-  String get lbMenuAbout => 'ABOUT';
+  String get lbMenuAboutSub => 'versión, créditos, legal';
 
   @override
-  String get lbMenuHowToPlaySub => 'swipes, modes, power-ups';
-
-  @override
-  String get lbMenuAboutSub => 'version, credits, legal';
-
-  @override
-  String get lbSetupLoadoutNone => 'TAP ONE TO ARM';
+  String get lbSetupLoadoutNone => 'TOCA UNO PARA ARMARLO';
 
   @override
   String lbSetupLoadoutArmedOne(String name) {
-    return '$name ARMED';
+    return '$name ARMADO';
   }
 
   @override
@@ -7758,40 +6629,40 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String lbArmedChip(String name) {
-    return 'ARMED · $name';
+    return 'ARMADO · $name';
   }
 
   @override
   String get lbGuestNoteApple =>
-      'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.';
+      'Los invitados pueden jugar y guardar el progreso en el dispositivo, pero no pueden hacer compras. Inicia sesión con Apple, Google o email cuando quieras suscribirte o comprar.';
 
   @override
   String get lbGuestNoteNoApple =>
-      'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.';
+      'Los invitados pueden jugar y guardar el progreso en el dispositivo, pero no pueden hacer compras. Inicia sesión con Google o email cuando quieras suscribirte o comprar.';
 
   @override
-  String get lbAuthLegalTitle => 'PRIVACY + TERMS';
+  String get lbAuthLegalTitle => 'PRIVACIDAD + TÉRMINOS';
 
   @override
-  String get lbConsentTitle => 'TERMS UPDATED';
+  String get lbConsentTitle => 'TÉRMINOS ACTUALIZADOS';
 
   @override
   String get lbEmailTitle => 'EMAIL';
 
   @override
-  String get lbEmailLinkTitle => 'SAVE PROGRESS';
+  String get lbEmailLinkTitle => 'GUARDAR PROGRESO';
 
   @override
-  String get lbUsernameTitle => 'USERNAME';
+  String get lbUsernameTitle => 'USUARIO';
 
   @override
-  String get lbShowPassword => 'Show password';
+  String get lbShowPassword => 'Mostrar contraseña';
 
   @override
-  String get lbHidePassword => 'Hide password';
+  String get lbHidePassword => 'Ocultar contraseña';
 
   @override
-  String get lbSignedIn => 'SIGNED IN';
+  String get lbSignedIn => 'CONECTADO';
 
   @override
   String get lbProviderGoogle => 'GOOGLE';
@@ -7803,25 +6674,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get lbProviderEmail => 'EMAIL';
 
   @override
-  String get lbStatsSubtitle => 'Every run, counted. Even the bad ones.';
+  String get lbStatsSubtitle => 'Cada partida, contada. Hasta las malas.';
 
   @override
-  String get lbTrendUp => 'CLIMBING';
+  String get lbTrendUp => 'SUBIENDO';
 
   @override
-  String get lbTrendDown => 'SLIPPING';
+  String get lbTrendDown => 'BAJANDO';
 
   @override
-  String get lbTrendFlat => 'STEADY';
+  String get lbTrendFlat => 'ESTABLE';
 
   @override
-  String get lbReplaysSubtitle => 'Kept on this phone. Never uploaded.';
+  String get lbReplaysSubtitle => 'Guardadas en este móvil. Nunca se suben.';
 
   @override
-  String get lbReplayTitle => 'REPLAY';
+  String get lbReplayTitle => 'REPETICIÓN';
 
   @override
-  String get lbReplayEnded => 'ENDED';
+  String get lbReplayEnded => 'TERMINADA';
 
   @override
   String lbSpeedX(String speed) {
@@ -7829,16 +6700,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbPause => 'PAUSE';
+  String get lbPause => 'PAUSA';
 
   @override
-  String get lbReplayPrevFrame => 'PREVIOUS FRAME';
+  String get lbReplayPrevFrame => 'FOTOGRAMA ANTERIOR';
 
   @override
-  String get lbReplayNextFrame => 'NEXT FRAME';
+  String get lbReplayNextFrame => 'FOTOGRAMA SIGUIENTE';
 
   @override
-  String get lbFriendsSubtitle => 'Snakes you know. Rivals you\'ll beat.';
+  String get lbFriendsSubtitle =>
+      'Serpientes que conoces. Rivales a los que ganarás.';
 
   @override
   String lbDurDayHour(String d, String h) {
@@ -7850,8 +6722,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days DAY STREAK',
-      one: '1 DAY STREAK',
+      other: 'RACHA DE $days DÍAS',
+      one: 'RACHA DE 1 DÍA',
     );
     return '$_temp0';
   }
@@ -7862,17 +6734,17 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbRefresh => 'REFRESH';
+  String get lbRefresh => 'ACTUALIZAR';
 
   @override
-  String get lbRouteErrorTitle => 'LOST THE TRAIL';
+  String get lbRouteErrorTitle => 'RASTRO PERDIDO';
 
   @override
   String get lbRouteErrorBody =>
-      'That screen does not exist in this version of the game.';
+      'Esa pantalla no existe en esta versión del juego.';
 
   @override
-  String get lbRouteErrorHome => 'BACK TO HOME';
+  String get lbRouteErrorHome => 'VOLVER AL INICIO';
 
   @override
   String lbVersionShort(String version) {
@@ -7880,36 +6752,36 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get lbCtrlReference => 'GESTURES & KEYS';
+  String get lbCtrlReference => 'GESTOS Y TECLAS';
 
   @override
-  String get lbCtrlReferenceSub => 'what every swipe and key does';
+  String get lbCtrlReferenceSub => 'qué hace cada gesto y tecla';
 
   @override
   String lbThemeSwatchLocked(String theme) {
-    return '$theme, locked';
+    return '$theme, bloqueado';
   }
 
   @override
-  String get lbLanguageRow => 'APP LANGUAGE';
+  String get lbLanguageRow => 'IDIOMA DE LA APP';
 
   @override
-  String get lbPerYearBestValue => 'per year · best value';
+  String get lbPerYearBestValue => 'al año · mejor precio';
 
   @override
-  String get lbProAlsoIncluded => 'ALSO INCLUDED';
+  String get lbProAlsoIncluded => 'TAMBIÉN INCLUYE';
 
   @override
-  String get lbFreeTrack => 'FREE TRACK';
+  String get lbFreeTrack => 'PASE GRATIS';
 
   @override
   String lbSeasonSubtitleSoon(String season, String left) {
-    return '$season · $left. Make them count.';
+    return '$season · $left. Aprovéchalo.';
   }
 
   @override
-  String get lbEndsIn => 'ENDS IN';
+  String get lbEndsIn => 'TERMINA EN';
 
   @override
-  String get lbStartsIn => 'STARTS IN';
+  String get lbStartsIn => 'EMPIEZA EN';
 }

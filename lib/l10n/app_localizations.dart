@@ -112,12 +112,6 @@ abstract class AppLocalizations {
     Locale('ru'),
   ];
 
-  /// App title shown in the OS task switcher. Brand name — keep as-is in every language.
-  ///
-  /// In en, this message translates to:
-  /// **'Snake Classic'**
-  String get appTitle;
-
   /// Settings section header for the app language picker. Uppercase like the other section headers.
   ///
   /// In en, this message translates to:
@@ -142,53 +136,11 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
-  /// Match result dialog title when the player won. Uppercase, celebratory.
-  ///
-  /// In en, this message translates to:
-  /// **'VICTORY!'**
-  String get mpVictory;
-
-  /// No description provided for @mpDraw.
-  ///
-  /// In en, this message translates to:
-  /// **'DRAW'**
-  String get mpDraw;
-
-  /// No description provided for @mpDefeat.
-  ///
-  /// In en, this message translates to:
-  /// **'DEFEAT'**
-  String get mpDefeat;
-
-  /// Label for the local player's own score/snake.
-  ///
-  /// In en, this message translates to:
-  /// **'You'**
-  String get mpYou;
-
-  /// The 'versus' medallion between the two players. Short — 2-3 characters.
-  ///
-  /// In en, this message translates to:
-  /// **'VS'**
-  String get mpVs;
-
   /// No description provided for @mpOpponent.
   ///
   /// In en, this message translates to:
   /// **'Opponent'**
   String get mpOpponent;
-
-  /// No description provided for @mpBackToLobby.
-  ///
-  /// In en, this message translates to:
-  /// **'Back to Lobby'**
-  String get mpBackToLobby;
-
-  /// No description provided for @mpPlayAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Play Again'**
-  String get mpPlayAgain;
 
   /// No description provided for @mpTimeUpDraw.
   ///
@@ -346,41 +298,11 @@ abstract class AppLocalizations {
   /// **'LENGTH'**
   String get mpLength;
 
-  /// Label on the swipe input indicator.
-  ///
-  /// In en, this message translates to:
-  /// **'Swipe'**
-  String get mpSwipe;
-
   /// Small inline status under an opponent who lost connection. Lowercase.
   ///
   /// In en, this message translates to:
   /// **'reconnecting…'**
   String get mpReconnectingInline;
-
-  /// The big main-menu play button. Uppercase, punchy.
-  ///
-  /// In en, this message translates to:
-  /// **'PLAY'**
-  String get homePlay;
-
-  /// No description provided for @homeHighScore.
-  ///
-  /// In en, this message translates to:
-  /// **'HIGH SCORE'**
-  String get homeHighScore;
-
-  /// Loadout chip when a power-up is pre-loaded for the next game.
-  ///
-  /// In en, this message translates to:
-  /// **'Armed: {name}'**
-  String homeArmedPowerUp(String name);
-
-  /// No description provided for @homeLoadoutCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Loadout ({count})'**
-  String homeLoadoutCount(int count);
 
   /// No description provided for @puSpeedBoost.
   ///
@@ -405,72 +327,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Slow Motion'**
   String get puSlowMotion;
-
-  /// No description provided for @homeTilePro.
-  ///
-  /// In en, this message translates to:
-  /// **'PRO'**
-  String get homeTilePro;
-
-  /// No description provided for @homeTileStore.
-  ///
-  /// In en, this message translates to:
-  /// **'STORE'**
-  String get homeTileStore;
-
-  /// No description provided for @homeTileFree.
-  ///
-  /// In en, this message translates to:
-  /// **'FREE'**
-  String get homeTileFree;
-
-  /// No description provided for @homeTileDaily.
-  ///
-  /// In en, this message translates to:
-  /// **'DAILY'**
-  String get homeTileDaily;
-
-  /// No description provided for @homeTileBattle.
-  ///
-  /// In en, this message translates to:
-  /// **'BATTLE'**
-  String get homeTileBattle;
-
-  /// No description provided for @homeTileEvents.
-  ///
-  /// In en, this message translates to:
-  /// **'EVENTS'**
-  String get homeTileEvents;
-
-  /// No description provided for @homeTileBoard.
-  ///
-  /// In en, this message translates to:
-  /// **'BOARD'**
-  String get homeTileBoard;
-
-  /// No description provided for @homeTileFriends.
-  ///
-  /// In en, this message translates to:
-  /// **'FRIENDS'**
-  String get homeTileFriends;
-
-  /// No description provided for @homeTileCosmetics.
-  ///
-  /// In en, this message translates to:
-  /// **'COSMETICS'**
-  String get homeTileCosmetics;
-
-  /// No description provided for @homeTileAwards.
-  ///
-  /// In en, this message translates to:
-  /// **'AWARDS'**
-  String get homeTileAwards;
-
-  /// Home grid tile labels — very short, they sit under icons in a fixed-size tile.
-  ///
-  /// In en, this message translates to:
-  /// **'VERSUS'**
-  String get homeTileVersus;
 
   /// No description provided for @homeNoAdReady.
   ///
@@ -514,95 +370,11 @@ abstract class AppLocalizations {
   /// **'Ad not finished — watch the full ad to earn your reward.'**
   String get homeAdNotFinished;
 
-  /// No description provided for @homePickGameMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a Game Mode'**
-  String get homePickGameMode;
-
-  /// No description provided for @homePickGameModeSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'You can change this anytime in Settings'**
-  String get homePickGameModeSubtitle;
-
   /// No description provided for @homeStartPlaying.
   ///
   /// In en, this message translates to:
   /// **'START PLAYING'**
   String get homeStartPlaying;
-
-  /// No description provided for @homeLoadoutTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Power-Up Loadout'**
-  String get homeLoadoutTitle;
-
-  /// No description provided for @homeLoadoutSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pre-load one power-up — it activates 5 seconds into your next game.'**
-  String get homeLoadoutSubtitle;
-
-  /// No description provided for @homeWatchAdFreeSpeedBoost.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch ad — free Speed Boost'**
-  String get homeWatchAdFreeSpeedBoost;
-
-  /// No description provided for @homeNoPowerUps.
-  ///
-  /// In en, this message translates to:
-  /// **'You have no power-ups.\nVisit the store to buy some!'**
-  String get homeNoPowerUps;
-
-  /// No description provided for @homeOwnedCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Owned: {count}'**
-  String homeOwnedCount(int count);
-
-  /// No description provided for @homeArmed.
-  ///
-  /// In en, this message translates to:
-  /// **'ARMED'**
-  String get homeArmed;
-
-  /// No description provided for @homeDone.
-  ///
-  /// In en, this message translates to:
-  /// **'DONE'**
-  String get homeDone;
-
-  /// No description provided for @settingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'SETTINGS'**
-  String get settingsTitle;
-
-  /// No description provided for @settingsBackToGame.
-  ///
-  /// In en, this message translates to:
-  /// **'BACK TO GAME'**
-  String get settingsBackToGame;
-
-  /// No description provided for @settingsSectionControls.
-  ///
-  /// In en, this message translates to:
-  /// **'CONTROLS'**
-  String get settingsSectionControls;
-
-  /// No description provided for @settingsSectionGameplay.
-  ///
-  /// In en, this message translates to:
-  /// **'GAMEPLAY'**
-  String get settingsSectionGameplay;
-
-  /// No description provided for @settingsSectionAudio.
-  ///
-  /// In en, this message translates to:
-  /// **'AUDIO'**
-  String get settingsSectionAudio;
 
   /// No description provided for @settingsSectionVisual.
   ///
@@ -639,18 +411,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PREMIUM FEATURES'**
   String get settingsSectionPremium;
-
-  /// No description provided for @settingsDPadControls.
-  ///
-  /// In en, this message translates to:
-  /// **'D-Pad Controls'**
-  String get settingsDPadControls;
-
-  /// No description provided for @settingsDPadSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Show on-screen directional buttons during gameplay'**
-  String get settingsDPadSubtitle;
 
   /// No description provided for @settingsSnapMovement.
   ///
@@ -723,12 +483,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Push anywhere in the bar toward where you want to go. Keep pressing to keep steering.'**
   String get settingsControlLayoutStickDesc;
-
-  /// No description provided for @poLayoutStick.
-  ///
-  /// In en, this message translates to:
-  /// **'STICK'**
-  String get poLayoutStick;
 
   /// No description provided for @gameJoystick.
   ///
@@ -922,29 +676,11 @@ abstract class AppLocalizations {
   /// **'Move snake right'**
   String get settingsMoveSnakeRight;
 
-  /// No description provided for @settingsGameMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Game Mode'**
-  String get settingsGameMode;
-
   /// No description provided for @settingsGameModeLocked.
   ///
   /// In en, this message translates to:
   /// **'Complete current game to change game mode'**
   String get settingsGameModeLocked;
-
-  /// No description provided for @settingsDifficulty.
-  ///
-  /// In en, this message translates to:
-  /// **'Difficulty'**
-  String get settingsDifficulty;
-
-  /// No description provided for @settingsDifficultySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sets how fast the snake starts. Each mode still speeds up as you level.'**
-  String get settingsDifficultySubtitle;
 
   /// No description provided for @settingsEasyNote.
   ///
@@ -958,23 +694,11 @@ abstract class AppLocalizations {
   /// **'Finish your current game to change difficulty.'**
   String get settingsDifficultyLocked;
 
-  /// No description provided for @settingsCurrentSize.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Size'**
-  String get settingsCurrentSize;
-
   /// No description provided for @settingsBoardSizeLocked.
   ///
   /// In en, this message translates to:
   /// **'Complete current game to change board size'**
   String get settingsBoardSizeLocked;
-
-  /// No description provided for @settingsCurrentDuration.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Duration'**
-  String get settingsCurrentDuration;
 
   /// No description provided for @settingsCrashFeedbackSubtitle.
   ///
@@ -993,36 +717,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shake the screen on collisions and game events'**
   String get settingsScreenShakeSubtitle;
-
-  /// No description provided for @settingsVibration.
-  ///
-  /// In en, this message translates to:
-  /// **'Vibration'**
-  String get settingsVibration;
-
-  /// No description provided for @settingsVibrationSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Vibrate on game events and button presses'**
-  String get settingsVibrationSubtitle;
-
-  /// No description provided for @settingsSoundEffects.
-  ///
-  /// In en, this message translates to:
-  /// **'Sound Effects'**
-  String get settingsSoundEffects;
-
-  /// No description provided for @settingsBackgroundMusic.
-  ///
-  /// In en, this message translates to:
-  /// **'Background Music'**
-  String get settingsBackgroundMusic;
-
-  /// No description provided for @settingsCurrentTheme.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Theme'**
-  String get settingsCurrentTheme;
 
   /// No description provided for @settingsBrowseThemes.
   ///
@@ -1047,18 +741,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DISPLAY'**
   String get settingsSectionDisplay;
-
-  /// No description provided for @settingsSmoothMotion.
-  ///
-  /// In en, this message translates to:
-  /// **'Smooth Motion'**
-  String get settingsSmoothMotion;
-
-  /// No description provided for @settingsSmoothMotionSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Use the highest refresh rate this screen supports'**
-  String get settingsSmoothMotionSubtitle;
 
   /// No description provided for @settingsDisplayHz.
   ///
@@ -1564,12 +1246,6 @@ abstract class AppLocalizations {
   /// **'You\'re offline. Multiplayer requires an internet connection.'**
   String get mpLobbyOffline;
 
-  /// No description provided for @mpLobbyDismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'DISMISS'**
-  String get mpLobbyDismiss;
-
   /// No description provided for @mpLobbyGo.
   ///
   /// In en, this message translates to:
@@ -1582,59 +1258,17 @@ abstract class AppLocalizations {
   /// **'Get Ready!'**
   String get mpLobbyGetReady;
 
-  /// No description provided for @mpLobbyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'MULTIPLAYER'**
-  String get mpLobbyTitle;
-
-  /// No description provided for @mpLobbySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Play with friends online'**
-  String get mpLobbySubtitle;
-
-  /// No description provided for @mpLobbyRoomCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Room: {code}'**
-  String mpLobbyRoomCode(Object code);
-
   /// No description provided for @mpLobbyRoomCodeCopied.
   ///
   /// In en, this message translates to:
   /// **'Room code copied!'**
   String get mpLobbyRoomCodeCopied;
 
-  /// No description provided for @mpLobbyQuickMatch.
-  ///
-  /// In en, this message translates to:
-  /// **'QUICK MATCH'**
-  String get mpLobbyQuickMatch;
-
-  /// No description provided for @mpLobbyQuickMatchSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'1v1 Classic — find an opponent automatically'**
-  String get mpLobbyQuickMatchSubtitle;
-
   /// No description provided for @mpLobbyFinding.
   ///
   /// In en, this message translates to:
   /// **'FINDING...'**
   String get mpLobbyFinding;
-
-  /// No description provided for @mpLobbyFindMatch.
-  ///
-  /// In en, this message translates to:
-  /// **'FIND MATCH'**
-  String get mpLobbyFindMatch;
-
-  /// No description provided for @mpLobbySeconds.
-  ///
-  /// In en, this message translates to:
-  /// **'sec'**
-  String get mpLobbySeconds;
 
   /// No description provided for @mpLobbySearching.
   ///
@@ -1653,12 +1287,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Queue Position: {position}'**
   String mpLobbyQueuePosition(Object position);
-
-  /// No description provided for @mpLobbyCancelUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'CANCEL'**
-  String get mpLobbyCancelUpper;
 
   /// No description provided for @mpLobbyConnectionLostTitle.
   ///
@@ -1714,89 +1342,17 @@ abstract class AppLocalizations {
   /// **'TRY AGAIN'**
   String get mpLobbyTryAgain;
 
-  /// No description provided for @mpLobbyWinsChip.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} W'**
-  String mpLobbyWinsChip(Object count);
-
-  /// No description provided for @mpLobbyLossesChip.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} L'**
-  String mpLobbyLossesChip(Object count);
-
-  /// No description provided for @mpLobbyDrawsChip.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} D'**
-  String mpLobbyDrawsChip(Object count);
-
-  /// No description provided for @mpLobbyWinsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Wins'**
-  String get mpLobbyWinsLabel;
-
-  /// No description provided for @mpLobbyLossesLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Losses'**
-  String get mpLobbyLossesLabel;
-
-  /// No description provided for @mpLobbyDrawsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Draws'**
-  String get mpLobbyDrawsLabel;
-
-  /// No description provided for @mpLobbyRatingLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Rating'**
-  String get mpLobbyRatingLabel;
-
   /// No description provided for @mpLobbyJoinRoom.
   ///
   /// In en, this message translates to:
   /// **'JOIN ROOM'**
   String get mpLobbyJoinRoom;
 
-  /// No description provided for @mpLobbyJoinSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter room code to join'**
-  String get mpLobbyJoinSubtitle;
-
   /// No description provided for @mpLobbyEnterRoomCode.
   ///
   /// In en, this message translates to:
   /// **'Enter room code'**
   String get mpLobbyEnterRoomCode;
-
-  /// No description provided for @mpLobbyCreateRoom.
-  ///
-  /// In en, this message translates to:
-  /// **'CREATE ROOM'**
-  String get mpLobbyCreateRoom;
-
-  /// No description provided for @mpLobbyCreateSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a 1v1 room and invite a friend'**
-  String get mpLobbyCreateSubtitle;
-
-  /// No description provided for @mpLobbyPlayersHeader.
-  ///
-  /// In en, this message translates to:
-  /// **'PLAYERS ({current}/{max})'**
-  String mpLobbyPlayersHeader(Object current, Object max);
-
-  /// No description provided for @mpLobbyYouBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'YOU'**
-  String get mpLobbyYouBadge;
 
   /// No description provided for @mpLobbyWaitingForPlayer.
   ///
@@ -1816,23 +1372,11 @@ abstract class AppLocalizations {
   /// **'Waiting for host to start...'**
   String get mpLobbyWaitingForHost;
 
-  /// No description provided for @mpLobbyLeave.
-  ///
-  /// In en, this message translates to:
-  /// **'LEAVE'**
-  String get mpLobbyLeave;
-
   /// No description provided for @mpLobbyReadyDone.
   ///
   /// In en, this message translates to:
   /// **'READY!'**
   String get mpLobbyReadyDone;
-
-  /// No description provided for @mpLobbyReady.
-  ///
-  /// In en, this message translates to:
-  /// **'READY'**
-  String get mpLobbyReady;
 
   /// No description provided for @mpModeClassicDesc.
   ///
@@ -1906,29 +1450,11 @@ abstract class AppLocalizations {
   /// **'🎉 +{count} bonus coins for watching!'**
   String goAdBonusCoins(Object count);
 
-  /// No description provided for @goWatchToDouble.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch to double your {count} coins'**
-  String goWatchToDouble(Object count);
-
-  /// No description provided for @goRewardClaimLine.
-  ///
-  /// In en, this message translates to:
-  /// **'+{coins} coins  •  +{xp} XP'**
-  String goRewardClaimLine(Object coins, Object xp);
-
   /// No description provided for @goClaimedTotal.
   ///
   /// In en, this message translates to:
   /// **'Claimed {count} coins from daily challenges!'**
   String goClaimedTotal(Object count);
-
-  /// No description provided for @goRibbonNewHighScore.
-  ///
-  /// In en, this message translates to:
-  /// **'NEW HIGH SCORE!'**
-  String get goRibbonNewHighScore;
 
   /// No description provided for @goRibbonTournamentSubmitted.
   ///
@@ -1948,96 +1474,6 @@ abstract class AppLocalizations {
   /// **'SUBMITTING TOURNAMENT SCORE…'**
   String get goRibbonTournamentSubmitting;
 
-  /// No description provided for @goVictory.
-  ///
-  /// In en, this message translates to:
-  /// **'VICTORY!'**
-  String get goVictory;
-
-  /// No description provided for @goGameOver.
-  ///
-  /// In en, this message translates to:
-  /// **'GAME OVER'**
-  String get goGameOver;
-
-  /// No description provided for @goFinalScore.
-  ///
-  /// In en, this message translates to:
-  /// **'FINAL SCORE'**
-  String get goFinalScore;
-
-  /// No description provided for @goLevel.
-  ///
-  /// In en, this message translates to:
-  /// **'LEVEL'**
-  String get goLevel;
-
-  /// No description provided for @goBest.
-  ///
-  /// In en, this message translates to:
-  /// **'BEST'**
-  String get goBest;
-
-  /// No description provided for @goCoinsEarned.
-  ///
-  /// In en, this message translates to:
-  /// **'Coins Earned'**
-  String get goCoinsEarned;
-
-  /// No description provided for @goDailyRewardsReady.
-  ///
-  /// In en, this message translates to:
-  /// **'DAILY REWARDS READY'**
-  String get goDailyRewardsReady;
-
-  /// No description provided for @goRewardsSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} reward} other{{count} rewards}}  •  +{coins} coins  •  +{xp} XP'**
-  String goRewardsSummary(Object coins, num count, Object xp);
-
-  /// No description provided for @goClaimAll.
-  ///
-  /// In en, this message translates to:
-  /// **'CLAIM ALL'**
-  String get goClaimAll;
-
-  /// No description provided for @goXpAmount.
-  ///
-  /// In en, this message translates to:
-  /// **'{xp} XP'**
-  String goXpAmount(Object xp);
-
-  /// No description provided for @goClaim.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim'**
-  String get goClaim;
-
-  /// No description provided for @goAchievements.
-  ///
-  /// In en, this message translates to:
-  /// **'ACHIEVEMENTS'**
-  String get goAchievements;
-
-  /// No description provided for @goRecentlyUnlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Recently Unlocked'**
-  String get goRecentlyUnlocked;
-
-  /// No description provided for @goInProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'In Progress'**
-  String get goInProgress;
-
-  /// No description provided for @goPlayAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'PLAY AGAIN'**
-  String get goPlayAgain;
-
   /// No description provided for @goAdNoticeRewarded.
   ///
   /// In en, this message translates to:
@@ -2050,53 +1486,11 @@ abstract class AppLocalizations {
   /// **'A short ad plays next'**
   String get goAdNoticeInterstitial;
 
-  /// No description provided for @goMenu.
-  ///
-  /// In en, this message translates to:
-  /// **'MENU'**
-  String get goMenu;
-
-  /// No description provided for @adIntroTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Bonus coins!'**
-  String get adIntroTitle;
-
-  /// No description provided for @adIntroBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch a short ad and get +{count} coins.'**
-  String adIntroBody(Object count);
-
-  /// No description provided for @adIntroCountdown.
-  ///
-  /// In en, this message translates to:
-  /// **'Ad starts in {seconds}s'**
-  String adIntroCountdown(Object seconds);
-
-  /// No description provided for @adIntroWatch.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch now'**
-  String get adIntroWatch;
-
-  /// No description provided for @adIntroSkip.
-  ///
-  /// In en, this message translates to:
-  /// **'No thanks'**
-  String get adIntroSkip;
-
   /// No description provided for @adBreakStarting.
   ///
   /// In en, this message translates to:
   /// **'Ad starting…'**
   String get adBreakStarting;
-
-  /// No description provided for @storeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Snake Store'**
-  String get storeTitle;
 
   /// No description provided for @storeTabPro.
   ///
@@ -2134,12 +1528,6 @@ abstract class AppLocalizations {
   /// **'Power-Ups'**
   String get storeTabPowerUps;
 
-  /// No description provided for @storeYourCoins.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Snake Coins'**
-  String get storeYourCoins;
-
   /// No description provided for @storeBonusMultiplier.
   ///
   /// In en, this message translates to:
@@ -2151,24 +1539,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subscribe before your free Pro ends'**
   String get storeSubscribeBeforePromoEnds;
-
-  /// No description provided for @storeChooseYourPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose your plan'**
-  String get storeChooseYourPlan;
-
-  /// No description provided for @storeWhatYouGet.
-  ///
-  /// In en, this message translates to:
-  /// **'What you get'**
-  String get storeWhatYouGet;
-
-  /// No description provided for @storeProHeroSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'All premium themes, skins & trails · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium'**
-  String get storeProHeroSubtitle;
 
   /// No description provided for @storeMonthly.
   ///
@@ -2194,12 +1564,6 @@ abstract class AppLocalizations {
   /// **'/year'**
   String get storePerYear;
 
-  /// No description provided for @storeSave17.
-  ///
-  /// In en, this message translates to:
-  /// **'Save 17%'**
-  String get storeSave17;
-
   /// No description provided for @storeFreeTrialBadge.
   ///
   /// In en, this message translates to:
@@ -2224,23 +1588,11 @@ abstract class AppLocalizations {
   /// **'Verifying…'**
   String get storeVerifyingEllipsis;
 
-  /// No description provided for @storeSubscribe.
-  ///
-  /// In en, this message translates to:
-  /// **'Subscribe'**
-  String get storeSubscribe;
-
   /// No description provided for @storeYoureOnFreePro.
   ///
   /// In en, this message translates to:
   /// **'You\'re on free Pro!'**
   String get storeYoureOnFreePro;
-
-  /// No description provided for @storeYourePro.
-  ///
-  /// In en, this message translates to:
-  /// **'You\'re Pro!'**
-  String get storeYourePro;
 
   /// No description provided for @storeFreePro.
   ///
@@ -2289,66 +1641,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ends in {minutes}m'**
   String storeEndsInM(Object minutes);
-
-  /// No description provided for @storeFeatureExtraLife.
-  ///
-  /// In en, this message translates to:
-  /// **'Always-free extra life — revive every game, no ad, no coins'**
-  String get storeFeatureExtraLife;
-
-  /// No description provided for @storeFeatureNoAds.
-  ///
-  /// In en, this message translates to:
-  /// **'No ads — play completely ad-free'**
-  String get storeFeatureNoAds;
-
-  /// No description provided for @storeFeatureThemes.
-  ///
-  /// In en, this message translates to:
-  /// **'All 6 premium themes'**
-  String get storeFeatureThemes;
-
-  /// No description provided for @storeFeatureSkins.
-  ///
-  /// In en, this message translates to:
-  /// **'All 11 premium snake skins'**
-  String get storeFeatureSkins;
-
-  /// No description provided for @storeFeatureTrails.
-  ///
-  /// In en, this message translates to:
-  /// **'All 11 premium trail effects'**
-  String get storeFeatureTrails;
-
-  /// No description provided for @storeFeatureBoards.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium board sizes (35×35, 40×40, 50×50)'**
-  String get storeFeatureBoards;
-
-  /// No description provided for @storeFeatureCoins.
-  ///
-  /// In en, this message translates to:
-  /// **'2× coin earnings'**
-  String get storeFeatureCoins;
-
-  /// No description provided for @storeFeaturePowerUps.
-  ///
-  /// In en, this message translates to:
-  /// **'5× premium power-ups every cycle'**
-  String get storeFeaturePowerUps;
-
-  /// No description provided for @storeFeatureTournaments.
-  ///
-  /// In en, this message translates to:
-  /// **'Bronze + Silver + Gold tournament entries each cycle'**
-  String get storeFeatureTournaments;
-
-  /// No description provided for @storeFeatureBattlePass.
-  ///
-  /// In en, this message translates to:
-  /// **'Battle Pass Premium track every season'**
-  String get storeFeatureBattlePass;
 
   /// No description provided for @storeInitiatingPurchase.
   ///
@@ -2577,18 +1869,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'APPLY'**
   String get storePillApply;
-
-  /// No description provided for @storePillEquipped.
-  ///
-  /// In en, this message translates to:
-  /// **'EQUIPPED'**
-  String get storePillEquipped;
-
-  /// No description provided for @storePillEquip.
-  ///
-  /// In en, this message translates to:
-  /// **'EQUIP'**
-  String get storePillEquip;
 
   /// No description provided for @storeThemeDescClassic.
   ///
@@ -3052,41 +2332,17 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get commonClose;
 
-  /// No description provided for @commonViewAll.
-  ///
-  /// In en, this message translates to:
-  /// **'View All'**
-  String get commonViewAll;
-
   /// No description provided for @commonRetry.
   ///
   /// In en, this message translates to:
   /// **'Retry'**
   String get commonRetry;
 
-  /// No description provided for @pfTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get pfTitle;
-
   /// No description provided for @pfSigningOut.
   ///
   /// In en, this message translates to:
   /// **'Signing out...'**
   String get pfSigningOut;
-
-  /// No description provided for @pfGuestPlayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Guest Player'**
-  String get pfGuestPlayer;
-
-  /// No description provided for @pfVerifiedAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Verified Account'**
-  String get pfVerifiedAccount;
 
   /// No description provided for @pfStatistics.
   ///
@@ -3100,47 +2356,11 @@ abstract class AppLocalizations {
   /// **'Replays'**
   String get pfReplays;
 
-  /// No description provided for @pfAchievements.
-  ///
-  /// In en, this message translates to:
-  /// **'Achievements'**
-  String get pfAchievements;
-
   /// No description provided for @pfLoadingStats.
   ///
   /// In en, this message translates to:
   /// **'Loading stats...'**
   String get pfLoadingStats;
-
-  /// No description provided for @pfHighScore.
-  ///
-  /// In en, this message translates to:
-  /// **'High Score'**
-  String get pfHighScore;
-
-  /// No description provided for @pfGamesPlayed.
-  ///
-  /// In en, this message translates to:
-  /// **'Games Played'**
-  String get pfGamesPlayed;
-
-  /// No description provided for @pfPlayTime.
-  ///
-  /// In en, this message translates to:
-  /// **'Play Time'**
-  String get pfPlayTime;
-
-  /// No description provided for @pfAverageScore.
-  ///
-  /// In en, this message translates to:
-  /// **'Average Score'**
-  String get pfAverageScore;
-
-  /// No description provided for @pfFoodConsumed.
-  ///
-  /// In en, this message translates to:
-  /// **'Food Consumed'**
-  String get pfFoodConsumed;
 
   /// No description provided for @pfPowerUps.
   ///
@@ -3207,12 +2427,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in with Apple'**
   String get pfSignInApple;
-
-  /// No description provided for @pfNoReplays.
-  ///
-  /// In en, this message translates to:
-  /// **'No replays yet. Play some games!'**
-  String get pfNoReplays;
 
   /// No description provided for @pfReplaysSaved.
   ///
@@ -3424,18 +2638,6 @@ abstract class AppLocalizations {
   /// **'Consistency'**
   String get stConsistency;
 
-  /// No description provided for @stScores.
-  ///
-  /// In en, this message translates to:
-  /// **'Scores'**
-  String get stScores;
-
-  /// No description provided for @stTrendLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Trend Line'**
-  String get stTrendLine;
-
   /// No description provided for @stPlayPatterns.
   ///
   /// In en, this message translates to:
@@ -3465,24 +2667,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Achievement Progress'**
   String get stAchievementProgress;
-
-  /// No description provided for @stViewAllAchievements.
-  ///
-  /// In en, this message translates to:
-  /// **'View All Achievements →'**
-  String get stViewAllAchievements;
-
-  /// No description provided for @stViewAchievements.
-  ///
-  /// In en, this message translates to:
-  /// **'VIEW ACHIEVEMENTS'**
-  String get stViewAchievements;
-
-  /// No description provided for @stReplaysUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'REPLAYS'**
-  String get stReplaysUpper;
 
   /// No description provided for @stResetStatistics.
   ///
@@ -3537,12 +2721,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Poor'**
   String get stPoor;
-
-  /// No description provided for @stNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'No data'**
-  String get stNoData;
 
   /// No description provided for @stNone.
   ///
@@ -4000,12 +3178,6 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get frRemove;
 
-  /// No description provided for @frLeaderboardTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Friends Leaderboard'**
-  String get frLeaderboardTitle;
-
   /// No description provided for @frLeaderboardSubtitle.
   ///
   /// In en, this message translates to:
@@ -4023,12 +3195,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'#{rank}'**
   String frRankBadge(Object rank);
-
-  /// No description provided for @frYou.
-  ///
-  /// In en, this message translates to:
-  /// **'YOU'**
-  String get frYou;
 
   /// No description provided for @frLeaderboardEmptySub.
   ///
@@ -4504,59 +3670,17 @@ abstract class AppLocalizations {
   /// **'Buy {tier} Entry - {price}'**
   String tnBuyEntry(Object price, Object tier);
 
-  /// No description provided for @acAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get acAll;
-
-  /// No description provided for @acUnlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlocked'**
-  String get acUnlocked;
-
   /// No description provided for @acLocked.
   ///
   /// In en, this message translates to:
   /// **'Locked'**
   String get acLocked;
 
-  /// No description provided for @acTotalUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'TOTAL'**
-  String get acTotalUpper;
-
-  /// No description provided for @acUnlockedUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'UNLOCKED'**
-  String get acUnlockedUpper;
-
-  /// No description provided for @acClaimedUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'CLAIMED'**
-  String get acClaimedUpper;
-
-  /// No description provided for @acPendingUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'PENDING'**
-  String get acPendingUpper;
-
   /// No description provided for @acPercentComplete.
   ///
   /// In en, this message translates to:
   /// **'{percent}% complete'**
   String acPercentComplete(Object percent);
-
-  /// No description provided for @acPercentOfUnlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}% of unlocked'**
-  String acPercentOfUnlocked(Object percent);
 
   /// No description provided for @acEmpty.
   ///
@@ -4569,18 +3693,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'+{xp} XP'**
   String acXpReward(Object xp);
-
-  /// No description provided for @acUnlockedDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlocked {date}'**
-  String acUnlockedDate(Object date);
-
-  /// No description provided for @rpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Game Replays'**
-  String get rpTitle;
 
   /// No description provided for @rpRecent.
   ///
@@ -4702,41 +3814,11 @@ abstract class AppLocalizations {
   /// **'Failed to delete replay'**
   String get rpDeleteFailed;
 
-  /// No description provided for @lbTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Leaderboards'**
-  String get lbTitle;
-
-  /// No description provided for @lbGlobal.
-  ///
-  /// In en, this message translates to:
-  /// **'Global'**
-  String get lbGlobal;
-
-  /// No description provided for @lbWeekly.
-  ///
-  /// In en, this message translates to:
-  /// **'Weekly'**
-  String get lbWeekly;
-
   /// No description provided for @lbWeeklySub.
   ///
   /// In en, this message translates to:
   /// **'Ranked by your best single-game score this week (resets Sunday)'**
   String get lbWeeklySub;
-
-  /// No description provided for @lbGlobalSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Ranked by your highest single-game score ever'**
-  String get lbGlobalSub;
-
-  /// No description provided for @lbScoreLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Score: {score}'**
-  String lbScoreLine(Object score);
 
   /// No description provided for @lbLoadingGlobal.
   ///
@@ -4756,12 +3838,6 @@ abstract class AppLocalizations {
   /// **'No scores yet'**
   String get lbNoScores;
 
-  /// No description provided for @lbBeFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Be the first to set a high score!'**
-  String get lbBeFirst;
-
   /// No description provided for @lbNoWeekly.
   ///
   /// In en, this message translates to:
@@ -4780,23 +3856,11 @@ abstract class AppLocalizations {
   /// **'Anonymous'**
   String get lbAnonymous;
 
-  /// No description provided for @lbGuestBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'GUEST'**
-  String get lbGuestBadge;
-
   /// No description provided for @lbPts.
   ///
   /// In en, this message translates to:
   /// **'pts'**
   String get lbPts;
-
-  /// No description provided for @lbGamesPlayed.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} game played} other{{count} games played}}'**
-  String lbGamesPlayed(num count);
 
   /// No description provided for @bpClaimedToast.
   ///
@@ -4804,29 +3868,11 @@ abstract class AppLocalizations {
   /// **'{name} claimed!'**
   String bpClaimedToast(Object name);
 
-  /// No description provided for @bpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Battle Pass'**
-  String get bpTitle;
-
-  /// No description provided for @bpTitleUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'BATTLE PASS'**
-  String get bpTitleUpper;
-
   /// No description provided for @bpLoading.
   ///
   /// In en, this message translates to:
   /// **'Loading battle pass...'**
   String get bpLoading;
-
-  /// No description provided for @bpWatchAdXp.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch ad — +50 Battle Pass XP'**
-  String get bpWatchAdXp;
 
   /// No description provided for @bpXpEarned.
   ///
@@ -4834,59 +3880,17 @@ abstract class AppLocalizations {
   /// **'+50 Battle Pass XP earned!'**
   String get bpXpEarned;
 
-  /// No description provided for @bpSeasonEnded.
-  ///
-  /// In en, this message translates to:
-  /// **'Season ended'**
-  String get bpSeasonEnded;
-
   /// No description provided for @bpHoursLeft.
   ///
   /// In en, this message translates to:
   /// **'{hours}h left'**
   String bpHoursLeft(Object hours);
 
-  /// No description provided for @bpDaysLeft.
-  ///
-  /// In en, this message translates to:
-  /// **'{days}d left'**
-  String bpDaysLeft(Object days);
-
-  /// No description provided for @bpTierUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'TIER'**
-  String get bpTierUpper;
-
-  /// No description provided for @bpTierMax.
-  ///
-  /// In en, this message translates to:
-  /// **' / {max}'**
-  String bpTierMax(Object max);
-
-  /// No description provided for @bpSeasonComplete.
-  ///
-  /// In en, this message translates to:
-  /// **'Season complete'**
-  String get bpSeasonComplete;
-
   /// No description provided for @bpSeasonCompleteUpper.
   ///
   /// In en, this message translates to:
   /// **'SEASON COMPLETE'**
   String get bpSeasonCompleteUpper;
-
-  /// No description provided for @bpXpProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{xp} / {next} XP to Tier {tier}'**
-  String bpXpProgress(Object next, Object tier, Object xp);
-
-  /// No description provided for @bpPremiumBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'PREMIUM'**
-  String get bpPremiumBadge;
 
   /// Name of the launch battle-pass season, shown as the screen's page title (uppercased at render). Keyed on the exact English season name because seasons can also arrive from the backend — an unrecognised server season falls through untranslated. Flavour text: translate for feel, not literally.
   ///
@@ -4900,23 +3904,11 @@ abstract class AppLocalizations {
   /// **'You\'ve unlocked every tier in this season.'**
   String get bpUnlockedEverything;
 
-  /// No description provided for @bpComingNext.
-  ///
-  /// In en, this message translates to:
-  /// **'COMING NEXT'**
-  String get bpComingNext;
-
   /// No description provided for @bpTierN.
   ///
   /// In en, this message translates to:
   /// **'Tier {tier}'**
   String bpTierN(Object tier);
-
-  /// No description provided for @bpTiersAway.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{{count} tier away} other{{count} tiers away}}'**
-  String bpTiersAway(num count);
 
   /// No description provided for @bpUnlockWithPro.
   ///
@@ -4966,24 +3958,6 @@ abstract class AppLocalizations {
   /// **'View all {count} tiers'**
   String bpViewAllTiers(Object count);
 
-  /// No description provided for @bpCollapse.
-  ///
-  /// In en, this message translates to:
-  /// **'COLLAPSE'**
-  String get bpCollapse;
-
-  /// No description provided for @bpExpand.
-  ///
-  /// In en, this message translates to:
-  /// **'EXPAND'**
-  String get bpExpand;
-
-  /// No description provided for @bpNow.
-  ///
-  /// In en, this message translates to:
-  /// **'NOW'**
-  String get bpNow;
-
   /// No description provided for @bpTierUpperN.
   ///
   /// In en, this message translates to:
@@ -5019,12 +3993,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check for new season'**
   String get bpCheckNewSeason;
-
-  /// No description provided for @pbActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium Active!'**
-  String get pbActive;
 
   /// No description provided for @pbActiveSub.
   ///
@@ -5110,126 +4078,6 @@ abstract class AppLocalizations {
   /// **'Everything below is yours'**
   String get pbAllUnlocked;
 
-  /// No description provided for @pbKeepProCta.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep Pro'**
-  String get pbKeepProCta;
-
-  /// No description provided for @pbHeaderSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock everything the game has to offer'**
-  String get pbHeaderSub;
-
-  /// No description provided for @pbMonthlyPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Monthly Plan'**
-  String get pbMonthlyPlan;
-
-  /// No description provided for @pbYearlyPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Yearly Plan'**
-  String get pbYearlyPlan;
-
-  /// No description provided for @pbSave33.
-  ///
-  /// In en, this message translates to:
-  /// **'Save 33%'**
-  String get pbSave33;
-
-  /// No description provided for @pbMostPopular.
-  ///
-  /// In en, this message translates to:
-  /// **'MOST POPULAR'**
-  String get pbMostPopular;
-
-  /// No description provided for @pbFeatExtraLife.
-  ///
-  /// In en, this message translates to:
-  /// **'Always-Free Extra Life'**
-  String get pbFeatExtraLife;
-
-  /// No description provided for @pbFeatExtraLifeDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Crash and keep going — Pro members revive instantly for free, no ad and no coins, once every game'**
-  String get pbFeatExtraLifeDesc;
-
-  /// No description provided for @pbFeatNoAds.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove All Ads'**
-  String get pbFeatNoAds;
-
-  /// No description provided for @pbFeatNoAdsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'No banners, no interstitials — play completely ad-free, forever'**
-  String get pbFeatNoAdsDesc;
-
-  /// No description provided for @pbFeatThemes.
-  ///
-  /// In en, this message translates to:
-  /// **'All Premium Themes'**
-  String get pbFeatThemes;
-
-  /// No description provided for @pbFeatThemesDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Crystal, Cyberpunk, Space, Ocean, Desert, Forest'**
-  String get pbFeatThemesDesc;
-
-  /// No description provided for @pbFeatSkins.
-  ///
-  /// In en, this message translates to:
-  /// **'All Premium Snake Skins'**
-  String get pbFeatSkins;
-
-  /// No description provided for @pbFeatSkinsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Golden, Galaxy, Dragon, Electric, Fire, Ice & 5 more'**
-  String get pbFeatSkinsDesc;
-
-  /// No description provided for @pbFeatTrails.
-  ///
-  /// In en, this message translates to:
-  /// **'All Premium Trail Effects'**
-  String get pbFeatTrails;
-
-  /// No description provided for @pbFeatTrailsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more'**
-  String get pbFeatTrailsDesc;
-
-  /// No description provided for @pbFeatBoards.
-  ///
-  /// In en, this message translates to:
-  /// **'Large Game Boards'**
-  String get pbFeatBoards;
-
-  /// No description provided for @pbFeatBoardsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Play on 35x35, 40x40 & 50x50 boards'**
-  String get pbFeatBoardsDesc;
-
-  /// No description provided for @pbFeatCoins.
-  ///
-  /// In en, this message translates to:
-  /// **'2x Coin Rewards'**
-  String get pbFeatCoins;
-
-  /// No description provided for @pbFeatCoinsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Double Snake Coins from every game'**
-  String get pbFeatCoinsDesc;
-
   /// No description provided for @pbFeatLucky.
   ///
   /// In en, this message translates to:
@@ -5254,18 +4102,6 @@ abstract class AppLocalizations {
   /// **'+30% spawn rate for on-board power-ups during gameplay'**
   String get pbFeatPowerUpsDesc;
 
-  /// No description provided for @pbFeatBundle.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium Power-up Bundle'**
-  String get pbFeatBundle;
-
-  /// No description provided for @pbFeatBundleDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle'**
-  String get pbFeatBundleDesc;
-
   /// No description provided for @pbFeatTournament.
   ///
   /// In en, this message translates to:
@@ -5278,41 +4114,11 @@ abstract class AppLocalizations {
   /// **'1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle'**
   String get pbFeatTournamentDesc;
 
-  /// No description provided for @pbIncludes.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium Includes:'**
-  String get pbIncludes;
-
-  /// No description provided for @pbProPerk.
-  ///
-  /// In en, this message translates to:
-  /// **'PRO PERK'**
-  String get pbProPerk;
-
-  /// No description provided for @pbSubscribeCta.
-  ///
-  /// In en, this message translates to:
-  /// **'Subscribe — {price}{period}'**
-  String pbSubscribeCta(Object period, Object price);
-
-  /// No description provided for @pbReassurance.
-  ///
-  /// In en, this message translates to:
-  /// **'No commitment • Cancel anytime • Secure payment'**
-  String get pbReassurance;
-
   /// No description provided for @pbNotAvailable.
   ///
   /// In en, this message translates to:
   /// **'Premium subscription not available'**
   String get pbNotAvailable;
-
-  /// No description provided for @eaTitleLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Your Progress'**
-  String get eaTitleLink;
 
   /// No description provided for @eaTitleSignIn.
   ///
@@ -5488,12 +4294,6 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Please try again.'**
   String get eaErrGeneric;
 
-  /// No description provided for @faWelcome.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to\nSnake Classic!'**
-  String get faWelcome;
-
   /// No description provided for @faChooseHow.
   ///
   /// In en, this message translates to:
@@ -5518,18 +4318,6 @@ abstract class AppLocalizations {
   /// **'Continue as Guest'**
   String get faContinueGuest;
 
-  /// No description provided for @faGuestNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.'**
-  String get faGuestNote;
-
-  /// No description provided for @faPrivacyTerms.
-  ///
-  /// In en, this message translates to:
-  /// **'Privacy & Terms'**
-  String get faPrivacyTerms;
-
   /// No description provided for @faReviewNote.
   ///
   /// In en, this message translates to:
@@ -5547,42 +4335,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue to Sign In'**
   String get faContinueToSignIn;
-
-  /// No description provided for @faHeadsUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Heads up'**
-  String get faHeadsUp;
-
-  /// No description provided for @faGuestBullet1.
-  ///
-  /// In en, this message translates to:
-  /// **'Guest data is automatically deleted from our servers after 90 days of inactivity.'**
-  String get faGuestBullet1;
-
-  /// No description provided for @faGuestBullet2.
-  ///
-  /// In en, this message translates to:
-  /// **'To save your progress permanently and play across devices, sign in with Apple, Google or Email instead.'**
-  String get faGuestBullet2;
-
-  /// No description provided for @faGuestBullet3.
-  ///
-  /// In en, this message translates to:
-  /// **'Guest accounts cannot purchase products or subscriptions. Sign in if you want to upgrade to Pro or buy cosmetics.'**
-  String get faGuestBullet3;
-
-  /// No description provided for @faChangedMind.
-  ///
-  /// In en, this message translates to:
-  /// **'I changed my mind'**
-  String get faChangedMind;
-
-  /// No description provided for @faProceedAnyway.
-  ///
-  /// In en, this message translates to:
-  /// **'Proceed anyway'**
-  String get faProceedAnyway;
 
   /// No description provided for @faAppleFailed.
   ///
@@ -5614,77 +4366,11 @@ abstract class AppLocalizations {
   /// **'Initializing Snake Classic...'**
   String get ldInitializing;
 
-  /// No description provided for @ldTip1.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan two moves ahead — your tail follows wherever the head just went.'**
-  String get ldTip1;
-
-  /// No description provided for @ldTip2.
-  ///
-  /// In en, this message translates to:
-  /// **'Bonus food is worth more points, but it disappears fast. Grab it quick!'**
-  String get ldTip2;
-
-  /// No description provided for @ldTip3.
-  ///
-  /// In en, this message translates to:
-  /// **'Crashed? Watch a quick ad or spend coins to revive and keep your score.'**
-  String get ldTip3;
-
-  /// No description provided for @ldTip4.
-  ///
-  /// In en, this message translates to:
-  /// **'Chain food without pausing to build a combo multiplier.'**
-  String get ldTip4;
-
-  /// No description provided for @ldTip5.
-  ///
-  /// In en, this message translates to:
-  /// **'Stuck in a tight spot? Hug the walls to buy yourself a moment.'**
-  String get ldTip5;
-
-  /// No description provided for @ldTip6.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily challenges and weekly quests stack up coins fast.'**
-  String get ldTip6;
-
-  /// No description provided for @ldTip7.
-  ///
-  /// In en, this message translates to:
-  /// **'Snake Classic Pro unlocks bigger boards and removes all ads.'**
-  String get ldTip7;
-
-  /// No description provided for @ldTip8.
-  ///
-  /// In en, this message translates to:
-  /// **'Time Attack rewards speed — and you can watch an ad for +30 seconds.'**
-  String get ldTip8;
-
-  /// No description provided for @ldTip9.
-  ///
-  /// In en, this message translates to:
-  /// **'Power-ups stack: arm a shield before squeezing through a gap.'**
-  String get ldTip9;
-
-  /// No description provided for @ldTip10.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch themes, skins, and trails anytime in the store for a fresh look.'**
-  String get ldTip10;
-
   /// No description provided for @ldStepCore.
   ///
   /// In en, this message translates to:
   /// **'Initializing core systems...'**
   String get ldStepCore;
-
-  /// No description provided for @ldStepCoreSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting up Server connection'**
-  String get ldStepCoreSub;
 
   /// No description provided for @ldStepProfile.
   ///
@@ -5692,23 +4378,11 @@ abstract class AppLocalizations {
   /// **'Creating your player profile...'**
   String get ldStepProfile;
 
-  /// No description provided for @ldStepProfileSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Generating unique username'**
-  String get ldStepProfileSub;
-
   /// No description provided for @ldStepPrefs.
   ///
   /// In en, this message translates to:
   /// **'Loading your preferences...'**
   String get ldStepPrefs;
-
-  /// No description provided for @ldStepPrefsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing themes and settings'**
-  String get ldStepPrefsSub;
 
   /// No description provided for @ldStepCloud.
   ///
@@ -5716,23 +4390,11 @@ abstract class AppLocalizations {
   /// **'Syncing with cloud...'**
   String get ldStepCloud;
 
-  /// No description provided for @ldStepCloudSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Ensuring data is up to date'**
-  String get ldStepCloudSub;
-
   /// No description provided for @ldStepGameData.
   ///
   /// In en, this message translates to:
   /// **'Loading game data...'**
   String get ldStepGameData;
-
-  /// No description provided for @ldStepGameDataSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Fetching Game Data'**
-  String get ldStepGameDataSub;
 
   /// No description provided for @ldStepAudio.
   ///
@@ -5740,23 +4402,11 @@ abstract class AppLocalizations {
   /// **'Configuring audio system...'**
   String get ldStepAudio;
 
-  /// No description provided for @ldStepAudioSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading sound effects'**
-  String get ldStepAudioSub;
-
   /// No description provided for @ldStepAds.
   ///
   /// In en, this message translates to:
   /// **'Warming up rewards...'**
   String get ldStepAds;
-
-  /// No description provided for @ldStepAdsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Getting your free power-up ad ready'**
-  String get ldStepAdsSub;
 
   /// No description provided for @ldStepSetup.
   ///
@@ -5764,35 +4414,17 @@ abstract class AppLocalizations {
   /// **'Checking setup status...'**
   String get ldStepSetup;
 
-  /// No description provided for @ldStepSetupSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Almost ready!'**
-  String get ldStepSetupSub;
-
   /// No description provided for @ldWelcome.
   ///
   /// In en, this message translates to:
   /// **'Welcome!'**
   String get ldWelcome;
 
-  /// No description provided for @ldWelcomeSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose how to continue'**
-  String get ldWelcomeSub;
-
   /// No description provided for @ldReady.
   ///
   /// In en, this message translates to:
   /// **'Ready to play!'**
   String get ldReady;
-
-  /// No description provided for @ldReadySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome back to Snake Classic'**
-  String get ldReadySub;
 
   /// No description provided for @ldInitFailed.
   ///
@@ -5805,114 +4437,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retrying initialization...'**
   String get ldRetrying;
-
-  /// No description provided for @ldTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'PREMIUM SNAKE EXPERIENCE'**
-  String get ldTagline;
-
-  /// No description provided for @ldLoadingUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'LOADING'**
-  String get ldLoadingUpper;
-
-  /// No description provided for @ldDidYouKnow.
-  ///
-  /// In en, this message translates to:
-  /// **'DID YOU KNOW?'**
-  String get ldDidYouKnow;
-
-  /// No description provided for @ldGameFeatures.
-  ///
-  /// In en, this message translates to:
-  /// **'GAME FEATURES'**
-  String get ldGameFeatures;
-
-  /// No description provided for @ldFeatFps.
-  ///
-  /// In en, this message translates to:
-  /// **'60FPS'**
-  String get ldFeatFps;
-
-  /// No description provided for @ldFeatFpsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Smooth Gameplay'**
-  String get ldFeatFpsSub;
-
-  /// No description provided for @ldFeatEffects.
-  ///
-  /// In en, this message translates to:
-  /// **'EFFECTS'**
-  String get ldFeatEffects;
-
-  /// No description provided for @ldFeatEffectsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Visual Particles'**
-  String get ldFeatEffectsSub;
-
-  /// No description provided for @ldFeatLevels.
-  ///
-  /// In en, this message translates to:
-  /// **'LEVELS'**
-  String get ldFeatLevels;
-
-  /// No description provided for @ldFeatLevelsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Progressive Fun'**
-  String get ldFeatLevelsSub;
-
-  /// No description provided for @ldFeatAudio.
-  ///
-  /// In en, this message translates to:
-  /// **'AUDIO'**
-  String get ldFeatAudio;
-
-  /// No description provided for @ldFeatAudioSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Immersive Sound'**
-  String get ldFeatAudioSub;
-
-  /// No description provided for @ldFeatScores.
-  ///
-  /// In en, this message translates to:
-  /// **'SCORES'**
-  String get ldFeatScores;
-
-  /// No description provided for @ldFeatScoresSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Global Rankings'**
-  String get ldFeatScoresSub;
-
-  /// No description provided for @ldFeatThemes.
-  ///
-  /// In en, this message translates to:
-  /// **'THEMES'**
-  String get ldFeatThemes;
-
-  /// No description provided for @ldFeatThemesSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Multiple Styles'**
-  String get ldFeatThemesSub;
-
-  /// No description provided for @ldDevelopedBy.
-  ///
-  /// In en, this message translates to:
-  /// **'DEVELOPED & MAINTAINED BY'**
-  String get ldDevelopedBy;
-
-  /// No description provided for @ldDevTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'Crafting premium mobile experiences'**
-  String get ldDevTagline;
 
   /// No description provided for @ldInitFailedUpper.
   ///
@@ -6316,30 +4840,6 @@ abstract class AppLocalizations {
   /// **'Waiting...'**
   String get wtWaiting;
 
-  /// No description provided for @hwPlayTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to Snake Classic!'**
-  String get hwPlayTitle;
-
-  /// No description provided for @hwPlayMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap the PLAY button to start a game. Swipe to control your snake and eat food to grow!'**
-  String get hwPlayMsg;
-
-  /// No description provided for @hwCoinsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Coins'**
-  String get hwCoinsTitle;
-
-  /// No description provided for @hwCoinsMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Earn coins by playing games, completing challenges, and daily bonuses. Use them in the store!'**
-  String get hwCoinsMsg;
-
   /// No description provided for @hwDailyTitle.
   ///
   /// In en, this message translates to:
@@ -6351,54 +4851,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Complete daily challenges for bonus coins and rewards. New challenges every day!'**
   String get hwDailyMsg;
-
-  /// No description provided for @hwStoreTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The Store'**
-  String get hwStoreTitle;
-
-  /// No description provided for @hwStoreMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Buy themes, snake skins, trails, and power-ups with your coins. Unlock Pro for premium boards and exclusive cosmetics.'**
-  String get hwStoreMsg;
-
-  /// No description provided for @hwCosmeticsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Skins & Trails'**
-  String get hwCosmeticsTitle;
-
-  /// No description provided for @hwCosmeticsMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Customize your snake here. Skins change how the snake itself looks; trails leave a glow behind it. Earn with coins or unlock with Pro.'**
-  String get hwCosmeticsMsg;
-
-  /// No description provided for @hwProfileTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Profile'**
-  String get hwProfileTitle;
-
-  /// No description provided for @hwProfileMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Stats, achievements, and high scores live here. Achievements unlock as you hit milestones — some require a specific mode (Classic, Hard, etc.). Sign in to sync across devices.'**
-  String get hwProfileMsg;
-
-  /// No description provided for @hwSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get hwSettingsTitle;
-
-  /// No description provided for @hwSettingsMsg.
-  ///
-  /// In en, this message translates to:
-  /// **'Customize your game experience - change themes, controls, audio, and more!'**
-  String get hwSettingsMsg;
 
   /// No description provided for @hudScoreUpper.
   ///
@@ -6430,53 +4882,11 @@ abstract class AppLocalizations {
   /// **'{multiplier}x'**
   String hudComboMultiplier(Object multiplier);
 
-  /// No description provided for @poPaused.
-  ///
-  /// In en, this message translates to:
-  /// **'PAUSED'**
-  String get poPaused;
-
-  /// No description provided for @poPremium.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium'**
-  String get poPremium;
-
   /// No description provided for @poStore.
   ///
   /// In en, this message translates to:
   /// **'Store'**
   String get poStore;
-
-  /// No description provided for @poResume.
-  ///
-  /// In en, this message translates to:
-  /// **'RESUME'**
-  String get poResume;
-
-  /// No description provided for @poRestart.
-  ///
-  /// In en, this message translates to:
-  /// **'RESTART'**
-  String get poRestart;
-
-  /// No description provided for @poHome.
-  ///
-  /// In en, this message translates to:
-  /// **'HOME'**
-  String get poHome;
-
-  /// No description provided for @poDPadOn.
-  ///
-  /// In en, this message translates to:
-  /// **'D-PAD: ON'**
-  String get poDPadOn;
-
-  /// No description provided for @poDPadOff.
-  ///
-  /// In en, this message translates to:
-  /// **'D-PAD: OFF'**
-  String get poDPadOff;
 
   /// No description provided for @poSnapOn.
   ///
@@ -6489,18 +4899,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SNAP: OFF'**
   String get poSnapOff;
-
-  /// No description provided for @poLayoutDPad.
-  ///
-  /// In en, this message translates to:
-  /// **'D-PAD'**
-  String get poLayoutDPad;
-
-  /// No description provided for @poLayoutTurn.
-  ///
-  /// In en, this message translates to:
-  /// **'TURN'**
-  String get poLayoutTurn;
 
   /// No description provided for @updateReadyTitle.
   ///
@@ -6520,18 +4918,6 @@ abstract class AppLocalizations {
   /// **'RESTART TO UPDATE'**
   String get poUpdateReady;
 
-  /// No description provided for @poSound.
-  ///
-  /// In en, this message translates to:
-  /// **'SOUND'**
-  String get poSound;
-
-  /// No description provided for @poMusic.
-  ///
-  /// In en, this message translates to:
-  /// **'MUSIC'**
-  String get poMusic;
-
   /// No description provided for @poHowToPlay.
   ///
   /// In en, this message translates to:
@@ -6543,168 +4929,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GAME GUIDE'**
   String get poGameGuide;
-
-  /// No description provided for @poFoodUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'FOOD'**
-  String get poFoodUpper;
-
-  /// No description provided for @poPts10.
-  ///
-  /// In en, this message translates to:
-  /// **'10 pts'**
-  String get poPts10;
-
-  /// No description provided for @poPts25.
-  ///
-  /// In en, this message translates to:
-  /// **'25 pts'**
-  String get poPts25;
-
-  /// No description provided for @poPts50.
-  ///
-  /// In en, this message translates to:
-  /// **'50 pts'**
-  String get poPts50;
-
-  /// No description provided for @poComboUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'COMBO'**
-  String get poComboUpper;
-
-  /// No description provided for @poBites5.
-  ///
-  /// In en, this message translates to:
-  /// **'5 bites'**
-  String get poBites5;
-
-  /// No description provided for @poBites10.
-  ///
-  /// In en, this message translates to:
-  /// **'10 bites'**
-  String get poBites10;
-
-  /// No description provided for @poBites20.
-  ///
-  /// In en, this message translates to:
-  /// **'20 bites'**
-  String get poBites20;
-
-  /// No description provided for @poComboHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The fire chip near your score heats up and pulses on each tier crossing.'**
-  String get poComboHint;
-
-  /// No description provided for @poPowerUpsUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'POWER-UPS'**
-  String get poPowerUpsUpper;
-
-  /// No description provided for @poDur7s.
-  ///
-  /// In en, this message translates to:
-  /// **'7s'**
-  String get poDur7s;
-
-  /// No description provided for @poDur6s.
-  ///
-  /// In en, this message translates to:
-  /// **'6s'**
-  String get poDur6s;
-
-  /// No description provided for @poDur10s.
-  ///
-  /// In en, this message translates to:
-  /// **'10s'**
-  String get poDur10s;
-
-  /// No description provided for @poDur8s.
-  ///
-  /// In en, this message translates to:
-  /// **'8s'**
-  String get poDur8s;
-
-  /// No description provided for @poScore2x.
-  ///
-  /// In en, this message translates to:
-  /// **'Score 2×'**
-  String get poScore2x;
-
-  /// No description provided for @poPowerUpHint.
-  ///
-  /// In en, this message translates to:
-  /// **'The ring around the icon drains as it expires. Timer freezes on pause.'**
-  String get poPowerUpHint;
-
-  /// No description provided for @poCrashUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'CRASH'**
-  String get poCrashUpper;
-
-  /// No description provided for @poCrashHint.
-  ///
-  /// In en, this message translates to:
-  /// **'A red shockwave fires at the cell you died on. Self-collision also highlights the body segment you hit in yellow.'**
-  String get poCrashHint;
-
-  /// No description provided for @poModesUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'MODES'**
-  String get poModesUpper;
-
-  /// No description provided for @poModeWallsOn.
-  ///
-  /// In en, this message translates to:
-  /// **'walls on'**
-  String get poModeWallsOn;
-
-  /// No description provided for @poModeWallsOff.
-  ///
-  /// In en, this message translates to:
-  /// **'walls off'**
-  String get poModeWallsOff;
-
-  /// No description provided for @poModeFastTick.
-  ///
-  /// In en, this message translates to:
-  /// **'fast tick'**
-  String get poModeFastTick;
-
-  /// No description provided for @poModeThreeFoods.
-  ///
-  /// In en, this message translates to:
-  /// **'3 foods at once'**
-  String get poModeThreeFoods;
-
-  /// No description provided for @poModeThreeLives.
-  ///
-  /// In en, this message translates to:
-  /// **'3 lives, ramps up'**
-  String get poModeThreeLives;
-
-  /// No description provided for @poModeThreeMin.
-  ///
-  /// In en, this message translates to:
-  /// **'3 min total'**
-  String get poModeThreeMin;
-
-  /// No description provided for @poModeFrequentPowerUps.
-  ///
-  /// In en, this message translates to:
-  /// **'frequent power-ups'**
-  String get poModeFrequentPowerUps;
-
-  /// No description provided for @poModeDontCross.
-  ///
-  /// In en, this message translates to:
-  /// **'don\'t cross your trail'**
-  String get poModeDontCross;
 
   /// No description provided for @dcTitle.
   ///
@@ -6831,12 +5055,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Speed'**
   String get gbSpeed;
-
-  /// No description provided for @gbLevel.
-  ///
-  /// In en, this message translates to:
-  /// **'Level'**
-  String get gbLevel;
 
   /// No description provided for @rarityCommon.
   ///
@@ -8248,30 +6466,6 @@ abstract class AppLocalizations {
   /// **'Enhanced versions of classic power-ups'**
   String get bundleMegaPackDesc;
 
-  /// No description provided for @bundleTacticalPack.
-  ///
-  /// In en, this message translates to:
-  /// **'Tactical Power Pack'**
-  String get bundleTacticalPack;
-
-  /// No description provided for @bundleTacticalPackDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Strategic power-ups for skilled players'**
-  String get bundleTacticalPackDesc;
-
-  /// No description provided for @bundleUltimatePack.
-  ///
-  /// In en, this message translates to:
-  /// **'Ultimate Power Pack'**
-  String get bundleUltimatePack;
-
-  /// No description provided for @bundleUltimatePackDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Every premium power-up available'**
-  String get bundleUltimatePackDesc;
-
   /// No description provided for @skinClassic.
   ///
   /// In en, this message translates to:
@@ -8896,18 +7090,6 @@ abstract class AppLocalizations {
   /// **'Special Reward'**
   String get bprSpecial;
 
-  /// No description provided for @bprFree.
-  ///
-  /// In en, this message translates to:
-  /// **'Free'**
-  String get bprFree;
-
-  /// No description provided for @bprPremium.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium'**
-  String get bprPremium;
-
   /// No description provided for @bprnStarDust.
   ///
   /// In en, this message translates to:
@@ -9262,12 +7444,6 @@ abstract class AppLocalizations {
   /// **'Practice different difficulty levels'**
   String get insTip4;
 
-  /// No description provided for @insBackToGame.
-  ///
-  /// In en, this message translates to:
-  /// **'BACK TO GAME'**
-  String get insBackToGame;
-
   /// No description provided for @dchClaimedReward.
   ///
   /// In en, this message translates to:
@@ -9292,30 +7468,6 @@ abstract class AppLocalizations {
   /// **'🎉 Doubled! +{coins} bonus coins!'**
   String dchDoubledBonus(Object coins);
 
-  /// No description provided for @dchClaimAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim All'**
-  String get dchClaimAll;
-
-  /// No description provided for @dchTodaysProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Today\'s Progress'**
-  String get dchTodaysProgress;
-
-  /// No description provided for @dchClaim.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim'**
-  String get dchClaim;
-
-  /// No description provided for @dchClaimed.
-  ///
-  /// In en, this message translates to:
-  /// **'Claimed'**
-  String get dchClaimed;
-
   /// No description provided for @dchAllCompleteTitle.
   ///
   /// In en, this message translates to:
@@ -9333,12 +7485,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bonus reward pending — claim any challenge'**
   String get dchBonusPending;
-
-  /// No description provided for @dchLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading challenges...'**
-  String get dchLoading;
 
   /// No description provided for @dchCheckBack.
   ///
@@ -9400,12 +7546,6 @@ abstract class AppLocalizations {
   /// **'Weekly Quests'**
   String get wqTitle;
 
-  /// No description provided for @wqClaimReward.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim Reward'**
-  String get wqClaimReward;
-
   /// No description provided for @rvNotFound.
   ///
   /// In en, this message translates to:
@@ -9417,12 +7557,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load replay'**
   String get rvLoadFailed;
-
-  /// No description provided for @rvTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Replay: {name}'**
-  String rvTitle(Object name);
 
   /// No description provided for @rvLoadingTitle.
   ///
@@ -9573,12 +7707,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update username'**
   String get unUpdateFailed;
-
-  /// No description provided for @pcTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Privacy & Terms Updated'**
-  String get pcTitle;
 
   /// No description provided for @pcVersionLine.
   ///
@@ -9820,53 +7948,11 @@ abstract class AppLocalizations {
   /// **'Offline'**
   String get ssiOffline;
 
-  /// No description provided for @rvoContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'CONTINUE?'**
-  String get rvoContinue;
-
-  /// No description provided for @rvoSubtitlePro.
-  ///
-  /// In en, this message translates to:
-  /// **'Thanks for being Pro — here\'s your free life'**
-  String get rvoSubtitlePro;
-
-  /// No description provided for @rvoSubtitleTimer.
-  ///
-  /// In en, this message translates to:
-  /// **'Revive and keep your score · {seconds}s'**
-  String rvoSubtitleTimer(Object seconds);
-
-  /// No description provided for @rvoGetLifePro.
-  ///
-  /// In en, this message translates to:
-  /// **'Get Life · Free for Pro'**
-  String get rvoGetLifePro;
-
-  /// No description provided for @rvoWatchAd.
-  ///
-  /// In en, this message translates to:
-  /// **'Watch ad to revive'**
-  String get rvoWatchAd;
-
   /// No description provided for @rvoLoadingAd.
   ///
   /// In en, this message translates to:
   /// **'Loading ad…'**
   String get rvoLoadingAd;
-
-  /// No description provided for @rvoUseCoins.
-  ///
-  /// In en, this message translates to:
-  /// **'Use {coins} coins'**
-  String rvoUseCoins(Object coins);
-
-  /// No description provided for @rvoNoThanks.
-  ///
-  /// In en, this message translates to:
-  /// **'No thanks'**
-  String get rvoNoThanks;
 
   /// No description provided for @tbTimesUp.
   ///
@@ -10323,18 +8409,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{h}h {m}m'**
   String stDurHourMin(Object h, Object m);
-
-  /// No description provided for @dchProgressSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'{completed} of {total} challenges completed'**
-  String dchProgressSummary(Object completed, Object total);
-
-  /// No description provided for @wqProgressSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'{completed} / {total} complete'**
-  String wqProgressSummary(Object completed, Object total);
 
   /// No description provided for @wqClaimable.
   ///
@@ -11440,30 +9514,6 @@ abstract class AppLocalizations {
   /// **'Watch your saved runs back'**
   String get settingsReplaysSubtitle;
 
-  /// No description provided for @homeTapToPlay.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to play'**
-  String get homeTapToPlay;
-
-  /// No description provided for @homeTileMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Me'**
-  String get homeTileMe;
-
-  /// No description provided for @dchSectionChallenges.
-  ///
-  /// In en, this message translates to:
-  /// **'Challenges'**
-  String get dchSectionChallenges;
-
-  /// Reward summary on a daily challenge row
-  ///
-  /// In en, this message translates to:
-  /// **'{coins} coins · {xp} XP'**
-  String dchRewardLine(int coins, int xp);
-
   /// No description provided for @updateAvailableTitle.
   ///
   /// In en, this message translates to:
@@ -12442,12 +10492,6 @@ abstract class AppLocalizations {
   /// **'+{coins}¢'**
   String lbCoinsReward(String coins);
 
-  /// Hidden achievement
-  ///
-  /// In en, this message translates to:
-  /// **'SECRET'**
-  String get lbSecret;
-
   /// Battle pass screen title
   ///
   /// In en, this message translates to:
@@ -12862,18 +10906,6 @@ abstract class AppLocalizations {
   /// **'per month'**
   String get lbPerMonth;
 
-  /// Under the yearly price
-  ///
-  /// In en, this message translates to:
-  /// **'per year'**
-  String get lbPerYear;
-
-  /// Under the yearly price
-  ///
-  /// In en, this message translates to:
-  /// **'best value'**
-  String get lbBestValue;
-
   /// Subscribe button
   ///
   /// In en, this message translates to:
@@ -12928,23 +10960,11 @@ abstract class AppLocalizations {
   /// **'EQUIPPED'**
   String get lbEquipped;
 
-  /// Item owned
-  ///
-  /// In en, this message translates to:
-  /// **'OWNED'**
-  String get lbOwned;
-
   /// Equip an owned item
   ///
   /// In en, this message translates to:
   /// **'EQUIP'**
   String get lbEquip;
-
-  /// Item unlocked by the subscription
-  ///
-  /// In en, this message translates to:
-  /// **'INCLUDED WITH PRO'**
-  String get lbIncludedWithPro;
 
   /// Skin tagline
   ///
@@ -13078,18 +11098,6 @@ abstract class AppLocalizations {
   /// **'floating'**
   String get lbCtrlStickSub;
 
-  /// Swipe sensitivity setting
-  ///
-  /// In en, this message translates to:
-  /// **'SWIPE FEEL'**
-  String get lbSwipeFeel;
-
-  /// Swipe sensitivity subline
-  ///
-  /// In en, this message translates to:
-  /// **'lazy ←→ twitchy'**
-  String get lbSwipeFeelSub;
-
   /// Section label
   ///
   /// In en, this message translates to:
@@ -13197,12 +11205,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PRIVACY'**
   String get lbPrivacy;
-
-  /// Settings shortcut to the run setup screen
-  ///
-  /// In en, this message translates to:
-  /// **'Run setup'**
-  String get lbOpenRunSetup;
 
   /// Multiplayer lobby title
   ///
@@ -13540,12 +11542,6 @@ abstract class AppLocalizations {
   /// **'The back gesture counts as no thanks, too.'**
   String get lbAdBackHint;
 
-  /// Pro upsell under GO PRO
-  ///
-  /// In en, this message translates to:
-  /// **'and never see this screen again.'**
-  String get lbAdGoProLine;
-
   /// Tap-absorbing curtain before a full-screen ad
   ///
   /// In en, this message translates to:
@@ -13558,29 +11554,11 @@ abstract class AppLocalizations {
   /// **'No ad right now. Try again in a sec.'**
   String get lbNoAdNow;
 
-  /// Offline banner
-  ///
-  /// In en, this message translates to:
-  /// **'NO SIGNAL. Single-player still works.'**
-  String get lbOffline;
-
   /// Server error
   ///
   /// In en, this message translates to:
   /// **'Our servers bonked. Your progress is safe on this phone.'**
   String get lbServerDown;
-
-  /// Purchase failed
-  ///
-  /// In en, this message translates to:
-  /// **'Purchase didn\'t go through. You weren\'t charged.'**
-  String get lbPurchaseFailed;
-
-  /// Matchmaking timeout
-  ///
-  /// In en, this message translates to:
-  /// **'No rival found. The house snake is warming up.'**
-  String get lbMatchTimeout;
 
   /// Home Versus block subtitle when the rating is unknown
   ///

@@ -10,9 +10,6 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'Snake Classic';
-
-  @override
   String get settingsSectionLanguage => 'ЯЗЫК';
 
   @override
@@ -25,28 +22,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonCancel => 'Отмена';
 
   @override
-  String get mpVictory => 'ПОБЕДА!';
-
-  @override
-  String get mpDraw => 'НИЧЬЯ';
-
-  @override
-  String get mpDefeat => 'ПОРАЖЕНИЕ';
-
-  @override
-  String get mpYou => 'Вы';
-
-  @override
-  String get mpVs => 'VS';
-
-  @override
   String get mpOpponent => 'Соперник';
-
-  @override
-  String get mpBackToLobby => 'В лобби';
-
-  @override
-  String get mpPlayAgain => 'Сыграть ещё';
 
   @override
   String get mpTimeUpDraw => 'Время вышло — абсолютное равенство!';
@@ -140,26 +116,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLength => 'ДЛИНА';
 
   @override
-  String get mpSwipe => 'Свайп';
-
-  @override
   String get mpReconnectingInline => 'переподключение…';
-
-  @override
-  String get homePlay => 'ИГРАТЬ';
-
-  @override
-  String get homeHighScore => 'РЕКОРД';
-
-  @override
-  String homeArmedPowerUp(String name) {
-    return 'Заряжено: $name';
-  }
-
-  @override
-  String homeLoadoutCount(int count) {
-    return 'Снаряжение ($count)';
-  }
 
   @override
   String get puSpeedBoost => 'Ускорение';
@@ -172,39 +129,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get puSlowMotion => 'Замедление';
-
-  @override
-  String get homeTilePro => 'PRO';
-
-  @override
-  String get homeTileStore => 'МАГАЗИН';
-
-  @override
-  String get homeTileFree => 'БОНУС';
-
-  @override
-  String get homeTileDaily => 'ЗАДАНИЯ';
-
-  @override
-  String get homeTileBattle => 'БИТВА';
-
-  @override
-  String get homeTileEvents => 'ТУРНИРЫ';
-
-  @override
-  String get homeTileBoard => 'РЕЙТИНГ';
-
-  @override
-  String get homeTileFriends => 'ДРУЗЬЯ';
-
-  @override
-  String get homeTileCosmetics => 'СТИЛИ';
-
-  @override
-  String get homeTileAwards => 'НАГРАДЫ';
-
-  @override
-  String get homeTileVersus => 'ДУЭЛЬ';
 
   @override
   String get homeNoAdReady =>
@@ -232,54 +156,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Реклама не досмотрена — досмотрите до конца, чтобы получить награду.';
 
   @override
-  String get homePickGameMode => 'Выберите режим игры';
-
-  @override
-  String get homePickGameModeSubtitle =>
-      'Это можно изменить в настройках в любой момент';
-
-  @override
   String get homeStartPlaying => 'НАЧАТЬ ИГРУ';
-
-  @override
-  String get homeLoadoutTitle => 'Снаряжение усилений';
-
-  @override
-  String get homeLoadoutSubtitle =>
-      'Зарядите одно усиление — оно активируется через 5 секунд после начала следующей игры.';
-
-  @override
-  String get homeWatchAdFreeSpeedBoost =>
-      'Смотреть рекламу — бесплатное ускорение';
-
-  @override
-  String get homeNoPowerUps => 'У вас нет усилений.\nЗагляните в магазин!';
-
-  @override
-  String homeOwnedCount(int count) {
-    return 'В наличии: $count';
-  }
-
-  @override
-  String get homeArmed => 'ЗАРЯЖЕНО';
-
-  @override
-  String get homeDone => 'ГОТОВО';
-
-  @override
-  String get settingsTitle => 'НАСТРОЙКИ';
-
-  @override
-  String get settingsBackToGame => 'ВЕРНУТЬСЯ В ИГРУ';
-
-  @override
-  String get settingsSectionControls => 'УПРАВЛЕНИЕ';
-
-  @override
-  String get settingsSectionGameplay => 'ГЕЙМПЛЕЙ';
-
-  @override
-  String get settingsSectionAudio => 'ЗВУК';
 
   @override
   String get settingsSectionVisual => 'ВНЕШНИЙ ВИД';
@@ -298,13 +175,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsSectionPremium => 'ПРЕМИУМ-ФУНКЦИИ';
-
-  @override
-  String get settingsDPadControls => 'Экранные кнопки (D-Pad)';
-
-  @override
-  String get settingsDPadSubtitle =>
-      'Показывать экранные кнопки направления во время игры';
 
   @override
   String get settingsSnapMovement => 'Движение по клеткам';
@@ -344,9 +214,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get settingsControlLayoutStickDesc =>
       'Толкните в любом месте панели в нужную сторону. Держите палец, чтобы продолжать управлять.';
-
-  @override
-  String get poLayoutStick => 'СТИК';
 
   @override
   String get gameJoystick => 'Джойстик';
@@ -451,18 +318,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsMoveSnakeRight => 'Змейка вправо';
 
   @override
-  String get settingsGameMode => 'Режим игры';
-
-  @override
   String get settingsGameModeLocked =>
       'Завершите текущую игру, чтобы сменить режим';
-
-  @override
-  String get settingsDifficulty => 'Сложность';
-
-  @override
-  String get settingsDifficultySubtitle =>
-      'Задаёт начальную скорость змейки. Каждый режим ускоряется с уровнями.';
 
   @override
   String get settingsEasyNote =>
@@ -473,14 +330,8 @@ class AppLocalizationsRu extends AppLocalizations {
       'Завершите текущую игру, чтобы сменить сложность.';
 
   @override
-  String get settingsCurrentSize => 'Текущий размер';
-
-  @override
   String get settingsBoardSizeLocked =>
       'Завершите текущую игру, чтобы сменить размер поля';
-
-  @override
-  String get settingsCurrentDuration => 'Текущая длительность';
 
   @override
   String get settingsCrashFeedbackSubtitle =>
@@ -494,22 +345,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Трясти экран при столкновениях и игровых событиях';
 
   @override
-  String get settingsVibration => 'Вибрация';
-
-  @override
-  String get settingsVibrationSubtitle =>
-      'Вибрировать при игровых событиях и нажатиях';
-
-  @override
-  String get settingsSoundEffects => 'Звуковые эффекты';
-
-  @override
-  String get settingsBackgroundMusic => 'Фоновая музыка';
-
-  @override
-  String get settingsCurrentTheme => 'Текущая тема';
-
-  @override
   String get settingsBrowseThemes => 'СМОТРЕТЬ ТЕМЫ';
 
   @override
@@ -520,13 +355,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsSectionDisplay => 'ЭКРАН';
-
-  @override
-  String get settingsSmoothMotion => 'Плавность движения';
-
-  @override
-  String get settingsSmoothMotionSubtitle =>
-      'Использовать максимальную частоту обновления, которую поддерживает этот экран';
 
   @override
   String get settingsDisplayHz => 'Гц';
@@ -821,43 +649,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLobbyOffline => 'Вы офлайн. Для мультиплеера нужен интернет.';
 
   @override
-  String get mpLobbyDismiss => 'ЗАКРЫТЬ';
-
-  @override
   String get mpLobbyGo => 'СТАРТ!';
 
   @override
   String get mpLobbyGetReady => 'Приготовьтесь!';
 
   @override
-  String get mpLobbyTitle => 'МУЛЬТИПЛЕЕР';
-
-  @override
-  String get mpLobbySubtitle => 'Играйте с друзьями онлайн';
-
-  @override
-  String mpLobbyRoomCode(Object code) {
-    return 'Комната: $code';
-  }
-
-  @override
   String get mpLobbyRoomCodeCopied => 'Код комнаты скопирован!';
 
   @override
-  String get mpLobbyQuickMatch => 'БЫСТРЫЙ МАТЧ';
-
-  @override
-  String get mpLobbyQuickMatchSubtitle =>
-      'Классика 1 на 1 — соперник найдётся автоматически';
-
-  @override
   String get mpLobbyFinding => 'ПОИСК...';
-
-  @override
-  String get mpLobbyFindMatch => 'НАЙТИ МАТЧ';
-
-  @override
-  String get mpLobbySeconds => 'сек';
 
   @override
   String get mpLobbySearching => 'ПОИСК ИГРОКОВ...';
@@ -879,9 +680,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String mpLobbyQueuePosition(Object position) {
     return 'Место в очереди: $position';
   }
-
-  @override
-  String get mpLobbyCancelUpper => 'ОТМЕНА';
 
   @override
   String get mpLobbyConnectionLostTitle => 'СОЕДИНЕНИЕ ПОТЕРЯНО';
@@ -915,55 +713,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLobbyTryAgain => 'ПОВТОРИТЬ';
 
   @override
-  String mpLobbyWinsChip(Object count) {
-    return '$count П';
-  }
-
-  @override
-  String mpLobbyLossesChip(Object count) {
-    return '$count Пр';
-  }
-
-  @override
-  String mpLobbyDrawsChip(Object count) {
-    return '$count Н';
-  }
-
-  @override
-  String get mpLobbyWinsLabel => 'Победы';
-
-  @override
-  String get mpLobbyLossesLabel => 'Поражения';
-
-  @override
-  String get mpLobbyDrawsLabel => 'Ничьи';
-
-  @override
-  String get mpLobbyRatingLabel => 'Рейтинг';
-
-  @override
   String get mpLobbyJoinRoom => 'ВОЙТИ В КОМНАТУ';
 
   @override
-  String get mpLobbyJoinSubtitle => 'Введите код комнаты для входа';
-
-  @override
   String get mpLobbyEnterRoomCode => 'Введите код комнаты';
-
-  @override
-  String get mpLobbyCreateRoom => 'СОЗДАТЬ КОМНАТУ';
-
-  @override
-  String get mpLobbyCreateSubtitle =>
-      'Создайте комнату 1 на 1 и пригласите друга';
-
-  @override
-  String mpLobbyPlayersHeader(Object current, Object max) {
-    return 'ИГРОКИ ($current/$max)';
-  }
-
-  @override
-  String get mpLobbyYouBadge => 'ВЫ';
 
   @override
   String get mpLobbyWaitingForPlayer => 'Ожидание игрока...';
@@ -975,13 +728,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mpLobbyWaitingForHost => 'Ожидание запуска хостом...';
 
   @override
-  String get mpLobbyLeave => 'ВЫЙТИ';
-
-  @override
   String get mpLobbyReadyDone => 'ГОТОВ!';
-
-  @override
-  String get mpLobbyReady => 'ГОТОВ';
 
   @override
   String get mpModeClassicDesc => 'Классическая битва змеек';
@@ -1025,22 +772,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String goWatchToDouble(Object count) {
-    return 'Посмотрите рекламу и удвойте свои $count монет';
-  }
-
-  @override
-  String goRewardClaimLine(Object coins, Object xp) {
-    return '+$coins монет  •  +$xp XP';
-  }
-
-  @override
   String goClaimedTotal(Object count) {
     return 'Получено $count монет за ежедневные задания!';
   }
-
-  @override
-  String get goRibbonNewHighScore => 'НОВЫЙ РЕКОРД!';
 
   @override
   String get goRibbonTournamentSubmitted => 'ТУРНИРНЫЙ СЧЁТ ОТПРАВЛЕН!';
@@ -1053,63 +787,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get goRibbonTournamentSubmitting => 'ОТПРАВКА ТУРНИРНОГО СЧЁТА…';
 
   @override
-  String get goVictory => 'ПОБЕДА!';
-
-  @override
-  String get goGameOver => 'ИГРА ОКОНЧЕНА';
-
-  @override
-  String get goFinalScore => 'ИТОГОВЫЙ СЧЁТ';
-
-  @override
-  String get goLevel => 'УРОВЕНЬ';
-
-  @override
-  String get goBest => 'РЕКОРД';
-
-  @override
-  String get goCoinsEarned => 'Заработано монет';
-
-  @override
-  String get goDailyRewardsReady => 'ЕЖЕДНЕВНЫЕ НАГРАДЫ ГОТОВЫ';
-
-  @override
-  String goRewardsSummary(Object coins, num count, Object xp) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count награды',
-      many: '$count наград',
-      few: '$count награды',
-      one: '$count награда',
-    );
-    return '$_temp0  •  +$coins монет  •  +$xp XP';
-  }
-
-  @override
-  String get goClaimAll => 'ЗАБРАТЬ ВСЁ';
-
-  @override
-  String goXpAmount(Object xp) {
-    return '$xp XP';
-  }
-
-  @override
-  String get goClaim => 'Забрать';
-
-  @override
-  String get goAchievements => 'ДОСТИЖЕНИЯ';
-
-  @override
-  String get goRecentlyUnlocked => 'Недавно открытые';
-
-  @override
-  String get goInProgress => 'В процессе';
-
-  @override
-  String get goPlayAgain => 'СЫГРАТЬ ЕЩЁ';
-
-  @override
   String goAdNoticeRewarded(Object count) {
     return 'Далее короткая реклама · +$count монет за просмотр';
   }
@@ -1118,32 +795,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get goAdNoticeInterstitial => 'Далее покажем короткую рекламу';
 
   @override
-  String get goMenu => 'МЕНЮ';
-
-  @override
-  String get adIntroTitle => 'Бонусные монеты!';
-
-  @override
-  String adIntroBody(Object count) {
-    return 'Посмотрите короткую рекламу и получите +$count монет.';
-  }
-
-  @override
-  String adIntroCountdown(Object seconds) {
-    return 'Реклама начнётся через $seconds с';
-  }
-
-  @override
-  String get adIntroWatch => 'Смотреть';
-
-  @override
-  String get adIntroSkip => 'Нет, спасибо';
-
-  @override
   String get adBreakStarting => 'Сейчас начнётся реклама…';
-
-  @override
-  String get storeTitle => 'Магазин Snake';
 
   @override
   String get storeTabPro => 'Pro';
@@ -1164,9 +816,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storeTabPowerUps => 'Усиления';
 
   @override
-  String get storeYourCoins => 'Ваши монеты Snake';
-
-  @override
   String storeBonusMultiplier(Object multiplier) {
     return 'БОНУС ${multiplier}x';
   }
@@ -1174,16 +823,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get storeSubscribeBeforePromoEnds =>
       'Оформите подписку, пока не закончился бесплатный Pro';
-
-  @override
-  String get storeChooseYourPlan => 'Выберите план';
-
-  @override
-  String get storeWhatYouGet => 'Что вы получаете';
-
-  @override
-  String get storeProHeroSubtitle =>
-      'Все премиум-темы, скины и следы · большие поля · 2× монеты · премиум-усиления · турнирные входы · премиум боевого пропуска';
 
   @override
   String get storeMonthly => 'Месяц';
@@ -1196,9 +835,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get storePerYear => '/год';
-
-  @override
-  String get storeSave17 => 'Экономия 17%';
 
   @override
   String storeFreeTrialBadge(Object days) {
@@ -1217,13 +853,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storeVerifyingEllipsis => 'Проверка…';
 
   @override
-  String get storeSubscribe => 'Подписаться';
-
-  @override
   String get storeYoureOnFreePro => 'У вас бесплатный Pro!';
-
-  @override
-  String get storeYourePro => 'Вы Pro!';
 
   @override
   String get storeFreePro => 'Бесплатный Pro';
@@ -1254,39 +884,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String storeEndsInM(Object minutes) {
     return 'Закончится через $minutesм';
   }
-
-  @override
-  String get storeFeatureExtraLife =>
-      'Всегда бесплатная доп. жизнь — возрождайтесь в каждой игре, без рекламы и монет';
-
-  @override
-  String get storeFeatureNoAds => 'Без рекламы — играйте совсем без объявлений';
-
-  @override
-  String get storeFeatureThemes => 'Все 6 премиум-тем';
-
-  @override
-  String get storeFeatureSkins => 'Все 11 премиум-скинов';
-
-  @override
-  String get storeFeatureTrails => 'Все 11 премиум-следов';
-
-  @override
-  String get storeFeatureBoards => 'Премиум-поля (35×35, 40×40, 50×50)';
-
-  @override
-  String get storeFeatureCoins => 'Монеты 2×';
-
-  @override
-  String get storeFeaturePowerUps => '5× премиум-усилений каждый цикл';
-
-  @override
-  String get storeFeatureTournaments =>
-      'Бронзовый + серебряный + золотой турнирные входы каждый цикл';
-
-  @override
-  String get storeFeatureBattlePass =>
-      'Премиум-ветка боевого пропуска каждый сезон';
 
   @override
   String storeInitiatingPurchase(Object name) {
@@ -1416,12 +1013,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get storePillApply => 'ПРИМЕНИТЬ';
-
-  @override
-  String get storePillEquipped => 'НАДЕТО';
-
-  @override
-  String get storePillEquip => 'НАДЕТЬ';
 
   @override
   String get storeThemeDescClassic => 'Тот самый первый облик';
@@ -1684,22 +1275,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get commonClose => 'Закрыть';
 
   @override
-  String get commonViewAll => 'Показать все';
-
-  @override
   String get commonRetry => 'Повторить';
 
   @override
-  String get pfTitle => 'Профиль';
-
-  @override
   String get pfSigningOut => 'Выход...';
-
-  @override
-  String get pfGuestPlayer => 'Гость';
-
-  @override
-  String get pfVerifiedAccount => 'Подтверждённый аккаунт';
 
   @override
   String get pfStatistics => 'Статистика';
@@ -1708,25 +1287,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pfReplays => 'Повторы';
 
   @override
-  String get pfAchievements => 'Достижения';
-
-  @override
   String get pfLoadingStats => 'Загрузка статистики...';
-
-  @override
-  String get pfHighScore => 'Рекорд';
-
-  @override
-  String get pfGamesPlayed => 'Сыграно игр';
-
-  @override
-  String get pfPlayTime => 'Время игры';
-
-  @override
-  String get pfAverageScore => 'Средний счёт';
-
-  @override
-  String get pfFoodConsumed => 'Съедено еды';
 
   @override
   String get pfPowerUps => 'Усиления';
@@ -1761,9 +1322,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pfSignInApple => 'Войти через Apple';
-
-  @override
-  String get pfNoReplays => 'Пока нет повторов. Сыграйте пару игр!';
 
   @override
   String pfReplaysSaved(num count) {
@@ -1887,12 +1445,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get stConsistency => 'Стабильность';
 
   @override
-  String get stScores => 'Очки';
-
-  @override
-  String get stTrendLine => 'Линия тренда';
-
-  @override
   String get stPlayPatterns => 'Игровые привычки (последние 7 дней)';
 
   @override
@@ -1906,15 +1458,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get stAchievementProgress => 'Прогресс достижений';
-
-  @override
-  String get stViewAllAchievements => 'Все достижения →';
-
-  @override
-  String get stViewAchievements => 'ДОСТИЖЕНИЯ';
-
-  @override
-  String get stReplaysUpper => 'ПОВТОРЫ';
 
   @override
   String get stResetStatistics => 'СБРОСИТЬ СТАТИСТИКУ';
@@ -1943,9 +1486,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get stPoor => 'Слабо';
-
-  @override
-  String get stNoData => 'Нет данных';
 
   @override
   String get stNone => 'Нет';
@@ -2252,9 +1792,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get frRemove => 'Удалить';
 
   @override
-  String get frLeaderboardTitle => 'Рейтинг друзей';
-
-  @override
   String get frLeaderboardSubtitle => 'Соревнуйтесь с друзьями';
 
   @override
@@ -2264,9 +1801,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String frRankBadge(Object rank) {
     return '№$rank';
   }
-
-  @override
-  String get frYou => 'ВЫ';
 
   @override
   String get frLeaderboardEmptySub =>
@@ -2556,34 +2090,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get acAll => 'Все';
-
-  @override
-  String get acUnlocked => 'Открытые';
-
-  @override
   String get acLocked => 'Закрытые';
-
-  @override
-  String get acTotalUpper => 'ВСЕГО';
-
-  @override
-  String get acUnlockedUpper => 'ОТКРЫТО';
-
-  @override
-  String get acClaimedUpper => 'ПОЛУЧЕНО';
-
-  @override
-  String get acPendingUpper => 'ОЖИДАЕТ';
 
   @override
   String acPercentComplete(Object percent) {
     return '$percent% выполнено';
-  }
-
-  @override
-  String acPercentOfUnlocked(Object percent) {
-    return '$percent% от открытых';
   }
 
   @override
@@ -2593,14 +2104,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String acXpReward(Object xp) {
     return '+$xp XP';
   }
-
-  @override
-  String acUnlockedDate(Object date) {
-    return 'Открыто $date';
-  }
-
-  @override
-  String get rpTitle => 'Повторы игр';
 
   @override
   String get rpRecent => 'Недавние';
@@ -2665,25 +2168,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rpDeleteFailed => 'Не удалось удалить повтор';
 
   @override
-  String get lbTitle => 'Рейтинги';
-
-  @override
-  String get lbGlobal => 'Мировой';
-
-  @override
-  String get lbWeekly => 'Недельный';
-
-  @override
   String get lbWeeklySub =>
       'По вашему лучшему счёту за неделю (сброс в воскресенье)';
-
-  @override
-  String get lbGlobalSub => 'По вашему лучшему счёту за всё время';
-
-  @override
-  String lbScoreLine(Object score) {
-    return 'Счёт: $score';
-  }
 
   @override
   String get lbLoadingGlobal => 'Загрузка мирового рейтинга...';
@@ -2695,9 +2181,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbNoScores => 'Пока нет результатов';
 
   @override
-  String get lbBeFirst => 'Станьте первым рекордсменом!';
-
-  @override
   String get lbNoWeekly => 'На этой неделе результатов нет';
 
   @override
@@ -2707,23 +2190,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbAnonymous => 'Аноним';
 
   @override
-  String get lbGuestBadge => 'ГОСТЬ';
-
-  @override
   String get lbPts => 'очк.';
-
-  @override
-  String lbGamesPlayed(num count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'сыграно $count игры',
-      many: 'сыграно $count игр',
-      few: 'сыграно $count игры',
-      one: 'сыграна $count игра',
-    );
-    return '$_temp0';
-  }
 
   @override
   String bpClaimedToast(Object name) {
@@ -2731,22 +2198,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get bpTitle => 'Боевой пропуск';
-
-  @override
-  String get bpTitleUpper => 'БОЕВОЙ ПРОПУСК';
-
-  @override
   String get bpLoading => 'Загрузка боевого пропуска...';
 
   @override
-  String get bpWatchAdXp => 'Смотреть рекламу — +50 XP пропуска';
-
-  @override
   String get bpXpEarned => '+50 XP боевого пропуска!';
-
-  @override
-  String get bpSeasonEnded => 'Сезон завершён';
 
   @override
   String bpHoursLeft(Object hours) {
@@ -2754,31 +2209,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String bpDaysLeft(Object days) {
-    return 'осталось $daysд';
-  }
-
-  @override
-  String get bpTierUpper => 'УРОВЕНЬ';
-
-  @override
-  String bpTierMax(Object max) {
-    return ' / $max';
-  }
-
-  @override
-  String get bpSeasonComplete => 'Сезон пройден';
-
-  @override
   String get bpSeasonCompleteUpper => 'СЕЗОН ПРОЙДЕН';
-
-  @override
-  String bpXpProgress(Object next, Object tier, Object xp) {
-    return '$xp / $next XP до уровня $tier';
-  }
-
-  @override
-  String get bpPremiumBadge => 'ПРЕМИУМ';
 
   @override
   String get bpSeasonCosmicSerpent => 'Сезон «Космический змей»';
@@ -2787,24 +2218,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bpUnlockedEverything => 'Вы открыли все уровни этого сезона.';
 
   @override
-  String get bpComingNext => 'ДАЛЬШЕ';
-
-  @override
   String bpTierN(Object tier) {
     return 'Уровень $tier';
-  }
-
-  @override
-  String bpTiersAway(num count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'через $count уровня',
-      many: 'через $count уровней',
-      few: 'через $count уровня',
-      one: 'через $count уровень',
-    );
-    return '$_temp0';
   }
 
   @override
@@ -2836,15 +2251,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get bpCollapse => 'СВЕРНУТЬ';
-
-  @override
-  String get bpExpand => 'РАЗВЕРНУТЬ';
-
-  @override
-  String get bpNow => 'ТЕКУЩИЙ';
-
-  @override
   String bpTierUpperN(Object tier) {
     return 'УРОВЕНЬ $tier';
   }
@@ -2866,9 +2272,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bpCheckNewSeason => 'Проверить новый сезон';
-
-  @override
-  String get pbActive => 'Премиум активен!';
 
   @override
   String get pbActiveSub => 'Вам доступны все премиум-функции';
@@ -2917,71 +2320,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pbAllUnlocked => 'Всё это уже ваше';
 
   @override
-  String get pbKeepProCta => 'Оставить Pro';
-
-  @override
-  String get pbHeaderSub => 'Откройте всё, что есть в игре';
-
-  @override
-  String get pbMonthlyPlan => 'Месячный план';
-
-  @override
-  String get pbYearlyPlan => 'Годовой план';
-
-  @override
-  String get pbSave33 => 'Экономия 33%';
-
-  @override
-  String get pbMostPopular => 'САМЫЙ ПОПУЛЯРНЫЙ';
-
-  @override
-  String get pbFeatExtraLife => 'Всегда бесплатная доп. жизнь';
-
-  @override
-  String get pbFeatExtraLifeDesc =>
-      'Разбились — играйте дальше: участники Pro мгновенно возрождаются бесплатно, без рекламы и монет, раз за игру';
-
-  @override
-  String get pbFeatNoAds => 'Уберите всю рекламу';
-
-  @override
-  String get pbFeatNoAdsDesc =>
-      'Без баннеров и вставок — играйте совсем без рекламы, навсегда';
-
-  @override
-  String get pbFeatThemes => 'Все премиум-темы';
-
-  @override
-  String get pbFeatThemesDesc =>
-      'Crystal, Cyberpunk, Space, Ocean, Desert, Forest';
-
-  @override
-  String get pbFeatSkins => 'Все премиум-скины';
-
-  @override
-  String get pbFeatSkinsDesc =>
-      'Golden, Galaxy, Dragon, Electric, Fire, Ice и ещё 5';
-
-  @override
-  String get pbFeatTrails => 'Все премиум-следы';
-
-  @override
-  String get pbFeatTrailsDesc =>
-      'Particle, Glow, Rainbow, Fire, Cosmic, Crystal и ещё 5';
-
-  @override
-  String get pbFeatBoards => 'Большие игровые поля';
-
-  @override
-  String get pbFeatBoardsDesc => 'Играйте на полях 35x35, 40x40 и 50x50';
-
-  @override
-  String get pbFeatCoins => 'Монеты 2x';
-
-  @override
-  String get pbFeatCoinsDesc => 'Вдвое больше монет Snake за каждую игру';
-
-  @override
   String get pbFeatLucky => 'Счастливчик — больше особой еды';
 
   @override
@@ -2995,13 +2333,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pbFeatPowerUpsDesc => '+30% к частоте появления усилений на поле';
 
   @override
-  String get pbFeatBundle => 'Премиум-набор усилений';
-
-  @override
-  String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield и Mega Invincibility каждый платёжный цикл';
-
-  @override
   String get pbFeatTournament => 'Турнирные входы';
 
   @override
@@ -3009,25 +2340,7 @@ class AppLocalizationsRu extends AppLocalizations {
       '1× бронзовый + 1× серебряный + 1× золотой вход каждый платёжный цикл';
 
   @override
-  String get pbIncludes => 'Премиум включает:';
-
-  @override
-  String get pbProPerk => 'БОНУС PRO';
-
-  @override
-  String pbSubscribeCta(Object period, Object price) {
-    return 'Подписаться — $price$period';
-  }
-
-  @override
-  String get pbReassurance =>
-      'Без обязательств • Отмена в любой момент • Безопасная оплата';
-
-  @override
   String get pbNotAvailable => 'Премиум-подписка недоступна';
-
-  @override
-  String get eaTitleLink => 'Сохраните прогресс';
 
   @override
   String get eaTitleSignIn => 'Вход по почте';
@@ -3128,9 +2441,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eaErrGeneric => 'Что-то пошло не так. Попробуйте ещё раз.';
 
   @override
-  String get faWelcome => 'Добро пожаловать в\nSnake Classic!';
-
-  @override
   String get faChooseHow => 'Выберите, как хотите играть:';
 
   @override
@@ -3143,13 +2453,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get faContinueGuest => 'Продолжить как гость';
 
   @override
-  String get faGuestNote =>
-      'Гости могут играть и сохранять прогресс локально, но не могут покупать. Войдите через Apple, Google или почту, когда решите подписаться или купить.';
-
-  @override
-  String get faPrivacyTerms => 'Конфиденциальность и условия';
-
-  @override
   String get faReviewNote =>
       'Перед продолжением ознакомьтесь с политикой конфиденциальности и условиями использования';
 
@@ -3159,27 +2462,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get faContinueToSignIn => 'Перейти ко входу';
-
-  @override
-  String get faHeadsUp => 'Обратите внимание';
-
-  @override
-  String get faGuestBullet1 =>
-      'Данные гостя автоматически удаляются с наших серверов после 90 дней неактивности.';
-
-  @override
-  String get faGuestBullet2 =>
-      'Чтобы сохранить прогресс навсегда и играть на разных устройствах, войдите через Apple, Google или почту.';
-
-  @override
-  String get faGuestBullet3 =>
-      'Гостевые аккаунты не могут покупать товары и подписки. Войдите, если хотите оформить Pro или купить косметику.';
-
-  @override
-  String get faChangedMind => 'Я передумал(а)';
-
-  @override
-  String get faProceedAnyway => 'Всё равно продолжить';
 
   @override
   String get faAppleFailed =>
@@ -3201,103 +2483,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ldInitializing => 'Запуск Snake Classic...';
 
   @override
-  String get ldTip1 =>
-      'Думайте на два хода вперёд — хвост идёт туда, где только что была голова.';
-
-  @override
-  String get ldTip2 =>
-      'Бонусная еда даёт больше очков, но быстро исчезает. Хватайте скорее!';
-
-  @override
-  String get ldTip3 =>
-      'Разбились? Посмотрите короткую рекламу или потратьте монеты, чтобы возродиться и сохранить счёт.';
-
-  @override
-  String get ldTip4 => 'Ешьте без пауз, чтобы копить множитель комбо.';
-
-  @override
-  String get ldTip5 =>
-      'Зажаты в углу? Идите вдоль стен, чтобы выиграть мгновение.';
-
-  @override
-  String get ldTip6 =>
-      'Ежедневные задания и недельные квесты быстро приносят монеты.';
-
-  @override
-  String get ldTip7 =>
-      'Snake Classic Pro открывает большие поля и убирает всю рекламу.';
-
-  @override
-  String get ldTip8 =>
-      'Режим «На время» ценит скорость — а за рекламу дают +30 секунд.';
-
-  @override
-  String get ldTip9 =>
-      'Усиления складываются: зарядите щит перед узким проходом.';
-
-  @override
-  String get ldTip10 =>
-      'Меняйте темы, скины и следы в магазине в любой момент.';
-
-  @override
   String get ldStepCore => 'Запуск основных систем...';
-
-  @override
-  String get ldStepCoreSub => 'Настройка соединения с сервером';
 
   @override
   String get ldStepProfile => 'Создание профиля игрока...';
 
   @override
-  String get ldStepProfileSub => 'Генерация уникального имени';
-
-  @override
   String get ldStepPrefs => 'Загрузка ваших настроек...';
-
-  @override
-  String get ldStepPrefsSub => 'Синхронизация тем и настроек';
 
   @override
   String get ldStepCloud => 'Синхронизация с облаком...';
 
   @override
-  String get ldStepCloudSub => 'Проверка актуальности данных';
-
-  @override
   String get ldStepGameData => 'Загрузка игровых данных...';
-
-  @override
-  String get ldStepGameDataSub => 'Получение игровых данных';
 
   @override
   String get ldStepAudio => 'Настройка аудиосистемы...';
 
   @override
-  String get ldStepAudioSub => 'Загрузка звуковых эффектов';
-
-  @override
   String get ldStepAds => 'Подготовка наград...';
-
-  @override
-  String get ldStepAdsSub => 'Готовим рекламу бесплатного усиления';
 
   @override
   String get ldStepSetup => 'Проверка состояния настройки...';
 
   @override
-  String get ldStepSetupSub => 'Почти готово!';
-
-  @override
   String get ldWelcome => 'Добро пожаловать!';
 
   @override
-  String get ldWelcomeSub => 'Выберите, как продолжить';
-
-  @override
   String get ldReady => 'Готово к игре!';
-
-  @override
-  String get ldReadySub => 'С возвращением в Snake Classic';
 
   @override
   String ldInitFailed(Object error) {
@@ -3306,60 +2519,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ldRetrying => 'Повторный запуск...';
-
-  @override
-  String get ldTagline => 'ПРЕМИУМ-ЗМЕЙКА';
-
-  @override
-  String get ldLoadingUpper => 'ЗАГРУЗКА';
-
-  @override
-  String get ldDidYouKnow => 'А ВЫ ЗНАЛИ?';
-
-  @override
-  String get ldGameFeatures => 'ОСОБЕННОСТИ ИГРЫ';
-
-  @override
-  String get ldFeatFps => '60FPS';
-
-  @override
-  String get ldFeatFpsSub => 'Плавный геймплей';
-
-  @override
-  String get ldFeatEffects => 'ЭФФЕКТЫ';
-
-  @override
-  String get ldFeatEffectsSub => 'Визуальные частицы';
-
-  @override
-  String get ldFeatLevels => 'УРОВНИ';
-
-  @override
-  String get ldFeatLevelsSub => 'Растущий азарт';
-
-  @override
-  String get ldFeatAudio => 'ЗВУК';
-
-  @override
-  String get ldFeatAudioSub => 'Погружающий звук';
-
-  @override
-  String get ldFeatScores => 'ОЧКИ';
-
-  @override
-  String get ldFeatScoresSub => 'Мировые рейтинги';
-
-  @override
-  String get ldFeatThemes => 'ТЕМЫ';
-
-  @override
-  String get ldFeatThemesSub => 'Много стилей';
-
-  @override
-  String get ldDevelopedBy => 'РАЗРАБОТКА И ПОДДЕРЖКА';
-
-  @override
-  String get ldDevTagline => 'Создаём премиальные мобильные впечатления';
 
   @override
   String get ldInitFailedUpper => 'СБОЙ ЗАПУСКА';
@@ -3580,53 +2739,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get wtWaiting => 'Ожидание...';
 
   @override
-  String get hwPlayTitle => 'Добро пожаловать в Snake Classic!';
-
-  @override
-  String get hwPlayMsg =>
-      'Нажмите ИГРАТЬ, чтобы начать. Управляйте змейкой свайпами и ешьте, чтобы расти!';
-
-  @override
-  String get hwCoinsTitle => 'Ваши монеты';
-
-  @override
-  String get hwCoinsMsg =>
-      'Зарабатывайте монеты в играх, заданиях и за ежедневные бонусы. Тратьте их в магазине!';
-
-  @override
   String get hwDailyTitle => 'Ежедневные задания';
 
   @override
   String get hwDailyMsg =>
       'Выполняйте ежедневные задания ради бонусных монет и наград. Каждый день новые!';
-
-  @override
-  String get hwStoreTitle => 'Магазин';
-
-  @override
-  String get hwStoreMsg =>
-      'Покупайте темы, скины, следы и усиления за монеты. Оформите Pro ради премиум-полей и эксклюзивной косметики.';
-
-  @override
-  String get hwCosmeticsTitle => 'Скины и следы';
-
-  @override
-  String get hwCosmeticsMsg =>
-      'Настройте змейку здесь. Скины меняют её облик; следы оставляют свечение позади. Получайте за монеты или открывайте с Pro.';
-
-  @override
-  String get hwProfileTitle => 'Ваш профиль';
-
-  @override
-  String get hwProfileMsg =>
-      'Здесь статистика, достижения и рекорды. Достижения открываются на рубежах — некоторым нужен конкретный режим (Классика, Сложный и т.д.). Войдите, чтобы синхронизироваться между устройствами.';
-
-  @override
-  String get hwSettingsTitle => 'Настройки';
-
-  @override
-  String get hwSettingsMsg =>
-      'Настройте игру под себя - темы, управление, звук и многое другое!';
 
   @override
   String get hudScoreUpper => 'СЧЁТ';
@@ -3650,40 +2767,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get poPaused => 'ПАУЗА';
-
-  @override
-  String get poPremium => 'Премиум';
-
-  @override
   String get poStore => 'Магазин';
-
-  @override
-  String get poResume => 'ПРОДОЛЖИТЬ';
-
-  @override
-  String get poRestart => 'ЗАНОВО';
-
-  @override
-  String get poHome => 'ДОМОЙ';
-
-  @override
-  String get poDPadOn => 'D-PAD: ВКЛ';
-
-  @override
-  String get poDPadOff => 'D-PAD: ВЫКЛ';
 
   @override
   String get poSnapOn => 'КЛЕТКИ: ВКЛ';
 
   @override
   String get poSnapOff => 'КЛЕТКИ: ВЫКЛ';
-
-  @override
-  String get poLayoutDPad => 'D-PAD';
-
-  @override
-  String get poLayoutTurn => 'ПОВОРОТ';
 
   @override
   String get updateReadyTitle => 'Обновление готово';
@@ -3695,100 +2785,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get poUpdateReady => 'ПЕРЕЗАПУСТИТЬ ДЛЯ ОБНОВЛЕНИЯ';
 
   @override
-  String get poSound => 'ЗВУК';
-
-  @override
-  String get poMusic => 'МУЗЫКА';
-
-  @override
   String get poHowToPlay => 'КАК ИГРАТЬ';
 
   @override
   String get poGameGuide => 'ГИД ПО ИГРЕ';
-
-  @override
-  String get poFoodUpper => 'ЕДА';
-
-  @override
-  String get poPts10 => '10 очк.';
-
-  @override
-  String get poPts25 => '25 очк.';
-
-  @override
-  String get poPts50 => '50 очк.';
-
-  @override
-  String get poComboUpper => 'КОМБО';
-
-  @override
-  String get poBites5 => '5 укусов';
-
-  @override
-  String get poBites10 => '10 укусов';
-
-  @override
-  String get poBites20 => '20 укусов';
-
-  @override
-  String get poComboHint =>
-      'Огненный чип у счёта разгорается и пульсирует на каждом рубеже.';
-
-  @override
-  String get poPowerUpsUpper => 'УСИЛЕНИЯ';
-
-  @override
-  String get poDur7s => '7 с';
-
-  @override
-  String get poDur6s => '6 с';
-
-  @override
-  String get poDur10s => '10 с';
-
-  @override
-  String get poDur8s => '8 с';
-
-  @override
-  String get poScore2x => 'Очки 2×';
-
-  @override
-  String get poPowerUpHint =>
-      'Кольцо вокруг значка тает до истечения. На паузе таймер замирает.';
-
-  @override
-  String get poCrashUpper => 'СТОЛКНОВЕНИЕ';
-
-  @override
-  String get poCrashHint =>
-      'Красная волна бьёт в клетку, где вы погибли. При столкновении с собой задетый сегмент подсвечивается жёлтым.';
-
-  @override
-  String get poModesUpper => 'РЕЖИМЫ';
-
-  @override
-  String get poModeWallsOn => 'стены есть';
-
-  @override
-  String get poModeWallsOff => 'стен нет';
-
-  @override
-  String get poModeFastTick => 'быстрый темп';
-
-  @override
-  String get poModeThreeFoods => '3 еды сразу';
-
-  @override
-  String get poModeThreeLives => '3 жизни, ускоряется';
-
-  @override
-  String get poModeThreeMin => '3 минуты всего';
-
-  @override
-  String get poModeFrequentPowerUps => 'частые усиления';
-
-  @override
-  String get poModeDontCross => 'не пересекайте след';
 
   @override
   String get dcTitle => 'Ежедневные задания';
@@ -3858,9 +2858,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gbSpeed => 'Скорость';
-
-  @override
-  String get gbLevel => 'Уровень';
 
   @override
   String get rarityCommon => 'Обычное';
@@ -4577,19 +3574,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bundleMegaPackDesc => 'Улучшенные версии классических усилений';
 
   @override
-  String get bundleTacticalPack => 'Тактический набор';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Стратегические усиления для умелых игроков';
-
-  @override
-  String get bundleUltimatePack => 'Абсолютный набор';
-
-  @override
-  String get bundleUltimatePackDesc => 'Все премиум-усиления сразу';
-
-  @override
   String get skinClassic => 'Классическая';
 
   @override
@@ -4912,12 +3896,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bprSpecial => 'Особая награда';
 
   @override
-  String get bprFree => 'Бесплатно';
-
-  @override
-  String get bprPremium => 'Премиум';
-
-  @override
   String get bprnStarDust => 'Звёздная пыль';
 
   @override
@@ -5105,9 +4083,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get insTip4 => 'Тренируйтесь на разных уровнях сложности';
 
   @override
-  String get insBackToGame => 'НАЗАД К ИГРЕ';
-
-  @override
   String dchClaimedReward(Object coins, Object xp) {
     return 'Получено $coins монет и $xp опыта!';
   }
@@ -5126,18 +4101,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get dchClaimAll => 'Забрать всё';
-
-  @override
-  String get dchTodaysProgress => 'Прогресс за сегодня';
-
-  @override
-  String get dchClaim => 'Забрать';
-
-  @override
-  String get dchClaimed => 'Получено';
-
-  @override
   String get dchAllCompleteTitle => 'Все вызовы выполнены!';
 
   @override
@@ -5145,9 +4108,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dchBonusPending => 'Бонус ждёт — заберите любой вызов';
-
-  @override
-  String get dchLoading => 'Загрузка вызовов...';
 
   @override
   String get dchCheckBack => 'Загляните позже за новыми ежедневными вызовами!';
@@ -5181,18 +4141,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get wqTitle => 'Еженедельные задания';
 
   @override
-  String get wqClaimReward => 'Забрать награду';
-
-  @override
   String get rvNotFound => 'Повтор не найден';
 
   @override
   String get rvLoadFailed => 'Не удалось загрузить повтор';
-
-  @override
-  String rvTitle(Object name) {
-    return 'Повтор: $name';
-  }
 
   @override
   String get rvLoadingTitle => 'Загрузка повтора...';
@@ -5279,9 +4231,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get unUpdateFailed => 'Не удалось обновить имя пользователя';
-
-  @override
-  String get pcTitle => 'Обновлены конфиденциальность и условия';
 
   @override
   String pcVersionLine(Object version) {
@@ -5441,33 +4390,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ssiOffline => 'Офлайн';
 
   @override
-  String get rvoContinue => 'ПРОДОЛЖИТЬ?';
-
-  @override
-  String get rvoSubtitlePro =>
-      'Спасибо, что вы Pro — вот ваша бесплатная жизнь';
-
-  @override
-  String rvoSubtitleTimer(Object seconds) {
-    return 'Возродитесь и сохраните счёт · $seconds с';
-  }
-
-  @override
-  String get rvoGetLifePro => 'Получить жизнь · Бесплатно для Pro';
-
-  @override
-  String get rvoWatchAd => 'Смотреть рекламу и возродиться';
-
-  @override
   String get rvoLoadingAd => 'Загрузка рекламы…';
-
-  @override
-  String rvoUseCoins(Object coins) {
-    return 'Потратить $coins монет';
-  }
-
-  @override
-  String get rvoNoThanks => 'Нет, спасибо';
 
   @override
   String get tbTimesUp => 'ВРЕМЯ ВЫШЛО!';
@@ -5737,16 +4660,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String stDurHourMin(Object h, Object m) {
     return '$h ч $m мин';
-  }
-
-  @override
-  String dchProgressSummary(Object completed, Object total) {
-    return 'Выполнено $completed из $total вызовов';
-  }
-
-  @override
-  String wqProgressSummary(Object completed, Object total) {
-    return '$completed / $total выполнено';
   }
 
   @override
@@ -6382,20 +5295,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsReplaysSubtitle => 'Пересмотреть сохранённые игры';
 
   @override
-  String get homeTapToPlay => 'Нажмите, чтобы играть';
-
-  @override
-  String get homeTileMe => 'Я';
-
-  @override
-  String get dchSectionChallenges => 'Задания';
-
-  @override
-  String dchRewardLine(int coins, int xp) {
-    return '$coins монет · $xp XP';
-  }
-
-  @override
   String get updateAvailableTitle => 'Доступно обновление';
 
   @override
@@ -6421,30 +5320,30 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String lbHomeGreeting(String name) {
-    return 'Hey, $name. Apples missed you.';
+    return 'Привет, $name. Яблоки скучали.';
   }
 
   @override
-  String get lbHomeHint => 'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.';
+  String get lbHomeHint => 'ЗАРУЛИ В БЛОК. ИЛИ ТАПНИ. МЫ НЕ СУДИМ.';
 
   @override
   String lbDailyNag(String done, String total) {
-    return 'DAILY $done/$total · ONE MORE SNACK, PLEASE';
+    return 'ЗАДАНИЯ $done/$total · ЕЩЁ КУСОЧЕК, ПЛИЗ';
   }
 
   @override
-  String get lbDailyAllFed => 'ALL FED. COME BACK TOMORROW.';
+  String get lbDailyAllFed => 'ВСЕ СЫТЫ. ПРИХОДИ ЗАВТРА.';
 
   @override
   String lbModeRow(String index, String count, String mode) {
-    return 'MODE $index/$count · $mode';
+    return 'РЕЖИМ $index/$count · $mode';
   }
 
   @override
-  String get lbYourBest => 'YOUR BEST';
+  String get lbYourBest => 'ТВОЙ РЕКОРД';
 
   @override
-  String get lbPlay => 'PLAY';
+  String get lbPlay => 'ИГРАТЬ';
 
   @override
   String lbModeBoard(String mode, String board) {
@@ -6452,351 +5351,352 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbHomeVersus => 'VERSUS';
+  String get lbHomeVersus => 'ВЕРСУС';
 
   @override
   String lbHomeVersusSub(String rating) {
-    return '1v1 · rating $rating';
+    return '1 на 1 · рейтинг $rating';
   }
 
   @override
   String lbHomeDaily(String done, String total) {
-    return 'DAILY $done/$total';
+    return 'ЗАДАНИЯ $done/$total';
   }
 
   @override
   String lbHomeDailySub(String time, String coins) {
-    return 'resets in $time · +$coins¢';
+    return 'сброс через $time · +$coins¢';
   }
 
   @override
-  String get lbHomeSeason => 'SEASON';
+  String get lbHomeSeason => 'СЕЗОН';
 
   @override
   String lbHomeSeasonSub(String tier, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
+      other: 'осталось $days дня',
+      many: 'осталось $days дней',
+      few: 'осталось $days дня',
+      one: 'остался $days день',
     );
-    return 'Tier $tier · $_temp0';
+    return 'Ур. $tier · $_temp0';
   }
 
   @override
-  String get lbHomeRanks => 'RANKS';
+  String get lbHomeRanks => 'РЕЙТИНГ';
 
   @override
   String lbHomeRanksSub(String rank) {
-    return '#$rank · climbing';
+    return '#$rank · ползём вверх';
   }
 
   @override
   String lbHomeRanksSubNone(String score) {
-    return 'Best run: $score';
+    return 'Лучший забег: $score';
   }
 
   @override
-  String get lbHomeStore => 'STORE';
+  String get lbHomeStore => 'МАГАЗИН';
 
   @override
-  String get lbHomeStoreSub => 'Skins, themes, trails';
+  String get lbHomeStoreSub => 'Скины, темы, следы';
 
   @override
-  String get lbHomeProfile => 'PROFILE';
+  String get lbHomeProfile => 'ПРОФИЛЬ';
 
   @override
   String lbHomeProfileSub(String level, String runs) {
-    return 'LV $level · $runs runs';
+    return 'УР $level · забеги: $runs';
   }
 
   @override
-  String get lbHomeMenu => 'MENU';
+  String get lbHomeMenu => 'МЕНЮ';
 
   @override
-  String get lbFreePowerUp => 'FREE POWER-UP · AD';
+  String get lbFreePowerUp => 'УСИЛЕНИЕ ЗА РЕКЛАМУ';
 
   @override
-  String get lbTipLabel => 'TIP';
+  String get lbTipLabel => 'СОВЕТ';
 
   @override
-  String get lbTip1 => 'The wall doesn\'t move. You do.';
+  String get lbTip1 => 'Стена не двигается. Двигаешься ты.';
 
   @override
-  String get lbTip2 => 'Combos decay after 6 seconds. Keep chewing.';
+  String get lbTip2 => 'Комбо гаснет через 6 секунд. Жуй дальше.';
 
   @override
-  String get lbTip3 => 'Zen mode has no walls. It still has you.';
+  String get lbTip3 => 'В Дзене нет стен. Зато есть ты.';
 
   @override
-  String get lbTip4 => 'Easy runs stay off the leaderboard. No shame.';
+  String get lbTip4 => 'Лёгкие забеги не идут в рейтинг. Это не стыдно.';
 
   @override
-  String get lbTip5 => 'Bonus food is worth 25. Special is 50. Greed is free.';
+  String get lbTip5 => 'Бонусная еда — 25. Особая — 50. Жадность бесплатна.';
 
   @override
-  String get lbTip6 => 'Swipe early. The snake doesn\'t do sudden.';
+  String get lbTip6 => 'Свайпай заранее. Змейка не умеет резко.';
 
   @override
-  String get lbTip7 =>
-      'Perfect Game: never step on the same cell twice. Good luck.';
+  String get lbTip7 => 'Идеальная игра: не наступай на клетку дважды. Удачи.';
 
   @override
-  String get lbTip8 => 'Pro players revive free. Just saying.';
+  String get lbTip8 => 'С Pro воскрешение бесплатно. Просто к слову.';
 
   @override
   String lbSplashStatus(String pct) {
-    return 'WARMING UP THE APPLES… $pct%';
+    return 'РАЗОГРЕВАЕМ ЯБЛОКИ… $pct%';
   }
 
   @override
   String lbSplashFooter(String version) {
-    return 'v$version · NO SNAKES WERE HARMED';
+    return 'v$version · НИ ОДНА ЗМЕЯ НЕ ПОСТРАДАЛА';
   }
 
   @override
-  String get lbSetupTitle => 'SETUP';
+  String get lbSetupTitle => 'НАСТРОЙКА';
 
   @override
   String get lbSetupSubtitle =>
-      'Pick your poison. Every mode is free. Forever.';
+      'Выбирай свой яд. Все режимы бесплатны. Навсегда.';
 
   @override
-  String get lbSetupMode => 'MODE';
+  String get lbSetupMode => 'РЕЖИМ';
 
   @override
   String lbSetupModesAside(String count) {
-    return '$count MODES · 0 PAYWALLS';
+    return 'РЕЖИМОВ: $count · ПЕЙВОЛЛОВ: 0';
   }
 
   @override
-  String get lbSetupBoard => 'BOARD';
+  String get lbSetupBoard => 'ПОЛЕ';
 
   @override
-  String get lbSetupDifficulty => 'DIFFICULTY';
+  String get lbSetupDifficulty => 'СЛОЖНОСТЬ';
 
   @override
-  String get lbSetupLoadout => 'LOADOUT';
+  String get lbSetupLoadout => 'СНАРЯЖЕНИЕ';
 
   @override
-  String get lbSetupGet => 'GET';
+  String get lbSetupGet => 'КУПИТЬ';
 
   @override
-  String get lbBoardTall => 'TALL';
+  String get lbBoardTall => 'ВЫСОКОЕ';
 
   @override
-  String get lbModeLineClassic => 'Walls bite.';
+  String get lbModeLineClassic => 'Стены кусаются.';
 
   @override
-  String get lbModeLineZen => 'No walls. Just vibes.';
+  String get lbModeLineZen => 'Без стен. Чистый вайб.';
 
   @override
-  String get lbModeLineSpeed => 'Fast. Then faster.';
+  String get lbModeLineSpeed => 'Быстро. Потом быстрее.';
 
   @override
-  String get lbModeLineMultiFood => 'The buffet is open.';
+  String get lbModeLineMultiFood => 'Шведский стол открыт.';
 
   @override
-  String get lbModeLineSurvival => '3 lives. Spend wisely.';
+  String get lbModeLineSurvival => '3 жизни. Трать с умом.';
 
   @override
-  String get lbModeLineTimeAttack => '3 minutes. Eat it all.';
+  String get lbModeLineTimeAttack => '3 минуты. Съешь всё.';
 
   @override
-  String get lbModeLinePowerUp => 'Power-ups. So many.';
+  String get lbModeLinePowerUp => 'Усиления. Очень много.';
 
   @override
-  String get lbModeLinePerfect => 'Never step twice.';
+  String get lbModeLinePerfect => 'Не наступай дважды.';
 
   @override
-  String get lbDiffEasyLine => 'practice · unranked';
+  String get lbDiffEasyLine => 'тренировка · без рейтинга';
 
   @override
-  String get lbDiffNormalLine => 'the classic pace';
+  String get lbDiffNormalLine => 'классический темп';
 
   @override
-  String get lbDiffHardLine => 'for show-offs';
+  String get lbDiffHardLine => 'для позёров';
 
   @override
   String lbComboWarm(String mult) {
-    return '×$mult WARM';
+    return '×$mult ТЕПЛО';
   }
 
   @override
   String lbComboHot(String mult) {
-    return '×$mult HOT · KEEP EATING';
+    return '×$mult ГОРЯЧО · ЕШЬ ДАЛЬШЕ';
   }
 
   @override
   String lbComboFire(String mult) {
-    return '×$mult ON FIRE';
+    return '×$mult В ОГНЕ';
   }
 
   @override
-  String get lbComboDecay => 'EAT SOMETHING. NOW.';
+  String get lbComboDecay => 'СЪЕШЬ ЧТО-НИБУДЬ. СРОЧНО.';
 
   @override
-  String get lbComboBroken => 'combo dropped. it happens.';
+  String get lbComboBroken => 'комбо сорвалось. бывает.';
 
   @override
   String lbLevelUp(String level) {
-    return 'LV $level · FASTER NOW';
+    return 'УР $level · ТЕПЕРЬ БЫСТРЕЕ';
   }
 
   @override
   String lbLevelShort(String level) {
-    return 'LV $level';
+    return 'УР $level';
   }
 
   @override
   String lbPowerInvincible(String secs) {
-    return 'INVINCIBLE · ${secs}s';
+    return 'НЕУЯЗВИМОСТЬ · $secsс';
   }
 
   @override
-  String get lbPowerInvincibleLine => 'walls are more of a suggestion';
+  String get lbPowerInvincibleLine => 'стены — скорее рекомендация';
 
   @override
   String lbPowerSpeed(String secs) {
-    return 'SPEED · ${secs}s';
+    return 'УСКОРЕНИЕ · $secsс';
   }
 
   @override
-  String get lbPowerSpeedLine => 'hold on';
+  String get lbPowerSpeedLine => 'держись';
 
   @override
   String lbPowerSlow(String secs) {
-    return 'SLOW-MO · ${secs}s';
+    return 'ЗАМЕДЛЕНИЕ · $secsс';
   }
 
   @override
-  String get lbPowerSlowLine => 'savor it';
+  String get lbPowerSlowLine => 'смакуй';
 
   @override
   String lbPowerScore(String secs) {
-    return '2× SCORE · ${secs}s';
+    return 'ОЧКИ ×2 · $secsс';
   }
 
   @override
   String lbPowerEnding(String name, String secs) {
-    return '$name ENDING · $secs';
+    return '$name ИСТЕКАЕТ · $secs';
   }
 
   @override
-  String get lbTimeAttackPanic => '10 SECONDS. PANIC RESPONSIBLY.';
+  String get lbTimeAttackPanic => '10 СЕКУНД. ПАНИКУЙ ОТВЕТСТВЕННО.';
 
   @override
   String lbLifeLost(String left) {
-    return '1 LIFE DOWN · $left TO GO';
+    return 'МИНУС ЖИЗНЬ · ОСТАЛОСЬ $left';
   }
 
   @override
   String lbHudLen(String len) {
-    return 'LEN $len';
+    return 'ДЛ. $len';
   }
 
   @override
-  String get lbScoreLabel => 'SCORE';
+  String get lbScoreLabel => 'СЧЁТ';
 
   @override
-  String get lbTurnLeft => 'TURN LEFT';
+  String get lbTurnLeft => 'НАЛЕВО';
 
   @override
-  String get lbTurnRight => 'TURN RIGHT';
+  String get lbTurnRight => 'НАПРАВО';
 
   @override
-  String get lbSwipeToSteer => 'SWIPE TO STEER';
+  String get lbSwipeToSteer => 'РУЛИ СВАЙПАМИ';
 
   @override
-  String get lbPauseTitle => 'PAUSED';
+  String get lbPauseTitle => 'ПАУЗА';
 
   @override
-  String get lbPauseLine => 'The apple will wait. Probably.';
+  String get lbPauseLine => 'Яблоко подождёт. Наверное.';
 
   @override
-  String get lbResume => 'RESUME';
+  String get lbResume => 'ПРОДОЛЖИТЬ';
 
   @override
-  String get lbResumeSub => '3 · 2 · 1, THEN GO';
+  String get lbResumeSub => '3 · 2 · 1, И ПОЕХАЛИ';
 
   @override
-  String get lbRestart => 'RESTART';
+  String get lbRestart => 'ЗАНОВО';
 
   @override
-  String get lbRestartSub => 'same mode';
+  String get lbRestartSub => 'тот же режим';
 
   @override
-  String get lbPauseSettings => 'SETTINGS';
+  String get lbPauseSettings => 'НАСТРОЙКИ';
 
   @override
-  String get lbPauseSettingsSub => 'controls · sound';
+  String get lbPauseSettingsSub => 'управление · звук';
 
   @override
-  String get lbQuit => 'QUIT TO MENU';
+  String get lbQuit => 'ВЫЙТИ В МЕНЮ';
 
   @override
-  String get lbQuitSub => 'run ends here';
+  String get lbQuitSub => 'забег закончится';
 
   @override
   String lbPauseSoFar(String score, String len, String time) {
-    return 'SO FAR · $score PTS · LEN $len · $time';
+    return 'ПОКА ЧТО · $score ОЧК. · ДЛ. $len · $time';
   }
 
   @override
-  String get lbCrashWallTitle => 'BONK!';
+  String get lbCrashWallTitle => 'БАЦ!';
 
   @override
   String lbCrashWall1(String len) {
-    return 'You kissed the wall at length $len.';
+    return 'Поцелуй со стеной на длине $len.';
   }
 
   @override
-  String get lbCrashWall2 => 'The wall was there first.';
+  String get lbCrashWall2 => 'Стена была тут первой.';
 
   @override
-  String get lbCrashWall3 => 'Walls: undefeated since forever.';
+  String get lbCrashWall3 => 'Стены: непобедимы с начала времён.';
 
   @override
-  String get lbCrashWallScore => 'THE WALL: 1 · YOU: 0';
+  String get lbCrashWallScore => 'СТЕНА: 1 · ТЫ: 0';
 
   @override
-  String get lbCrashSelfTitle => 'OUCH.';
+  String get lbCrashSelfTitle => 'АЙ.';
 
   @override
-  String get lbCrashSelf1 => 'You bit yourself. Why?';
+  String get lbCrashSelf1 => 'Кусать себя? Зачем?';
 
   @override
-  String get lbCrashSelf2 => 'Tail: delicious, apparently.';
+  String get lbCrashSelf2 => 'Хвост, видимо, вкусный.';
 
   @override
-  String get lbCrashSelf3 => 'Self-snack detected.';
+  String get lbCrashSelf3 => 'Обнаружен самоперекус.';
 
   @override
-  String get lbCrashTimeTitle => 'TIME!';
+  String get lbCrashTimeTitle => 'ВРЕМЯ!';
 
   @override
-  String get lbCrashTime1 => 'Out of time. The apples got away.';
+  String get lbCrashTime1 => 'Время вышло. Яблоки сбежали.';
 
   @override
   String lbCrashTime2(String food) {
-    return 'Three minutes, $food apples. Respect.';
+    return 'Три минуты. Яблок: $food. Респект.';
   }
 
   @override
-  String get lbCrashStepTitle => 'STEPPED.';
+  String get lbCrashStepTitle => 'ШАГ НЕ ТУДА.';
 
   @override
   String get lbCrashStep1 =>
-      'You walked on your own path. Perfect Game is not forgiving.';
+      'Шаг по собственному следу. Идеальная игра не прощает.';
 
   @override
-  String get lbCrashQuitTitle => 'BAILED.';
+  String get lbCrashQuitTitle => 'ПОБЕГ.';
 
   @override
-  String get lbCrashQuit1 => 'Run ended by you. We saw nothing.';
+  String get lbCrashQuit1 => 'Забег прерван тобой. Мы ничего не видели.';
 
   @override
-  String get lbCrashGeneric => 'Game over.';
+  String get lbCrashGeneric => 'Игра окончена.';
 
   @override
   String lbGameOverHeadline(String line) {
@@ -6804,42 +5704,42 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbReviveTitle => 'SECOND CHANCE?';
+  String get lbReviveTitle => 'ВТОРОЙ ШАНС?';
 
   @override
   String lbSeconds(String secs) {
-    return '${secs}s';
+    return '$secsс';
   }
 
   @override
   String lbReviveLine(String len, String score) {
-    return 'Keep length $len and all $score points.';
+    return 'Сохрани длину $len и счёт $score.';
   }
 
   @override
-  String get lbReviveWatch => 'WATCH AD · FREE';
+  String get lbReviveWatch => 'РЕКЛАМА · БЕСПЛАТНО';
 
   @override
   String lbRevivePay(String cost) {
-    return 'PAY $cost¢';
+    return 'ЗАПЛАТИТЬ $cost¢';
   }
 
   @override
   String lbReviveYouHave(String coins) {
-    return 'you have $coins';
+    return 'у тебя $coins';
   }
 
   @override
-  String get lbReviveDecline => 'NAH, SHOW ME MY SCORE';
+  String get lbReviveDecline => 'НЕ, ПОКАЖИ МОЙ СЧЁТ';
 
   @override
-  String get lbRevivePro => 'REVIVE · FREE WITH PRO';
+  String get lbRevivePro => 'ВОСКРЕСНУТЬ · БЕСПЛАТНО С PRO';
 
   @override
-  String get lbReviveProHint => 'Pro players revive free. Just saying.';
+  String get lbReviveProHint => 'С Pro воскрешение бесплатно. Просто к слову.';
 
   @override
-  String get lbGoBest => 'BEST';
+  String get lbGoBest => 'РЕКОРД';
 
   @override
   String lbGoBehind(String gap) {
@@ -6847,80 +5747,80 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbGoBehindLine => 'so close. (not really.)';
+  String get lbGoBehindLine => 'так близко. (нет.)';
 
   @override
-  String get lbGoNewBest => 'NEW BEST!';
+  String get lbGoNewBest => 'НОВЫЙ РЕКОРД!';
 
   @override
-  String get lbGoNewBestLine => 'Frame this one.';
+  String get lbGoNewBestLine => 'Это в рамочку.';
 
   @override
   String lbGoRun(String run) {
-    return 'RUN $run';
+    return 'ЗАБЕГ $run';
   }
 
   @override
-  String get lbGoChartTitle => 'YOUR RUN, UNCOILED';
+  String get lbGoChartTitle => 'ТВОЙ ЗАБЕГ ВО ВСЮ ДЛИНУ';
 
   @override
   String lbGoChartStats(String food, String combo) {
-    return '$food FOOD · PEAK ×$combo';
+    return 'ЕДА: $food · ПИК ×$combo';
   }
 
   @override
-  String get lbGoChartCaption => '1 COLUMN = 1 FOOD · TALLER = TASTIER';
+  String get lbGoChartCaption => '1 СТОЛБИК = 1 ЕДА · ВЫШЕ = ВКУСНЕЕ';
 
   @override
-  String get lbAgain => 'AGAIN';
+  String get lbAgain => 'ЕЩЁ РАЗ';
 
   @override
-  String get lbGoContinue => 'CONTINUE';
+  String get lbGoContinue => 'ПРОДОЛЖИТЬ';
 
   @override
   String lbGoContinueSub(String cost, String len) {
-    return '$cost¢ or ad · keep len $len';
+    return '$cost¢ или реклама · с длиной $len';
   }
 
   @override
   String lbGoContinueProSub(String len) {
-    return 'free with Pro · keep len $len';
+    return 'бесплатно с Pro · с длиной $len';
   }
 
   @override
   String lbGoEarned(String coins) {
-    return '+$coins¢ EARNED';
+    return '+$coins¢ ЗАРАБОТАНО';
   }
 
   @override
   String lbGoRewardsLine(String ready, String coins, String xp) {
-    return '$ready daily ready · +$coins¢ · +$xp XP';
+    return 'заданий готово: $ready · +$coins¢ · +$xp XP';
   }
 
   @override
-  String get lbGoNothingToClaim => 'nothing to claim yet · keep playing';
+  String get lbGoNothingToClaim => 'забирать пока нечего · играй дальше';
 
   @override
-  String get lbClaim => 'CLAIM';
+  String get lbClaim => 'ЗАБРАТЬ';
 
   @override
-  String get lbGoDoubleCoins => '2× COINS · AD';
+  String get lbGoDoubleCoins => 'МОНЕТЫ ×2 · РЕКЛАМА';
 
   @override
-  String get lbGoWatchReplay => 'WATCH REPLAY';
+  String get lbGoWatchReplay => 'СМОТРЕТЬ ПОВТОР';
 
   @override
-  String get lbHome => 'HOME';
+  String get lbHome => 'ДОМОЙ';
 
   @override
-  String get lbDailyTitle => 'DAILY';
+  String get lbDailyTitle => 'ЗАДАНИЯ ДНЯ';
 
   @override
-  String get lbDailySubtitle => 'Three snacks a day. Doctor\'s orders.';
+  String get lbDailySubtitle => 'Три перекуса в день. Доктор прописал.';
 
   @override
   String lbDailyProgress(String done, String total) {
-    return '$done OF $total DONE';
+    return 'ГОТОВО $done ИЗ $total';
   }
 
   @override
@@ -6928,39 +5828,41 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: 'streak: $days days',
-      one: 'streak: 1 day',
+      other: 'серия: $days дня',
+      many: 'серия: $days дней',
+      few: 'серия: $days дня',
+      one: 'серия: $days день',
     );
-    return '$_temp0 · resets in $time';
+    return '$_temp0 · сброс через $time';
   }
 
   @override
   String lbResetsIn(String time) {
-    return 'resets in $time';
+    return 'сброс через $time';
   }
 
   @override
-  String get lbClaimAll => 'CLAIM ALL';
+  String get lbClaimAll => 'ЗАБРАТЬ ВСЁ';
 
   @override
-  String get lbClaimAllDouble => 'CLAIM ALL ×2';
+  String get lbClaimAllDouble => 'ЗАБРАТЬ ВСЁ ×2';
 
   @override
-  String get lbClaimAllDoubleLine => 'one short ad, double the loot';
+  String get lbClaimAllDoubleLine => 'одна короткая реклама — добыча ×2';
 
   @override
   String lbWeeklyTeaser(String done, String total) {
-    return 'WEEKLY QUESTS · $done/$total';
+    return 'ЗАДАНИЯ НЕДЕЛИ · $done/$total';
   }
 
   @override
-  String get lbWeeklyTeaserLine => 'the big loot drops Sunday';
+  String get lbWeeklyTeaserLine => 'крупная добыча — в воскресенье';
 
   @override
-  String get lbWeeklyTitle => 'WEEKLY';
+  String get lbWeeklyTitle => 'ЗАДАНИЯ НЕДЕЛИ';
 
   @override
-  String get lbWeeklySubtitle => 'Bigger snacks. Seven days to finish them.';
+  String get lbWeeklySubtitle => 'Перекусы покрупнее. Семь дней на всё.';
 
   @override
   String lbRewardCoinsXp(String coins, String xp) {
@@ -6969,37 +5871,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String lbPlayMode(String mode) {
-    return 'PLAY $mode';
+    return 'ИГРАТЬ: $mode';
   }
 
   @override
-  String get lbTrophiesTitle => 'TROPHIES';
+  String get lbTrophiesTitle => 'ТРОФЕИ';
 
   @override
   String lbTrophiesSubtitle(String unlocked, String total, String locked) {
-    return '$unlocked of $total. The other $locked are judging you.';
+    return '$unlocked из $total. Остальные ($locked) тебя осуждают.';
   }
 
   @override
-  String get lbFilterAll => 'ALL';
+  String get lbFilterAll => 'ВСЕ';
 
   @override
   String lbFilterUnlocked(String count) {
-    return 'UNLOCKED $count';
+    return 'ОТКРЫТЫ $count';
   }
 
   @override
   String lbFilterLocked(String count) {
-    return 'LOCKED $count';
+    return 'ЗАКРЫТЫ $count';
   }
 
   @override
   String lbTrophiesSummary(String pct, String claimed, String waiting) {
-    return '$pct% COMPLETE · $claimed CLAIMED · $waiting WAITING';
+    return '$pct% ГОТОВО · ПОЛУЧЕНО $claimed · ЖДУТ $waiting';
   }
 
   @override
-  String get lbClaimed => 'CLAIMED';
+  String get lbClaimed => 'ПОЛУЧЕНО';
 
   @override
   String lbCoinsReward(String coins) {
@@ -7007,29 +5909,28 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbSecret => 'SECRET';
-
-  @override
-  String get lbSeasonTitle => 'SEASON';
+  String get lbSeasonTitle => 'СЕЗОН';
 
   @override
   String lbSeasonSubtitle(String season, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days days left',
-      one: '1 day left',
+      other: 'осталось $days дня',
+      many: 'осталось $days дней',
+      few: 'осталось $days дня',
+      one: 'остался $days день',
     );
-    return '$season · $_temp0. Make them count.';
+    return '$season · $_temp0. Не трать зря.';
   }
 
   @override
   String lbSeasonEnded(String season) {
-    return '$season · season over. A new one is coming.';
+    return '$season · сезон окончен. Скоро будет новый.';
   }
 
   @override
-  String get lbTier => 'TIER';
+  String get lbTier => 'УРОВЕНЬ';
 
   @override
   String lbTierOf(String max) {
@@ -7037,16 +5938,16 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbProTrack => 'PRO TRACK';
+  String get lbProTrack => 'ЛИНИЯ PRO';
 
   @override
   String lbXpToTier(String xp, String need, String tier) {
-    return '$xp / $need XP TO TIER $tier';
+    return '$xp / $need XP ДО УРОВНЯ $tier';
   }
 
   @override
   String lbNextUp(String tier, String track) {
-    return 'NEXT UP · TIER $tier · $track';
+    return 'ДАЛЕЕ · УРОВЕНЬ $tier · $track';
   }
 
   @override
@@ -7054,8 +5955,10 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n tiers away. Eat faster.',
-      one: '1 tier away. Eat faster.',
+      other: 'Ещё $n уровня. Ешь быстрее.',
+      many: 'Ещё $n уровней. Ешь быстрее.',
+      few: 'Ещё $n уровня. Ешь быстрее.',
+      one: 'Ещё $n уровень. Ешь быстрее.',
     );
     return '$_temp0';
   }
@@ -7065,97 +5968,104 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n TIERS',
-      one: '1 TIER',
+      other: '$n УРОВНЯ',
+      many: '$n УРОВНЕЙ',
+      few: '$n УРОВНЯ',
+      one: '$n УРОВЕНЬ',
     );
     return '$_temp0';
   }
 
   @override
   String lbXpAd(String xp) {
-    return '+$xp XP · WATCH AD';
+    return '+$xp XP · РЕКЛАМА';
   }
 
   @override
-  String get lbYouAreHere => 'YOU ARE HERE';
+  String get lbYouAreHere => 'ТЫ ЗДЕСЬ';
 
   @override
-  String get lbFree => 'FREE';
+  String get lbFree => 'БЕСПЛАТНО';
 
   @override
   String get lbPro => 'PRO';
 
   @override
-  String get lbRanksTitle => 'RANKS';
+  String get lbRanksTitle => 'РЕЙТИНГ';
 
   @override
-  String get lbRanksSubtitle => 'Ranked by your best single run. No pressure.';
+  String get lbRanksSubtitle => 'По лучшему забегу. Без давления.';
 
   @override
-  String get lbTabGlobal => 'GLOBAL';
+  String get lbTabGlobal => 'МИР';
 
   @override
-  String get lbTabWeekly => 'WEEKLY';
+  String get lbTabWeekly => 'НЕДЕЛЯ';
 
   @override
-  String get lbTabFriends => 'FRIENDS';
+  String get lbTabFriends => 'ДРУЗЬЯ';
 
   @override
   String lbRanksYouRow(String rank, String name) {
-    return '#$rank · YOU · $name';
+    return '#$rank · ТЫ · $name';
   }
 
   @override
   String lbRanksYouUnranked(String name) {
-    return 'YOU · $name';
+    return 'ТЫ · $name';
   }
 
   @override
   String lbRanksGap(String gap, String leader) {
-    return '$gap behind $leader. Snack harder.';
+    return 'До $leader: $gap. Жуй усерднее.';
   }
 
   @override
-  String get lbRanksLeader => 'You\'re #1. Everyone\'s chasing you.';
+  String get lbRanksLeader => 'Ты №1. Все гонятся за тобой.';
 
   @override
-  String get lbRanksEasyOnly => 'Easy runs don\'t rank. Normal is waiting.';
+  String get lbRanksEasyOnly =>
+      'Лёгкие забеги не в рейтинге. Попробуй Обычный.';
 
   @override
-  String get lbRanksOffline => 'Ranks need the internet. Your snake doesn\'t.';
+  String get lbRanksOffline => 'Рейтингу нужен интернет. Твоей змейке — нет.';
 
   @override
-  String get lbRanksEmpty => 'Nobody here yet. Be the first.';
+  String get lbRanksEmpty => 'Тут пока пусто. Займи первое место.';
 
   @override
   String lbRunsCount(int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n runs',
-      one: '1 run',
+      other: '$n забега',
+      many: '$n забегов',
+      few: '$n забега',
+      one: '$n забег',
     );
     return '$_temp0';
   }
 
   @override
-  String get lbProfileTitle => 'PROFILE';
+  String get lbProfileTitle => 'ПРОФИЛЬ';
 
   @override
-  String get lbProfileSubtitle => 'Your snake, by the numbers.';
+  String get lbProfileSubtitle => 'Твоя змейка в цифрах.';
 
   @override
-  String get lbFunFact => 'FUN FACT';
+  String get lbFunFact => 'ЗАБАВНЫЙ ФАКТ';
 
   @override
   String lbFunApples(String apples, int pies) {
     String _temp0 = intl.Intl.pluralLogic(
       pies,
       locale: localeName,
-      other: '$pies pies',
-      one: '1 pie',
+      other: '$pies пирога',
+      many: '$pies пирогов',
+      few: '$pies пирога',
+      one: '$pies пирог',
     );
-    return '$apples apples eaten. That\'s about $_temp0.';
+    return 'Съедено яблок: $apples. Это примерно $_temp0.';
   }
 
   @override
@@ -7163,10 +6073,12 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       minutes,
       locale: localeName,
-      other: '$minutes minutes',
-      one: '1 minute',
+      other: '$minutes минуты',
+      many: '$minutes минут',
+      few: '$minutes минуты',
+      one: '$minutes минута',
     );
-    return '$_temp0 of slithering. Hydrate.';
+    return '$_temp0 ползания. Пей воду.';
   }
 
   @override
@@ -7174,550 +6086,519 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       powerups,
       locale: localeName,
-      other: '$powerups power-ups',
-      one: '1 power-up',
+      other: 'Схвачено $powerups усиления',
+      many: 'Схвачено $powerups усилений',
+      few: 'Схвачено $powerups усиления',
+      one: 'Схвачено $powerups усиление',
     );
-    return '$_temp0 grabbed. Greedy, love it.';
+    return '$_temp0. Жадно. Нам нравится.';
   }
 
   @override
-  String get lbSynced => 'PROGRESS SYNCED';
+  String get lbSynced => 'ПРОГРЕСС В ОБЛАКЕ';
 
   @override
-  String get lbSyncedLine => 'Offline? Play anyway. We\'ll catch up later.';
+  String get lbSyncedLine => 'Офлайн? Играй всё равно. Синхронизируем потом.';
 
   @override
-  String get lbSyncPending => 'SYNC PENDING';
+  String get lbSyncPending => 'ЖДЁТ СИНХРОНИЗАЦИИ';
 
   @override
-  String get lbGuest => 'PLAYING AS GUEST';
+  String get lbGuest => 'ИГРАЕШЬ КАК ГОСТЬ';
 
   @override
-  String get lbGuestLine => 'Link an account to keep this snake forever.';
+  String get lbGuestLine =>
+      'Привяжи аккаунт, чтобы змейка осталась с тобой навсегда.';
 
   @override
   String lbSignedInWith(String provider) {
-    return 'SIGNED IN · $provider';
+    return 'ВХОД · $provider';
   }
 
   @override
-  String get lbStatBest => 'BEST';
+  String get lbStatBest => 'РЕКОРД';
 
   @override
-  String get lbStatGames => 'GAMES';
+  String get lbStatGames => 'ИГРЫ';
 
   @override
-  String get lbStatPlayTime => 'PLAY TIME';
+  String get lbStatPlayTime => 'ВРЕМЯ В ИГРЕ';
 
   @override
-  String get lbStatAverage => 'AVERAGE';
+  String get lbStatAverage => 'СРЕДНИЙ';
 
   @override
-  String get lbStatFood => 'FOOD EATEN';
+  String get lbStatFood => 'СЪЕДЕНО';
 
   @override
-  String get lbStatPowerups => 'POWER-UPS';
+  String get lbStatPowerups => 'УСИЛЕНИЯ';
 
   @override
-  String get lbStats => 'STATS';
+  String get lbStats => 'СТАТИСТИКА';
 
   @override
-  String get lbReplays => 'REPLAYS';
+  String get lbReplays => 'ПОВТОРЫ';
 
   @override
-  String get lbFriends => 'FRIENDS';
+  String get lbFriends => 'ДРУЗЬЯ';
 
   @override
-  String get lbTrophies => 'TROPHIES';
+  String get lbTrophies => 'ТРОФЕИ';
 
   @override
   String lbFriendsOn(String count) {
-    return '$count ON';
+    return '$count В СЕТИ';
   }
 
   @override
-  String get lbStoreTitle => 'STORE';
+  String get lbStoreTitle => 'МАГАЗИН';
 
   @override
-  String get lbStoreSubPro => 'No ads. All the drip. Your call.';
+  String get lbStoreSubPro => 'Без рекламы. Весь стиль. Решать тебе.';
 
   @override
-  String get lbStoreSubCoins => 'Coins for the impatient.';
+  String get lbStoreSubCoins => 'Монеты для нетерпеливых.';
 
   @override
-  String get lbStoreSubThemes => 'New board, same bad habits.';
+  String get lbStoreSubThemes => 'Новое поле, старые привычки.';
 
   @override
-  String get lbStoreSubSkins => 'Same snake. Way more drip.';
+  String get lbStoreSubSkins => 'Та же змейка. Куда стильнее.';
 
   @override
-  String get lbStoreSubTrails => 'Leave a mark.';
+  String get lbStoreSubTrails => 'Оставь след.';
 
   @override
-  String get lbStoreSubPowerups => 'Tiny cheats. Fully legal.';
+  String get lbStoreSubPowerups => 'Мелкие читы. Вполне легальные.';
 
   @override
-  String get lbSnakeCoins => 'SNAKE COINS';
+  String get lbSnakeCoins => 'МОНЕТЫ SNAKE';
 
   @override
   String lbFreeCoins(String coins) {
-    return '+$coins¢ FREE';
+    return '+$coins¢ БЕСПЛАТНО';
   }
 
   @override
-  String get lbFreeCoinsLine => 'watch a short ad';
+  String get lbFreeCoinsLine => 'посмотри короткую рекламу';
 
   @override
   String get lbProName => 'SNAKE CLASSIC PRO';
 
   @override
-  String get lbProPerkNoAds => 'No ads. Not one. Ever.';
+  String get lbProPerkNoAds => 'Без рекламы. Вообще. Никогда.';
 
   @override
-  String get lbProPerkRevive => 'A free revive, every single run';
+  String get lbProPerkRevive => 'Бесплатное воскрешение в каждом забеге';
 
   @override
   String lbProPerkThemes(String count) {
-    return 'All $count premium themes';
+    return 'Все премиум-темы ($count)';
   }
 
   @override
   String lbProPerkCosmetics(String skins, String trails) {
-    return 'All $skins skins + all $trails trails';
+    return 'Все скины ($skins) + все следы ($trails)';
   }
 
   @override
-  String get lbProPerkCoins => '2× coins from every run';
+  String get lbProPerkCoins => 'Монеты ×2 за каждый забег';
 
   @override
-  String get lbMonthly => 'MONTHLY';
+  String get lbMonthly => 'МЕСЯЦ';
 
   @override
-  String get lbYearly => 'YEARLY';
+  String get lbYearly => 'ГОД';
 
   @override
-  String get lbPerMonth => 'per month';
+  String get lbPerMonth => 'в месяц';
 
   @override
-  String get lbPerYear => 'per year';
+  String get lbGoPro => 'ВЗЯТЬ PRO';
 
   @override
-  String get lbBestValue => 'best value';
+  String get lbProActive => 'PRO ВКЛЮЧЁН';
 
   @override
-  String get lbGoPro => 'GO PRO';
-
-  @override
-  String get lbProActive => 'PRO IS ON';
-
-  @override
-  String get lbProActiveLine => 'Thanks for backing the snake.';
+  String get lbProActiveLine => 'Спасибо, что поддерживаешь змейку.';
 
   @override
   String get lbStoreFooter =>
-      'Prices come from your app store. Cancel anytime.';
+      'Цены берутся из магазина приложений. Отмена в любое время.';
 
   @override
-  String get lbRestorePurchases => 'RESTORE PURCHASES';
+  String get lbRestorePurchases => 'ВОССТАНОВИТЬ ПОКУПКИ';
 
   @override
   String lbBuyPrice(String price) {
-    return 'BUY · $price';
+    return 'КУПИТЬ · $price';
   }
 
   @override
   String lbBuyCoins(String coins) {
-    return 'BUY · $coins¢';
+    return 'КУПИТЬ · $coins¢';
   }
 
   @override
-  String get lbOrFreeWithPro => 'or free with Pro';
+  String get lbOrFreeWithPro => 'или бесплатно с Pro';
 
   @override
-  String get lbEquipped => 'EQUIPPED';
+  String get lbEquipped => 'ВЫБРАНО';
 
   @override
-  String get lbOwned => 'OWNED';
+  String get lbEquip => 'ВЫБРАТЬ';
 
   @override
-  String get lbEquip => 'EQUIP';
+  String get lbSkinTagGolden => 'Богатый. Знаменитый. Чуть самодовольный.';
 
   @override
-  String get lbIncludedWithPro => 'INCLUDED WITH PRO';
+  String get lbSkinTagFire => 'Горячо. Не трогать.';
 
   @override
-  String get lbSkinTagGolden => 'Rich. Famous. A little smug.';
+  String get lbSkinTagIce => 'Хладнокровие под давлением.';
 
   @override
-  String get lbSkinTagFire => 'Hot to the touch.';
+  String get lbSkinTagElectric => 'Шокирующе быстрый.';
 
   @override
-  String get lbSkinTagIce => 'Cool under pressure.';
+  String get lbSkinTagRainbow => 'Все цвета. Сразу.';
 
   @override
-  String get lbSkinTagElectric => 'Shockingly fast.';
+  String get lbSkinTagNeon => 'Видно из космоса.';
 
   @override
-  String get lbSkinTagRainbow => 'All of them. At once.';
+  String get lbSkinTagShadow => 'Видишь? А теперь нет.';
 
   @override
-  String get lbSkinTagNeon => 'Visible from space.';
+  String get lbSkinTagGalaxy => 'Вмещает множества.';
 
   @override
-  String get lbSkinTagShadow => 'Now you see it.';
+  String get lbSkinTagCrystal => 'Обращаться бережно.';
 
   @override
-  String get lbSkinTagGalaxy => 'Contains multitudes.';
+  String get lbSkinTagCosmic => 'Вселенский размах.';
 
   @override
-  String get lbSkinTagCrystal => 'Handle with care.';
+  String get lbSkinTagDragon => 'Юридически не дракон.';
 
   @override
-  String get lbSkinTagCosmic => 'Big universe energy.';
+  String get lbSettingsTitle => 'НАСТРОЙКИ';
 
   @override
-  String get lbSkinTagDragon => 'Legally not a dragon.';
+  String get lbSettingsSubtitle => 'Подкрути, пока не станет в самый раз.';
 
   @override
-  String get lbSettingsTitle => 'SETTINGS';
+  String get lbControls => 'УПРАВЛЕНИЕ';
 
   @override
-  String get lbSettingsSubtitle => 'Tweak it till it feels right.';
+  String get lbCtrlSwipe => 'СВАЙП';
 
   @override
-  String get lbControls => 'CONTROLS';
-
-  @override
-  String get lbCtrlSwipe => 'SWIPE';
-
-  @override
-  String get lbCtrlSwipeSub => 'anywhere';
+  String get lbCtrlSwipeSub => 'где угодно';
 
   @override
   String get lbCtrlDpad => 'D-PAD';
 
   @override
-  String get lbCtrlDpadSub => '4 arrows';
+  String get lbCtrlDpadSub => '4 стрелки';
 
   @override
-  String get lbCtrlTurn => 'TURN';
+  String get lbCtrlTurn => 'ПОВОРОТ';
 
   @override
-  String get lbCtrlTurnSub => 'left · right';
+  String get lbCtrlTurnSub => 'влево · вправо';
 
   @override
-  String get lbCtrlStick => 'STICK';
+  String get lbCtrlStick => 'СТИК';
 
   @override
-  String get lbCtrlStickSub => 'floating';
+  String get lbCtrlStickSub => 'плавающий';
 
   @override
-  String get lbSwipeFeel => 'SWIPE FEEL';
+  String get lbGameplay => 'ГЕЙМПЛЕЙ';
 
   @override
-  String get lbSwipeFeelSub => 'lazy ←→ twitchy';
+  String get lbMode => 'РЕЖИМ';
 
   @override
-  String get lbGameplay => 'GAMEPLAY';
+  String get lbBoard => 'ПОЛЕ';
 
   @override
-  String get lbMode => 'MODE';
+  String get lbDifficulty => 'СЛОЖНОСТЬ';
 
   @override
-  String get lbBoard => 'BOARD';
+  String get lbCrashReplay => 'ПОВТОР АВАРИИ';
 
   @override
-  String get lbDifficulty => 'DIFFICULTY';
+  String get lbCrashReplaySub => 'сколько сыпать соль на рану';
 
   @override
-  String get lbCrashReplay => 'CRASH REPLAY';
-
-  @override
-  String get lbCrashReplaySub => 'how long we rub it in';
-
-  @override
-  String get lbTheme => 'THEME';
+  String get lbTheme => 'ТЕМА';
 
   @override
   String lbThemeAside(String theme, String free, String premium) {
-    return '$theme · $free FREE · $premium PREMIUM';
+    return '$theme · $free БЕСПЛ. · $premium ПРЕМИУМ';
   }
 
   @override
-  String get lbSoundFeel => 'SOUND & FEEL';
+  String get lbSoundFeel => 'ЗВУК И ОТКЛИК';
 
   @override
-  String get lbSoundFx => 'SOUND FX';
+  String get lbSoundFx => 'ЗВУКИ';
 
   @override
-  String get lbSoundFxSub => 'crunchy, as intended';
+  String get lbSoundFxSub => 'хрустящие, как задумано';
 
   @override
-  String get lbMusic => 'MUSIC';
+  String get lbMusic => 'МУЗЫКА';
 
   @override
-  String get lbHaptics => 'HAPTICS';
+  String get lbHaptics => 'ВИБРАЦИЯ';
 
   @override
-  String get lbHapticsSub => 'tiny buzz on every bite';
+  String get lbHapticsSub => 'лёгкая дрожь на каждый укус';
 
   @override
-  String get lb120Hz => '120 HZ';
+  String get lb120Hz => '120 ГЦ';
 
   @override
-  String get lb120HzSub => 'smooth like butter (if your phone is)';
+  String get lb120HzSub => 'плавно, как по маслу (если телефон тянет)';
 
   @override
-  String get lbReplayTutorial => 'REPLAY TUTORIAL';
+  String get lbReplayTutorial => 'ОБУЧЕНИЕ ЗАНОВО';
 
   @override
-  String get lbPrivacy => 'PRIVACY';
+  String get lbPrivacy => 'ПРИВАТНОСТЬ';
 
   @override
-  String get lbOpenRunSetup => 'Run setup';
+  String get lbVersusTitle => 'ВЕРСУС';
 
   @override
-  String get lbVersusTitle => 'VERSUS';
+  String get lbVersusSubtitle => 'Живые люди. Живые змеи. Настоящие разборки.';
 
   @override
-  String get lbVersusSubtitle => 'Real people. Real snakes. Real beef.';
+  String get lbWins => 'ПОБЕДЫ';
 
   @override
-  String get lbWins => 'WINS';
+  String get lbLosses => 'ПОРАЖЕНИЯ';
 
   @override
-  String get lbLosses => 'LOSSES';
+  String get lbDraws => 'НИЧЬИ';
 
   @override
-  String get lbDraws => 'DRAWS';
+  String get lbRating => 'РЕЙТИНГ';
 
   @override
-  String get lbRating => 'RATING';
+  String get lbQuickMatch => 'БЫСТРЫЙ МАТЧ';
 
   @override
-  String get lbQuickMatch => 'QUICK MATCH';
+  String get lbQuickMatchLine =>
+      'Классика 1 на 1. Найдём соперника за секунды.';
 
   @override
-  String get lbQuickMatchLine => '1v1 Classic. We find you a rival in seconds.';
-
-  @override
-  String get lbFindMatch => 'FIND MATCH';
+  String get lbFindMatch => 'НАЙТИ МАТЧ';
 
   @override
   String lbSearching(String secs) {
-    return 'SNIFFING OUT A RIVAL… ${secs}s';
+    return 'ВЫНЮХИВАЕМ СОПЕРНИКА… $secsс';
   }
 
   @override
-  String get lbCancel => 'CANCEL';
+  String get lbCancel => 'ОТМЕНА';
 
   @override
-  String get lbGotCode => 'GOT A CODE?';
+  String get lbGotCode => 'ЕСТЬ КОД?';
 
   @override
   String get lbGotCodeLine =>
-      'Six letters. Case doesn\'t matter. Friendship might.';
+      'Шесть букв. Регистр не важен. Дружба — может быть.';
 
   @override
-  String get lbCreateRoom => 'CREATE ROOM';
+  String get lbCreateRoom => 'СОЗДАТЬ КОМНАТУ';
 
   @override
-  String get lbCreateRoomLine => 'Invite a friend. Or a frenemy.';
+  String get lbCreateRoomLine => 'Позови друга. Или заклятого друга.';
 
   @override
   String get lbHouseSnake =>
-      'Nobody brave online? The house snake joins after 30s. It doesn\'t trash talk.';
+      'Смельчаков онлайн нет? Через 30 с зайдёт змейка заведения. Она не дерзит.';
 
   @override
-  String get lbTournamentsLive => 'TOURNAMENTS · LIVE';
+  String get lbTournamentsLive => 'ТУРНИРЫ · ИДУТ';
 
   @override
-  String get lbTournamentsLine => 'Bronze free · Silver & Gold entries';
+  String get lbTournamentsLine => 'Бронза бесплатно · Серебро и Золото за вход';
 
   @override
-  String get lbRoomTitle => 'ROOM';
+  String get lbRoomTitle => 'КОМНАТА';
 
   @override
-  String get lbRoomSubtitle => 'Share the code. Wait nervously.';
+  String get lbRoomSubtitle => 'Поделись кодом. Жди и нервничай.';
 
   @override
   String lbPlayersCount(String count, String max) {
-    return 'PLAYERS $count/$max';
+    return 'ИГРОКИ $count/$max';
   }
 
   @override
-  String get lbYou => 'YOU';
+  String get lbYou => 'ТЫ';
 
   @override
-  String get lbRival => 'RIVAL';
+  String get lbRival => 'СОПЕРНИК';
 
   @override
-  String get lbWaitingYou => 'WAITING · tap ready, hero';
+  String get lbWaitingYou => 'ЖДЁМ · жми «готов», герой';
 
   @override
-  String get lbWaiting => 'WAITING';
+  String get lbWaiting => 'ЖДЁМ';
 
   @override
-  String get lbReadyThem => 'READY · stretching menacingly';
+  String get lbReadyThem => 'ГОТОВ · угрожающе разминается';
 
   @override
-  String get lbReadyYou => 'READY · nerves of steel';
+  String get lbReadyYou => 'ГОТОВ · стальные нервы';
 
   @override
-  String get lbReadyCheck => 'READY CHECK';
+  String get lbReadyCheck => 'ВСЕ ГОТОВЫ?';
 
   @override
-  String get lbReady => 'READY';
+  String get lbReady => 'ГОТОВ';
 
   @override
-  String get lbLeaveRoom => 'LEAVE ROOM';
+  String get lbLeaveRoom => 'ВЫЙТИ ИЗ КОМНАТЫ';
 
   @override
   String get lbVs => 'VS';
 
   @override
-  String get lbLive => 'LIVE';
+  String get lbLive => 'В ИГРЕ';
 
   @override
   String lbMatchBehind(String rival, String gap) {
-    return '$rival is $gap points ahead. Rude.';
+    return '$rival впереди на $gap очк. Невежливо.';
   }
 
   @override
   String lbMatchAhead(String gap) {
-    return 'You\'re $gap ahead. Don\'t get cocky.';
+    return 'Ты впереди на $gap. Не зазнавайся.';
   }
 
   @override
-  String get lbMatchTied => 'Dead even. Eat something.';
+  String get lbMatchTied => 'Ровно. Съешь что-нибудь.';
 
   @override
-  String get lbVictory => 'VICTORY';
+  String get lbVictory => 'ПОБЕДА';
 
   @override
   String lbVictoryLine(String rival) {
-    return 'You out-snaked $rival.';
+    return 'Победа над $rival. Чисто по-змеиному.';
   }
 
   @override
-  String get lbDefeat => 'DEFEAT';
+  String get lbDefeat => 'ПОРАЖЕНИЕ';
 
   @override
   String lbDefeatLine(String rival) {
-    return '$rival took this one.';
+    return 'Этот раунд за $rival.';
   }
 
   @override
-  String get lbDefeatBothCrashed =>
-      'Both snakes crashed. Their score decided it.';
+  String get lbDefeatBothCrashed => 'Обе змейки разбились. Решил счёт.';
 
   @override
   String lbDefeatLine2(String rival) {
-    return '$rival will be insufferable now.';
+    return '$rival теперь будет задаваться. Долго.';
   }
 
   @override
-  String get lbDraw => 'DRAW';
+  String get lbDraw => 'НИЧЬЯ';
 
   @override
-  String get lbDrawLine => 'Perfectly balanced. Rematch?';
+  String get lbDrawLine => 'Идеальный баланс. Реванш?';
 
   @override
   String get lbVersusFooter =>
-      'Every loss is just a rematch waiting to happen.';
+      'Каждое поражение — это реванш, который ждёт своего часа.';
 
   @override
-  String get lbLength => 'LENGTH';
+  String get lbLength => 'ДЛИНА';
 
   @override
-  String get lbSurvived => 'SURVIVED';
+  String get lbSurvived => 'ВРЕМЯ ЖИЗНИ';
 
   @override
-  String get lbRematch => 'REMATCH';
+  String get lbRematch => 'РЕВАНШ';
 
   @override
-  String get lbBackToLobby => 'BACK TO LOBBY';
+  String get lbBackToLobby => 'В ЛОББИ';
 
   @override
-  String get lbAdBreak => 'AD BREAK';
+  String get lbAdBreak => 'РЕКЛАМНАЯ ПАУЗА';
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'A short ad. $coins coins for you.';
+    return 'Короткая реклама. Твоя награда: $coins¢.';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Fair trade? Your call either way.';
+  String get lbAdBreakLine2 => 'Честный обмен? Решать в любом случае тебе.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'STARTS IN $secs · OR SKIP, NO HARD FEELINGS';
+    return 'СТАРТ ЧЕРЕЗ $secs · ИЛИ ПРОПУСТИ, БЕЗ ОБИД';
   }
 
   @override
   String lbAdRewardWhenEnds(String coins) {
-    return '+$coins¢ WHEN IT ENDS';
+    return '+$coins¢ ПО ОКОНЧАНИИ';
   }
 
   @override
-  String get lbWatchNow => 'WATCH NOW';
+  String get lbWatchNow => 'СМОТРЕТЬ';
 
   @override
-  String get lbNoThanks => 'NO THANKS';
+  String get lbNoThanks => 'НЕТ, СПАСИБО';
 
   @override
-  String get lbAdBackHint => 'The back gesture counts as no thanks, too.';
+  String get lbAdBackHint => 'Жест «назад» тоже значит «нет, спасибо».';
 
   @override
-  String get lbAdGoProLine => 'and never see this screen again.';
+  String get lbAdStarting => 'ЗАПУСК РЕКЛАМЫ…';
 
   @override
-  String get lbAdStarting => 'AD STARTING…';
-
-  @override
-  String get lbNoAdNow => 'No ad right now. Try again in a sec.';
-
-  @override
-  String get lbOffline => 'NO SIGNAL. Single-player still works.';
+  String get lbNoAdNow => 'Рекламы сейчас нет. Попробуй через секунду.';
 
   @override
   String get lbServerDown =>
-      'Our servers bonked. Your progress is safe on this phone.';
+      'Наши серверы врезались в стену. Прогресс в сохранности на этом телефоне.';
 
   @override
-  String get lbPurchaseFailed =>
-      'Purchase didn\'t go through. You weren\'t charged.';
+  String get lbHomeVersusSubOffline => '1 на 1 · живые соперники';
 
   @override
-  String get lbMatchTimeout => 'No rival found. The house snake is warming up.';
+  String get lbHomeSeasonSubNone => 'XP за каждый забег';
 
   @override
-  String get lbHomeVersusSubOffline => '1v1 · real rivals';
+  String get lbMenuHowToPlay => 'КАК ИГРАТЬ';
 
   @override
-  String get lbHomeSeasonSubNone => 'Earn XP every run';
+  String get lbMenuTournaments => 'ТУРНИРЫ';
 
   @override
-  String get lbMenuHowToPlay => 'HOW TO PLAY';
+  String get lbMenuAbout => 'ОБ ИГРЕ';
 
   @override
-  String get lbMenuTournaments => 'TOURNAMENTS';
+  String get lbMenuHowToPlaySub => 'свайпы, режимы, усиления';
 
   @override
-  String get lbMenuAbout => 'ABOUT';
+  String get lbMenuAboutSub => 'версия, авторы, правовое';
 
   @override
-  String get lbMenuHowToPlaySub => 'swipes, modes, power-ups';
-
-  @override
-  String get lbMenuAboutSub => 'version, credits, legal';
-
-  @override
-  String get lbSetupLoadoutNone => 'TAP ONE TO ARM';
+  String get lbSetupLoadoutNone => 'ЗАРЯДИ ОДНО ТАПОМ';
 
   @override
   String lbSetupLoadoutArmedOne(String name) {
-    return '$name ARMED';
+    return 'ЗАРЯЖЕНО: $name';
   }
 
   @override
@@ -7727,40 +6608,40 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String lbArmedChip(String name) {
-    return 'ARMED · $name';
+    return 'ЗАРЯЖЕНО · $name';
   }
 
   @override
   String get lbGuestNoteApple =>
-      'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.';
+      'Гости могут играть и сохранять прогресс на устройстве, но не могут совершать покупки. Войди через Apple, Google или почту, когда захочешь оформить подписку или что-то купить.';
 
   @override
   String get lbGuestNoteNoApple =>
-      'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.';
+      'Гости могут играть и сохранять прогресс на устройстве, но не могут совершать покупки. Войди через Google или почту, когда захочешь оформить подписку или что-то купить.';
 
   @override
-  String get lbAuthLegalTitle => 'PRIVACY + TERMS';
+  String get lbAuthLegalTitle => 'ПРИВАТНОСТЬ + УСЛОВИЯ';
 
   @override
-  String get lbConsentTitle => 'TERMS UPDATED';
+  String get lbConsentTitle => 'УСЛОВИЯ ОБНОВЛЕНЫ';
 
   @override
-  String get lbEmailTitle => 'EMAIL';
+  String get lbEmailTitle => 'ПОЧТА';
 
   @override
-  String get lbEmailLinkTitle => 'SAVE PROGRESS';
+  String get lbEmailLinkTitle => 'СОХРАНИТЬ ПРОГРЕСС';
 
   @override
-  String get lbUsernameTitle => 'USERNAME';
+  String get lbUsernameTitle => 'ИМЯ ИГРОКА';
 
   @override
-  String get lbShowPassword => 'Show password';
+  String get lbShowPassword => 'Показать пароль';
 
   @override
-  String get lbHidePassword => 'Hide password';
+  String get lbHidePassword => 'Скрыть пароль';
 
   @override
-  String get lbSignedIn => 'SIGNED IN';
+  String get lbSignedIn => 'ВХОД ВЫПОЛНЕН';
 
   @override
   String get lbProviderGoogle => 'GOOGLE';
@@ -7769,28 +6650,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbProviderApple => 'APPLE';
 
   @override
-  String get lbProviderEmail => 'EMAIL';
+  String get lbProviderEmail => 'ПОЧТА';
 
   @override
-  String get lbStatsSubtitle => 'Every run, counted. Even the bad ones.';
+  String get lbStatsSubtitle => 'Каждый забег на счету. Даже неудачный.';
 
   @override
-  String get lbTrendUp => 'CLIMBING';
+  String get lbTrendUp => 'РАСТЁТ';
 
   @override
-  String get lbTrendDown => 'SLIPPING';
+  String get lbTrendDown => 'ПАДАЕТ';
 
   @override
-  String get lbTrendFlat => 'STEADY';
+  String get lbTrendFlat => 'СТАБИЛЬНО';
 
   @override
-  String get lbReplaysSubtitle => 'Kept on this phone. Never uploaded.';
+  String get lbReplaysSubtitle =>
+      'Хранятся на этом телефоне. Никуда не загружаются.';
 
   @override
-  String get lbReplayTitle => 'REPLAY';
+  String get lbReplayTitle => 'ПОВТОР';
 
   @override
-  String get lbReplayEnded => 'ENDED';
+  String get lbReplayEnded => 'КОНЕЦ';
 
   @override
   String lbSpeedX(String speed) {
@@ -7798,20 +6680,21 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbPause => 'PAUSE';
+  String get lbPause => 'ПАУЗА';
 
   @override
-  String get lbReplayPrevFrame => 'PREVIOUS FRAME';
+  String get lbReplayPrevFrame => 'ПРЕДЫДУЩИЙ КАДР';
 
   @override
-  String get lbReplayNextFrame => 'NEXT FRAME';
+  String get lbReplayNextFrame => 'СЛЕДУЮЩИЙ КАДР';
 
   @override
-  String get lbFriendsSubtitle => 'Snakes you know. Rivals you\'ll beat.';
+  String get lbFriendsSubtitle =>
+      'Змейки, которых ты знаешь. Соперники, которых обыграешь.';
 
   @override
   String lbDurDayHour(String d, String h) {
-    return '${d}d ${h}h';
+    return '$dд $hч';
   }
 
   @override
@@ -7819,29 +6702,30 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       days,
       locale: localeName,
-      other: '$days DAY STREAK',
-      one: '1 DAY STREAK',
+      other: 'СЕРИЯ: $days ДНЯ',
+      many: 'СЕРИЯ: $days ДНЕЙ',
+      few: 'СЕРИЯ: $days ДНЯ',
+      one: 'СЕРИЯ: $days ДЕНЬ',
     );
     return '$_temp0';
   }
 
   @override
   String lbPoints(String points) {
-    return '$points PTS';
+    return '$points ОЧК.';
   }
 
   @override
-  String get lbRefresh => 'REFRESH';
+  String get lbRefresh => 'ОБНОВИТЬ';
 
   @override
-  String get lbRouteErrorTitle => 'LOST THE TRAIL';
+  String get lbRouteErrorTitle => 'СЛЕД ПОТЕРЯН';
 
   @override
-  String get lbRouteErrorBody =>
-      'That screen does not exist in this version of the game.';
+  String get lbRouteErrorBody => 'Такого экрана нет в этой версии игры.';
 
   @override
-  String get lbRouteErrorHome => 'BACK TO HOME';
+  String get lbRouteErrorHome => 'НА ГЛАВНУЮ';
 
   @override
   String lbVersionShort(String version) {
@@ -7849,36 +6733,36 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get lbCtrlReference => 'GESTURES & KEYS';
+  String get lbCtrlReference => 'ЖЕСТЫ И КЛАВИШИ';
 
   @override
-  String get lbCtrlReferenceSub => 'what every swipe and key does';
+  String get lbCtrlReferenceSub => 'что делает каждый свайп и клавиша';
 
   @override
   String lbThemeSwatchLocked(String theme) {
-    return '$theme, locked';
+    return '$theme, закрыто';
   }
 
   @override
-  String get lbLanguageRow => 'APP LANGUAGE';
+  String get lbLanguageRow => 'ЯЗЫК ПРИЛОЖЕНИЯ';
 
   @override
-  String get lbPerYearBestValue => 'per year · best value';
+  String get lbPerYearBestValue => 'в год · выгоднее всего';
 
   @override
-  String get lbProAlsoIncluded => 'ALSO INCLUDED';
+  String get lbProAlsoIncluded => 'ТАКЖЕ ВХОДИТ';
 
   @override
-  String get lbFreeTrack => 'FREE TRACK';
+  String get lbFreeTrack => 'БЕСПЛ. ЛИНИЯ';
 
   @override
   String lbSeasonSubtitleSoon(String season, String left) {
-    return '$season · $left. Make them count.';
+    return '$season · $left. Не трать зря.';
   }
 
   @override
-  String get lbEndsIn => 'ENDS IN';
+  String get lbEndsIn => 'ДО КОНЦА';
 
   @override
-  String get lbStartsIn => 'STARTS IN';
+  String get lbStartsIn => 'ДО НАЧАЛА';
 }
