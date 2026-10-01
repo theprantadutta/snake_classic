@@ -186,6 +186,16 @@ class PowerUpCubit extends Cubit<PowerUpState> {
     return coins.state.balance.total;
   }
 
+  /// The Pro purchase grant: 5 of each working power-up. Matches the
+  /// backend's VerifyPurchaseCommandHandler grant; see
+  /// PurchaseService._applyLocalGrants for why it is applied here too.
+  Future<void> grantProBundle() => _grantToInventory(const {
+        'speed_boost': 5,
+        'invincibility': 5,
+        'score_multiplier': 5,
+        'slow_motion': 5,
+      });
+
   /// Grant one free basic power-up (a Speed Boost) — used by the rewarded-ad
   /// "watch for a free power-up" placement. Persists via [StoreDao], which
   /// enqueues the sync outbox row for the SyncEngine to push.

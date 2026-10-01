@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
@@ -54,6 +56,10 @@ class RunSetupScreen extends StatelessWidget {
                     cubit.setGameMode(mode);
                     // Choosing here IS the first-run mode choice.
                     cubit.markGameModePrompted();
+                    getIt<AnalyticsFacade>().trackSettingChanged(
+                      settingName: 'game_mode',
+                      value: mode.name,
+                    );
                   },
                 ),
             ],
@@ -74,7 +80,13 @@ class RunSetupScreen extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     alignment: Alignment.center,
                     semanticLabel: '${size.localizedName(l10n)}, ${size.id}',
-                    onTap: () => cubit.setBoardSize(size),
+                    onTap: () {
+                      cubit.setBoardSize(size);
+                      getIt<AnalyticsFacade>().trackSettingChanged(
+                        settingName: 'board_size',
+                        value: size.name,
+                      );
+                    },
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Padding(
@@ -111,7 +123,13 @@ class RunSetupScreen extends StatelessWidget {
                     },
                     selected: settings.difficulty == d,
                     centered: true,
-                    onTap: () => cubit.setDifficulty(d),
+                    onTap: () {
+                      cubit.setDifficulty(d);
+                      getIt<AnalyticsFacade>().trackSettingChanged(
+                        settingName: 'difficulty',
+                        value: d.label,
+                      );
+                    },
                   ),
                 ),
             ],

@@ -1425,6 +1425,26 @@ class ApiService {
           gameMode: gameMode,
           difficulty: difficulty);
 
+  /// The caller's own position on a board: `{period, rank, score,
+  /// top_score, gap, total_players}` (rank/score/gap null without a
+  /// qualifying score). Null when signed out, offline, or on a backend
+  /// that predates the endpoint (404) — callers fall back to the cached
+  /// `current_user_rank`.
+  Future<Map<String, dynamic>?> getMyLeaderboardPosition(String period) async {
+    if (!isAuthenticated) return null;
+    try {
+      final uri = Uri.parse('$baseUrl/leaderboard/me')
+          .replace(queryParameters: {'period': period});
+      final response =
+          await http.get(uri, headers: _authHeaders).timeout(_timeout);
+      if (response.statusCode != 200) return null;
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /leaderboard/me', e);
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> _getLeaderboard(
     String boardPath, {
     required int page,

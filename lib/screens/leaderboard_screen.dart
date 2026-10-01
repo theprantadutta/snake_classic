@@ -9,6 +9,7 @@ import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/providers/providers.dart';
 import 'package:snake_classic/screens/friends_leaderboard_screen.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
@@ -97,7 +98,23 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     } catch (_) {
       // Non-fatal: the pinned row falls back to the cached entries.
     }
+    // The player's own score and gap per board, when the backend has
+    // /leaderboard/me (an older backend answers null and nothing changes).
+    final api = ApiService();
+    final results = await Future.wait([
+      api.getMyLeaderboardPosition('global'),
+      api.getMyLeaderboardPosition('weekly'),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _myGlobal = results[0];
+      _myWeekly = results[1];
+    });
   }
+
+  /// `/leaderboard/me` per board; null when unavailable.
+  Map<String, dynamic>? _myGlobal;
+  Map<String, dynamic>? _myWeekly;
 
   Future<void> _loadGlobalLeaderboard() async {
     await ref.read(combinedLeaderboardProvider.notifier).refresh();
@@ -316,15 +333,19 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         ? -1
         : players.indexWhere((e) => e['uid'] == uid);
 
-    final int? rank = (isWeekly ? _weeklyServerRank : _globalServerRank) ??
+    final me = isWeekly ? _myWeekly : _myGlobal;
+    final int? rank = (me?['rank'] as num?)?.toInt() ??
+        (isWeekly ? _weeklyServerRank : _globalServerRank) ??
         (isWeekly ? null : state.userRank?['rank'] as int?) ??
         (myIndex >= 0 ? myIndex + 1 : null);
 
     final int? entryScore =
         myIndex >= 0 ? (players[myIndex]['highScore'] ?? 0) as int : null;
-    final int? myScore = isWeekly
-        ? entryScore
-        : (settings.highScore > 0 ? settings.highScore : entryScore);
+    final int? myScore = (me?['score'] as num?)?.toInt() ??
+        (isWeekly
+            ? entryScore
+            : (settings.highScore > 0 ? settings.highScore : entryScore));
+    final int? serverGap = (me?['gap'] as num?)?.toInt();
 
     final name = authState.publicLabel;
     String? line;
@@ -338,7 +359,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       line = l10n.lbRanksLeader;
     } else if (myScore != null && players.isNotEmpty) {
       final leader = players.first;
-      final gap = ((leader['highScore'] ?? 0) as int) - myScore;
+      final gap = serverGap ?? ((leader['highScore'] ?? 0) as int) - myScore;
       if (gap > 0) {
         final leaderName = (leader['username'] ??
                 leader['displayName'] ??
