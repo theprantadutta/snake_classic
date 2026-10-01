@@ -774,9 +774,12 @@ class _GameScreenState extends State<GameScreen>
                                                                   // drag because of gesture
                                                                   // arena ordering rather
                                                                   // than any real boundary.
+                                                                  // Centred: a width-bound board on a
+                                                                  // tall phone gets even margins rather
+                                                                  // than one dead band underneath.
                                                                   return Align(
                                                                     alignment: Alignment
-                                                                        .topCenter,
+                                                                        .center,
                                                                     child: Column(
                                                                       mainAxisSize:
                                                                           MainAxisSize.min,

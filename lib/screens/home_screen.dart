@@ -542,31 +542,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Rect r(num col, num row, num cw, num ch) =>
         Rect.fromLTWH(x0 + col * cell, row * cell, cw * cell, ch * cell);
 
-    // ── Vertical plan, top-down and bottom-up ──────────────────────────
+    // ── Vertical plan ─────────────────────────────────────────────────────
+    //
+    // The kit draws Home for a 360x780 frame; real phones are taller,
+    // shorter and wider. Lay out the minimum on whole grid rows, then spend
+    // the rows that are left — taller destination tiles first, then a
+    // bigger PLAY, then breathing room between the groups — so no phone
+    // gets a cramped board or a dead band.
     final top = ((MediaQuery.paddingOf(context).top + 6) / cell).ceil();
-    var hintRow = rows - 2;
-    var tilesTop = hintRow - 9;
-    var bestRows = 5;
-    int needed() => top + 3 + 1 + bestRows + 1 + 6 + 2;
-    if (needed() > tilesTop) bestRows = 3;
+    final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+    final hasChips = adsOn || context.watch<PowerUpCubit>().state.armed != null;
+    final chipRows = hasChips ? 2 : 0;
+    var bestRows = 5, playH = 4, tileH = 3;
     var showHint = true;
-    if (needed() > tilesTop) {
+    int fixedRows() =>
+        2 + 1 + bestRows + 1 + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
+    final available = rows - 1 - top;
+    var spare = available - fixedRows();
+    if (spare < 0) {
+      bestRows = 3;
+      spare = available - fixedRows();
+    }
+    if (spare < 0) {
       showHint = false;
-      hintRow = rows;
-      tilesTop = rows - 9 - 1;
+      spare = available - fixedRows();
+    }
+    if (spare >= 5) {
+      tileH = 4;
+      spare -= 3;
+    }
+    if (spare >= 3) {
+      playH = 5;
+      spare -= 1;
+    }
+    if (spare >= 6) {
+      playH = 6;
+      spare -= 1;
+    }
+    // Whatever is left becomes even gaps: above the tiles, under the
+    // header, and between the mode row and the chips.
+    final gaps = [0, 0, 0];
+    for (var k = 0; spare > 0; k = (k + 1) % gaps.length, spare--) {
+      gaps[k]++;
     }
 
     final headerRow = top;
-    final bestLabelRow = top + 3;
+    final bestLabelRow = headerRow + 2 + gaps[1] + 1;
     final bestRow = bestLabelRow + 1;
     final stripRow = bestRow + bestRows;
     final playW = (contentCols - 8).isEven ? 8 : 9;
     final playC0 = c0 + (contentCols - playW) ~/ 2;
     final playR0 = stripRow + 2;
-    final modeBarRow = playR0 + 4 + 1;
+    final modeBarRow = playR0 + playH + 1;
     final modeRow = modeBarRow + 1;
-    final chipsRow = modeRow + 1;
-    final gapRows = tilesTop - chipsRow;
+    final chipsRow = modeRow + 1 + gaps[2];
+    final tilesTop = chipsRow + chipRows + gaps[0];
+    final hintRow = tilesTop + tileH * 3;
 
     final settings = context.watch<GameSettingsCubit>().state;
     final modes = GameMode.values;
@@ -576,7 +607,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final ringL = playC0 - 1,
         ringR = playC0 + playW,
         ringT = playR0 - 1,
-        ringB = playR0 + 4;
+        ringB = playR0 + playH;
     final loop = <HomeCell>[
       for (var x = ringL; x <= ringR; x++) (x, ringT),
       for (var y = ringT + 1; y <= ringB; y++) (ringR, y),
@@ -596,14 +627,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final col = i % 2, row = i ~/ 2;
       return r(
         c0 + (col == 0 ? 0 : half),
-        tilesTop + row * 3,
+        tilesTop + row * tileH,
         col == 0 ? half : contentCols - half,
-        3,
+        tileH,
       );
     }
 
     final targets = <HomeSnakeTarget>[
-      HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + 4),
+      HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + playH),
       HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + 1),
       HomeSnakeTarget(
         'best',
@@ -624,9 +655,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         HomeSnakeTarget(
           tiles[i],
           c0 + (i.isEven ? 0 : half.floor()),
-          tilesTop + (i ~/ 2) * 3,
+          tilesTop + (i ~/ 2) * tileH,
           i.isEven ? c0 + half.ceil() : c0 + contentCols,
-          tilesTop + (i ~/ 2) * 3 + 3,
+          tilesTop + (i ~/ 2) * tileH + tileH,
         ),
     ];
 
@@ -727,7 +758,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // PLAY — the one loud thing.
           Positioned.fromRect(
-            rect: r(playC0, playR0, playW, 4),
+            rect: r(playC0, playR0, playW, playH),
             child: LBBlock(
               key: HomeWalkthrough.playButtonKey,
               kind: LBBlockKind.fill,
@@ -742,7 +773,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   LBCellText(
                     l10n.lbPlay,
-                    cell: 7 * context.uiScale,
+                    cell: (7 + (playH - 4) * 1.5) * context.uiScale,
                     color: p.onLime,
                   ),
                   SizedBox(height: 8 * context.uiScale),
@@ -790,9 +821,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
 
           // Armed power-up + free power-up (rewarded), when there is room.
-          if (gapRows >= 2)
+          if (hasChips)
             Positioned.fromRect(
-              rect: r(c0, chipsRow + (gapRows - 2) / 2, contentCols, 2),
+              rect: r(c0, chipsRow, contentCols, 2),
               child: _HomeChips(
                 onArmed: () => context.push(AppRoutes.runSetup),
                 onFree: () => _watchForFreePowerUp(context),
@@ -803,7 +834,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           for (var i = 0; i < tiles.length; i++)
             Positioned.fromRect(
               rect: tileRect(i),
-              child: _tile(context, tiles[i]),
+              child: _tile(context, tiles[i], tall: tileH > 3),
             ),
 
           if (showHint)
@@ -866,12 +897,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _tile(BuildContext context, String id) {
+  Widget _tile(BuildContext context, String id, {bool tall = false}) {
     final l10n = AppLocalizations.of(context)!;
     void go() => _enter(context, id);
     switch (id) {
       case 'versus':
         return _HomeTile(
+          tall: tall,
           key: HomeWalkthrough.versusKey,
           icon: LBIcon.swords,
           title: l10n.lbHomeVersus,
@@ -893,6 +925,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           now.day + 1,
         ).difference(now);
         return _HomeTile(
+          tall: tall,
           key: HomeWalkthrough.dailyChallengesKey,
           icon: LBIcon.calendar,
           title: l10n.lbHomeDaily(
@@ -911,6 +944,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final end = bp.season?.endDate ?? bp.expiryDate;
         final daysLeft = end?.difference(DateTime.now()).inDays;
         return _HomeTile(
+          tall: tall,
           icon: LBIcon.star,
           title: l10n.lbHomeSeason,
           subtitle: bp.isActive && daysLeft != null && daysLeft >= 0
@@ -921,6 +955,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case 'ranks':
         final best = context.watch<GameSettingsCubit>().state.highScore;
         return _HomeTile(
+          tall: tall,
           icon: LBIcon.trophy,
           title: l10n.lbHomeRanks,
           subtitle: _globalRank != null
@@ -930,6 +965,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       case 'store':
         return _HomeTile(
+          tall: tall,
           key: HomeWalkthrough.storeKey,
           icon: LBIcon.coin,
           title: l10n.lbHomeStore,
@@ -940,6 +976,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return ListenableBuilder(
           listenable: ProgressionService(),
           builder: (context, _) => _HomeTile(
+            tall: tall,
             key: HomeWalkthrough.profileKey,
             icon: LBIcon.user,
             title: l10n.lbHomeProfile,
@@ -1425,8 +1462,11 @@ class _HomeTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.kind = LBBlockKind.outline,
+    this.tall = false,
   });
 
+  /// Four grid rows instead of three: bigger type to fill the block.
+  final bool tall;
   final LBIcon icon;
   final String title;
   final String subtitle;
@@ -1448,7 +1488,7 @@ class _HomeTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              LBPixelIcon(icon, cell: 3.2, color: fg),
+              LBPixelIcon(icon, cell: tall ? 3.8 : 3.2, color: fg),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1464,7 +1504,7 @@ class _HomeTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          SizedBox(height: tall ? 9 : 5),
           Text(
             subtitle,
             maxLines: 1,
