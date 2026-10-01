@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/data/daos/leaderboard_dao.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
@@ -350,9 +351,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final name = authState.publicLabel;
     String? line;
     if (rank == null) {
-      // The high score only counts Normal and Hard runs; a player who has
-      // played but has no ranked best has only played Easy.
+      // The high score only counts Normal and Hard runs. A best of 0 alone
+      // doesn't mean Easy (a Normal run can score 0), so only say so when
+      // the player is actually set to Easy.
       final easyOnly = settings.highScore == 0 &&
+          settings.difficulty == Difficulty.easy &&
           StatisticsService().statistics.totalGamesPlayed > 0;
       if (easyOnly) line = l10n.lbRanksEasyOnly;
     } else if (rank == 1) {

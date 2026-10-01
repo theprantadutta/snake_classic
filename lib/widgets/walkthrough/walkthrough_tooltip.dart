@@ -88,19 +88,22 @@ class WalkthroughTooltip extends StatelessWidget {
           // Action buttons
           Row(
             children: [
-              if (step.canSkip)
-                Flexible(
-                  child: TextButton(
-                    onPressed: onSkip,
-                    style: lbTextButtonStyle(p),
-                    child: Text(
-                      l10n.wtSkip.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              const Spacer(),
+              Expanded(
+                flex: 2,
+                child: step.canSkip
+                    ? Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: onSkip,
+                          style: lbTextButtonStyle(p),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(l10n.wtSkip.toUpperCase(), maxLines: 1),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               Flexible(flex: 3, child: _buildPrimaryButton(context, l10n)),
             ],
           ),

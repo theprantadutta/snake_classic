@@ -3585,33 +3585,33 @@
   "@lbFunFact": {
     "description": "Fun fact label"
   },
-  "lbFunApples": "{apples} apples eaten. That's about {pies} pies.",
+  "lbFunApples": "{apples} apples eaten. That's about {pies, plural, =1{1 pie} other{{pies} pies}}.",
   "@lbFunApples": {
-    "description": "Fun fact",
+    "description": "Profile fun fact; pies = apples / 10, shown from 10 apples up",
     "placeholders": {
       "apples": {
         "type": "String"
       },
       "pies": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "lbFunMinutes": "{minutes} minutes of slithering. Hydrate.",
+  "lbFunMinutes": "{minutes, plural, =1{1 minute} other{{minutes} minutes}} of slithering. Hydrate.",
   "@lbFunMinutes": {
-    "description": "Fun fact",
+    "description": "Profile fun fact: total play time",
     "placeholders": {
       "minutes": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "lbFunPowerups": "{powerups} power-ups grabbed. Greedy, love it.",
+  "lbFunPowerups": "{powerups, plural, =1{1 power-up} other{{powerups} power-ups}} grabbed. Greedy, love it.",
   "@lbFunPowerups": {
-    "description": "Fun fact",
+    "description": "Profile fun fact: power-ups collected",
     "placeholders": {
       "powerups": {
-        "type": "String"
+        "type": "int"
       }
     }
   },

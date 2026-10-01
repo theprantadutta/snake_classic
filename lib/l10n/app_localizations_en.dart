@@ -7111,18 +7111,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lbFunFact => 'FUN FACT';
 
   @override
-  String lbFunApples(String apples, String pies) {
-    return '$apples apples eaten. That\'s about $pies pies.';
+  String lbFunApples(String apples, int pies) {
+    String _temp0 = intl.Intl.pluralLogic(
+      pies,
+      locale: localeName,
+      other: '$pies pies',
+      one: '1 pie',
+    );
+    return '$apples apples eaten. That\'s about $_temp0.';
   }
 
   @override
-  String lbFunMinutes(String minutes) {
-    return '$minutes minutes of slithering. Hydrate.';
+  String lbFunMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes',
+      one: '1 minute',
+    );
+    return '$_temp0 of slithering. Hydrate.';
   }
 
   @override
-  String lbFunPowerups(String powerups) {
-    return '$powerups power-ups grabbed. Greedy, love it.';
+  String lbFunPowerups(int powerups) {
+    String _temp0 = intl.Intl.pluralLogic(
+      powerups,
+      locale: localeName,
+      other: '$powerups power-ups',
+      one: '1 power-up',
+    );
+    return '$_temp0 grabbed. Greedy, love it.';
   }
 
   @override

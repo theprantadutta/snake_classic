@@ -932,10 +932,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             '${daily.completedCount}',
             '${daily.totalCount}',
           ),
-          subtitle: l10n.lbHomeDailySub(
-            _hm(reset),
-            context.formatInt(coinsLeft),
-          ),
+          subtitle: coinsLeft > 0
+              ? l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft))
+              : l10n.lbResetsIn(_hm(reset)),
           kind: claimable ? LBBlockKind.gold : LBBlockKind.outline,
           onTap: go,
         );

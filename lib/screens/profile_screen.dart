@@ -261,13 +261,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final minutes = _stat('totalPlayTime') ~/ 60;
     final powerUps = _stat('totalPowerUps');
     final facts = <String>[
-      if (apples > 0) l10n.lbFunApples(context.formatInt(apples), context.formatInt(apples ~/ 10)),
-      if (minutes > 0) l10n.lbFunMinutes(context.formatInt(minutes)),
-      if (powerUps > 0) l10n.lbFunPowerups(context.formatInt(powerUps)),
+      if (apples >= 10) l10n.lbFunApples(context.formatInt(apples), apples ~/ 10),
+      if (minutes > 0) l10n.lbFunMinutes(minutes),
+      if (powerUps > 0) l10n.lbFunPowerups(powerUps),
     ];
-    if (facts.isEmpty) {
-      facts.add(l10n.lbFunApples(context.formatInt(apples), context.formatInt(apples ~/ 10)));
-    }
+    // Nothing to brag about yet: a tip instead of "0 apples, 0 pies".
+    if (facts.isEmpty) facts.add(l10n.lbTip6);
     final fact = facts[_factIndex % facts.length];
     return LBBlock(
       kind: LBBlockKind.gold,

@@ -12628,23 +12628,23 @@ abstract class AppLocalizations {
   /// **'FUN FACT'**
   String get lbFunFact;
 
-  /// Fun fact
+  /// Profile fun fact; pies = apples / 10, shown from 10 apples up
   ///
   /// In en, this message translates to:
-  /// **'{apples} apples eaten. That\'s about {pies} pies.'**
-  String lbFunApples(String apples, String pies);
+  /// **'{apples} apples eaten. That\'s about {pies, plural, =1{1 pie} other{{pies} pies}}.'**
+  String lbFunApples(String apples, int pies);
 
-  /// Fun fact
+  /// Profile fun fact: total play time
   ///
   /// In en, this message translates to:
-  /// **'{minutes} minutes of slithering. Hydrate.'**
-  String lbFunMinutes(String minutes);
+  /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}} of slithering. Hydrate.'**
+  String lbFunMinutes(int minutes);
 
-  /// Fun fact
+  /// Profile fun fact: power-ups collected
   ///
   /// In en, this message translates to:
-  /// **'{powerups} power-ups grabbed. Greedy, love it.'**
-  String lbFunPowerups(String powerups);
+  /// **'{powerups, plural, =1{1 power-up} other{{powerups} power-ups}} grabbed. Greedy, love it.'**
+  String lbFunPowerups(int powerups);
 
   /// Sync status
   ///
