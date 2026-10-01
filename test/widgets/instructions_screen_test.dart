@@ -8,7 +8,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/screens/instructions_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// How to Play, laid out.
 ///
@@ -168,70 +168,61 @@ void main() {
   });
 
   group('it looks like the rest of the app', () {
-    testWidgets('the title is uppercase and accent-coloured', (tester) async {
+    testWidgets('the title is drawn in snake cells in the header', (tester) async {
+      // Living Board: screen titles are painted in the cell font by the
+      // shared header, not set as text.
       await pump(tester);
 
-      final title = tester.widget<Text>(find.text('HOW TO PLAY'));
-      expect(title.style?.color, GameTheme.classic.accentColor);
-      expect(title.style?.fontWeight, FontWeight.bold);
+      final title = find.descendant(
+        of: find.byType(LBHeader),
+        matching: find.byType(LBCellText),
+      );
+      expect(title, findsOneWidget);
+      expect(tester.widget<LBCellText>(title).text, 'HOW TO PLAY');
     });
 
-    testWidgets('every card wears the shared panel treatment', (tester) async {
-      // This test used to assert the opposite — that no card carried a
-      // shadow — because at the time the shared language was deliberately
-      // flat and this screen was the one still glowing. The language is an
-      // arcade HUD now, and the point of the test is unchanged: How to Play
-      // must not drift from what screen_shell.dart says a panel looks like.
+    testWidgets('every reference section sits in a board block', (tester) async {
+      // How to Play must not drift from the shared surfaces: each of the
+      // five reference sections is one outline LBBlock under a section
+      // label, and the objective is not carded.
       await pump(tester);
 
-      // The section cards are the bordered, 16-radius boxes. Buttons and the
-      // background are allowed their own treatment.
-      final cards = tester
-          .widgetList<Container>(find.byType(Container))
-          .map((c) => c.decoration)
-          .whereType<BoxDecoration>()
-          .where(
-            (d) =>
-                d.border != null &&
-                d.borderRadius == BorderRadius.circular(16),
+      final blocks = tester
+          .widgetList<LBBlock>(
+            find.descendant(
+              of: find.byType(SingleChildScrollView),
+              matching: find.byType(LBBlock),
+            ),
           )
           .toList();
 
-      expect(cards, hasLength(5), reason: 'five sections are carded');
-      for (final card in cards) {
-        expect(
-          card.boxShadow ?? const [],
-          isNotEmpty,
-          reason: 'panels carry the accent glow',
-        );
-        expect(
-          card.gradient,
-          isNotNull,
-          reason: 'panels are top-lit, not a flat fill',
-        );
+      expect(blocks, hasLength(5), reason: 'five sections are blocked');
+      for (final block in blocks) {
+        expect(block.kind, LBBlockKind.outline);
       }
+      expect(find.byType(LBSectionLabel), findsNWidgets(6));
     });
 
     testWidgets('the back action still pops', (tester) async {
       await pump(tester);
       expect(find.byType(InstructionsScreen), findsOneWidget);
 
-      // Invoked directly rather than tapped: GradientButton's gesture handler
-      // constructs AudioService first, which throws without the audio plugin
-      // and would swallow the press before it reached the callback. The
-      // callback is what this test is about.
-      await tester.scrollUntilVisible(find.text('BACK TO GAME'), 300);
-      final button = tester.widget<GradientButton>(
-        find.byType(GradientButton),
+      // Invoked directly rather than tapped, so the test is about the
+      // callback, not the press animation and feedback around it.
+      final back = tester.widget<LBIconBlock>(
+        find.descendant(
+          of: find.byType(LBHeader),
+          matching: find.byType(LBIconBlock),
+        ),
       );
-      expect(button.onPressed, isNotNull);
-      button.onPressed!();
+      expect(back.onTap, isNotNull);
+      back.onTap!();
       await tester.pumpAndSettle();
 
       expect(
         find.byType(InstructionsScreen),
         findsNothing,
-        reason: 'the button leaves the screen, like the app bar arrow',
+        reason: 'the header back block leaves the screen',
       );
     });
   });

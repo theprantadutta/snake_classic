@@ -4,6 +4,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/screens/legal_document_screen.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Slim, non-blocking "by playing you agree" strip shown on Home until the
 /// player has accepted the current legal version.
@@ -31,6 +32,8 @@ import 'package:snake_classic/utils/legal_acceptance.dart';
 class FirstRunLegalNotice extends StatefulWidget {
   const FirstRunLegalNotice({super.key, required this.theme});
 
+  /// Kept for callers; the strip reads the Living Board palette from the
+  /// context.
   final GameTheme theme;
 
   @override
@@ -80,24 +83,20 @@ class _FirstRunLegalNoticeState extends State<FirstRunLegalNotice> {
     if (_accepted != false) return const SizedBox.shrink();
 
     final l10n = AppLocalizations.of(context)!;
-    final theme = widget.theme;
+    final p = context.lb;
 
-    final bodyStyle = TextStyle(
-      fontSize: 11,
-      height: 1.35,
-      color: theme.accentColor.withValues(alpha: 0.7),
-    );
+    final bodyStyle = LBText.body(p, color: p.inkMuted, size: 10.5).copyWith(height: 1.4);
     final linkStyle = bodyStyle.copyWith(
-      color: theme.accentColor,
-      fontWeight: FontWeight.w700,
+      color: p.lime,
+      fontWeight: FontWeight.w800,
       decoration: TextDecoration.underline,
-      decorationColor: theme.accentColor.withValues(alpha: 0.6),
+      decorationColor: p.lime.withValues(alpha: .6),
     );
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      color: theme.backgroundColor.withValues(alpha: 0.55),
+      padding: EdgeInsets.fromLTRB(context.lbGutter, 8, context.lbGutter, 8),
+      color: p.deep.withValues(alpha: .9),
       child: Text.rich(
         TextSpan(
           style: bodyStyle,

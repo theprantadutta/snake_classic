@@ -1,69 +1,52 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/control_layout_picker.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/l10n/supported_locales.dart';
-import 'package:snake_classic/services/ads/ad_service.dart';
-import 'package:snake_classic/services/review_service.dart';
-import 'package:snake_classic/services/analytics/analytics_facade.dart';
-import 'package:snake_classic/presentation/bloc/display/display_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/display/display_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/screens/legal_document_screen.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/notification_service.dart';
-import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
+import 'package:snake_classic/services/review_service.dart';
+import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/formatting.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
-import 'package:snake_classic/widgets/not_backed_up_notice.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/arcade_controls.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/widgets/settings_category_rail.dart';
-import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/credits_dialog.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/settings/settings_display_panel.dart';
+import 'package:snake_classic/widgets/lb_screens/settings/settings_rows.dart';
+import 'package:snake_classic/widgets/lb_screens/settings/settings_theme_strip.dart';
+import 'package:snake_classic/widgets/pause_overlay.dart' show LBControlChoice;
 
-/// The sections of this screen, in the order they appear.
+/// Settings (Living Board screen 16).
 ///
-/// The category rail, the jump targets and the entrance stagger are all
-/// derived from this one enum, so a chip cannot end up without a section to
-/// scroll to, and the two orders cannot drift apart.
-enum _SettingsSection {
-  controls(Icons.videogame_asset_rounded),
-  gameplay(Icons.sports_esports_rounded),
-  audio(Icons.graphic_eq_rounded),
-  visual(Icons.palette_rounded),
-  display(Icons.motion_photos_on_rounded),
-  language(Icons.translate_rounded),
-  notifications(Icons.notifications_active_rounded),
-  testNotifications(Icons.bug_report_rounded),
-  profile(Icons.person_rounded),
-  yourGame(Icons.insights_rounded),
-  help(Icons.school_rounded),
-  legal(Icons.gavel_rounded),
-  premium(Icons.workspace_premium_rounded);
-
-  const _SettingsSection(this.icon);
-
-  /// Shown in the section's emblem and on its rail chip.
-  final IconData icon;
-}
-
+/// The top of the page is the mock: CONTROLS (four layout blocks), GAMEPLAY
+/// (mode / board / difficulty open Run setup; crash replay picks in a
+/// sheet), THEME (a swatch per theme in its own palette) and SOUND & FEEL.
+/// Everything else Settings has always offered follows in the same style —
+/// visual, display, language, notifications, account, your game, help,
+/// legal and premium — and the footer carries the tutorial, privacy and the
+/// version.
+///
+/// Every value is read straight off its cubit (GameSettingsCubit,
+/// DisplayCubit, ThemeCubit, PremiumCubit, AuthCubit). The screen used to
+/// keep local mirrors of the settings fields and a listener to keep them in
+/// step; the cubits emit synchronously, so reading them is the same value
+/// without the drift hazard.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -72,27 +55,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-
-  /// Driven by the category rail: it listens to this to know which section
-  /// you are in, and animates it when you tap a chip.
-  final ScrollController _bodyScroll = ScrollController();
-
-  /// One per section, attached where the section is built so the rail has
-  /// something to scroll to.
-  final Map<_SettingsSection, GlobalKey> _sectionKeys = {
-    for (final section in _SettingsSection.values) section: GlobalKey(),
-  };
   late final AnalyticsFacade _analytics;
-  bool _dPadEnabled = false;
-  bool _screenShakeEnabled = false;
-  bool _hapticsEnabled = true;
-  DPadPosition _dPadPosition = DPadPosition.bottomCenter;
-  BoardSize _selectedBoardSize =
-      GameConstants.availableBoardSizes[1]; // Default to Classic
-  GameMode _selectedGameMode = GameMode.classic;
-  Difficulty _selectedDifficulty = Difficulty.normal;
-  Duration _selectedCrashFeedbackDuration =
-      GameConstants.defaultCrashFeedbackDuration;
 
   // Notification preferences. Mirrored from NotificationService at init
   // and on every toggle; service is the source of truth (persists through
@@ -104,87 +67,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifSocial = true;
   bool _notifSpecialEvent = true;
 
-  @override
-  void dispose() {
-    _bodyScroll.dispose();
-    super.dispose();
-  }
+  /// For the footer. Null until the platform answers.
+  String? _version;
 
   @override
   void initState() {
     super.initState();
     _analytics = getIt<AnalyticsFacade>();
-    // Direct assignment, not _syncFromSettingsCubit: that one calls
-    // setState, which is not legal this early. Nothing has been built yet,
-    // so seeding the fields is enough.
-    _applySettings(context.read<GameSettingsCubit>().state);
     _loadNotificationPreferences();
-    // Pull fresh user data so the USER PROFILE row shows the live
-    // username (handles the case where the local UnifiedUser was
-    // cached pre-backfill / pre-rename and is missing the value).
-    // Fire-and-forget — the screen renders from current state and
-    // updates if anything changed.
+    _loadVersion();
+    // Pull fresh user data so the account row shows the live username
+    // (handles the case where the local UnifiedUser was cached
+    // pre-backfill / pre-rename and is missing the value).
+    // Fire-and-forget — the screen renders from current state and updates
+    // if anything changed.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<AuthCubit>().refreshUserFromBackend();
       // Re-read the live refresh rate when the screen opens, so the number
-      // in the DISPLAY card is current rather than whatever we last saw at
-      // launch (battery saver may have kicked in since).
+      // in DISPLAY is current rather than whatever we last saw at launch
+      // (battery saver may have kicked in since).
       context.read<DisplayCubit>().refreshInfo();
     });
   }
 
-  /// Whether any cubit-owned value differs from our local mirror of it.
-  ///
-  /// This and [_applySettings] must cover the SAME fields, and so must the
-  /// `listenWhen` in build(). Keeping the three in step by hand is the whole
-  /// hazard here: `difficulty` was compared by the old version of this
-  /// method but missing from `listenWhen`, so a difficulty change made
-  /// anywhere else never reached this screen while it was open. Hence
-  /// [_settingsDiffer] — build()'s listenWhen now calls it instead of
-  /// repeating the list, so a field can only be forgotten in one place
-  /// rather than two.
-  bool _settingsDiffer(GameSettingsState s) =>
-      _dPadEnabled != s.dPadEnabled ||
-      _dPadPosition != s.dPadPosition ||
-      _screenShakeEnabled != s.screenShakeEnabled ||
-      _hapticsEnabled != s.hapticsEnabled ||
-      _selectedBoardSize != s.boardSize ||
-      _selectedGameMode != s.gameMode ||
-      _selectedDifficulty != s.difficulty ||
-      _selectedCrashFeedbackDuration != s.crashFeedbackDuration;
-
-  /// Copy the cubit's values into the local mirrors. No setState — callers
-  /// decide, because initState cannot use it.
-  void _applySettings(GameSettingsState s) {
-    if (!s.isReady) return;
-    _dPadEnabled = s.dPadEnabled;
-    _dPadPosition = s.dPadPosition;
-    _screenShakeEnabled = s.screenShakeEnabled;
-    _hapticsEnabled = s.hapticsEnabled;
-    _selectedBoardSize = s.boardSize;
-    _selectedGameMode = s.gameMode;
-    _selectedDifficulty = s.difficulty;
-    _selectedCrashFeedbackDuration = s.crashFeedbackDuration;
-  }
-
-  /// Mirror the GameSettingsCubit state into our local UI fields, rebuilding
-  /// if anything actually moved. Driven by the BlocListener in build(), so
-  /// this screen stays in lock-step with the cubit (the source of truth).
-  void _syncFromSettingsCubit(GameSettingsState s) {
-    if (!s.isReady || !_settingsDiffer(s)) return;
-    setState(() => _applySettings(s));
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _version = info.version);
+    } catch (_) {
+      // No version in the footer is better than a broken footer.
+    }
   }
 
   void _loadNotificationPreferences() {
     final prefs = _notificationService.notificationPreferences;
-    setState(() {
-      _notifDailyReminder = prefs[NotificationType.dailyReminder] ?? true;
-      _notifTournament = prefs[NotificationType.tournament] ?? true;
-      _notifAchievement = prefs[NotificationType.achievement] ?? true;
-      _notifSocial = prefs[NotificationType.social] ?? true;
-      _notifSpecialEvent = prefs[NotificationType.specialEvent] ?? true;
-    });
+    _notifDailyReminder = prefs[NotificationType.dailyReminder] ?? true;
+    _notifTournament = prefs[NotificationType.tournament] ?? true;
+    _notifAchievement = prefs[NotificationType.achievement] ?? true;
+    _notifSocial = prefs[NotificationType.social] ?? true;
+    _notifSpecialEvent = prefs[NotificationType.specialEvent] ?? true;
   }
 
   Future<void> _toggleNotification(
@@ -200,1850 +122,150 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
+  void _track(String name, Object value) =>
+      _analytics.trackSettingChanged(settingName: name, value: '$value');
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // Keep our local UI mirrors in lock-step with GameSettingsCubit so
-    // changes that originate elsewhere (e.g. the game-screen first-launch
-    // modal flipping D-Pad on) reflect here even if the screen is already
-    // mounted. The cubit is the only source of truth for these values.
-    return BlocListener<GameSettingsCubit, GameSettingsState>(
-      // Delegates to _settingsDiffer rather than re-listing every field,
-      // which is what let `difficulty` fall out of this condition while
-      // still being compared inside the sync.
-      listenWhen: (prev, curr) =>
-          prev.isReady != curr.isReady || _settingsDiffer(curr),
-      listener: (context, settingsState) =>
-          _syncFromSettingsCubit(settingsState),
-      child: BlocBuilder<ThemeCubit, ThemeState>(
-        builder: (context, themeState) {
-          return BlocBuilder<GameCubit, GameCubitState>(
-            builder: (context, gameState) {
-              return BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, authState) {
-                  return BlocBuilder<PremiumCubit, PremiumState>(
-                    builder: (context, premiumState) {
-                      final theme = themeState.currentTheme;
+    final settings = context.watch<GameSettingsCubit>().state;
+    final themeState = context.watch<ThemeCubit>().state;
+    final premium = context.watch<PremiumCubit>().state;
+    final auth = context.watch<AuthCubit>().state;
+    final display = context.watch<DisplayCubit>().state;
+    final isPlaying = context.select<GameCubit, bool>((c) => c.state.isPlaying);
 
-                      return Scaffold(
-                        bottomNavigationBar: const SnakeBannerAd(),
-                        extendBodyBehindAppBar: true,
-                        // The shared bar, so this screen tracks the design
-                        // language instead of carrying its own copy of it.
-                        appBar: appScreenBar(
-                          context,
-                          theme,
-                          l10n.settingsTitle,
-                        ),
-                        body: AppBackground(
-                          theme: theme,
-                          child: SafeArea(
-                            child: Padding(
-                              // Extra horizontal inset on tablets caps the
-                              // settings column to a centered ~640px width
-                              // instead of stretching rows full-screen.
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 24.0 + context.sideInset(),
-                              ),
-                              child: Column(
-                                children: [
-                                  // No spacer for the app bar here, though it
-                                  // is drawn over the body: with
-                                  // extendBodyBehindAppBar, Scaffold hands the
-                                  // body a MediaQuery whose top padding is the
-                                  // WHOLE bar height, so the SafeArea above
-                                  // has already cleared it. Adding
-                                  // kToolbarHeight on top of that counted it
-                                  // twice and left a dead band under the
-                                  // title.
-                                  SettingsCategoryRail(
-                                    categories: _railCategories(
-                                      l10n,
-                                      premiumState,
-                                    ),
-                                    bodyController: _bodyScroll,
-                                    theme: theme,
-                                  ),
-                                  Expanded(
-                                    child: SingleChildScrollView(
-                                      controller: _bodyScroll,
-                                      padding: const EdgeInsets.only(
-                                        top: 20,
-                                        bottom: 24,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // 1. Controls Section (most frequently adjusted during gameplay)
-                                          _buildSection(
-                                            _SettingsSection.controls,
-                                            l10n.settingsSectionControls,
-                                            [
-                                              _buildAudioSwitch(
-                                                l10n.settingsDPadControls,
-                                                _dPadEnabled,
-                                                (value) async {
-                                                  setState(() {
-                                                    _dPadEnabled = value;
-                                                  });
-                                                  await context
-                                                      .read<GameSettingsCubit>()
-                                                      .updateDPadEnabled(value);
-                                                  _analytics
-                                                      .trackSettingChanged(
-                                                        settingName:
-                                                            'dpad_enabled',
-                                                        value: '$value',
-                                                      );
-                                                },
-                                                theme,
-                                                description:
-                                                    l10n.settingsDPadSubtitle,
-                                              ),
-                                              // Layout picker, then the
-                                              // position selector — which
-                                              // only means something for
-                                              // the four-way pad.
-                                              if (_dPadEnabled) ...[
-                                                const SizedBox(height: 16),
-                                                _buildControlLayoutPicker(
-                                                  theme,
-                                                ),
-                                                _buildDPadPositionIfDPad(
-                                                  gameState,
-                                                  theme,
-                                                ),
-                                              ],
-                                              const SizedBox(height: 16),
-                                              _buildSnapMovementToggle(theme),
-                                              const SizedBox(height: 16),
-                                              _buildControlInfo(theme),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 2. Gameplay Section (mode + board size + crash feedback + effects)
-                                          _buildSection(
-                                            _SettingsSection.gameplay,
-                                            l10n.settingsSectionGameplay,
-                                            [
-                                              _buildGameModeSelector(
-                                                gameState,
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildDifficultySelector(
-                                                gameState,
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildBoardSizeSelector(
-                                                gameState,
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildCrashFeedbackDurationSelector(
-                                                gameState,
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildAudioSwitch(
-                                                l10n.settingsScreenShake,
-                                                _screenShakeEnabled,
-                                                (value) async {
-                                                  setState(() {
-                                                    _screenShakeEnabled = value;
-                                                  });
-                                                  await context
-                                                      .read<GameSettingsCubit>()
-                                                      .setScreenShakeEnabled(
-                                                        value,
-                                                      );
-                                                  _analytics
-                                                      .trackSettingChanged(
-                                                        settingName:
-                                                            'screen_shake',
-                                                        value: '$value',
-                                                      );
-                                                },
-                                                theme,
-                                                description: l10n
-                                                    .settingsScreenShakeSubtitle,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildAudioSwitch(
-                                                l10n.settingsVibration,
-                                                _hapticsEnabled,
-                                                (value) async {
-                                                  setState(() {
-                                                    _hapticsEnabled = value;
-                                                  });
-                                                  await context
-                                                      .read<GameSettingsCubit>()
-                                                      .setHapticsEnabled(value);
-                                                  _analytics
-                                                      .trackSettingChanged(
-                                                        settingName:
-                                                            'haptics_enabled',
-                                                        value: '$value',
-                                                      );
-                                                },
-                                                theme,
-                                                description: l10n
-                                                    .settingsVibrationSubtitle,
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 3. Audio Section
-                                          _buildSection(
-                                            _SettingsSection.audio,
-                                            l10n.settingsSectionAudio,
-                                            [
-                                              // Read straight off the cubit
-                                              // — no local mirror. The pause
-                                              // overlay offers the same two
-                                              // toggles, and one value with
-                                              // two copies is how they drift.
-                                              BlocBuilder<GameSettingsCubit,
-                                                  GameSettingsState>(
-                                                buildWhen: (prev, curr) =>
-                                                    prev.soundEnabled !=
-                                                        curr.soundEnabled ||
-                                                    prev.musicEnabled !=
-                                                        curr.musicEnabled,
-                                                builder: (context, settings) {
-                                                  final cubit = context
-                                                      .read<
-                                                          GameSettingsCubit>();
-                                                  return Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      _buildAudioSwitch(
-                                                        l10n
-                                                            .settingsSoundEffects,
-                                                        settings.soundEnabled,
-                                                        (value) async {
-                                                          await cubit
-                                                              .setSoundEnabled(
-                                                                  value);
-                                                          _analytics
-                                                              .trackSettingChanged(
-                                                            settingName:
-                                                                'sound_effects',
-                                                            value: '$value',
-                                                          );
-                                                        },
-                                                        theme,
-                                                      ),
-                                                      const SizedBox(
-                                                          height: 16),
-                                                      _buildAudioSwitch(
-                                                        l10n
-                                                            .settingsBackgroundMusic,
-                                                        settings.musicEnabled,
-                                                        (value) async {
-                                                          await cubit
-                                                              .setMusicEnabled(
-                                                                  value);
-                                                          _analytics
-                                                              .trackSettingChanged(
-                                                            settingName:
-                                                                'background_music',
-                                                            value: '$value',
-                                                          );
-                                                        },
-                                                        theme,
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 4. Visual Section (theme + trail effects)
-                                          _buildSection(
-                                            _SettingsSection.visual,
-                                            l10n.settingsSectionVisual,
-                                            [
-                                              _buildThemeSelector(
-                                                themeState,
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const Divider(height: 1),
-                                              const SizedBox(height: 24),
-                                              _buildAudioSwitch(
-                                                l10n.settingsSnakeTrail,
-                                                themeState.isTrailSystemEnabled,
-                                                (value) async {
-                                                  await context
-                                                      .read<ThemeCubit>()
-                                                      .setTrailSystemEnabled(
-                                                        value,
-                                                      );
-                                                },
-                                                theme,
-                                                description: l10n
-                                                    .settingsSnakeTrailSubtitle,
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 5. Display Section (refresh rate)
-                                          _buildDisplaySection(theme),
-
-                                          const SizedBox(height: 32),
-
-                                          // App language picker. Section title comes
-                                          // from the ARB (the picker itself is the
-                                          // first localized surface in the app).
-                                          _buildSection(
-                                            _SettingsSection.language,
-                                            AppLocalizations.of(context)!
-                                                .settingsSectionLanguage,
-                                            [_buildLanguagePicker(theme)],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 5. User Profile Section
-                                          _buildSection(
-                                            _SettingsSection.notifications,
-                                            l10n.settingsSectionNotifications,
-                                            [
-                                              _buildAudioSwitch(
-                                                l10n.settingsNotifDailyReminder,
-                                                _notifDailyReminder,
-                                                (v) => _toggleNotification(
-                                                  NotificationType
-                                                      .dailyReminder,
-                                                  v,
-                                                  (val) =>
-                                                      _notifDailyReminder = val,
-                                                ),
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildAudioSwitch(
-                                                l10n.settingsNotifTournament,
-                                                _notifTournament,
-                                                (v) => _toggleNotification(
-                                                  NotificationType.tournament,
-                                                  v,
-                                                  (val) =>
-                                                      _notifTournament = val,
-                                                ),
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildAudioSwitch(
-                                                l10n.settingsNotifAchievement,
-                                                _notifAchievement,
-                                                (v) => _toggleNotification(
-                                                  NotificationType.achievement,
-                                                  v,
-                                                  (val) =>
-                                                      _notifAchievement = val,
-                                                ),
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildAudioSwitch(
-                                                l10n.settingsNotifSocial,
-                                                _notifSocial,
-                                                (v) => _toggleNotification(
-                                                  NotificationType.social,
-                                                  v,
-                                                  (val) => _notifSocial = val,
-                                                ),
-                                                theme,
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildAudioSwitch(
-                                                l10n.settingsNotifSpecialEvents,
-                                                _notifSpecialEvent,
-                                                (v) => _toggleNotification(
-                                                  NotificationType.specialEvent,
-                                                  v,
-                                                  (val) =>
-                                                      _notifSpecialEvent = val,
-                                                ),
-                                                theme,
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // Diagnostic buttons that isolate each layer
-                                          // of the notification pipeline. Gated behind
-                                          // kDebugMode so production builds never see
-                                          // it — these are developer-facing controls
-                                          // for triage during development + Play Store
-                                          // internal testing, not user features. See
-                                          // NOTIFICATIONS_TESTING.md for triage guide.
-                                          if (kDebugMode) ...[
-                                            _buildSection(
-                                              _SettingsSection
-                                                  .testNotifications,
-                                              'TEST NOTIFICATIONS',
-                                              [
-                                                _buildNotificationTestPanel(
-                                                  theme,
-                                                ),
-                                              ],
-                                              theme,
-                                            ),
-                                            const SizedBox(height: 32),
-                                          ],
-
-                                          _buildSection(
-                                            _SettingsSection.profile,
-                                            l10n.settingsSectionUserProfile,
-                                            [
-                                              _buildUserProfileSettings(
-                                                authState,
-                                                theme,
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 5b. Your game — statistics and replays.
-                                          // Both used to be circular buttons flanking
-                                          // the home screen's high-score bar, where
-                                          // they cost the home screen a whole row to
-                                          // offer two things a player looks at
-                                          // occasionally. They live here now, where
-                                          // the rest of "about your game" already is.
-                                          _buildSection(
-                                            _SettingsSection.yourGame,
-                                            l10n.settingsSectionYourGame,
-                                            [
-                                              _buildLinkButton(
-                                                theme,
-                                                icon: Icons.analytics,
-                                                label: l10n.pfStatistics,
-                                                subtitle: l10n
-                                                    .settingsStatisticsSubtitle,
-                                                onPressed: () => context.push(
-                                                  AppRoutes.statistics,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 16),
-                                              _buildLinkButton(
-                                                theme,
-                                                icon: Icons.video_library,
-                                                label: l10n.pfReplays,
-                                                subtitle: l10n
-                                                    .settingsReplaysSubtitle,
-                                                onPressed: () => context.push(
-                                                  AppRoutes.replays,
-                                                ),
-                                              ),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 6. Help & Tutorial Section
-                                          _buildSection(
-                                            _SettingsSection.help,
-                                            l10n.settingsSectionHelp,
-                                            [
-                                              _buildReplayTutorialButton(theme),
-                                              const SizedBox(height: 16),
-                                              _buildCreditsButton(theme),
-                                              _buildRateUsButton(theme),
-                                              _buildPrivacyChoicesButton(theme),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 6b. Legal Section
-                                          _buildSection(
-                                            _SettingsSection.legal,
-                                            l10n.settingsSectionLegal,
-                                            [
-                                              _buildPrivacyPolicyButton(theme),
-                                              const SizedBox(height: 12),
-                                              _buildTermsButton(theme),
-                                            ],
-                                            theme,
-                                          ),
-
-                                          const SizedBox(height: 32),
-
-                                          // 7. Premium Section (if available)
-                                          if (premiumState.isInitialized)
-                                            _buildSection(
-                                              _SettingsSection.premium,
-                                              l10n.settingsSectionPremium,
-                                              [
-                                                _buildPremiumStatusCard(
-                                                  premiumState,
-                                                  theme,
-                                                ),
-                                                if (!premiumState.hasPremium)
-                                                  _buildUpgradeButton(
-                                                    premiumState,
-                                                    theme,
-                                                  ),
-                                                _buildRestorePurchasesButton(
-                                                  premiumState,
-                                                  theme,
-                                                ),
-                                                _buildPurchaseHistoryButton(
-                                                  premiumState,
-                                                  theme,
-                                                ),
-                                                if (premiumState.hasPremium ||
-                                                    premiumState
-                                                        .ownedSkins
-                                                        .isNotEmpty)
-                                                  _buildCosmeticsButton(
-                                                    premiumState,
-                                                    theme,
-                                                  ),
-                                                if (premiumState.hasBattlePass)
-                                                  _buildBattlePassButton(
-                                                    premiumState,
-                                                    theme,
-                                                  ),
-                                              ],
-                                              theme,
-                                            ),
-
-                                          const SizedBox(height: 16),
-
-                                          // Back Button — full width
-                                          GradientButton(
-                                            onPressed: () => context.pop(),
-                                            text: l10n.settingsBackToGame,
-                                            primaryColor: theme.accentColor,
-                                            secondaryColor: theme.foodColor,
-                                            icon: Icons.arrow_back,
-                                            width: double.infinity,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  /// App-language picker: system default + one row per supported locale.
-  /// Selection applies instantly (MaterialApp rebuilds off the settings
-  /// cubit) — no restart needed.
-  Widget _buildLanguagePicker(GameTheme theme) {
-    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
-      buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
-      builder: (context, settingsState) {
-        final l10n = AppLocalizations.of(context)!;
-        final current = settingsState.localeCode;
-
-        Widget option({
-          required String? code,
-          required String label,
-          String? subtitle,
-        }) {
-          final selected = current == code;
-          return InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: () {
-              context.read<GameSettingsCubit>().setLocaleCode(code);
-              _analytics.trackSettingChanged(
-                settingName: 'app_language',
-                value: code ?? 'system',
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    selected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    size: 20,
-                    color: selected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontSize: 15,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                        if (subtitle != null)
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              color: theme.accentColor.withValues(alpha: 0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          children: [
-            option(
-              code: null,
-              label: l10n.languageSystemDefault,
-              subtitle: l10n.languageSystemDefaultSubtitle,
-            ),
-            for (final locale in SupportedLocales.locales)
-              option(
-                code: locale.languageCode,
-                label:
-                    SupportedLocales.endonyms[locale.languageCode] ??
-                    locale.languageCode,
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// The rail's chips, in section order, filtered to what is actually built.
-  ///
-  /// The conditionals here have to mirror the ones around the sections
-  /// themselves — a chip that scrolls to a section this build does not have
-  /// is a dead control.
-  List<SettingsCategory> _railCategories(
-    AppLocalizations l10n,
-    PremiumState premiumState,
-  ) {
-    SettingsCategory of(_SettingsSection section, String label) =>
-        SettingsCategory(
-          label: label,
-          icon: section.icon,
-          key: _sectionKeys[section]!,
-        );
-
-    return [
-      of(_SettingsSection.controls, l10n.settingsSectionControls),
-      of(_SettingsSection.gameplay, l10n.settingsSectionGameplay),
-      of(_SettingsSection.audio, l10n.settingsSectionAudio),
-      of(_SettingsSection.visual, l10n.settingsSectionVisual),
-      of(_SettingsSection.display, l10n.settingsSectionDisplay),
-      of(_SettingsSection.language, l10n.settingsSectionLanguage),
-      of(_SettingsSection.notifications, l10n.settingsSectionNotifications),
-      if (kDebugMode) of(_SettingsSection.testNotifications, 'TEST'),
-      of(_SettingsSection.profile, l10n.settingsSectionUserProfile),
-      of(_SettingsSection.yourGame, l10n.settingsSectionYourGame),
-      of(_SettingsSection.help, l10n.settingsSectionHelp),
-      of(_SettingsSection.legal, l10n.settingsSectionLegal),
-      if (premiumState.isInitialized)
-        of(_SettingsSection.premium, l10n.settingsSectionPremium),
-    ];
-  }
-
-  /// One section panel: emblem, tracked title, rule out to a terminator, and
-  /// a card with bracketed corners.
-  ///
-  /// Delegates to [screenSection] rather than drawing its own chrome. This
-  /// used to be a hand-rolled copy of `ProfileScreen._buildSection`, kept in
-  /// sync by hand — which is the exact drift `screen_shell.dart` exists to
-  /// stop. Both screens now read from the one language.
-  Widget _buildSection(
-    _SettingsSection section,
-    String title,
-    List<Widget> children,
-    GameTheme theme,
-  ) {
-    return KeyedSubtree(
-      // The rail scrolls to this.
-      key: _sectionKeys[section],
-      child: screenSection(
-        context,
-        theme,
-        title,
-        // stretch, not the default centre. Rows fill either way, but a bare
-        // Text shrink-wraps — which is why every hint and caption on this
-        // screen used to sit centred while the control it described was
-        // left-aligned above it.
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
-        ),
-        icon: section.icon,
-        index: section.index,
-      ),
-    );
-  }
-
-  // ==================== Display / refresh rate ====================
-
-  /// `59.94` and `120` should both read like a refresh rate, not like a
-  /// float — panels report awkward real numbers and `120.0 Hz` looks broken.
-  String _formatHz(double hz) =>
-      hz % 1 == 0 ? '${hz.toInt()}' : hz.toStringAsFixed(1);
-
-  /// DISPLAY — how smoothly the game moves, and what the panel is actually
-  /// doing about it.
-  ///
-  /// Reads [DisplayCubit], which owns the device-local high-refresh-rate
-  /// opt-in. The preference is per handset by design (see [DevicePreferences]):
-  /// a 120 Hz phone and a 60 Hz tablet on the same account should be able to
-  /// disagree, so this one setting never syncs.
-  Widget _buildDisplaySection(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return BlocBuilder<DisplayCubit, DisplayState>(
-      builder: (context, display) {
-        return _buildSection(
-          _SettingsSection.display,
-          l10n.settingsSectionDisplay,
-          [
-            _buildRefreshRateCard(display, theme),
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 20),
-            _buildAudioSwitch(
-              l10n.settingsSmoothMotion,
-              display.highRefreshRateEnabled,
-              (value) async {
-                await context.read<DisplayCubit>().setHighRefreshRateEnabled(
-                  value,
-                );
-                _analytics.trackSettingChanged(
-                  settingName: 'high_refresh_rate_enabled',
-                  value: '$value',
-                );
-              },
-              theme,
-              description: l10n.settingsSmoothMotionSubtitle,
-              enabled: display.deviceSupportsHighRate,
-            ),
-
-            // The platform overrides us in both of these cases whatever the
-            // toggle says. Saying so beats looking broken.
-            if (display.throttledByBattery) ...[
-              const SizedBox(height: 12),
-              _buildDisplayNote(
-                Icons.battery_saver_rounded,
-                l10n.settingsDisplayBatteryNote,
-                theme,
-              ),
-            ],
-            if (display.throttledByHeat) ...[
-              const SizedBox(height: 12),
-              _buildDisplayNote(
-                Icons.thermostat_rounded,
-                l10n.settingsDisplayThermalNote,
-                theme,
-              ),
-            ],
-            // Only once we have actually read the panel — before that we would
-            // be telling a 120 Hz phone it is single-rate.
-            if (display.loaded &&
-                display.info != null &&
-                !display.deviceSupportsHighRate) ...[
-              const SizedBox(height: 12),
-              _buildDisplayNote(
-                Icons.info_outline_rounded,
-                l10n.settingsDisplaySingleRateNote,
-                theme,
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            Text(
-              l10n.settingsDisplayFooter,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 12.5,
-                height: 1.4,
-              ),
-            ),
-
-            // Every mode the panel offers. Only worth showing when there is
-            // more than one — a lone chip is just the number above it again.
-            if ((display.info?.supportedRates.length ?? 0) > 1) ...[
-              const SizedBox(height: 20),
-              Text(
-                l10n.settingsDisplaySupportedTitle,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: context.letterSpacing(1.2),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _buildSupportedRates(display, theme),
-            ],
-          ],
-          theme,
-        );
-      },
-    );
-  }
-
-  /// The live readout: what the screen is refreshing at this second.
-  Widget _buildRefreshRateCard(DisplayState display, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final info = display.info;
-    final current = info == null ? '—' : _formatHz(info.currentRate);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return LBScaffold(
+      title: l10n.lbSettingsTitle,
+      subtitle: l10n.lbSettingsSubtitle,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              current,
-              style: TextStyle(
-                // Accent only when the number is the result of our own
-                // request — otherwise it is just the platform default and
-                // colouring it would take credit for nothing.
-                color: display.isLive ? theme.accentColor : Colors.white,
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                height: 1,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 3),
-              child: Text(
-                l10n.settingsDisplayHz,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Spacer(),
-            if (info != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(
-                  l10n.settingsDisplayUpTo(_formatHz(info.maxRate)),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-          ],
+        _controls(l10n, settings),
+        _gameplay(l10n, settings, isPlaying),
+        _theme(l10n, themeState, premium),
+        _soundAndFeel(l10n, settings, display),
+        _visual(l10n, settings, themeState),
+        SettingsSection(
+          label: l10n.settingsSectionDisplay,
+          children: [SettingsDisplayPanel(display: display)],
         ),
-        const SizedBox(height: 6),
-        Text(
-          info == null
-              ? l10n.settingsDisplayReading
-              : l10n.settingsDisplayCurrentCaption,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12.5,
-            height: 1.3,
+        _language(l10n, settings),
+        _notifications(l10n),
+        // Diagnostic buttons that isolate each layer of the notification
+        // pipeline. Gated behind kDebugMode so production builds never see
+        // it — developer-facing controls for triage, not user features. See
+        // NOTIFICATIONS_TESTING.md for the triage guide.
+        if (kDebugMode)
+          SettingsSection(
+            label: 'TEST NOTIFICATIONS',
+            children: [_buildNotificationTestPanel()],
           ),
+        _account(l10n, auth),
+        _yourGame(l10n),
+        _help(l10n, themeState.currentTheme),
+        _legal(l10n),
+        if (premium.isInitialized) _premium(l10n, premium),
+        SettingsFooterLinks(
+          links: [
+            (l10n.lbReplayTutorial, _showReplayTutorialSheet),
+            (l10n.lbPrivacy, _openPrivacyPolicy),
+          ],
+          version: _version == null ? null : l10n.lbVersionShort(_version!),
         ),
       ],
     );
   }
 
-  /// Pills for every rate the panel supports, lowest first. The one currently
-  /// in use is filled so the readout above has something to point at.
-  Widget _buildSupportedRates(DisplayState display, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final info = display.info!;
-    final rates = [...info.supportedRates]..sort();
+  // ==================== CONTROLS ====================
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final rate in rates)
-          Builder(
-            builder: (context) {
-              // Panels report near-misses (59.94 vs 60), so match on
-              // proximity rather than equality or nothing ever highlights.
-              final isCurrent = (rate - info.currentRate).abs() < 0.5;
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isCurrent
-                      ? theme.accentColor.withValues(alpha: 0.18)
-                      : Colors.white.withValues(alpha: 0.05),
-                  border: Border.all(
-                    color: isCurrent
-                        ? theme.accentColor.withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.15),
-                  ),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${_formatHz(rate)} ${l10n.settingsDisplayHz}',
-                  style: TextStyle(
-                    color: isCurrent
-                        ? theme.accentColor
-                        : Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12.5,
-                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                  ),
-                ),
-              );
-            },
-          ),
-      ],
-    );
+  /// SWIPE turns the on-screen control off; D-PAD / TURN / STICK turn it on
+  /// with that layout. Same cubit calls and analytics events as the old
+  /// switch + layout picker.
+  Future<void> _chooseControl({required bool dPad, ControlLayout? layout}) async {
+    final cubit = context.read<GameSettingsCubit>();
+    final before = cubit.state;
+    if (before.dPadEnabled != dPad) {
+      await cubit.setDPadEnabled(dPad);
+      _track('dpad_enabled', dPad);
+    }
+    if (layout != null && before.controlLayout != layout) {
+      await cubit.setControlLayout(layout);
+      _track('control_layout', layout.name);
+    }
   }
 
-  /// Inline advisory — the platform is doing something the toggle cannot
-  /// override, or there is nothing here to override in the first place.
-  Widget _buildDisplayNote(IconData icon, String text, GameTheme theme) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.08),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 17, color: theme.accentColor),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12.5,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(ThemeState themeState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
+  Widget _controls(AppLocalizations l10n, GameSettingsState s) {
+    bool on(ControlLayout layout) => s.dPadEnabled && s.controlLayout == layout;
+    return SettingsSection(
+      label: l10n.lbControls,
+      // First section: the header subtitle already spaces it.
+      topGap: 0,
       children: [
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsCurrentTheme,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    theme.localizedName(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: LBControlChoice(
+                title: l10n.lbCtrlSwipe,
+                subtitle: l10n.lbCtrlSwipeSub,
+                selected: !s.dPadEnabled,
+                onTap: () => _chooseControl(dPad: false),
               ),
             ),
-
-            // Theme preview
-            Container(
-              width: 60,
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
+            Expanded(
+              child: LBControlChoice(
+                title: l10n.lbCtrlDpad,
+                subtitle: l10n.lbCtrlDpadSub,
+                selected: on(ControlLayout.dPad),
+                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.dPad),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: theme.snakeColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: theme.foodColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
+            ),
+            Expanded(
+              child: LBControlChoice(
+                title: l10n.lbCtrlTurn,
+                subtitle: l10n.lbCtrlTurnSub,
+                selected: on(ControlLayout.turnButtons),
+                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.turnButtons),
+              ),
+            ),
+            Expanded(
+              child: LBControlChoice(
+                title: l10n.lbCtrlStick,
+                subtitle: l10n.lbCtrlStickSub,
+                selected: on(ControlLayout.joystick),
+                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.joystick),
               ),
             ),
           ],
         ),
-
-        const SizedBox(height: 16),
-
-        GradientButton(
-          // Routes to the Themes tab of the unified store (tab index 2:
-          // Pro / Coins / Themes / Skins / Trails / Power-Ups).
-          onPressed: () => context.push('${AppRoutes.store}?tab=2'),
-          text: l10n.settingsBrowseThemes,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.primaryColor,
-          icon: Icons.palette,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-      ],
-    );
-  }
-
-  /// A labelled toggle, optionally with the sentence that explains it.
-  ///
-  /// [description] belongs to the row rather than floating after it as a
-  /// separate child: attached, it reads as this setting's explanation and
-  /// wraps under its own label; loose, it was just another paragraph in the
-  /// card with nothing tying it to the switch above.
-  ///
-  /// The label is white, not accent. When every label on the screen is the
-  /// theme colour there is nothing left for the theme colour to mean, and the
-  /// eyebrows and selected states stop standing out.
-  /// A labelled toggle.
-  ///
-  /// Named for the audio switches it was first written for; it drives every
-  /// boolean on this screen. The Material [Switch] it used to wrap is what
-  /// made the screen read as a phone settings screen, so the body is now an
-  /// [ArcadeSwitchTile] — same signature, same call sites, different metaphor.
-  ///
-  /// [enabled] false greys the row out and swallows taps — for a control the
-  /// hardware cannot honour (a single-rate panel has no refresh rate to
-  /// unlock), where hiding it entirely would just be confusing.
-  Widget _buildAudioSwitch(
-    String title,
-    bool value,
-    Function(bool) onChanged,
-    GameTheme theme, {
-    String? description,
-    bool enabled = true,
-  }) {
-    return ArcadeSwitchTile(
-      title: title,
-      value: value,
-      onChanged: onChanged,
-      theme: theme,
-      description: description,
-      enabled: enabled,
-    );
-  }
-
-  /// Cell-by-cell movement. Reads [GameSettingsCubit] directly rather than
-  /// the cached settings map: it is device-local and never in the cache.
-  Widget _buildSnapMovementToggle(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
-      buildWhen: (a, b) => a.snapMovementEnabled != b.snapMovementEnabled,
-      builder: (context, settings) {
-        return _buildAudioSwitch(
-          l10n.settingsSnapMovement,
-          settings.snapMovementEnabled,
-          (value) async {
-            await context.read<GameSettingsCubit>().setSnapMovementEnabled(
-              value,
-            );
-            _analytics.trackSettingChanged(
-              settingName: 'snap_movement_enabled',
-              value: '$value',
-            );
+        // The position selector only applies to the four-way pad; the turn
+        // buttons occupy both corners by design and the stick floats.
+        if (on(ControlLayout.dPad)) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
+            child: LBSectionLabel(l10n.settingsDPadPosition),
+          ),
+          SettingsOptionStrip<DPadPosition>(
+            options: DPadPosition.values,
+            selected: s.dPadPosition,
+            labelOf: (pos) => pos.localizedName(l10n),
+            onSelect: (pos) => context.read<GameSettingsCubit>().updateDPadPosition(pos),
+          ),
+          const SizedBox(height: 4),
+        ],
+        // Cell-by-cell movement. Device-local, read straight off the cubit.
+        SettingsToggleRow(
+          title: l10n.settingsSnapMovement,
+          subtitle: l10n.settingsSnapMovementSubtitle,
+          value: s.snapMovementEnabled,
+          onChanged: (value) async {
+            await context.read<GameSettingsCubit>().setSnapMovementEnabled(value);
+            _track('snap_movement_enabled', value);
           },
-          theme,
-          description: l10n.settingsSnapMovementSubtitle,
-        );
-      },
-    );
-  }
-
-  /// D-pad / turn buttons / joystick. Device-local, read straight off the
-  /// cubit. The picker itself is a standalone widget so it can be tested
-  /// inside a scroll view, which is where it lives here.
-  Widget _buildControlLayoutPicker(GameTheme theme) {
-    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
-      buildWhen: (a, b) => a.controlLayout != b.controlLayout,
-      builder: (context, settings) {
-        return ControlLayoutPicker(
-          theme: theme,
-          selected: settings.controlLayout,
-          onSelect: (layout) async {
-            await context.read<GameSettingsCubit>().setControlLayout(layout);
-            _analytics.trackSettingChanged(
-              settingName: 'control_layout',
-              value: layout.name,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  /// The position selector only applies to the four-way pad; the turn
-  /// buttons occupy both corners by design.
-  Widget _buildDPadPositionIfDPad(GameCubitState gameState, GameTheme theme) {
-    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
-      buildWhen: (a, b) => a.controlLayout != b.controlLayout,
-      builder: (context, settings) {
-        if (settings.controlLayout != ControlLayout.dPad) {
-          return const SizedBox.shrink();
-        }
-        return Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: _buildDPadPositionSelector(gameState, theme),
-        );
-      },
-    );
-  }
-
-  Widget _buildDPadPositionSelector(GameCubitState gameState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.gamepad,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              l10n.settingsDPadPosition,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: DPadPosition.values.map((position) {
-              final isSelected = _dPadPosition == position;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    setState(() {
-                      _dPadPosition = position;
-                    });
-                    await context.read<GameSettingsCubit>().updateDPadPosition(
-                      position,
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.accentColor.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: isSelected
-                          ? Border.all(color: theme.accentColor, width: 1.5)
-                          : null,
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          position.icon,
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          position.localizedName(l10n),
-                          style: TextStyle(
-                            color: isSelected
-                                ? theme.accentColor
-                                : theme.accentColor.withValues(alpha: 0.6),
-                            fontSize: 12,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
         ),
       ],
     );
   }
 
-  Widget _buildControlInfo(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Platform-specific controls
-        if (kIsWeb ||
-            (!defaultTargetPlatform.toString().contains('android') &&
-                !defaultTargetPlatform.toString().contains('ios'))) ...[
-          // Desktop/Web controls
-          Text(
-            l10n.settingsDesktopControls,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: context.letterSpacing(1),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildControlItem(
-            l10n.settingsArrowKeys,
-            l10n.settingsChangeDirection,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsWasdKeys,
-            l10n.settingsChangeDirection,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsSpacebar,
-            l10n.settingsPauseResume,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsMouseClick,
-            l10n.settingsPauseResume,
-            theme,
-          ),
-          if (!kIsWeb) ...[
-            const SizedBox(height: 16),
-            Text(
-              l10n.settingsTouchControlsIfAvailable,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.7),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildControlItem(
-              l10n.settingsSwipeGestures,
-              l10n.settingsChangeDirection,
-              theme,
-            ),
-            _buildControlItem(
-              l10n.settingsTapScreen,
-              l10n.settingsPauseResume,
-              theme,
-            ),
-          ],
-        ] else ...[
-          // Mobile controls
-          Text(
-            l10n.settingsTouchControls,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: context.letterSpacing(1),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildControlItem(
-            l10n.settingsSwipeUp,
-            l10n.settingsMoveSnakeUp,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsSwipeDown,
-            l10n.settingsMoveSnakeDown,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsSwipeLeft,
-            l10n.settingsMoveSnakeLeft,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsSwipeRight,
-            l10n.settingsMoveSnakeRight,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsOnScreenControls,
-            l10n.settingsOnScreenControlsDesc,
-            theme,
-          ),
-          _buildControlItem(
-            l10n.settingsTapScreen,
-            l10n.settingsPauseResume,
-            theme,
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// One line of the controls reference: the gesture, and what it does.
-  ///
-  /// This is documentation, not a menu. It used to lead with a right-chevron
-  /// and stack the action underneath, which made five static lines look like
-  /// five tappable rows — the chevron is the strongest "there is something
-  /// behind this" signal in the whole app, and nothing was behind it.
-  ///
-  /// Two columns instead: the gesture reads as the key, the action as its
-  /// value, and the pair is unmistakably a table.
-  Widget _buildControlItem(String control, String action, GameTheme theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              control,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 5,
-            child: Text(
-              action,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGameModeSelector(GameCubitState gameState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsGameMode,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_selectedGameMode.icon} ${_selectedGameMode.localizedName(l10n)}',
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          _selectedGameMode.localizedDescription(l10n),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: GameMode.values.map((mode) {
-            final isSelected = _selectedGameMode == mode;
-            final isCurrentlyPlaying = gameState.isPlaying;
-            return GestureDetector(
-              onTap: isCurrentlyPlaying
-                  ? null
-                  : () async {
-                      setState(() => _selectedGameMode = mode);
-                      await context.read<GameSettingsCubit>().updateGameMode(
-                        mode,
-                      );
-                      _analytics.trackSettingChanged(
-                        settingName: 'game_mode',
-                        value: mode.name,
-                      );
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                // Matches ArcadeOptionChip. The selected state is a wash, a
-                // heavier border AND a glow rather than a colour change
-                // alone — on the bright themes (crystal, desert) an accent
-                // border on a transparent chip is nearly invisible, so which
-                // option is live has to be carried by more than hue.
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.22)
-                      : Colors.white.withValues(alpha: 0.04),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.28),
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(11),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: theme.accentColor.withValues(alpha: 0.30),
-                            blurRadius: 12,
-                            spreadRadius: -3,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  '${mode.icon} ${mode.localizedName(l10n)}',
-                  style: TextStyle(
-                    color: isCurrentlyPlaying
-                        ? theme.accentColor.withValues(alpha: 0.5)
-                        : (isSelected
-                              ? theme.accentColor
-                              : Colors.white.withValues(alpha: 0.8)),
-                    fontSize: 11,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        if (gameState.isPlaying) ...[
-          const SizedBox(height: 12),
-          Text(
-            l10n.settingsGameModeLocked,
-            style: TextStyle(
-              color: Colors.orange.withValues(alpha: 0.8),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildDifficultySelector(GameCubitState gameState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final isCurrentlyPlaying = gameState.isPlaying;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.settingsDifficulty,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          l10n.settingsDifficultySubtitle,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: Difficulty.values.map((difficulty) {
-            final isSelected = _selectedDifficulty == difficulty;
-
-            return GestureDetector(
-              onTap: isCurrentlyPlaying
-                  ? null
-                  : () async {
-                      setState(() {
-                        _selectedDifficulty = difficulty;
-                      });
-                      await context.read<GameSettingsCubit>().setDifficulty(
-                        difficulty,
-                      );
-                      _analytics.trackSettingChanged(
-                        settingName: 'difficulty',
-                        value: difficulty.label,
-                      );
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                // Matches ArcadeOptionChip. The selected state is a wash, a
-                // heavier border AND a glow rather than a colour change
-                // alone — on the bright themes (crystal, desert) an accent
-                // border on a transparent chip is nearly invisible, so which
-                // option is live has to be carried by more than hue.
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.22)
-                      : Colors.white.withValues(alpha: 0.04),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.28),
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(11),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: theme.accentColor.withValues(alpha: 0.30),
-                            blurRadius: 12,
-                            spreadRadius: -3,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  '${difficulty.icon} ${difficulty.localizedLabel(l10n)}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isCurrentlyPlaying
-                        ? theme.accentColor.withValues(alpha: 0.5)
-                        : (isSelected
-                              ? theme.accentColor
-                              : Colors.white.withValues(alpha: 0.8)),
-                    fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          _selectedDifficulty.localizedDescription(l10n),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 12,
-          ),
-        ),
-        // Being explicit up front is kinder than letting an Easy player
-        // grind a personal best and only then discover it never counted.
-        if (!_selectedDifficulty.postsToLeaderboard) ...[
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 14,
-                color: theme.accentColor.withValues(alpha: 0.8),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  l10n.settingsEasyNote,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.8),
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-        if (isCurrentlyPlaying) ...[
-          const SizedBox(height: 8),
-          Text(
-            l10n.settingsDifficultyLocked,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildBoardSizeSelector(GameCubitState gameState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      // Explicit: the default centre made the size description float in the
-      // middle while the label and value above it sat hard left.
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsCurrentSize,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _selectedBoardSize.localizedName(l10n),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${_selectedBoardSize.width} × ${_selectedBoardSize.height}',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Board size preview
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: CustomPaint(
-                painter: _BoardSizePainter(theme, _selectedBoardSize),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        Text(
-          _selectedBoardSize.localizedDescription(l10n),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 12,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Board size selection buttons. Every size is FREE — pick any one.
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: GameConstants.availableBoardSizes.map((boardSize) {
-            final isSelected = _selectedBoardSize == boardSize;
-            final isCurrentlyPlaying = gameState.isPlaying;
-
-            return GestureDetector(
-              onTap: isCurrentlyPlaying
-                  ? null
-                  : () async {
-                      setState(() {
-                        _selectedBoardSize = boardSize;
-                      });
-                      await context.read<GameSettingsCubit>().updateBoardSize(
-                        boardSize,
-                      );
-                      _analytics.trackSettingChanged(
-                        settingName: 'board_size',
-                        value: boardSize.name,
-                      );
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                // Matches ArcadeOptionChip. The selected state is a wash, a
-                // heavier border AND a glow rather than a colour change
-                // alone — on the bright themes (crystal, desert) an accent
-                // border on a transparent chip is nearly invisible, so which
-                // option is live has to be carried by more than hue.
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.22)
-                      : Colors.white.withValues(alpha: 0.04),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.28),
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(11),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: theme.accentColor.withValues(alpha: 0.30),
-                            blurRadius: 12,
-                            spreadRadius: -3,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  '${boardSize.localizedName(l10n)}\n${boardSize.width}×${boardSize.height}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isCurrentlyPlaying
-                        ? theme.accentColor.withValues(alpha: 0.5)
-                        : (isSelected
-                              ? theme.accentColor
-                              : Colors.white.withValues(alpha: 0.8)),
-                    fontSize: 11,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-
-        if (gameState.isPlaying) ...[
-          const SizedBox(height: 12),
-          Text(
-            l10n.settingsBoardSizeLocked,
-            style: TextStyle(
-              color: Colors.orange.withValues(alpha: 0.8),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+  // ==================== GAMEPLAY ====================
 
   /// Render-time localization for the crash-feedback labels. The raw
   /// GameConstants label stays English ('Skip'/'Until Tap' are also used as
@@ -2057,147 +279,319 @@ class _SettingsScreenState extends State<SettingsScreen> {
     };
   }
 
-  Widget _buildCrashFeedbackDurationSelector(
-    GameCubitState gameState,
-    GameTheme theme,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      // Explicit, for the same reason as the board-size selector: the default
-      // centre stranded the description in the middle of the card.
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _gameplay(AppLocalizations l10n, GameSettingsState s, bool isPlaying) {
+    // Mode, board and difficulty are picked on Run setup now. While a run
+    // is live they stay locked, exactly as the old in-place pickers were.
+    void openSetup() => context.push(AppRoutes.runSetup);
+    return SettingsSection(
+      label: l10n.lbGameplay,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsCurrentDuration,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _crashLabel(l10n, _selectedCrashFeedbackDuration),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Timer icon preview
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(Icons.timer, color: theme.accentColor, size: 24),
-            ),
-          ],
+        SettingsValueRow(
+          title: l10n.lbMode,
+          subtitle: isPlaying ? l10n.settingsGameModeLocked : null,
+          value: s.gameMode.localizedName(l10n),
+          onTap: isPlaying ? null : openSetup,
         ),
-
-        const SizedBox(height: 16),
-
-        Text(
-          l10n.settingsCrashFeedbackSubtitle,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 12,
-          ),
+        SettingsValueRow(
+          title: l10n.lbBoard,
+          subtitle: isPlaying ? l10n.settingsBoardSizeLocked : null,
+          value: s.boardSize.id.replaceAll('x', '×'),
+          onTap: isPlaying ? null : openSetup,
         ),
-
-        const SizedBox(height: 16),
-
-        // Duration selection buttons
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: GameConstants.availableCrashFeedbackDurations.map((
-            duration,
-          ) {
-            final isSelected = _selectedCrashFeedbackDuration == duration;
-
-            return GestureDetector(
-              onTap: () async {
-                setState(() {
-                  _selectedCrashFeedbackDuration = duration;
-                });
-                await context
-                    .read<GameSettingsCubit>()
-                    .updateCrashFeedbackDuration(duration);
-                _analytics.trackSettingChanged(
-                  settingName: 'crash_feedback_duration',
-                  value: '${duration.inSeconds}',
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                // Matches ArcadeOptionChip. The selected state is a wash, a
-                // heavier border AND a glow rather than a colour change
-                // alone — on the bright themes (crystal, desert) an accent
-                // border on a transparent chip is nearly invisible, so which
-                // option is live has to be carried by more than hue.
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.accentColor.withValues(alpha: 0.22)
-                      : Colors.white.withValues(alpha: 0.04),
-                  border: Border.all(
-                    color: isSelected
-                        ? theme.accentColor
-                        : theme.accentColor.withValues(alpha: 0.28),
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(11),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: theme.accentColor.withValues(alpha: 0.30),
-                            blurRadius: 12,
-                            spreadRadius: -3,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  _crashLabel(l10n, duration),
-                  style: TextStyle(
-                    color: isSelected
-                        ? theme.accentColor
-                        : Colors.white.withValues(alpha: 0.8),
-                    fontSize: 14,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+        SettingsValueRow(
+          title: l10n.lbDifficulty,
+          // Being explicit up front is kinder than letting an Easy player
+          // grind a personal best and only then discover it never counted.
+          subtitle: isPlaying
+              ? l10n.settingsDifficultyLocked
+              : (s.difficulty.postsToLeaderboard ? null : l10n.settingsEasyNote),
+          value: s.difficulty.localizedLabel(l10n),
+          onTap: isPlaying ? null : openSetup,
+        ),
+        SettingsValueRow(
+          title: l10n.lbCrashReplay,
+          subtitle: l10n.lbCrashReplaySub,
+          value: _crashLabel(l10n, s.crashFeedbackDuration),
+          onTap: _showCrashReplaySheet,
         ),
       ],
     );
   }
 
-  Widget _buildUserProfileSettings(AuthState authState, GameTheme theme) {
+  void _showCrashReplaySheet() {
     final l10n = AppLocalizations.of(context)!;
+    showLBSheet<void>(
+      context: context,
+      title: l10n.lbCrashReplay,
+      subtitle: l10n.settingsCrashFeedbackSubtitle,
+      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
+        buildWhen: (a, b) => a.crashFeedbackDuration != b.crashFeedbackDuration,
+        builder: (context, s) => SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final duration in GameConstants.availableCrashFeedbackDurations)
+                SettingsSheetOption(
+                  title: _crashLabel(l10n, duration),
+                  selected: s.crashFeedbackDuration == duration,
+                  onTap: () async {
+                    await context.read<GameSettingsCubit>().updateCrashFeedbackDuration(duration);
+                    _track('crash_feedback_duration', duration.inSeconds);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==================== THEME ====================
+
+  Widget _theme(AppLocalizations l10n, ThemeState themeState, PremiumState premium) {
+    final premiumCount = PremiumContent.premiumThemes.length;
+    final freeCount = GameTheme.values.length - premiumCount;
+    return SettingsSection(
+      label: l10n.lbTheme,
+      aside: l10n.lbThemeAside(
+        themeState.currentTheme.localizedName(l10n).toUpperCase(),
+        context.formatInt(freeCount),
+        context.formatInt(premiumCount),
+      ),
+      children: [
+        SettingsThemeStrip(
+          current: themeState.currentTheme,
+          isUnlocked: premium.isThemeUnlocked,
+          onTap: (t) {
+            if (premium.isThemeUnlocked(t)) {
+              // Same call the store's theme rows make for an owned theme.
+              context.read<ThemeCubit>().setTheme(t);
+            } else {
+              // Locked: the Themes tab of the unified store (tab index 2:
+              // Pro / Coins / Themes / Skins / Trails / Power-Ups), where
+              // the unlock and purchase live.
+              context.push('${AppRoutes.store}?tab=2');
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  // ==================== SOUND & FEEL ====================
+
+  Widget _soundAndFeel(AppLocalizations l10n, GameSettingsState s, DisplayState display) {
+    final cubit = context.read<GameSettingsCubit>();
+    return SettingsSection(
+      label: l10n.lbSoundFeel,
+      children: [
+        // Read straight off the cubit — no local mirror. The pause overlay
+        // offers the same toggles, and one value with two copies drifts.
+        SettingsToggleRow(
+          title: l10n.lbSoundFx,
+          subtitle: l10n.lbSoundFxSub,
+          value: s.soundEnabled,
+          onChanged: (value) async {
+            await cubit.setSoundEnabled(value);
+            _track('sound_effects', value);
+          },
+        ),
+        SettingsToggleRow(
+          title: l10n.lbMusic,
+          value: s.musicEnabled,
+          onChanged: (value) async {
+            await cubit.setMusicEnabled(value);
+            _track('background_music', value);
+          },
+        ),
+        SettingsToggleRow(
+          title: l10n.lbHaptics,
+          subtitle: l10n.lbHapticsSub,
+          value: s.hapticsEnabled,
+          onChanged: (value) async {
+            await cubit.setHapticsEnabled(value);
+            _track('haptics_enabled', value);
+          },
+        ),
+        // DisplayCubit owns the device-local high-refresh-rate opt-in; it
+        // never syncs. Disabled (not hidden) on a single-rate panel.
+        SettingsToggleRow(
+          title: l10n.lb120Hz,
+          subtitle: l10n.lb120HzSub,
+          value: display.highRefreshRateEnabled,
+          onChanged: display.deviceSupportsHighRate
+              ? (value) async {
+                  await context.read<DisplayCubit>().setHighRefreshRateEnabled(value);
+                  _track('high_refresh_rate_enabled', value);
+                }
+              : null,
+        ),
+        // The platform overrides us in both of these cases whatever the
+        // toggle says. Saying so beats looking broken.
+        if (display.throttledByBattery) SettingsNote(text: l10n.settingsDisplayBatteryNote, icon: LBIcon.bolt),
+        if (display.throttledByHeat) SettingsNote(text: l10n.settingsDisplayThermalNote, icon: LBIcon.flame),
+        // Only once we have actually read the panel — before that we would be
+        // telling a 120 Hz phone it is single-rate.
+        if (display.loaded && display.info != null && !display.deviceSupportsHighRate)
+          SettingsNote(text: l10n.settingsDisplaySingleRateNote),
+      ],
+    );
+  }
+
+  // ==================== VISUAL ====================
+
+  Widget _visual(AppLocalizations l10n, GameSettingsState s, ThemeState themeState) {
+    return SettingsSection(
+      label: l10n.settingsSectionVisual,
+      children: [
+        SettingsToggleRow(
+          title: l10n.settingsScreenShake,
+          subtitle: l10n.settingsScreenShakeSubtitle,
+          value: s.screenShakeEnabled,
+          onChanged: (value) async {
+            await context.read<GameSettingsCubit>().setScreenShakeEnabled(value);
+            _track('screen_shake', value);
+          },
+        ),
+        SettingsToggleRow(
+          title: l10n.settingsSnakeTrail,
+          subtitle: l10n.settingsSnakeTrailSubtitle,
+          value: themeState.isTrailSystemEnabled,
+          onChanged: (value) => context.read<ThemeCubit>().setTrailSystemEnabled(value),
+        ),
+        SettingsValueRow(
+          title: l10n.settingsBrowseThemes,
+          leading: const LBPixelIcon(LBIcon.grid, cell: 3.4),
+          onTap: () => context.push('${AppRoutes.store}?tab=2'),
+        ),
+      ],
+    );
+  }
+
+  // ==================== LANGUAGE ====================
+
+  /// App-language picker: system default + one option per supported locale.
+  /// Selection applies instantly (MaterialApp rebuilds off the settings
+  /// cubit) — no restart needed.
+  Widget _language(AppLocalizations l10n, GameSettingsState s) {
+    final code = s.localeCode;
+    final current = code == null
+        ? l10n.languageSystemDefault
+        : (SupportedLocales.endonyms[code] ?? code);
+    return SettingsSection(
+      label: l10n.settingsSectionLanguage,
+      children: [
+        SettingsValueRow(
+          title: l10n.lbLanguageRow,
+          value: current,
+          onTap: _showLanguageSheet,
+        ),
+      ],
+    );
+  }
+
+  void _showLanguageSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    showLBSheet<void>(
+      context: context,
+      title: l10n.settingsSectionLanguage,
+      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
+        buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
+        builder: (context, settingsState) {
+          // Re-read: the sheet itself switches language when you pick one.
+          final l = AppLocalizations.of(context)!;
+          final current = settingsState.localeCode;
+          void pick(String? code) {
+            context.read<GameSettingsCubit>().setLocaleCode(code);
+            _analytics.trackSettingChanged(
+              settingName: 'app_language',
+              value: code ?? 'system',
+            );
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SettingsSheetOption(
+                  title: l.languageSystemDefault,
+                  subtitle: l.languageSystemDefaultSubtitle,
+                  selected: current == null,
+                  onTap: () => pick(null),
+                ),
+                for (final locale in SupportedLocales.locales)
+                  SettingsSheetOption(
+                    title: SupportedLocales.endonyms[locale.languageCode] ?? locale.languageCode,
+                    selected: current == locale.languageCode,
+                    onTap: () => pick(locale.languageCode),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ==================== NOTIFICATIONS ====================
+
+  Widget _notifications(AppLocalizations l10n) {
+    return SettingsSection(
+      label: l10n.settingsSectionNotifications,
+      children: [
+        SettingsToggleRow(
+          title: l10n.settingsNotifDailyReminder,
+          value: _notifDailyReminder,
+          onChanged: (v) => _toggleNotification(
+            NotificationType.dailyReminder,
+            v,
+            (val) => _notifDailyReminder = val,
+          ),
+        ),
+        SettingsToggleRow(
+          title: l10n.settingsNotifTournament,
+          value: _notifTournament,
+          onChanged: (v) => _toggleNotification(
+            NotificationType.tournament,
+            v,
+            (val) => _notifTournament = val,
+          ),
+        ),
+        SettingsToggleRow(
+          title: l10n.settingsNotifAchievement,
+          value: _notifAchievement,
+          onChanged: (v) => _toggleNotification(
+            NotificationType.achievement,
+            v,
+            (val) => _notifAchievement = val,
+          ),
+        ),
+        SettingsToggleRow(
+          title: l10n.settingsNotifSocial,
+          value: _notifSocial,
+          onChanged: (v) => _toggleNotification(
+            NotificationType.social,
+            v,
+            (val) => _notifSocial = val,
+          ),
+        ),
+        SettingsToggleRow(
+          title: l10n.settingsNotifSpecialEvents,
+          value: _notifSpecialEvent,
+          onChanged: (v) => _toggleNotification(
+            NotificationType.specialEvent,
+            v,
+            (val) => _notifSpecialEvent = val,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==================== ACCOUNT ====================
+
+  Widget _account(AppLocalizations l10n, AuthState authState) {
+    final p = context.lb;
     // Resolve the username explicitly so the row labels it as "Username"
     // and shows the same value the change-username dialog pre-fills.
     // Falls back to displayName / 'Not set' so the row never goes blank.
@@ -2206,302 +600,890 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final usernameLabel = hasRealUsername
         ? username
         : (authState.user?.displayName.isNotEmpty == true
-              ? authState.user!.displayName
-              : l10n.settingsNotSet);
+            ? authState.user!.displayName
+            : l10n.settingsNotSet);
+    // hasNoCredential, not isGuestUser: a silently-created Firebase
+    // anonymous account is still an account nobody chose and nobody can
+    // recover. Calling it "signed in" is the lie that made this confusing.
+    final guest = authState.hasNoCredential;
 
-    return Column(
+    return SettingsSection(
+      label: l10n.settingsSectionUserProfile,
       children: [
-        // Current username display
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.settingsUsername,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12,
-                      letterSpacing: context.letterSpacing(0.5),
+        LBBlock(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              LBPixelIcon(guest ? LBIcon.user : LBIcon.shield, cell: 4, color: guest ? p.inkMuted : p.lime),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.settingsUsername.toUpperCase(), style: LBText.label(p)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '@$usernameLabel',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LBText.value(p, color: p.head, size: 17),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
+                    const SizedBox(height: 2),
+                    Text(
+                      guest ? l10n.settingsGuestAccount : l10n.settingsAuthenticatedAccount,
+                      style: LBText.body(p, size: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (guest) ...[
+          // States the consequence; tapping it is the fix (shared upgrade
+          // sheet), same as the standalone notice it replaces here.
+          LBBlock(
+            kind: LBBlockKind.danger,
+            onTap: () => showAccountUpgradeSheet(context),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: LBPixelIcon(LBIcon.x, cell: 3, color: LB.bonk),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        authState.hasNoCredential
-                            ? Icons.person_outline
-                            : Icons.verified_user,
-                        color: authState.hasNoCredential
-                            ? Colors.orange
-                            : Colors.green,
-                        size: 18,
+                      Text(
+                        l10n.accountNotBackedUpTitle.toUpperCase(),
+                        style: LBText.button(p, color: LB.bonk, size: 12.5),
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          '@$usernameLabel',
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      const SizedBox(height: 4),
+                      Text(l10n.accountNotBackedUpBody, style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 11)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    // hasNoCredential, not isGuestUser: a silently-created
-                    // Firebase anonymous account is still an account nobody
-                    // chose and nobody can recover. Calling it "signed in"
-                    // is the lie that made this whole area confusing.
-                    authState.hasNoCredential
-                        ? l10n.settingsGuestAccount
-                        : l10n.settingsAuthenticatedAccount,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Profile type indicator
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                border: Border.all(
-                  color:
-                      (authState.hasNoCredential ? Colors.orange : Colors.green)
-                          .withValues(alpha: 0.5),
-                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(
-                authState.hasNoCredential
-                    ? Icons.person_outline
-                    : Icons.account_circle,
-                color: authState.hasNoCredential ? Colors.orange : Colors.green,
-                size: 24,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Username actions
-        if (authState.hasNoCredential) ...[
-          // States the consequence before offering the fix directly below it.
-          NotBackedUpNotice(theme: theme),
-          const SizedBox(height: 12),
-          // A real, tappable way to sign in. This section used to offer
-          // guests the hint text below and nothing to act on it with, so the
-          // only sign-in entry points in the whole app were the Profile card
-          // (which was itself gated on isAnonymous and so invisible to
-          // offline guests) and a deferred prompt that fires at most three
-          // times ever, only after a new personal best, only after three
-          // games. A player who simply decided they wanted an account had
-          // nowhere to go.
-          //
-          // Routes through the shared upgrade sheet rather than a bare
-          // Google button so Settings offers the same Google / Apple /
-          // email choices as every other surface — and links rather than
-          // re-signs-in when there is an anonymous UID worth preserving.
-          GradientButton(
-            onPressed: () => showAccountUpgradeSheet(context),
-            text: l10n.eaSignIn,
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.primaryColor,
-            icon: Icons.login,
-            width: double.infinity,
-          ),
-          const SizedBox(height: 12),
-          GradientButton(
-            onPressed: () => _showUsernameDialog(authState, theme),
-            text: l10n.settingsChangeUsername,
-            primaryColor: Colors.orange,
-            secondaryColor: Colors.deepOrange,
-            icon: Icons.edit,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.settingsGuestSignInHint,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 12,
+                const SizedBox(width: 8),
+                const LBPixelIcon(LBIcon.next, cell: 2.4, color: LB.bonk),
+              ],
             ),
           ),
+          // A real, tappable way to sign in. Routes through the shared
+          // upgrade sheet rather than a bare Google button so Settings
+          // offers the same Google / Apple / email choices as every other
+          // surface — and links rather than re-signs-in when there is an
+          // anonymous UID worth preserving.
+          SettingsValueRow(
+            title: l10n.eaSignIn,
+            leading: const LBPixelIcon(LBIcon.user, cell: 3.4),
+            onTap: () => showAccountUpgradeSheet(context),
+          ),
+          SettingsValueRow(
+            title: l10n.settingsChangeUsername,
+            onTap: () => _showUsernameDialog(authState),
+          ),
+          SettingsCaption(l10n.settingsGuestSignInHint),
         ] else ...[
-          // For authenticated users
-          GradientButton(
-            onPressed: () => _showUsernameDialog(authState, theme),
-            text: l10n.settingsChangeUsername,
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.primaryColor,
-            icon: Icons.edit,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
+          SettingsValueRow(
+            title: l10n.settingsChangeUsername,
+            onTap: () => _showUsernameDialog(authState),
           ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.settingsUsernameVisibleHint,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 12,
-            ),
-          ),
+          SettingsCaption(l10n.settingsUsernameVisibleHint),
         ],
       ],
     );
   }
 
-  /// Three-button diagnostic surface for the notification pipeline. Each
-  /// button isolates one layer:
+  // ==================== YOUR GAME ====================
+
+  /// Statistics and replays — "about your game".
+  Widget _yourGame(AppLocalizations l10n) {
+    return SettingsSection(
+      label: l10n.settingsSectionYourGame,
+      children: [
+        SettingsValueRow(
+          title: l10n.pfStatistics,
+          subtitle: l10n.settingsStatisticsSubtitle,
+          leading: const LBPixelIcon(LBIcon.chart, cell: 3.4),
+          onTap: () => context.push(AppRoutes.statistics),
+        ),
+        SettingsValueRow(
+          title: l10n.pfReplays,
+          subtitle: l10n.settingsReplaysSubtitle,
+          leading: const LBPixelIcon(LBIcon.film, cell: 3.4),
+          onTap: () => context.push(AppRoutes.replays),
+        ),
+      ],
+    );
+  }
+
+  // ==================== HELP ====================
+
+  Widget _help(AppLocalizations l10n, GameTheme theme) {
+    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+    // Only when ads are enabled AND a consent form is actually available.
+    // Without the form check this opened nothing (and logged a "no form(s)
+    // configured" UMP error) when no consent form exists for the app ID or
+    // consent isn't required in the user's region.
+    final showAdPrivacy = ads != null && ads.adsEnabled && ads.privacyOptionsRequired;
+    return SettingsSection(
+      label: l10n.settingsSectionHelp,
+      children: [
+        SettingsValueRow(
+          title: l10n.settingsReplayTutorial,
+          subtitle: l10n.settingsReplayTutorialSubtitle,
+          leading: const LBPixelIcon(LBIcon.play, cell: 3.4),
+          onTap: _showReplayTutorialSheet,
+        ),
+        SettingsValueRow(
+          title: l10n.lbCtrlReference,
+          subtitle: l10n.lbCtrlReferenceSub,
+          leading: const LBPixelIcon(LBIcon.target, cell: 3.4),
+          onTap: _showControlReferenceSheet,
+        ),
+        SettingsValueRow(
+          title: l10n.settingsAboutCredits,
+          subtitle: l10n.settingsAboutCreditsSubtitle,
+          leading: const LBPixelIcon(LBIcon.heart, cell: 3.4),
+          onTap: () => showCreditsDialog(context, theme),
+        ),
+        // Explicit "Rate us" — opens the store listing directly (not the
+        // quota-limited in-app review sheet, which the platform may silently
+        // skip on a deliberate tap). The in-app sheet still fires at
+        // positive moments via ReviewService.maybeRequestReview.
+        SettingsValueRow(
+          title: l10n.settingsRateApp,
+          subtitle: defaultTargetPlatform == TargetPlatform.iOS
+              ? l10n.settingsRateAppSubtitleIos
+              : l10n.settingsRateAppSubtitle,
+          leading: const LBPixelIcon(LBIcon.star, cell: 3.4),
+          onTap: () => getIt<ReviewService>().openStoreListing(),
+        ),
+        // Re-opens Google's UMP privacy options form so users can change
+        // their personalized-ad consent. Free users with ads only.
+        if (showAdPrivacy)
+          SettingsValueRow(
+            title: l10n.settingsAdPrivacy,
+            subtitle: l10n.settingsAdPrivacySubtitle,
+            leading: const LBPixelIcon(LBIcon.eye, cell: 3.4),
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+              final shown = await ads.showPrivacyOptions();
+              if (!shown) {
+                messenger.showSnackBar(
+                  arcadeSnackBarFor(snackTheme, message: l10n.settingsAdPrivacyUnavailable),
+                );
+              }
+            },
+          ),
+      ],
+    );
+  }
+
+  void _showReplayTutorialSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    showLBSheet<void>(
+      context: context,
+      title: l10n.settingsReplayDialogTitle,
+      subtitle: l10n.settingsReplayDialogBody,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SettingsValueRow(
+            title: l10n.settingsHomeTour,
+            leading: const LBPixelIcon(LBIcon.grid, cell: 3.4),
+            onTap: () async {
+              Navigator.of(sheetContext).pop();
+              final walkthroughService = WalkthroughService();
+              await walkthroughService.initialize();
+              await walkthroughService.reset(WalkthroughService.homeWalkthroughId);
+              if (mounted) {
+                context.go(AppRoutes.home);
+              }
+            },
+          ),
+          SettingsValueRow(
+            title: l10n.settingsGameTutorial,
+            leading: const LBPixelIcon(LBIcon.play, cell: 3.4),
+            onTap: () async {
+              Navigator.of(sheetContext).pop();
+              final walkthroughService = WalkthroughService();
+              await walkthroughService.initialize();
+              await walkthroughService.reset(WalkthroughService.gameTutorialId);
+              if (mounted) {
+                // The request travels with the navigation. Resetting the
+                // stored flag and going to /game used to be the whole
+                // implementation, and nothing on the game screen read that
+                // flag — so the tutorial never appeared.
+                context.go(AppRoutes.gameWithTutorial);
+              }
+            },
+          ),
+          LBBlock(
+            kind: LBBlockKind.muted,
+            height: 46,
+            alignment: Alignment.center,
+            onTap: () => Navigator.of(sheetContext).pop(),
+            child: Text(
+              l10n.commonCancel.toUpperCase(),
+              style: LBText.button(sheetContext.lb, color: sheetContext.lb.inkMuted, size: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The controls reference: the gesture, and what it does. Documentation,
+  /// not a menu — two columns, no chevrons.
+  void _showControlReferenceSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    final desktop = kIsWeb ||
+        (!defaultTargetPlatform.toString().contains('android') &&
+            !defaultTargetPlatform.toString().contains('ios'));
+    final rows = <Widget>[
+      if (desktop) ...[
+        // Desktop/Web controls
+        _refLabel(l10n.settingsDesktopControls),
+        _refRow(l10n.settingsArrowKeys, l10n.settingsChangeDirection),
+        _refRow(l10n.settingsWasdKeys, l10n.settingsChangeDirection),
+        _refRow(l10n.settingsSpacebar, l10n.settingsPauseResume),
+        _refRow(l10n.settingsMouseClick, l10n.settingsPauseResume),
+        if (!kIsWeb) ...[
+          const SizedBox(height: 12),
+          _refLabel(l10n.settingsTouchControlsIfAvailable),
+          _refRow(l10n.settingsSwipeGestures, l10n.settingsChangeDirection),
+          _refRow(l10n.settingsTapScreen, l10n.settingsPauseResume),
+        ],
+      ] else ...[
+        // Mobile controls
+        _refLabel(l10n.settingsTouchControls),
+        _refRow(l10n.settingsSwipeUp, l10n.settingsMoveSnakeUp),
+        _refRow(l10n.settingsSwipeDown, l10n.settingsMoveSnakeDown),
+        _refRow(l10n.settingsSwipeLeft, l10n.settingsMoveSnakeLeft),
+        _refRow(l10n.settingsSwipeRight, l10n.settingsMoveSnakeRight),
+        _refRow(l10n.settingsOnScreenControls, l10n.settingsOnScreenControlsDesc),
+        _refRow(l10n.settingsTapScreen, l10n.settingsPauseResume),
+      ],
+    ];
+    showLBSheet<void>(
+      context: context,
+      title: l10n.lbCtrlReference,
+      builder: (_) => SingleChildScrollView(
+        child: LBBlock(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+        ),
+      ),
+    );
+  }
+
+  Widget _refLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text.toUpperCase(), style: LBText.label(context.lb)),
+      );
+
+  Widget _refRow(String control, String action) {
+    final p = context.lb;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(control, style: LBText.body(p, color: p.ink, size: 12.5).copyWith(fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 5,
+            child: Text(action, textAlign: TextAlign.end, style: LBText.body(p, size: 11.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== LEGAL ====================
+
+  void _openLegalDoc(
+    String title,
+    String assetPath,
+    IconData icon,
+    String fallbackUrl,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LegalDocumentScreen(
+          title: title,
+          assetPath: assetPath,
+          icon: icon,
+          fallbackUrl: fallbackUrl,
+        ),
+      ),
+    );
+  }
+
+  void _openPrivacyPolicy() {
+    final l10n = AppLocalizations.of(context)!;
+    _openLegalDoc(
+      l10n.settingsPrivacyPolicyTitle,
+      'assets/legal/PRIVACY.md',
+      Icons.privacy_tip_outlined,
+      'https://legal.pranta.dev/privacy?projectName=snake_classic',
+    );
+  }
+
+  Widget _legal(AppLocalizations l10n) {
+    return SettingsSection(
+      label: l10n.settingsSectionLegal,
+      children: [
+        SettingsValueRow(
+          title: l10n.settingsPrivacyPolicyButton,
+          leading: const LBPixelIcon(LBIcon.shield, cell: 3.4),
+          onTap: _openPrivacyPolicy,
+        ),
+        SettingsValueRow(
+          title: l10n.settingsTermsButton,
+          leading: const LBPixelIcon(LBIcon.copy, cell: 3.4),
+          onTap: () => _openLegalDoc(
+            l10n.settingsTermsTitle,
+            'assets/legal/TERMS.md',
+            Icons.description_outlined,
+            'https://legal.pranta.dev/terms?projectName=snake_classic',
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==================== PREMIUM ====================
+
+  Widget _premium(AppLocalizations l10n, PremiumState premiumState) {
+    final p = context.lb;
+    final pro = premiumState.hasPremium;
+    return SettingsSection(
+      label: l10n.settingsSectionPremium,
+      children: [
+        LBBlock(
+          kind: pro ? LBBlockKind.gold : LBBlockKind.outline,
+          selected: pro,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              LBPixelIcon(pro ? LBIcon.crown : LBIcon.lock, cell: 4, color: pro ? LB.gold : p.lime),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (pro ? l10n.settingsProTitle : l10n.settingsPremiumStatus).toUpperCase(),
+                      style: LBText.button(p, color: pro ? LB.gold : p.head, size: 13),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      pro ? l10n.settingsActiveSubscription : l10n.settingsUnlockPremium,
+                      style: LBText.body(p, size: 11),
+                    ),
+                    if (pro && premiumState.subscriptionExpiry != null)
+                      Text(
+                        l10n.settingsRenews(context.formatMonthDay(premiumState.subscriptionExpiry!)),
+                        style: LBText.body(p, color: p.inkDim, size: 11),
+                      ),
+                  ],
+                ),
+              ),
+              if (pro) LBChip(label: l10n.settingsProBadge, kind: LBChipKind.gold),
+            ],
+          ),
+        ),
+        // The Pro CTA routes to the dedicated subscription screen
+        // (PremiumBenefitsScreen) — the same destination the pause overlay
+        // uses.
+        if (!pro)
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: settingsRowHeight(context)),
+            child: LBBlock(
+              kind: LBBlockKind.goldFill,
+              alignment: Alignment.center,
+              onTap: () => context.push(AppRoutes.premiumBenefits),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LBPixelIcon(LBIcon.crown, cell: 3, color: LBBlock.foregroundOf(LBBlockKind.goldFill, p)),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      l10n.settingsUpgradeToPro.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: LBText.button(p, color: LBBlock.foregroundOf(LBBlockKind.goldFill, p), size: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        SettingsValueRow(
+          title: l10n.settingsRestorePurchases,
+          leading: const LBPixelIcon(LBIcon.next, cell: 3.4),
+          onTap: _restorePurchases,
+        ),
+        SettingsValueRow(
+          title: l10n.settingsPurchaseHistory,
+          leading: const LBPixelIcon(LBIcon.hourglass, cell: 3.4),
+          onTap: _showPurchaseHistory,
+        ),
+        if (pro || premiumState.ownedSkins.isNotEmpty)
+          SettingsValueRow(
+            title: l10n.settingsSnakeCosmetics,
+            leading: const LBPixelIcon(LBIcon.star, cell: 3.4),
+            value: premiumState.ownedSkins.isNotEmpty ? context.formatInt(premiumState.ownedSkins.length) : null,
+            onTap: () => context.push(AppRoutes.cosmetics),
+          ),
+        if (premiumState.hasBattlePass)
+          SettingsValueRow(
+            title: l10n.settingsBattlePass,
+            leading: const LBPixelIcon(LBIcon.trophy, cell: 3.4),
+            value: l10n.settingsTier(premiumState.battlePassTier),
+            onTap: () => context.push(AppRoutes.battlePass),
+          ),
+      ],
+    );
+  }
+
+  void _restorePurchases() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
+
+      final purchaseService = PurchaseService();
+      await purchaseService.restorePurchases();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsRestored,
+            tone: ArcadeSnackTone.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsRestoreFailed,
+            tone: ArcadeSnackTone.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showPurchaseHistory() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final premiumCubit = context.read<PremiumCubit>();
+      final history = await premiumCubit.getPurchaseHistory();
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: .65),
+        builder: (dialogContext) {
+          final p = dialogContext.lb;
+          return _LBDialogFrame(
+            title: l10n.settingsPurchaseHistory,
+            actions: [
+              LBBlock(
+                kind: LBBlockKind.muted,
+                height: 46,
+                alignment: Alignment.center,
+                onTap: () => Navigator.of(dialogContext).pop(),
+                child: Text(l10n.settingsClose.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+              ),
+            ],
+            child: SizedBox(
+              height: 300,
+              child: history.isEmpty
+                  ? Center(child: Text(l10n.settingsNoPurchases, style: LBText.body(p, size: 12)))
+                  : ListView.builder(
+                      itemCount: history.length,
+                      itemBuilder: (context, index) {
+                        final purchase = history[index];
+                        // Purchase is already a Map<String, dynamic>
+                        try {
+                          final productId = purchase['productId']?.toString() ?? l10n.settingsUnknown;
+                          final transactionDate = purchase['transactionDate']?.toString() ?? '';
+                          final status = purchase['status']?.toString() ?? l10n.settingsUnknown;
+
+                          return LBBlock(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: LBPixelIcon(_getPurchaseIcon(_getTypeFromProductId(productId)), cell: 3),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _formatProductName(productId),
+                                        style: LBText.button(p, size: 12).copyWith(letterSpacing: .6),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(l10n.settingsStatusLine(status), style: LBText.body(p, size: 11)),
+                                      Text(
+                                        l10n.settingsDateLine(_formatDate(transactionDate)),
+                                        style: LBText.body(p, size: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        } catch (e) {
+                          return LBBlock(
+                            kind: LBBlockKind.muted,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l10n.settingsPurchaseNumber(index + 1), style: LBText.button(p, size: 12)),
+                                Text(l10n.settingsDataParseError, style: LBText.body(p, size: 11)),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                    ),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: l10n.settingsHistoryLoadFailed,
+            tone: ArcadeSnackTone.error,
+          ),
+        );
+      }
+    }
+  }
+
+  LBIcon _getPurchaseIcon(String type) {
+    switch (type) {
+      case 'subscription':
+        return LBIcon.crown;
+      case 'theme':
+        return LBIcon.grid;
+      case 'skin':
+        return LBIcon.user;
+      case 'trail':
+        return LBIcon.flame;
+      case 'bundle':
+        return LBIcon.gift;
+      case 'battlepass':
+        return LBIcon.trophy;
+      case 'tournament':
+        return LBIcon.swords;
+      default:
+        return LBIcon.coin;
+    }
+  }
+
+  String _formatDate(String timestamp) {
+    try {
+      final date = DateTime.parse(timestamp);
+      return context.formatDate(date);
+    } catch (e) {
+      return AppLocalizations.of(context)!.settingsUnknownDate;
+    }
+  }
+
+  String _getTypeFromProductId(String productId) {
+    // Strip store prefix before checking
+    final bare = ProductIds.stripPrefix(productId);
+    if (bare.contains('pro_monthly') || bare.contains('pro_yearly')) {
+      return 'subscription';
+    } else if (bare.contains('theme')) {
+      return 'theme';
+    } else if (bare.contains('skin')) {
+      return 'skin';
+    } else if (bare.contains('trail')) {
+      return 'trail';
+    } else if (bare.contains('bundle') || bare.contains('pack') || bare.contains('collection')) {
+      return 'bundle';
+    } else if (bare.contains('battle_pass')) {
+      return 'battlepass';
+    } else if (bare.contains('tournament')) {
+      return 'tournament';
+    }
+    return 'unknown';
+  }
+
+  String _formatProductName(String productId) {
+    // Strip store prefix before formatting
+    final bare = ProductIds.stripPrefix(productId);
+    return bare
+        .replaceAll('skin_', '')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .join(' ');
+  }
+
+  // ==================== USERNAME ====================
+
+  /// Maps a stable [UsernameError] code from UsernameService to the
+  /// localized message shown in the username dialog.
+  String _usernameErrorText(UsernameError code, AppLocalizations l10n) {
+    switch (code) {
+      case UsernameError.empty:
+        return l10n.unEmpty;
+      case UsernameError.tooShort:
+        return l10n.unMinLength(UsernameService.minLength);
+      case UsernameError.tooLong:
+        return l10n.unMaxLength(UsernameService.maxLength);
+      case UsernameError.invalidFormat:
+        return l10n.unPattern;
+      case UsernameError.reserved:
+        return l10n.unReserved;
+      case UsernameError.taken:
+        return l10n.unTaken;
+      case UsernameError.updateFailed:
+        return l10n.unUpdateFailed;
+    }
+  }
+
+  void _showUsernameDialog(AuthState authState) {
+    final l10n = AppLocalizations.of(context)!;
+    // Pre-fill with the current username so the user can see what it is
+    // before editing, rather than retyping it for a small tweak.
+    final currentUsername = authState.user?.username ?? '';
+    final TextEditingController usernameController = TextEditingController(text: currentUsername);
+    final UsernameService usernameService = UsernameService();
+    String? errorMessage;
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: .65),
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setState) {
+            final p = dialogContext.lb;
+            Future<void> submit() async {
+              final newUsername = usernameController.text.trim();
+              if (newUsername.isEmpty) return;
+
+              setState(() {
+                isLoading = true;
+                errorMessage = null;
+              });
+
+              bool success = false;
+              final authCubit = context.read<AuthCubit>();
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+
+              if (authState.isGuestUser) {
+                success = await authCubit.updateGuestUsername(newUsername);
+                if (!success) {
+                  final validation = usernameService.validateUsername(newUsername);
+                  setState(() {
+                    errorMessage = validation.errorCode != null
+                        ? _usernameErrorText(validation.errorCode!, l10n)
+                        : l10n.settingsUsernameUpdateFailed;
+                  });
+                }
+              } else {
+                // For authenticated users
+                success = await authCubit.updateAuthenticatedUsername(newUsername);
+                if (!success) {
+                  final validation = await UsernameService().validateUsernameComplete(newUsername);
+                  setState(() {
+                    errorMessage = validation.errorCode != null
+                        ? _usernameErrorText(validation.errorCode!, l10n)
+                        : l10n.settingsUsernameUpdateFailed;
+                  });
+                }
+              }
+
+              if (success && dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+                scaffoldMessenger.showSnackBar(
+                  arcadeSnackBarFor(
+                    snackTheme,
+                    message: l10n.settingsUsernameUpdated(newUsername),
+                    tone: ArcadeSnackTone.success,
+                  ),
+                );
+              }
+
+              setState(() {
+                isLoading = false;
+              });
+            }
+
+            OutlineInputBorder border(Color c) => OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(LB.blockRadius),
+                  borderSide: BorderSide(color: c),
+                );
+
+            return _LBDialogFrame(
+              title: l10n.settingsChangeUsernameTitle,
+              actions: [
+                LBBlock(
+                  kind: isLoading ? LBBlockKind.muted : LBBlockKind.fill,
+                  height: 50,
+                  alignment: Alignment.center,
+                  onTap: isLoading ? null : submit,
+                  child: isLoading
+                      ? SizedBox(
+                          width: 42,
+                          child: LBCellsBar(count: 3, value: 1, cell: 14, semanticsLabel: l10n.settingsUpdate),
+                        )
+                      : Text(
+                          l10n.settingsUpdate.toUpperCase(),
+                          style: LBText.button(p, color: p.onLime, size: 13),
+                        ),
+                ),
+                LBBlock(
+                  kind: LBBlockKind.muted,
+                  height: 46,
+                  alignment: Alignment.center,
+                  onTap: isLoading ? null : () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.commonCancel.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+                ),
+              ],
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (currentUsername.isNotEmpty) ...[
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: LBChip(
+                          label: '${l10n.settingsCurrentLabel} $currentUsername',
+                          icon: LBIcon.user,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Text(l10n.settingsUsernameDialogBody, style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12)),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: usernameController,
+                      cursorColor: p.lime,
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsUsername,
+                        labelStyle: LBText.body(p, size: 12),
+                        hintText: l10n.settingsEnterNewUsername,
+                        hintStyle: LBText.body(p, color: p.inkDim, size: 12),
+                        filled: true,
+                        fillColor: p.blockFill,
+                        border: border(p.blockStroke),
+                        enabledBorder: border(p.blockStroke),
+                        focusedBorder: border(p.lime),
+                        errorBorder: border(LB.bonkStroke),
+                        focusedErrorBorder: border(LB.bonk),
+                        errorText: errorMessage,
+                        errorStyle: LBText.body(p, color: LB.bonk, size: 11),
+                        counterStyle: LBText.body(p, color: p.inkDim, size: 10),
+                      ),
+                      style: LBText.body(p, color: p.ink, size: 14).copyWith(fontWeight: FontWeight.w700),
+                      maxLength: 20,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(l10n.settingsUsernameRules, style: LBText.body(p, color: p.inkDim, size: 11)),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ==================== DEBUG: TEST NOTIFICATIONS ====================
+
+  /// Diagnostic surface for the notification pipeline. Each button isolates
+  /// one layer:
   ///   • Send Local Test   → permission + channel + display path
   ///   • Send Push via Backend → FCM token + backend send + delivery
   ///   • Copy FCM Token    → manual Firebase Console testing
   /// If "local" works but "backend" doesn't, the break is in token
   /// registration or backend send. If neither works, the OS-level
-  /// permission is denied.
-  Widget _buildNotificationTestPanel(GameTheme theme) {
+  /// permission is denied. Debug builds only, so its copy is not localized.
+  Widget _buildNotificationTestPanel() {
     final fcmToken = _notificationService.fcmToken;
     final hasFcmToken = fcmToken != null && fcmToken.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GradientButton(
-          onPressed: _sendTestLocalNotification,
-          text: 'SEND LOCAL TEST',
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.notifications_active,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
+        SettingsValueRow(
+          title: 'SEND LOCAL TEST',
+          subtitle: 'Fires immediately. If you don\'t see it, OS permission is denied '
+              'or the channel is blocked in system settings.',
+          onTap: _sendTestLocalNotification,
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Fires immediately. If you don\'t see it, OS permission is denied '
-          'or the channel is blocked in system settings.',
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GradientButton(
-          onPressed: hasFcmToken ? _sendTestPushViaBackend : null,
-          text: hasFcmToken ? 'SEND PUSH VIA BACKEND' : 'NO FCM TOKEN',
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.cloud_upload,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          hasFcmToken
+        SettingsValueRow(
+          title: hasFcmToken ? 'SEND PUSH VIA BACKEND' : 'NO FCM TOKEN',
+          subtitle: hasFcmToken
               ? 'Backend sends a push to your device via FCM. Should arrive '
-                    'within ~5 seconds if token + backend + delivery all work.'
+                  'within ~5 seconds if token + backend + delivery all work.'
               : 'FCM token not yet registered. Sign in or restart the app, '
-                    'then return to retry.',
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
+                  'then return to retry.',
+          onTap: hasFcmToken ? _sendTestPushViaBackend : null,
         ),
-        if (kDebugMode) ...[
-          const SizedBox(height: 16),
-          GradientButton(
-            onPressed: hasFcmToken ? _copyFcmTokenToClipboard : null,
-            text: 'COPY FCM TOKEN',
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.content_copy,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Debug only. Paste into Firebase Console → Cloud Messaging → '
-            'Send test message to bypass the backend entirely.',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.6),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          GradientButton(
-            onPressed: _scheduleTestAtTime,
-            text: 'SCHEDULE TEST AT TIME',
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.schedule,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Pick date + time. Backend schedules a one-off Hangfire job to '
-            'fire an FCM push at that instant — fires even if the app is '
-            'killed and even if the device clock drifts. Cancel via the '
-            'next button.',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.6),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 12),
-          GradientButton(
-            onPressed: _cancelScheduledTest,
-            text: 'CANCEL SCHEDULED TEST',
-            primaryColor: theme.accentColor.withValues(alpha: 0.5),
-            secondaryColor: theme.foodColor.withValues(alpha: 0.5),
-            icon: Icons.cancel_outlined,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
-          ),
-          const SizedBox(height: 16),
-          GradientButton(
-            onPressed: _previewDailyReminder,
-            text: 'PREVIEW DAILY REMINDER',
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.alarm_on,
-            width: double.infinity,
-            height: 44,
-            outlined: true,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Backend fires the exact daily reminder variant this user '
-            'would receive at the next 20:00-local tick — streak / '
-            'challenge / high-score branches all evaluated server-side '
-            'from your real DB state. Bypasses the timing gate for '
-            'instant verification.',
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.6),
-              fontSize: 12,
-            ),
-          ),
-        ],
+        SettingsValueRow(
+          title: 'COPY FCM TOKEN',
+          subtitle: 'Debug only. Paste into Firebase Console → Cloud Messaging → '
+              'Send test message to bypass the backend entirely.',
+          onTap: hasFcmToken ? _copyFcmTokenToClipboard : null,
+        ),
+        SettingsValueRow(
+          title: 'SCHEDULE TEST AT TIME',
+          subtitle: 'Pick date + time. Backend schedules a one-off Hangfire job to '
+              'fire an FCM push at that instant — fires even if the app is '
+              'killed and even if the device clock drifts. Cancel via the '
+              'next button.',
+          onTap: _scheduleTestAtTime,
+        ),
+        SettingsValueRow(
+          title: 'CANCEL SCHEDULED TEST',
+          onTap: _cancelScheduledTest,
+        ),
+        SettingsValueRow(
+          title: 'PREVIEW DAILY REMINDER',
+          subtitle: 'Backend fires the exact daily reminder variant this user '
+              'would receive at the next 20:00-local tick — streak / '
+              'challenge / high-score branches all evaluated server-side '
+              'from your real DB state. Bypasses the timing gate for '
+              'instant verification.',
+          onTap: _previewDailyReminder,
+        ),
       ],
     );
   }
@@ -2513,7 +1495,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       arcadeSnackBar(
         context,
         message: 'Local test fired — check your notification tray.',
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -2541,14 +1523,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       arcadeSnackBar(
         context,
         message: 'FCM token copied. Paste into Firebase Console.',
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
   /// Two-step picker: date → time. Defaults bias toward "now + 2 min" so
   /// the common dev workflow (tap-tap-OK to verify scheduling works) is
-  /// fast. Schedules via OS-level zonedSchedule on confirm.
+  /// fast.
   Future<void> _scheduleTestAtTime() async {
     final now = DateTime.now();
     final preset = now.add(const Duration(minutes: 2));
@@ -2580,7 +1562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         arcadeSnackBar(
           context,
           message: 'Pick a future date + time',
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
@@ -2615,8 +1597,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _previewDailyReminder() async {
     // Backend reads streak / challenge / high-score state from the DB
-    // directly — no need to pass anything from here. Variant matches
-    // exactly what the wild user would see at the next 20:00-local tick.
+    // directly. Variant matches exactly what the wild user would see at the
+    // next 20:00-local tick.
     final variant = await _notificationService.previewDailyReminder();
 
     if (!mounted) return;
@@ -2637,1123 +1619,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final mm = dt.minute.toString().padLeft(2, '0');
     return '${dt.month}/${dt.day} $hh:$mm';
   }
-
-  /// Re-opens Google's UMP privacy options form so users can change their
-  /// personalized-ad consent. Only shown to free users with ads enabled.
-  Widget _buildPrivacyChoicesButton(GameTheme theme) {
-    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
-    // Only show when ads are enabled AND a consent form is actually available
-    // to present. Without the form check this button opened nothing (and logged
-    // a "no form(s) configured" UMP error) when no consent form exists for the
-    // app ID or consent isn't required in the user's region.
-    if (ads == null || !ads.adsEnabled || !ads.privacyOptionsRequired) {
-      return const SizedBox.shrink();
-    }
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 16),
-        GradientButton(
-          onPressed: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            final snackTheme = context.read<ThemeCubit>().state.currentTheme;
-            final shown = await ads.showPrivacyOptions();
-            if (!shown) {
-              messenger.showSnackBar(
-                arcadeSnackBarFor(
-                  snackTheme,
-                  message: l10n.settingsAdPrivacyUnavailable,
-                ),
-              );
-            }
-          },
-          text: l10n.settingsAdPrivacy,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.privacy_tip,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.settingsAdPrivacySubtitle,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreditsButton(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GradientButton(
-          onPressed: () => showCreditsDialog(context, theme),
-          text: l10n.settingsAboutCredits,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.info_outline,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.settingsAboutCreditsSubtitle,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _openLegalDoc(
-    String title,
-    String assetPath,
-    IconData icon,
-    String fallbackUrl,
-  ) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LegalDocumentScreen(
-          title: title,
-          assetPath: assetPath,
-          icon: icon,
-          fallbackUrl: fallbackUrl,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrivacyPolicyButton(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return GradientButton(
-      onPressed: () => _openLegalDoc(
-        l10n.settingsPrivacyPolicyTitle,
-        'assets/legal/PRIVACY.md',
-        Icons.privacy_tip_outlined,
-        'https://legal.pranta.dev/privacy?projectName=snake_classic',
-      ),
-      text: l10n.settingsPrivacyPolicyButton,
-      primaryColor: theme.accentColor,
-      secondaryColor: theme.foodColor,
-      icon: Icons.privacy_tip_outlined,
-      width: double.infinity,
-      height: 44,
-      outlined: true,
-    );
-  }
-
-  Widget _buildTermsButton(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return GradientButton(
-      onPressed: () => _openLegalDoc(
-        l10n.settingsTermsTitle,
-        'assets/legal/TERMS.md',
-        Icons.description_outlined,
-        'https://legal.pranta.dev/terms?projectName=snake_classic',
-      ),
-      text: l10n.settingsTermsButton,
-      primaryColor: theme.accentColor,
-      secondaryColor: theme.foodColor,
-      icon: Icons.description_outlined,
-      width: double.infinity,
-      height: 44,
-      outlined: true,
-    );
-  }
-
-  /// Explicit "Rate us" entry — opens the Play Store listing directly (not the
-  /// quota-limited in-app review sheet, which the platform may silently skip on
-  /// a deliberate tap). The in-app sheet still fires automatically at positive
-  /// moments via ReviewService.maybeRequestReview.
-  Widget _buildRateUsButton(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 16),
-        GradientButton(
-          onPressed: () => getIt<ReviewService>().openStoreListing(),
-          text: l10n.settingsRateApp,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.star_rounded,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          defaultTargetPlatform == TargetPlatform.iOS
-              ? l10n.settingsRateAppSubtitleIos
-              : l10n.settingsRateAppSubtitle,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// An outlined row that goes somewhere, with the sentence that says why.
-  ///
-  /// Same shape as the tutorial replay button below it, which is the pattern
-  /// this screen already uses for "this opens something else".
-  /// A row that opens somewhere else.
-  ///
-  /// Was a full-width outlined button with a caption underneath, which gave a
-  /// section of five links five identical slabs and no scanline. An icon chip
-  /// plus a chevron says "this navigates" without spending a whole button on
-  /// saying it.
-  Widget _buildLinkButton(
-    GameTheme theme, {
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required VoidCallback onPressed,
-  }) {
-    return ArcadeLinkTile(
-      label: label,
-      description: subtitle,
-      icon: icon,
-      onTap: onPressed,
-      theme: theme,
-    );
-  }
-
-  Widget _buildReplayTutorialButton(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GradientButton(
-          onPressed: () => _showReplayTutorialDialog(theme),
-          text: l10n.settingsReplayTutorial,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: Icons.school,
-          width: double.infinity,
-          height: 44,
-          outlined: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.settingsReplayTutorialSubtitle,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.6),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showReplayTutorialDialog(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.school, color: theme.accentColor),
-            const SizedBox(width: 12),
-            Text(
-              l10n.settingsReplayDialogTitle,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          l10n.settingsReplayDialogBody,
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-            },
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final walkthroughService = WalkthroughService();
-              await walkthroughService.initialize();
-              await walkthroughService.reset(
-                WalkthroughService.homeWalkthroughId,
-              );
-              if (mounted) {
-                context.go(AppRoutes.home);
-              }
-            },
-            child: Text(
-              l10n.settingsHomeTour,
-              style: TextStyle(color: theme.foodColor),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final walkthroughService = WalkthroughService();
-              await walkthroughService.initialize();
-              await walkthroughService.reset(WalkthroughService.gameTutorialId);
-              if (mounted) {
-                // The request travels with the navigation. Resetting the
-                // stored flag and going to /game used to be the whole
-                // implementation, and nothing on the game screen read that
-                // flag — so the player who asked to be taught got an ordinary
-                // run and the tutorial never appeared.
-                context.go(AppRoutes.gameWithTutorial);
-              }
-            },
-            child: Text(
-              l10n.settingsGameTutorial,
-              style: TextStyle(color: theme.accentColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showUsernameDialog(AuthState authState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    // Pre-fill with the current username so the user can see what it is
-    // before editing. Previously the field opened empty, which made it
-    // unclear what the existing value was and forced users to retype
-    // their full username just to make a small tweak.
-    final currentUsername = authState.user?.username ?? '';
-    final TextEditingController usernameController = TextEditingController(
-      text: currentUsername,
-    );
-    final UsernameService usernameService = UsernameService();
-    String? errorMessage;
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, setState) {
-            return AlertDialog(
-              backgroundColor: theme.backgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: theme.accentColor.withValues(alpha: 0.3),
-                ),
-              ),
-              title: Text(
-                l10n.settingsChangeUsernameTitle,
-                style: TextStyle(
-                  color: theme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (currentUsername.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.accentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.person,
-                              size: 14,
-                              color: theme.accentColor.withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${l10n.settingsCurrentLabel} ',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 12,
-                              ),
-                            ),
-                            Flexible(
-                              child: Text(
-                                currentUsername,
-                                style: TextStyle(
-                                  color: theme.accentColor,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    Text(
-                      l10n.settingsUsernameDialogBody,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextField(
-                      controller: usernameController,
-                      decoration: InputDecoration(
-                        labelText: l10n.settingsUsername,
-                        labelStyle: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                        ),
-                        hintText: l10n.settingsEnterNewUsername,
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
-                        filled: true,
-                        fillColor: theme.backgroundColor.withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.accentColor),
-                        ),
-                        errorText: errorMessage,
-                        errorStyle: const TextStyle(color: Colors.red),
-                      ),
-                      style: TextStyle(color: Colors.white),
-                      maxLength: 20,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      l10n.settingsUsernameRules,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
-                  child: Text(
-                    l10n.commonCancel,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          final newUsername = usernameController.text.trim();
-                          if (newUsername.isEmpty) return;
-
-                          setState(() {
-                            isLoading = true;
-                            errorMessage = null;
-                          });
-
-                          bool success = false;
-                          final authCubit = context.read<AuthCubit>();
-                          final scaffoldMessenger = ScaffoldMessenger.of(
-                            context,
-                          );
-                          final snackTheme = context
-                              .read<ThemeCubit>()
-                              .state
-                              .currentTheme;
-
-                          if (authState.isGuestUser) {
-                            success = await authCubit.updateGuestUsername(
-                              newUsername,
-                            );
-                            if (!success) {
-                              final validation = usernameService
-                                  .validateUsername(newUsername);
-                              setState(() {
-                                errorMessage = validation.errorCode != null
-                                    ? _usernameErrorText(
-                                        validation.errorCode!,
-                                        l10n,
-                                      )
-                                    : l10n.settingsUsernameUpdateFailed;
-                              });
-                            }
-                          } else {
-                            // For authenticated users
-                            success = await authCubit
-                                .updateAuthenticatedUsername(newUsername);
-                            if (!success) {
-                              final validation = await UsernameService()
-                                  .validateUsernameComplete(newUsername);
-                              setState(() {
-                                errorMessage = validation.errorCode != null
-                                    ? _usernameErrorText(
-                                        validation.errorCode!,
-                                        l10n,
-                                      )
-                                    : l10n.settingsUsernameUpdateFailed;
-                              });
-                            }
-                          }
-
-                          if (success && dialogContext.mounted) {
-                            Navigator.of(dialogContext).pop();
-                            scaffoldMessenger.showSnackBar(
-                              arcadeSnackBarFor(
-                                snackTheme,
-                                message: l10n.settingsUsernameUpdated(
-                                  newUsername,
-                                ),
-                                tone: ArcadeSnackTone.success,
-                              ),
-                            );
-                          }
-
-                          setState(() {
-                            isLoading = false;
-                          });
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.accentColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: isLoading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          l10n.settingsUpdate,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 }
 
-class _BoardSizePainter extends CustomPainter {
-  final GameTheme theme;
-  final BoardSize boardSize;
+/// A centred Living Board dialog frame with a free-form body and a stack of
+/// actions — for the dialogs [showLBDialog] cannot express (a text field
+/// with live validation, a scrolling list).
+class _LBDialogFrame extends StatelessWidget {
+  const _LBDialogFrame({required this.title, required this.child, required this.actions});
 
-  _BoardSizePainter(this.theme, this.boardSize);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
-    // Draw a grid representation
-    final cellSize = size.width / boardSize.width.toDouble();
-
-    // Draw vertical lines
-    for (int i = 0; i <= boardSize.width; i++) {
-      if (i % 5 == 0) {
-        // Only draw every 5th line to avoid clutter
-        canvas.drawLine(
-          Offset(i * cellSize, 0),
-          Offset(i * cellSize, size.height),
-          paint,
-        );
-      }
-    }
-
-    // Draw horizontal lines
-    for (int i = 0; i <= boardSize.height; i++) {
-      if (i % 5 == 0) {
-        // Only draw every 5th line to avoid clutter
-        canvas.drawLine(
-          Offset(0, i * cellSize),
-          Offset(size.width, i * cellSize),
-          paint,
-        );
-      }
-    }
-
-    // Draw a small snake representation
-    final snakePaint = Paint()..color = theme.snakeColor;
-    final center = Offset(size.width / 2, size.height / 2);
-    canvas.drawCircle(center, 2, snakePaint);
-  }
+  final String title;
+  final Widget child;
+  final List<Widget> actions;
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Premium UI Components
-extension _SettingsPremium on _SettingsScreenState {
-  Widget _buildPremiumStatusCard(PremiumState premiumState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: premiumState.hasPremium
-            ? const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-              )
-            : LinearGradient(
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.1),
-                  theme.backgroundColor.withValues(alpha: 0.05),
-                ],
-              ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: premiumState.hasPremium
-              ? Colors.amber
-              : theme.accentColor.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            premiumState.hasPremium ? Icons.diamond : Icons.lock,
-            color: premiumState.hasPremium ? Colors.black : theme.accentColor,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  premiumState.hasPremium
-                      ? l10n.settingsProTitle
-                      : l10n.settingsPremiumStatus,
-                  style: TextStyle(
-                    color: premiumState.hasPremium
-                        ? Colors.black
-                        : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  premiumState.hasPremium
-                      ? l10n.settingsActiveSubscription
-                      : l10n.settingsUnlockPremium,
-                  style: TextStyle(
-                    color: premiumState.hasPremium
-                        ? Colors.black.withValues(alpha: 0.8)
-                        : Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
-                ),
-                if (premiumState.hasPremium &&
-                    premiumState.subscriptionExpiry != null)
-                  Text(
-                    l10n.settingsRenews(
-                      context.formatMonthDay(premiumState.subscriptionExpiry!),
-                    ),
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (premiumState.hasPremium)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                l10n.settingsProBadge,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpgradeButton(PremiumState premiumState, GameTheme theme) {
-    // Full-width so the CTA actually reads as the primary action of the
-    // Premium section. Routes to the dedicated subscription screen
-    // (PremiumBenefitsScreen → /premium-benefits) — the same destination
-    // the pause overlay's Premium button uses. The previous in-screen
-    // dialog locked the user to monthly with no upsell or comparison.
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: SizedBox(
-        width: double.infinity,
-        child: GradientButton(
-          onPressed: () => context.push(AppRoutes.premiumBenefits),
-          text: AppLocalizations.of(context)!.settingsUpgradeToPro,
-          primaryColor: const Color(0xFFFFD700),
-          secondaryColor: const Color(0xFFFFA500),
-          icon: Icons.star,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRestorePurchasesButton(
-    PremiumState premiumState,
-    GameTheme theme,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: TextButton(
-        onPressed: () => _restorePurchases(),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.restore, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(
-              AppLocalizations.of(context)!.settingsRestorePurchases,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPurchaseHistoryButton(
-    PremiumState premiumState,
-    GameTheme theme,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: TextButton(
-        onPressed: () => _showPurchaseHistory(),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(
-              AppLocalizations.of(context)!.settingsPurchaseHistory,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCosmeticsButton(PremiumState premiumState, GameTheme theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: TextButton(
-        onPressed: () => _openCosmeticsSelector(),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.palette, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(
-              AppLocalizations.of(context)!.settingsSnakeCosmetics,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (premiumState.ownedSkins.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.accentColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${premiumState.ownedSkins.length}',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBattlePassButton(PremiumState premiumState, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.purple.withValues(alpha: 0.3),
-              Colors.blue.withValues(alpha: 0.3),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.purple.withValues(alpha: 0.5)),
-        ),
-        child: TextButton(
-          onPressed: () => _openBattlePass(),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            backgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: LBBlock(
+          kind: LBBlockKind.sheet,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.military_tech, color: Colors.purple),
-              const SizedBox(width: 8),
-              Text(
-                l10n.settingsBattlePass,
-                style: const TextStyle(
-                  color: Colors.purple,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.purple,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  l10n.settingsTier(premiumState.battlePassTier),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              Text(title.toUpperCase(), style: LBText.button(p, color: p.head, size: 14)),
+              const SizedBox(height: 12),
+              Flexible(child: child),
+              const SizedBox(height: 16),
+              ...actions,
             ],
           ),
         ),
       ),
     );
-  }
-
-  // Removed _showPremiumDialog + _purchasePro — the Upgrade button now
-  // routes to PremiumBenefitsScreen which carries the full subscription
-  // experience (monthly/yearly toggle, feature grid, benefits walk-through,
-  // proper purchase flow). The old inline dialog was monthly-only with no
-  // upsell.
-
-  void _restorePurchases() async {
-    final l10n = AppLocalizations.of(context)!;
-    try {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
-
-      final purchaseService = PurchaseService();
-      await purchaseService.restorePurchases();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          arcadeSnackBar(
-            context,
-            message: l10n.settingsRestored,
-            tone: ArcadeSnackTone.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          arcadeSnackBar(
-            context,
-            message: l10n.settingsRestoreFailed,
-            tone: ArcadeSnackTone.error,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Maps a stable [UsernameError] code from UsernameService to the
-  /// localized message shown in the username dialog.
-  String _usernameErrorText(UsernameError code, AppLocalizations l10n) {
-    switch (code) {
-      case UsernameError.empty:
-        return l10n.unEmpty;
-      case UsernameError.tooShort:
-        return l10n.unMinLength(UsernameService.minLength);
-      case UsernameError.tooLong:
-        return l10n.unMaxLength(UsernameService.maxLength);
-      case UsernameError.invalidFormat:
-        return l10n.unPattern;
-      case UsernameError.reserved:
-        return l10n.unReserved;
-      case UsernameError.taken:
-        return l10n.unTaken;
-      case UsernameError.updateFailed:
-        return l10n.unUpdateFailed;
-    }
-  }
-
-  void _showPurchaseHistory() async {
-    final l10n = AppLocalizations.of(context)!;
-    try {
-      final premiumCubit = context.read<PremiumCubit>();
-      final history = await premiumCubit.getPurchaseHistory();
-
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.settingsPurchaseHistory),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: history.isEmpty
-                ? Center(
-                    child: Text(
-                      l10n.settingsNoPurchases,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: history.length,
-                    itemBuilder: (context, index) {
-                      final purchase = history[index];
-                      // Purchase is already a Map<String, dynamic>
-                      try {
-                        final productId =
-                            purchase['productId']?.toString() ??
-                            l10n.settingsUnknown;
-                        final transactionDate =
-                            purchase['transactionDate']?.toString() ?? '';
-                        final status =
-                            purchase['status']?.toString() ??
-                            l10n.settingsUnknown;
-
-                        return Card(
-                          child: ListTile(
-                            leading: Icon(
-                              _getPurchaseIcon(
-                                _getTypeFromProductId(productId),
-                              ),
-                            ),
-                            title: Text(_formatProductName(productId)),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l10n.settingsStatusLine(status)),
-                                Text(
-                                  l10n.settingsDateLine(
-                                    _formatDate(transactionDate),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } catch (e) {
-                        return ListTile(
-                          title: Text(l10n.settingsPurchaseNumber(index + 1)),
-                          subtitle: Text(l10n.settingsDataParseError),
-                        );
-                      }
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.settingsClose),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          arcadeSnackBar(
-            context,
-            message: l10n.settingsHistoryLoadFailed,
-            tone: ArcadeSnackTone.error,
-          ),
-        );
-      }
-    }
-  }
-
-  IconData _getPurchaseIcon(String type) {
-    switch (type) {
-      case 'subscription':
-        return Icons.star;
-      case 'theme':
-        return Icons.palette;
-      case 'skin':
-        return Icons.pets;
-      case 'trail':
-        return Icons.auto_awesome;
-      case 'bundle':
-        return Icons.shopping_bag;
-      case 'battlepass':
-        return Icons.emoji_events;
-      case 'tournament':
-        return Icons.sports_esports;
-      default:
-        return Icons.shopping_cart;
-    }
-  }
-
-  String _formatDate(String timestamp) {
-    try {
-      final date = DateTime.parse(timestamp);
-      return context.formatDate(date);
-    } catch (e) {
-      return AppLocalizations.of(context)!.settingsUnknownDate;
-    }
-  }
-
-  String _getTypeFromProductId(String productId) {
-    // Strip store prefix before checking
-    final bare = ProductIds.stripPrefix(productId);
-    if (bare.contains('pro_monthly') || bare.contains('pro_yearly')) {
-      return 'subscription';
-    } else if (bare.contains('theme')) {
-      return 'theme';
-    } else if (bare.contains('skin')) {
-      return 'skin';
-    } else if (bare.contains('trail')) {
-      return 'trail';
-    } else if (bare.contains('bundle') ||
-        bare.contains('pack') ||
-        bare.contains('collection')) {
-      return 'bundle';
-    } else if (bare.contains('battle_pass')) {
-      return 'battlepass';
-    } else if (bare.contains('tournament')) {
-      return 'tournament';
-    }
-    return 'unknown';
-  }
-
-  String _formatProductName(String productId) {
-    // Strip store prefix before formatting
-    final bare = ProductIds.stripPrefix(productId);
-    return bare
-        .replaceAll('skin_', '')
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map(
-          (word) => word.isNotEmpty
-              ? '${word[0].toUpperCase()}${word.substring(1)}'
-              : '',
-        )
-        .join(' ');
-  }
-
-  void _openCosmeticsSelector() {
-    context.push(AppRoutes.cosmetics);
-  }
-
-  void _openBattlePass() {
-    context.push(AppRoutes.battlePass);
   }
 }

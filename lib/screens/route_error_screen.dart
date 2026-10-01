@@ -1,12 +1,9 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/game_button.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Shown when the router is handed a location that matches no route.
 ///
@@ -30,59 +27,60 @@ class RouteErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeCubit>().state.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final g = context.lbGutter;
 
     return Scaffold(
-      body: AppBackground(
-        theme: theme,
+      body: LBGridBackground(
         child: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.wrong_location_rounded,
-                    size: 56,
-                    color: theme.accentColor,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'LOST THE TRAIL',
-                    textAlign: TextAlign.center,
-                    style: GameTypography.headlineMedium(
-                      color: theme.accentColor,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: g, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(child: LBPixelIcon(LBIcon.target, cell: 9 * context.uiScale, color: p.lime)),
+                    const SizedBox(height: 22),
+                    Center(
+                      child: Semantics(
+                        header: true,
+                        child: LBCellText(l10n.lbRouteErrorTitle, cell: 5 * context.uiScale, glow: true),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'That screen does not exist in this version of the game.',
-                    textAlign: TextAlign.center,
-                    style: GameTypography.bodyMedium(
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  if (kDebugMode && error != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     Text(
-                      '$error',
+                      l10n.lbRouteErrorBody,
                       textAlign: TextAlign.center,
-                      style: GameTypography.bodySmall(
-                        color: Colors.white.withValues(alpha: 0.4),
+                      style: LBText.body(p, color: p.ink.withValues(alpha: .75), size: 13),
+                    ),
+                    if (kDebugMode && error != null) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        '$error',
+                        textAlign: TextAlign.center,
+                        style: LBText.body(p, color: p.inkDim, size: 10.5),
+                      ),
+                    ],
+                    SizedBox(height: context.lbCell * 1.5),
+                    LBBlock(
+                      kind: LBBlockKind.fill,
+                      height: context.lbCell * 3,
+                      alignment: Alignment.center,
+                      semanticLabel: l10n.lbRouteErrorHome,
+                      // go(), not push(): the stack that got us here is the
+                      // broken one, so replace it rather than sit on top.
+                      onTap: () => context.go(AppRoutes.home),
+                      child: Text(
+                        l10n.lbRouteErrorHome,
+                        style: LBText.button(p, color: p.onLime, size: 15).copyWith(letterSpacing: 3),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 28),
-                  GameButton(
-                    text: 'BACK TO HOME',
-                    theme: theme,
-                    icon: Icons.home_rounded,
-                    // go(), not push(): the stack that got us here is the
-                    // broken one, so replace it rather than sit on top of it.
-                    onPressed: () => context.go(AppRoutes.home),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

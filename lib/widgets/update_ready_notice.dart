@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// One-line strip above the banner on Home: a flexible update has finished
 /// downloading and only needs a restart. Renders nothing until then, so it
@@ -13,6 +14,8 @@ import 'package:snake_classic/utils/constants.dart';
 class UpdateReadyNotice extends StatelessWidget {
   const UpdateReadyNotice({super.key, required this.theme});
 
+  /// Kept for callers; the strip reads the Living Board palette from the
+  /// context.
   final GameTheme theme;
 
   @override
@@ -22,44 +25,33 @@ class UpdateReadyNotice extends StatelessWidget {
       builder: (context, ready, _) {
         if (!ready) return const SizedBox.shrink();
         final l10n = AppLocalizations.of(context)!;
-        return Container(
-          padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
-          color: theme.backgroundColor.withValues(alpha: 0.55),
-          child: Row(
-            children: [
-              Icon(
-                Icons.system_update_rounded,
-                size: 18,
-                color: theme.accentColor.withValues(alpha: 0.9),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.updateReadyTitle,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+        final p = context.lb;
+        return ColoredBox(
+          color: p.deep.withValues(alpha: .9),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(context.lbGutter, 4, context.lbGutter - 4, 4),
+            child: Row(
+              children: [
+                LBPixelIcon(LBIcon.next, cell: 3, color: p.lime),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    l10n.updateReadyTitle,
+                    style: LBText.button(p, color: p.head, size: 12).copyWith(letterSpacing: .8),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: () => InAppUpdateService().completeUpdate(),
-                style: TextButton.styleFrom(
-                  foregroundColor: theme.accentColor,
+                LBBlock(
+                  height: 40,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  minimumSize: const Size(0, 36),
-                ),
-                child: Text(
-                  l10n.updateReadyRestart.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+                  alignment: Alignment.center,
+                  onTap: () => InAppUpdateService().completeUpdate(),
+                  child: Text(
+                    l10n.updateReadyRestart.toUpperCase(),
+                    style: LBText.button(p, color: p.lime, size: 11.5),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

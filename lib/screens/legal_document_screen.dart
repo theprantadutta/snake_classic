@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Full-screen viewer for a bundled legal document (Privacy Policy or Terms of
 /// Use). Loads the markdown asset and renders it scrollable. Used from the
-/// Settings screen so both documents are reachable in-app.
+/// Settings screen and the first-run legal notice so both documents are
+/// reachable in-app.
 class LegalDocumentScreen extends StatefulWidget {
   const LegalDocumentScreen({
     super.key,
@@ -21,6 +19,9 @@ class LegalDocumentScreen extends StatefulWidget {
 
   final String title;
   final String assetPath;
+
+  /// Kept for callers; the Living Board header carries no icon, so it is
+  /// not drawn.
   final IconData icon;
 
   /// Shown as a hint if the bundled asset can't be loaded.
@@ -30,17 +31,29 @@ class LegalDocumentScreen extends StatefulWidget {
   State<LegalDocumentScreen> createState() => _LegalDocumentScreenState();
 }
 
-class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
+class _LegalDocumentScreenState extends State<LegalDocumentScreen> with SingleTickerProviderStateMixin {
   String _content = '';
 
   // Set when the bundled asset can't be loaded — the localized fallback
   // message is resolved at render time (no context/l10n in the async load).
   bool _loadFailed = false;
 
+  /// Sweeps the loading cells while the asset is read.
+  late final AnimationController _loading = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _loading.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -52,121 +65,49 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> {
         setState(() => _loadFailed = true);
       }
     }
+    _loading.stop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeCubit>().state.currentTheme;
-    final isSmall = MediaQuery.of(context).size.height < 800;
+    final p = context.lb;
     final l10n = AppLocalizations.of(context)!;
+    final g = context.lbGutter;
     final content = _loadFailed
-        ? (widget.fallbackUrl != null
-            ? l10n.lgAvailableAt(widget.fallbackUrl!)
-            : l10n.lgUnavailable)
+        ? (widget.fallbackUrl != null ? l10n.lgAvailableAt(widget.fallbackUrl!) : l10n.lgUnavailable)
         : _content;
 
-    return Scaffold(
-      body: AnimatedAppBackground(
-        theme: theme,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              children: [
-                // Header with back button
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(isSmall ? 16 : 20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.accentColor.withValues(alpha: 0.2),
-                        theme.accentColor.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.3),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: HudCorners(
-                    color: theme.accentColor,
-                    inset: 8,
-                    child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: theme.accentColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(widget.icon,
-                            color: theme.accentColor, size: 28),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontSize: isSmall ? 20 : 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+    return LBScaffold(
+      title: widget.title,
+      // The documents never carried a banner; a legal text is not an ad slot.
+      banner: false,
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * .5),
+        child: LBBlock(
+          padding: EdgeInsets.zero,
+          child: content.isEmpty
+              ? Center(
+                  child: ExcludeSemantics(
+                    child: SizedBox(
+                      width: 60,
+                      child: AnimatedBuilder(
+                        animation: _loading,
+                        builder: (context, _) => LBCellsBar(
+                          count: 5,
+                          value: (_loading.value * 6).floor() / 5,
+                          cell: 12,
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(Icons.close, color: theme.accentColor),
-                        tooltip: l10n.commonClose,
-                      ),
-                    ],
-                  )),
-                ),
-                const SizedBox(height: 16),
-                // Document content
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          theme.backgroundColor.withValues(alpha: 0.4),
-                          theme.backgroundColor.withValues(alpha: 0.2),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
                     ),
-                    child: content.isEmpty
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              color: theme.accentColor,
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            child: Text(
-                              content,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    content,
+                    style: LBText.body(p, color: p.ink.withValues(alpha: .88), size: 12.5).copyWith(height: 1.5),
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
     );

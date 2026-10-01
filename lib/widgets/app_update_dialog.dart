@@ -5,6 +5,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/app_release_policy.dart';
 import 'package:snake_classic/services/app_release_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Tell an iOS player there is a newer build on the App Store.
 ///
@@ -42,57 +43,97 @@ Future<void> showAppUpdateDialog(
   await showDialog<void>(
     context: context,
     barrierDismissible: !blocking,
-    builder: (dialogContext) => PopScope(
-      canPop: !blocking,
-      child: AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1F),
-        title: Text(
-          blocking ? l10n.updateRequiredTitle : l10n.updateAvailableTitle,
-          style: const TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          blocking
-              ? l10n.updateRequiredBody
-              : l10n.updateAvailableBody(service.latestVersion ?? ''),
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          if (!blocking)
-            TextButton(
-              onPressed: () {
-                // Record the refusal before closing so the snooze is
-                // written even if the frame after this is the last one.
-                service.recordDeclined();
-                Navigator.of(dialogContext).pop();
-              },
-              child: Text(
-                l10n.updateActionLater,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+    barrierColor: Colors.black.withValues(alpha: .65),
+    builder: (dialogContext) {
+      final p = dialogContext.lb;
+      return PopScope(
+        canPop: !blocking,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: LBBlock(
+              kind: LBBlockKind.sheet,
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      LBPixelIcon(
+                        blocking ? LBIcon.lock : LBIcon.gift,
+                        cell: 3.4,
+                        color: blocking ? LB.gold : p.lime,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          blocking ? l10n.updateRequiredTitle : l10n.updateAvailableTitle,
+                          style: LBText.button(p, color: p.head, size: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    blocking
+                        ? l10n.updateRequiredBody
+                        : l10n.updateAvailableBody(service.latestVersion ?? ''),
+                    style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
+                  ),
+                  const SizedBox(height: 18),
+                  LBBlock(
+                    kind: LBBlockKind.fill,
+                    height: 50,
+                    alignment: Alignment.center,
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.maybeOf(dialogContext);
+                      final opened = await _openStore(storeUrl);
+                      if (!opened) {
+                        messenger?.showSnackBar(
+                          SnackBar(content: Text(l10n.updateOpenStoreFailed)),
+                        );
+                        return;
+                      }
+                      // Close only the dismissible one. The blocking dialog
+                      // stays up behind the App Store so that returning
+                      // without having updated does not silently drop the
+                      // player into a build we have already said is unfit.
+                      if (!blocking && dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                    },
+                    child: Text(
+                      l10n.updateActionUpdate,
+                      style: LBText.button(p, color: p.onLime, size: 13),
+                    ),
+                  ),
+                  if (!blocking)
+                    LBBlock(
+                      kind: LBBlockKind.muted,
+                      height: 46,
+                      alignment: Alignment.center,
+                      onTap: () {
+                        // Record the refusal before closing so the snooze is
+                        // written even if the frame after this is the last
+                        // one.
+                        service.recordDeclined();
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: Text(
+                        l10n.updateActionLater,
+                        style: LBText.button(p, color: p.inkMuted, size: 12),
+                      ),
+                    ),
+                ],
               ),
             ),
-          FilledButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.maybeOf(dialogContext);
-              final opened = await _openStore(storeUrl);
-              if (!opened) {
-                messenger?.showSnackBar(
-                  SnackBar(content: Text(l10n.updateOpenStoreFailed)),
-                );
-                return;
-              }
-              // Close only the dismissible one. The blocking dialog stays
-              // up behind the App Store so that returning without having
-              // updated does not silently drop the player into a build we
-              // have already said is unfit.
-              if (!blocking && dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
-              }
-            },
-            child: Text(l10n.updateActionUpdate),
           ),
-        ],
-      ),
-    ),
+        ),
+      );
+    },
   );
 }
 
