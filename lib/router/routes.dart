@@ -57,6 +57,12 @@ abstract class AppRoutes {
   // Helper to generate replay viewer path with ID
   static String replayViewerPath(String id) => '/replays/$id';
 
+  /// Run setup: mode, board, difficulty, loadout (Living Board screen 03).
+  static const String runSetup = '/setup';
+
+  /// Debug-only gallery of every Living Board component.
+  static const String lbGallery = '/debug/lb-gallery';
+
   // Multiplayer
   static const String multiplayerLobby = '/multiplayer';
   static const String multiplayerLobbyWithId = '/multiplayer/:gameId';

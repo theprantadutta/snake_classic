@@ -48,9 +48,6 @@ dependencies:
   # Animations and effects
   flutter_animate: ^4.5.0
 
-  # Custom fonts
-  google_fonts: ^8.0.1
-  
   # Vector math for game calculations
   vector_math: ^2.1.4
   
@@ -198,21 +195,19 @@ flutter:
     - assets/images/powerups/
     - assets/images/effects/
     - assets/legal/
-    # Orbitron + Rajdhani static instances, bundled so google_fonts loads
-    # them from assets instead of fetching from fonts.gstatic.com at runtime.
-    # google_fonts matches these via the AssetManifest (assets: section, NOT
-    # the fonts: section). Runtime fetching is disabled in main.dart.
-    - assets/fonts/
+    # Font licence texts (registered with LicenseRegistry in main.dart). The
+    # TTFs themselves are declared in the fonts: section below.
+    - assets/fonts/OFL-JetBrainsMono.txt
+    - assets/fonts/OFL-Noto.txt
     - .env
     # - assets/images/
 
-  # Script fallbacks for locales Orbitron/Rajdhani don't cover — Cyrillic
-  # (ru), Latin Extended-A (pl), Devanagari (hi) and Arabic (ar). Referenced
+  # Script fallbacks for scripts JetBrains Mono doesn't cover — Devanagari
+  # (hi) and Arabic (ar); NotoSans stays as a safety net. Referenced
   # via fontFamilyFallback in GameTypography.scriptFallback, never as a
-  # primary family, so Latin text is untouched. Declared here (NOT via
-  # google_fonts) because runtime fetching is disabled — these must ship in
-  # the bundle so non-Latin locales render identically offline on every
-  # device instead of falling back to an arbitrary OS font.
+  # primary family, so Latin text is untouched. They ship in the bundle so
+  # non-Latin locales render identically offline on every device instead of
+  # falling back to an arbitrary OS font.
   fonts:
     # Living Board's one typeface (OFL, licence in assets/fonts/). Covers
     # Latin, Latin Extended and Cyrillic, so en/es/fr/it/pl/pt/ru render in

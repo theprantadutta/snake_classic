@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/screens/debug/lb_gallery_screen.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/router/routes.dart';
@@ -320,6 +321,14 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
         );
       },
     ),
+
+    if (kDebugMode)
+      GoRoute(
+        path: AppRoutes.lbGallery,
+        name: 'lbGallery',
+        pageBuilder: (context, state) =>
+            _zoomPage(state, const LBGalleryScreen()),
+      ),
 
     // Multiplayer — order matters: /multiplayer/game MUST come before
     // /multiplayer/:gameId, otherwise GoRouter matches "game" as a gameId.

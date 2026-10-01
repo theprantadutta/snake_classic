@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Game typography system using custom fonts
-/// - Orbitron: Futuristic display font for headlines and scores
-/// - Rajdhani: Clean readable font for body text and UI elements
+/// Game typography: JetBrains Mono everywhere (Living Board — one grid, one
+/// font). Bundled in assets/fonts/, declared in pubspec.yaml's `fonts:`.
+///
+/// Sizes sit a step below the old Orbitron/Rajdhani scale: a monospace face
+/// is far wider than Rajdhani, and these styles still back screens that
+/// were laid out for it. New Living Board UI uses [LBText] instead.
 abstract class GameTypography {
   // Font family names
-  static const String headlineFont = 'Orbitron';
-  static const String bodyFont = 'Rajdhani';
+  static const String headlineFont = 'JetBrainsMono';
+  static const String bodyFont = 'JetBrainsMono';
 
-  /// Per-script fallbacks for the locales Orbitron/Rajdhani don't cover.
+  /// Per-script fallbacks for the scripts JetBrains Mono doesn't cover.
   ///
-  /// Orbitron carries no Polish diacritics, Cyrillic, Devanagari or Arabic;
-  /// Rajdhani carries Polish + Devanagari but no Cyrillic or Arabic. Runtime
-  /// font fetching is disabled (see main.dart), so without these the engine
-  /// substitutes whatever the OS happens to have — which mixes two fonts
-  /// inside a single Polish word and varies by device. Flutter walks this
-  /// list per missing glyph, so Latin text still renders in Orbitron/Rajdhani
-  /// and only the uncovered glyphs come from Noto.
+  /// JetBrains Mono carries Latin, Latin Extended (pl) and Cyrillic (ru) but
+  /// no Devanagari or Arabic. Without these the engine substitutes whatever
+  /// the OS happens to have, which varies by device. Flutter walks this list
+  /// per missing glyph, so Latin text still renders in JetBrains Mono and
+  /// only the uncovered glyphs come from Noto.
   ///
   /// Families are declared in pubspec.yaml's `fonts:` section.
   static const List<String> scriptFallback = <String>[
@@ -46,48 +46,38 @@ abstract class GameTypography {
         _ => value,
       };
 
-  /// Appends [scriptFallback] to a google_fonts style.
-  ///
-  /// Must append rather than assign: google_fonts returns a style whose
-  /// `fontFamily` is the variant-specific family ("Orbitron_regular") and
-  /// whose `fontFamilyFallback` is already `['Orbitron']` — that entry is
-  /// how it degrades to the base family. Overwriting the list would drop it.
-  static TextStyle _withScriptFallback(TextStyle style) => style.copyWith(
-        fontFamilyFallback: <String>[
-          ...?style.fontFamilyFallback,
-          ...scriptFallback,
-        ],
-      );
+  static TextStyle _withScriptFallback(TextStyle style) =>
+      style.copyWith(fontFamily: bodyFont, fontFamilyFallback: scriptFallback);
 
   // === Display Styles (Large headlines) ===
 
-  /// Extra large display text - 48px Orbitron Bold
+  /// Extra large display text
   /// Use for: Main titles, splash screens
   static TextStyle displayLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 48,
+        TextStyle(
+          fontSize: 40,
           fontWeight: FontWeight.w700,
           letterSpacing: 2,
           color: color,
         ),
       );
 
-  /// Large display text - 40px Orbitron SemiBold
+  /// Large display text
   /// Use for: Screen titles, important headers
   static TextStyle displayMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 40,
+        TextStyle(
+          fontSize: 34,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.5,
           color: color,
         ),
       );
 
-  /// Small display text - 34px Orbitron SemiBold
+  /// Small display text
   /// Use for: Section headers
   static TextStyle displaySmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 34,
+        TextStyle(
+          fontSize: 28,
           fontWeight: FontWeight.w600,
           letterSpacing: 1,
           color: color,
@@ -96,33 +86,33 @@ abstract class GameTypography {
 
   // === Headline Styles ===
 
-  /// Large headline - 32px Orbitron SemiBold
+  /// Large headline
   /// Use for: Page titles, major section headers
   static TextStyle headlineLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 32,
+        TextStyle(
+          fontSize: 26,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.5,
           color: color,
         ),
       );
 
-  /// Medium headline - 28px Orbitron Medium
+  /// Medium headline
   /// Use for: Card titles, dialog headers
   static TextStyle headlineMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 28,
+        TextStyle(
+          fontSize: 23,
           fontWeight: FontWeight.w500,
           letterSpacing: 1,
           color: color,
         ),
       );
 
-  /// Small headline - 24px Orbitron Medium
+  /// Small headline
   /// Use for: Subsection headers
   static TextStyle headlineSmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 24,
+        TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           color: color,
@@ -131,31 +121,31 @@ abstract class GameTypography {
 
   // === Title Styles ===
 
-  /// Large title - 22px Rajdhani SemiBold
+  /// Large title
   /// Use for: List item titles, prominent labels
   static TextStyle titleLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      );
-
-  /// Medium title - 18px Rajdhani SemiBold
-  /// Use for: Card content titles
-  static TextStyle titleMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
+        TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: color,
         ),
       );
 
-  /// Small title - 16px Rajdhani SemiBold
+  /// Medium title
+  /// Use for: Card content titles
+  static TextStyle titleMedium({Color? color}) => _withScriptFallback(
+        TextStyle(
+          fontSize: 15.5,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      );
+
+  /// Small title
   /// Use for: Small card titles, list headers
   static TextStyle titleSmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 16,
+        TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: color,
         ),
@@ -163,33 +153,33 @@ abstract class GameTypography {
 
   // === Body Styles ===
 
-  /// Large body text - 16px Rajdhani Regular
+  /// Large body text
   /// Use for: Primary content, descriptions
   static TextStyle bodyLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 16,
+        TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.5,
           color: color,
         ),
       );
 
-  /// Medium body text - 14px Rajdhani Regular
+  /// Medium body text
   /// Use for: Secondary content, details
   static TextStyle bodyMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 14,
+        TextStyle(
+          fontSize: 12.5,
           fontWeight: FontWeight.w400,
           height: 1.4,
           color: color,
         ),
       );
 
-  /// Small body text - 12px Rajdhani Regular
+  /// Small body text
   /// Use for: Captions, helper text
   static TextStyle bodySmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 12,
+        TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.w400,
           height: 1.3,
           color: color,
@@ -198,33 +188,33 @@ abstract class GameTypography {
 
   // === Label Styles ===
 
-  /// Large label - 14px Rajdhani SemiBold
+  /// Large label
   /// Use for: Button text, prominent labels
   static TextStyle labelLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 14,
+        TextStyle(
+          fontSize: 12.5,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
           color: color,
         ),
       );
 
-  /// Medium label - 12px Rajdhani Medium
+  /// Medium label
   /// Use for: Chip text, tags
   static TextStyle labelMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 12,
+        TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           color: color,
         ),
       );
 
-  /// Small label - 10px Rajdhani Medium
+  /// Small label
   /// Use for: Badges, small indicators
   static TextStyle labelSmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 10,
+        TextStyle(
+          fontSize: 9.5,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           color: color,
@@ -233,108 +223,108 @@ abstract class GameTypography {
 
   // === Special Game Styles ===
 
-  /// Score display - 36px Orbitron Black
+  /// Score display
   /// Use for: In-game score, high scores
   static TextStyle scoreDisplay({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 36,
-          fontWeight: FontWeight.w900,
+        TextStyle(
+          fontSize: 30,
+          fontWeight: FontWeight.w800,
           letterSpacing: 1,
           color: color,
         ),
       );
 
-  /// Large score display - 48px Orbitron Black
+  /// Large score display
   /// Use for: Game over score, leaderboard top scores
   static TextStyle scoreLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 48,
-          fontWeight: FontWeight.w900,
+        TextStyle(
+          fontSize: 40,
+          fontWeight: FontWeight.w800,
           letterSpacing: 2,
           color: color,
         ),
       );
 
-  /// Small score display - 24px Orbitron Bold
+  /// Small score display
   /// Use for: Mini scores, stats
   static TextStyle scoreSmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 24,
+        TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
           color: color,
         ),
       );
 
-  /// Button text - 16px Rajdhani Bold
+  /// Button text
   /// Use for: Primary buttons, CTAs
   static TextStyle buttonLarge({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 16,
+        TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           letterSpacing: 1,
           color: color,
         ),
       );
 
-  /// Small button text - 14px Rajdhani SemiBold
+  /// Small button text
   /// Use for: Secondary buttons, small actions
   static TextStyle buttonMedium({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 14,
+        TextStyle(
+          fontSize: 12.5,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.8,
           color: color,
         ),
       );
 
-  /// Tiny button text - 12px Rajdhani SemiBold
+  /// Tiny button text
   /// Use for: Compact buttons, icon buttons with labels
   static TextStyle buttonSmall({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 12,
+        TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
           color: color,
         ),
       );
 
-  /// Game title style - 28px Orbitron ExtraBold
+  /// Game title style
   /// Use for: "SNAKE CLASSIC" title, brand text
   static TextStyle gameTitle({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 28,
+        TextStyle(
+          fontSize: 23,
           fontWeight: FontWeight.w800,
           letterSpacing: 3,
           color: color,
         ),
       );
 
-  /// Level indicator - 20px Orbitron Bold
+  /// Level indicator
   /// Use for: Level numbers, tier indicators
   static TextStyle levelIndicator({Color? color}) => _withScriptFallback(
-        GoogleFonts.orbitron(
-          fontSize: 20,
+        TextStyle(
+          fontSize: 17,
           fontWeight: FontWeight.w700,
           color: color,
         ),
       );
 
-  /// Stats value - 18px Rajdhani Bold
+  /// Stats value
   /// Use for: Statistics numbers, counts
   static TextStyle statsValue({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 18,
+        TextStyle(
+          fontSize: 15.5,
           fontWeight: FontWeight.w700,
           color: color,
         ),
       );
 
-  /// Stats label - 12px Rajdhani Medium
+  /// Stats label
   /// Use for: Statistics labels
   static TextStyle statsLabel({Color? color}) => _withScriptFallback(
-        GoogleFonts.rajdhani(
-          fontSize: 12,
+        TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.w500,
           letterSpacing: 1,
           color: color,

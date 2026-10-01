@@ -12,14 +12,13 @@ import 'package:snake_classic/utils/typography.dart';
 ///
 /// Runtime font fetching is disabled (see main.dart), so a glyph missing from
 /// the whole bundle is silently substituted by whatever the OS happens to
-/// have — different on every device, and mixed mid-word. Orbitron alone
-/// covers no Cyrillic, Devanagari, Arabic or Polish diacritics, which is
+/// have — different on every device, and mixed mid-word. JetBrains Mono
+/// covers no Devanagari or Arabic, which is
 /// exactly the gap GameTypography.scriptFallback exists to close; this test
 /// fails if a new language (or a new string) reintroduces one.
 void main() {
   const fontFiles = <String>[
-    'assets/fonts/Orbitron-Regular.ttf',
-    'assets/fonts/Rajdhani-Regular.ttf',
+    'assets/fonts/JetBrainsMono-Regular.ttf',
     'assets/fonts/NotoSans-Regular.ttf',
     'assets/fonts/NotoSansDevanagari-Regular.ttf',
     'assets/fonts/NotoSansArabic-Regular.ttf',

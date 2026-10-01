@@ -9,11 +9,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/core/observability/sentry_bootstrap.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
@@ -185,12 +185,6 @@ Future<void> _bootstrap() async {
     ),
   );
 
-  // Orbitron + Rajdhani are bundled as assets (see assets/fonts/ and
-  // pubspec.yaml). Disable runtime fetching so google_fonts NEVER reaches out
-  // to fonts.gstatic.com — the app renders correctly fully offline, and we no
-  // longer crash on "Connection closed before full header was received".
-  GoogleFonts.config.allowRuntimeFetching = false;
-
   AppLogger.lifecycle('Snake Classic starting up...');
 
   {
@@ -253,9 +247,12 @@ Future<void> _bootstrap() async {
     // showLicensePage / AboutDialog. The .txt files shipped as assets
     // for a while with nothing reading them — this makes them count.
     LicenseRegistry.addLicense(() async* {
-      for (final f in ['OFL-Orbitron.txt', 'OFL-Rajdhani.txt']) {
+      for (final (pkg, f) in [
+        ('JetBrains Mono', 'OFL-JetBrainsMono.txt'),
+        ('Noto', 'OFL-Noto.txt'),
+      ]) {
         final text = await rootBundle.loadString('assets/fonts/$f');
-        yield LicenseEntryWithLineBreaks(['google_fonts'], text);
+        yield LicenseEntryWithLineBreaks([pkg], text);
       }
     });
 
@@ -801,7 +798,9 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       },
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: themeState.currentTheme.backgroundColor,
+        scaffoldBackgroundColor: LBPalette.of(themeState.currentTheme).board,
+        // Living Board palette for the active theme; read it with context.lb.
+        extensions: [LBPalette.of(themeState.currentTheme)],
         visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: false,
         // No ink ripples anywhere in the game.
