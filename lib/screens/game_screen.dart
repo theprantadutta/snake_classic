@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,6 +33,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
 import 'package:snake_classic/models/food.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key, this.startTutorial = false});
@@ -225,7 +227,22 @@ class _GameScreenState extends State<GameScreen>
     _keyboardFocusNode.dispose();
     _juiceController.dispose();
     _tutorialController?.dispose();
+    _calloutTimer?.cancel();
+    _callout.dispose();
     super.dispose();
+  }
+
+  /// The run's one-line callout in the strip under the board (COPY.md
+  /// "In-run": level up, combo dropped, life lost, Time Attack's last 10s).
+  final ValueNotifier<String?> _callout = ValueNotifier(null);
+  Timer? _calloutTimer;
+
+  void _showCallout(String text) {
+    _callout.value = text;
+    _calloutTimer?.cancel();
+    _calloutTimer = Timer(const Duration(milliseconds: 2200), () {
+      if (mounted) _callout.value = null;
+    });
   }
 
   // Listener for game state changes - handles navigation and events
@@ -308,6 +325,7 @@ class _GameScreenState extends State<GameScreen>
         builder: (context, state) => LBGameInfoRow(
           gameState: state.gameState ?? fallback,
           showJoke: !context.read<GameSettingsCubit>().state.dPadEnabled,
+          callout: _callout,
         ),
       ),
     );
@@ -417,6 +435,7 @@ class _GameScreenState extends State<GameScreen>
     GameState current,
     List<TickEvent> events,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     for (final event in events) {
       switch (event) {
         case FoodEatenEvent():
@@ -448,12 +467,29 @@ class _GameScreenState extends State<GameScreen>
           // ONE consolidated cue: the HUD level badge burst/scale (see
           // GameHUD._triggerLevelUpEffect) plus a light shake.
           _juiceController.levelUp();
+          _showCallout(l10n.lbLevelUp('${event.toLevel}'));
+        case ComboBrokenEvent(:final previousCombo) when previousCombo >= 5:
+          _showCallout(l10n.lbComboBroken.toUpperCase());
         default:
           break;
       }
     }
 
     if (previous == null) return;
+
+    // Survival: a life spent (the crash resumes instead of ending the run).
+    if (current.livesRemaining < previous.livesRemaining &&
+        current.livesRemaining > 0) {
+      _showCallout(l10n.lbLifeLost('${current.livesRemaining}'));
+    }
+
+    // Time Attack: crossing into the last ten seconds, once.
+    if (current.gameMode.timeLimit != null &&
+        current.status == GameStatus.playing &&
+        previous.timeAttackSecondsRemaining > 10 &&
+        current.timeAttackSecondsRemaining <= 10) {
+      _showCallout(l10n.lbTimeAttackPanic);
+    }
 
     // Crash effects
     if (current.status == GameStatus.crashed &&

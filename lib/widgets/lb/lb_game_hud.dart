@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
@@ -240,9 +241,18 @@ class _LBLevelWallState extends State<LBLevelWall> with SingleTickerProviderStat
 /// Survival lives) on the left, `LEN n · SPEED` on the right. Self-ticking so
 /// countdowns move between ticks.
 class LBGameInfoRow extends StatefulWidget {
-  const LBGameInfoRow({super.key, required this.gameState, this.showJoke = true});
+  const LBGameInfoRow({
+    super.key,
+    required this.gameState,
+    this.showJoke = true,
+    this.callout,
+  });
 
   final GameState gameState;
+
+  /// A short-lived event line (level up, life lost…) shown in place of the
+  /// power-up readout while it is non-null.
+  final ValueListenable<String?>? callout;
 
   /// Room for the power-up's secondary line (swipe players, no controls).
   final bool showJoke;
@@ -280,9 +290,10 @@ class _LBGameInfoRowState extends State<LBGameInfoRow> with SingleTickerProvider
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
         child: AnimatedBuilder(
-          animation: _ticker,
+          animation: Listenable.merge([_ticker, widget.callout]),
           builder: (context, _) {
             final left = <Widget>[];
+            final callout = widget.callout?.value;
             if (gs.gameMode.timeLimit != null) {
               final s = gs.timeAttackSecondsRemaining;
               final low = s <= 10;
@@ -309,7 +320,14 @@ class _LBGameInfoRowState extends State<LBGameInfoRow> with SingleTickerProvider
               ));
             }
             final active = gs.activePowerUps.where((x) => !x.isExpired).toList();
-            if (active.isNotEmpty) {
+            if (callout != null) {
+              left.add(Text(
+                callout,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.button(p, color: p.lime, size: 12.5).copyWith(letterSpacing: 1.6),
+              ));
+            } else if (active.isNotEmpty) {
               left.add(_PowerUpReadout(powerUp: active.last, showJoke: widget.showJoke && left.isEmpty));
             }
             return Row(
