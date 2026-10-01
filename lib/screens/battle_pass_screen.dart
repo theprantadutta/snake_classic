@@ -234,9 +234,16 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
     // longer stretch of the ladder instead of an empty band.
     final height = MediaQuery.sizeOf(context).height;
     final rows = ((height - 480) / (context.lbCell * 3)).floor().clamp(4, 14);
+    // From the tier before the current one, skipping tiers with nothing on
+    // either track (a row of two dashes says nothing and costs a row) —
+    // except the current tier, which carries YOU ARE HERE.
     final start = (state.currentTier - 1).clamp(1, total < 1 ? 1 : total);
-    final end = (start + rows - 1).clamp(1, total);
-    return [for (var t = start; t <= end && t <= total; t++) season.levels[t - 1]];
+    final out = <BattlePassLevel>[];
+    for (var t = start; t <= total && out.length < rows; t++) {
+      final level = season.levels[t - 1];
+      if (level.hasRewards || t == state.currentTier) out.add(level);
+    }
+    return out;
   }
 
   Widget _buildTiersToggle(

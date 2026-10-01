@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_banner_slot.dart';
 import 'package:snake_classic/widgets/lb/lb_grid_background.dart';
 import 'package:snake_classic/widgets/lb/lb_header.dart';
@@ -74,7 +75,32 @@ class LBScaffold extends StatelessWidget {
                 onBack: onBack,
                 showBack: showBack,
               ),
-              Expanded(child: content),
+              // Content scrolling up under the header fades out over a
+              // short band instead of butting hard against the subtitle.
+              Expanded(
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: content),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: context.lbCell * .6,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [context.lb.board, context.lb.board.withValues(alpha: 0)],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               ?bottom,
             ],
           ),
