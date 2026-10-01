@@ -186,6 +186,10 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/audio/
+    # Living Board chiptune set — file names are the contract (see
+    # docs/living-board/design/DESIGN_SPEC.md §6).
+    - assets/audio/lb/sfx/
+    - assets/audio/lb/music/
     - assets/images/
     # Generated pickup/effect sprites (see generate-assets.md). Flutter
     # directory entries are non-recursive, so subfolders are listed
@@ -210,6 +214,20 @@ flutter:
   # the bundle so non-Latin locales render identically offline on every
   # device instead of falling back to an arbitrary OS font.
   fonts:
+    # Living Board's one typeface (OFL, licence in assets/fonts/). Covers
+    # Latin, Latin Extended and Cyrillic, so en/es/fr/it/pl/pt/ru render in
+    # it natively; hi and ar fall through to the Noto families below.
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/JetBrainsMono-ExtraBold.ttf
+          weight: 800
     - family: NotoSans
       fonts:
         - asset: assets/fonts/NotoSans-Regular.ttf

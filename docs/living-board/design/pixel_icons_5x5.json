@@ -1,0 +1,257 @@
+{
+ "description": "Pixel icons on a 5x5 cell grid. \"x\" = primary color, \"o\" = accent color (optional, falls back to primary), \".\" = empty. Same cell rendering as the cell font.",
+ "icons": {
+  "apple": [
+   "..o..",
+   ".xxx.",
+   "xxxxx",
+   "xxxxx",
+   ".xxx."
+  ],
+  "coin": [
+   ".xxx.",
+   "x.x.x",
+   "x.x.x",
+   "x.x.x",
+   ".xxx."
+  ],
+  "trophy": [
+   "xxxxx",
+   "xxxxx",
+   ".xxx.",
+   "..x..",
+   ".xxx."
+  ],
+  "bolt": [
+   "..xx.",
+   ".xx..",
+   "xxxxx",
+   "..xx.",
+   ".xx.."
+  ],
+  "heart": [
+   ".x.x.",
+   "xxxxx",
+   "xxxxx",
+   ".xxx.",
+   "..x.."
+  ],
+  "star": [
+   "..x..",
+   "xxxxx",
+   ".xxx.",
+   ".x.x.",
+   "x...x"
+  ],
+  "crown": [
+   "x.x.x",
+   "x.x.x",
+   "xxxxx",
+   "xxxxx",
+   "xxxxx"
+  ],
+  "flame": [
+   "..x..",
+   ".xx..",
+   ".xxx.",
+   "xxoxx",
+   ".xxx."
+  ],
+  "lock": [
+   ".xxx.",
+   ".x.x.",
+   "xxxxx",
+   "xx.xx",
+   "xxxxx"
+  ],
+  "check": [
+   "....x",
+   "...xx",
+   "x.xx.",
+   "xxx..",
+   ".x..."
+  ],
+  "gear": [
+   ".x.x.",
+   "xxxxx",
+   "xx.xx",
+   "xxxxx",
+   ".x.x."
+  ],
+  "skull": [
+   ".xxx.",
+   "x.x.x",
+   "xxxxx",
+   ".xxx.",
+   ".x.x."
+  ],
+  "swords": [
+   "x...x",
+   "xx.xx",
+   ".xox.",
+   "xx.xx",
+   "x...x"
+  ],
+  "play": [
+   "x....",
+   "xxx..",
+   "xxxxx",
+   "xxx..",
+   "x...."
+  ],
+  "pause": [
+   "xx.xx",
+   "xx.xx",
+   "xx.xx",
+   "xx.xx",
+   "xx.xx"
+  ],
+  "back": [
+   "..x..",
+   ".x...",
+   "xxxxx",
+   ".x...",
+   "..x.."
+  ],
+  "next": [
+   "..x..",
+   "...x.",
+   "xxxxx",
+   "...x.",
+   "..x.."
+  ],
+  "user": [
+   ".xxx.",
+   ".xxx.",
+   "..x..",
+   "xxxxx",
+   "xxxxx"
+  ],
+  "shield": [
+   "xxxxx",
+   "xxxxx",
+   "xxxxx",
+   ".xxx.",
+   "..x.."
+  ],
+  "hourglass": [
+   "xxxxx",
+   ".xxx.",
+   "..x..",
+   ".xxx.",
+   "xxxxx"
+  ],
+  "gift": [
+   ".x.x.",
+   "xxxxx",
+   "..x..",
+   "xxxxx",
+   "xxxxx"
+  ],
+  "copy": [
+   "xxx..",
+   "x.xxx",
+   "xxx.x",
+   "..x.x",
+   "..xxx"
+  ],
+  "plus": [
+   "..x..",
+   "..x..",
+   "xxxxx",
+   "..x..",
+   "..x.."
+  ],
+  "tv": [
+   ".x.x.",
+   "..x..",
+   "xxxxx",
+   "x...x",
+   "xxxxx"
+  ],
+  "film": [
+   "xxxxx",
+   "x.x.x",
+   "xxxxx",
+   "x.x.x",
+   "xxxxx"
+  ],
+  "calendar": [
+   "x.x.x",
+   "xxxxx",
+   "x...x",
+   "x.x.x",
+   "xxxxx"
+  ],
+  "chart": [
+   "....x",
+   "...xx",
+   "..xxx",
+   ".xxxx",
+   "xxxxx"
+  ],
+  "friends": [
+   "xx.xx",
+   "xx.xx",
+   ".....",
+   "xxxxx",
+   "xxxxx"
+  ],
+  "grid": [
+   "x.x.x",
+   ".....",
+   "x.x.x",
+   ".....",
+   "x.x.x"
+  ],
+  "sound": [
+   "..x..",
+   ".xx.x",
+   "xxx..",
+   ".xx.x",
+   "..x.."
+  ],
+  "music": [
+   "..xxx",
+   "..x.x",
+   "..x.x",
+   "xxx.x",
+   "xxx.."
+  ],
+  "buzz": [
+   "x.x.x",
+   "x.x.x",
+   "x.x.x",
+   "x.x.x",
+   "x.x.x"
+  ],
+  "eye": [
+   ".....",
+   ".xxx.",
+   "xx.xx",
+   ".xxx.",
+   "....."
+  ],
+  "x": [
+   "x...x",
+   ".x.x.",
+   "..x..",
+   ".x.x.",
+   "x...x"
+  ],
+  "target": [
+   ".xxx.",
+   "x...x",
+   "x.x.x",
+   "x...x",
+   ".xxx."
+  ],
+  "invite": [
+   ".xx..",
+   ".xx.x",
+   "...xx",
+   "xxx.x",
+   "xxx.."
+  ]
+ }
+}

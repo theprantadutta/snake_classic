@@ -1,0 +1,49 @@
+{
+ "name": "Snake Classic — Living Board",
+ "core": {
+  "board": "#08160B",
+  "deep": "#0C1F0F",
+  "lime": "#AEDC10",
+  "head": "#D4F25A",
+  "gold": "#F5C518",
+  "bonk": "#FF5A4E",
+  "ink": "#E9F5C8",
+  "splash": "#0F380F"
+ },
+ "alpha": {
+  "inkMuted": "rgba(233,245,200,0.60)",
+  "inkDim": "rgba(233,245,200,0.40)",
+  "gridLine": "rgba(174,220,16,0.07)",
+  "blockFill": "rgba(174,220,16,0.06)",
+  "blockStroke": "rgba(174,220,16,0.32)",
+  "cellOff": "rgba(174,220,16,0.13)",
+  "wall": "rgba(174,220,16,0.45)",
+  "goldFill": "rgba(245,197,24,0.09)",
+  "goldStroke": "rgba(245,197,24,0.50)",
+  "bonkFill": "rgba(255,90,78,0.09)",
+  "bonkStroke": "rgba(255,90,78,0.55)"
+ },
+ "food": {
+  "apple": "#E8433A",
+  "appleHighlight": "#FF9A8C",
+  "glow": "rgba(245,197,24,0.55)"
+ },
+ "rarity": {
+  "common": "#9FB8A0",
+  "rare": "#4FB8F0",
+  "epic": "#B47CFF",
+  "legendary": "#F5C518",
+  "diamond": "#7FF3FF"
+ },
+ "podium": {
+  "first": "#F5C518",
+  "second": "#C9D4C4",
+  "third": "#D08A4E"
+ },
+ "versus": {
+  "you": "#AEDC10",
+  "rival": "#FF5A4E",
+  "rivalHead": "#FF8A7E"
+ },
+ "themes_note": "Each GameTheme re-skins the board: board <- theme.backgroundColor (darkened 35%), lime <- theme.snakeColor, head <- lighten(snakeColor, 25%), food <- theme.foodColor. Gold, bonk and rarity colors are constant across themes so rewards and danger always read the same."
+}
