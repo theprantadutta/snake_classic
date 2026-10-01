@@ -252,6 +252,13 @@ class GameCubit extends Cubit<GameCubitState> {
       difficulty: _settingsCubit.state.difficulty,
     );
 
+    // main() starts this fire-and-forget, and the awaits above can take many
+    // seconds when the network is slow (the services retry their backend
+    // calls). A player who taps PLAY in that window has a live run by now —
+    // emitting `ready` here would overwrite it, and every tick after that is
+    // skipped: a frozen board with no food and no way out but quitting.
+    if (state.status != GamePlayStatus.initial) return;
+
     emit(state.copyWith(status: GamePlayStatus.ready, gameState: gameState));
   }
 
