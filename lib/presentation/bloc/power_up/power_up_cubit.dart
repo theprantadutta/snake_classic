@@ -341,26 +341,36 @@ class PowerUpCubit extends Cubit<PowerUpState> {
   /// that work. Past Pro grants, the two retired power-up packs and old
   /// battle-pass tiers put these into players' inventories; they are
   /// converted one for one rather than lost. Unknown keys are left alone.
+  /// Both spellings are covered (the API sent stored camelCase keys out as
+  /// snake_case). Mirrors the backend's PowerUpInventoryNormalizer.
   static const Map<String, String> legacyInventoryKeys = {
     'teleport': 'speed_boost',
     'powerSurge': 'speed_boost',
     'power_surge': 'speed_boost',
     'megaSpeedBoost': 'speed_boost',
+    'mega_speed_boost': 'speed_boost',
     'ghostMode': 'invincibility',
     'ghost_mode': 'invincibility',
     'scoreShield': 'invincibility',
     'score_shield': 'invincibility',
     'megaInvincibility': 'invincibility',
+    'mega_invincibility': 'invincibility',
     'magneticFood': 'score_multiplier',
     'magnetic_food': 'score_multiplier',
     'comboMultiplier': 'score_multiplier',
+    'combo_multiplier': 'score_multiplier',
     'doubleTrouble': 'score_multiplier',
+    'double_trouble': 'score_multiplier',
     'luckyCharm': 'score_multiplier',
+    'lucky_charm': 'score_multiplier',
     'megaScoreMultiplier': 'score_multiplier',
+    'mega_score_multiplier': 'score_multiplier',
     'sizeReducer': 'slow_motion',
     'size_reducer': 'slow_motion',
     'timeWarp': 'slow_motion',
+    'time_warp': 'slow_motion',
     'megaSlowMotion': 'slow_motion',
+    'mega_slow_motion': 'slow_motion',
   };
 
   /// The working inventory key for [key] (itself if it already works or
