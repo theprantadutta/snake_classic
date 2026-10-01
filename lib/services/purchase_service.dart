@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_inapp_purchase/flutter_inapp_purchase.dart';
 import 'package:get_it/get_it.dart';
+import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -580,6 +581,7 @@ class PurchaseService {
       switch (outcome) {
         case VerifyOutcome.granted:
           AppLogger.info('Purchase verified by backend: ${payload.productId}');
+          _applyLocalGrants(result);
         case VerifyOutcome.transient:
           AppLogger.warning(
             'Backend verification unavailable for ${payload.productId}: '
@@ -595,6 +597,22 @@ class PurchaseService {
     } catch (e) {
       AppLogger.error('Error verifying purchase with backend', e);
       return VerifyOutcome.transient;
+    }
+  }
+
+  /// Mirror server-side grants that only the server knows about into local
+  /// state. The Pro purchase grants power-ups server-side; the server also
+  /// writes them to the inventory mirror, but this device's next inventory
+  /// push (client-owned, last-write-wins) would overwrite that, so the same
+  /// grant is added locally and the push carries it. Only fires when the
+  /// server says it granted them on this verify, so a duplicate verify
+  /// never adds them twice.
+  void _applyLocalGrants(Map<String, dynamic>? result) {
+    final unlocked = result?['unlocked_content'] ?? result?['unlockedContent'];
+    if (unlocked is List && unlocked.contains('premium_power_ups')) {
+      if (GetIt.I.isRegistered<PowerUpCubit>()) {
+        unawaited(GetIt.I<PowerUpCubit>().grantProBundle());
+      }
     }
   }
 
