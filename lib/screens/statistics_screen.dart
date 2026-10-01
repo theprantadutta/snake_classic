@@ -1,25 +1,19 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:snake_classic/utils/game_animations.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/utils/formatting.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/profile/lb_profile_parts.dart';
 
+/// Statistics on the Living Board: the same numbers as before, in blocks and
+/// cells. Everything comes from Drift via [AppDataCache]; pull down to
+/// refresh, or reset from the bottom.
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -49,1086 +43,304 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   // session on data it already had.
   bool get _isLoading => !_appCache.isLocalDataLoaded;
 
+  int _stat(String key, [int fallback = 0]) => (_displayStats[key] as num?)?.toInt() ?? fallback;
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Subscribe to AppDataCache so a post-game refreshStatistics() call
     // rebuilds this screen with the updated high score / totals instead of
     // leaving the user staring at the snapshot captured at first paint.
     return ListenableBuilder(
       listenable: _appCache,
-      builder: (context, _) => BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, state) {
-        final theme = state.currentTheme;
-
-        return Scaffold(
-          bottomNavigationBar: const SnakeBannerAd(),
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: _isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.accentColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppLocalizations.of(context)!.stLoading,
-                            style: TextStyle(
-                              color: theme.accentColor.withValues(alpha: 0.8),
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        // Header
-                        _buildHeader(theme),
-
-                        // Statistics Content
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16 + context.sideInset(),
-                              vertical: 16,
-                            ),
-                            child: Column(
-                              children: [
-                                // Performance Overview
-                                _buildPerformanceOverview(theme),
-
-                                const SizedBox(height: 24),
-
-                                // Game Activity
-                                _buildGameActivity(theme),
-
-                                const SizedBox(height: 24),
-
-                                // Food & Power-ups
-                                _buildConsumptionStats(theme),
-
-                                const SizedBox(height: 24),
-
-                                // Performance Trends
-                                _buildPerformanceTrends(theme),
-
-                                const SizedBox(height: 24),
-
-                                // Play Patterns
-                                _buildPlayPatterns(theme),
-
-                                const SizedBox(height: 24),
-
-                                // Achievement Progress
-                                _buildAchievementProgress(theme),
-
-                                const SizedBox(height: 32),
-
-                                // Action Buttons
-                                _buildActionButtons(theme),
-
-                                const SizedBox(height: 24),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+      builder: (context, _) {
+        if (_isLoading) {
+          return LBScaffold(
+            title: l10n.lbStats,
+            subtitle: l10n.lbStatsSubtitle,
+            body: LBLoadingCells(label: l10n.stLoading),
+          );
+        }
+        final g = context.lbGutter;
+        final cell = context.lbCell;
+        return LBScaffold(
+          title: l10n.lbStats,
+          subtitle: l10n.lbStatsSubtitle,
+          body: RefreshIndicator(
+            onRefresh: _refreshStatistics,
+            color: context.lb.lime,
+            backgroundColor: context.lb.deep,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(g, cell * .9, g, cell * 1.5),
+              children: [
+                ..._performanceOverview(l10n),
+                SizedBox(height: cell),
+                ..._gameActivity(l10n),
+                SizedBox(height: cell),
+                ..._consumption(l10n),
+                SizedBox(height: cell),
+                ..._trendsSection(l10n),
+                SizedBox(height: cell),
+                ..._playPatternsSection(l10n),
+                SizedBox(height: cell),
+                ..._achievementProgress(l10n),
+                SizedBox(height: cell),
+                ..._actions(l10n),
+              ],
             ),
           ),
         );
       },
-    ),
     );
   }
 
-  Widget _buildHeader(GameTheme theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back, color: theme.accentColor, size: context.scaled(24)),
-          ),
-
-          const SizedBox(width: 8),
-
-          Icon(Icons.analytics, color: theme.accentColor, size: context.scaled(28)),
-
-          const SizedBox(width: 12),
-
-          // Matches appScreenBar. This screen builds its own header row
-          // rather than using a Scaffold appBar, so it cannot take the shared
-          // widget — but it can wear the same title.
-          // Expanded, not Flexible-beside-a-Spacer: both would be flex 1 and
-          // split the free space evenly, which is what cut the title to
-          // "STATI...". This takes the room and the refresh button keeps its
-          // place at the end. FittedBox then shrinks rather than truncates,
-          // the same way the shared app bar does.
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-              AppLocalizations.of(context)!.pfStatistics.toUpperCase(),
-              overflow: TextOverflow.ellipsis,
-              style: GameTypography.headlineSmall(color: theme.accentColor)
-                  .copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: context.letterSpacing(2),
-                shadows: [
-                  Shadow(
-                    blurRadius: 18,
-                    color: theme.accentColor.withValues(alpha: 0.45),
-                  ),
-                ],
-              ),
-            ),
-            ),
-          ),
-
-          IconButton(
-            onPressed: _refreshStatistics,
-            icon: Icon(
-              Icons.refresh,
-              color: theme.accentColor.withValues(alpha: 0.7),
-              size: context.scaled(24),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceOverview(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return _buildStatSection(
-      title: l10n.stPerformanceOverview,
-      icon: Icons.trending_up,
-      theme: theme,
-      child: Column(
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    l10n.pfHighScore,
-                    '${_displayStats['highScore'] ?? 0}',
-                    Icons.emoji_events,
-                    Colors.amber,
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    l10n.stTotalGames,
-                    '${_displayStats['totalGames'] ?? 0}',
-                    Icons.games,
-                    theme.accentColor,
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    l10n.pfAverageScore,
-                    context.formatInt(
-                      (_displayStats['averageScore'] as num?) ?? 0,
-                    ),
-                    Icons.trending_up,
-                    Colors.green,
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    l10n.stWinStreak,
-                    '${_displayStats['winStreak'] ?? 0}',
-                    Icons.local_fire_department,
-                    Colors.orange,
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGameActivity(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return _buildStatSection(
-      title: l10n.stGameActivity,
-      icon: Icons.schedule,
-      theme: theme,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  l10n.pfPlayTime,
-                  _formatDuration(
-                    l10n,
-                    (_displayStats['totalPlayTime'] as num?)?.toInt() ?? 0,
-                  ),
-                  Icons.access_time,
-                  Colors.blue,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stLongestGame,
-                  _formatDuration(
-                    l10n,
-                    (_displayStats['longestSurvival'] as num?)?.toInt() ?? 0,
-                  ),
-                  Icons.timer,
-                  Colors.purple,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stHighestLevel,
-                  '${_displayStats['highestLevel'] ?? 1}',
-                  Icons.military_tech,
-                  Colors.indigo,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stPerfectGames,
-                  '${_displayStats['perfectGames'] ?? 0}',
-                  Icons.star,
-                  Colors.pink,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConsumptionStats(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final foodBreakdown =
-        _displayStats['foodBreakdown'] as Map<String, int>? ?? {};
-    final powerUpBreakdown =
-        _displayStats['powerUpBreakdown'] as Map<String, int>? ?? {};
-
-    return _buildStatSection(
-      title: l10n.stFoodPowerUps,
-      icon: Icons.restaurant,
-      theme: theme,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  l10n.pfFoodConsumed,
-                  '${_displayStats['totalFood'] ?? 0}',
-                  Icons.apple,
-                  Colors.red,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stPowerUpsUsed,
-                  '${_displayStats['totalPowerUps'] ?? 0}',
-                  Icons.flash_on,
-                  Colors.yellow,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-
-          if (foodBreakdown.isNotEmpty || powerUpBreakdown.isNotEmpty) ...[
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                if (foodBreakdown.isNotEmpty)
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      l10n.stFavoriteFood,
-                      '${_displayStats['favoriteFood'] ?? l10n.stNone}',
-                      foodBreakdown,
-                      theme,
-                    ),
-                  ),
-
-                if (foodBreakdown.isNotEmpty && powerUpBreakdown.isNotEmpty)
-                  const SizedBox(width: 12),
-
-                if (powerUpBreakdown.isNotEmpty)
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      l10n.stFavoritePowerUp,
-                      _displayStats['favoritePowerUp'] != null
-                          ? localizedPowerUpStatName(
-                              _displayStats['favoritePowerUp'].toString(),
-                              l10n)
-                          : l10n.stNone,
-                      powerUpBreakdown,
-                      theme,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceTrends(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final recentScores =
-        (_performanceTrends['recentScores'] as List<int>?) ?? [];
-    final trend = _performanceTrends['trend'] as String? ?? 'stable';
-
-    return _buildStatSection(
-      title: l10n.stPerformanceTrends,
-      icon: Icons.show_chart,
-      theme: theme,
-      child: Column(
-        children: [
-          // Enhanced Trend Overview Cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildTrendCard(
-                  l10n.stOverallTrend,
-                  trend,
-                  _getTrendIcon(trend),
-                  _getTrendColor(trend),
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stRecentAverage,
-                  '${_performanceTrends['averageRecentScore'] ?? 0}',
-                  Icons.analytics,
-                  Colors.cyan,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Performance Statistics Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stBestRecent,
-                  '${_performanceTrends['bestRecentScore'] ?? 0}',
-                  Icons.star_outline,
-                  Colors.amber,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stConsistency,
-                  _calculateConsistencyRating(recentScores, l10n),
-                  Icons.equalizer,
-                  Colors.purple,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-
-          if (recentScores.isNotEmpty) ...[
-            const SizedBox(height: 16),
-
-            // Enhanced Chart Container
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: HudCorners(
-                color: theme.accentColor,
-                inset: 8,
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.stProgressLastGames(recentScores.length),
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getTrendColor(trend).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          trend.toUpperCase(),
-                          style: TextStyle(
-                            color: _getTrendColor(trend),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Enhanced Chart with Trend Line
-                  SizedBox(
-                    height: context.scaled(80),
-                    child: _buildEnhancedTrendChart(recentScores, theme, trend),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Chart Legend
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLegendItem(l10n.stScores, theme.accentColor, theme),
-                      const SizedBox(width: 16),
-                      _buildLegendItem(
-                        l10n.stTrendLine,
-                        _getTrendColor(trend),
-                        theme,
-                      ),
-                    ],
-                  ),
-                ],
-              )),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Performance Insights
-            _buildPerformanceInsights(recentScores, trend, theme),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlayPatterns(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final dailyPlayTime =
-        (_playPatterns['dailyPlayTime'] as Map<String, int>?) ?? {};
-
-    return _buildStatSection(
-      title: l10n.stPlayPatterns,
-      icon: Icons.calendar_today,
-      theme: theme,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stWeeklyTime,
-                  _formatDuration(
-                    l10n,
-                    (_playPatterns['totalWeeklyTime'] as num?)?.toInt() ?? 0,
-                  ),
-                  Icons.schedule,
-                  Colors.green,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  l10n.stMostActiveDay,
-                  _localizedMostActiveDay(l10n),
-                  Icons.star,
-                  Colors.orange,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-
-          if (dailyPlayTime.isNotEmpty) ...[
-            const SizedBox(height: 16),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.accentColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: HudCorners(
-                color: theme.accentColor,
-                inset: 8,
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.stDailyActivity,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  SizedBox(
-                    height: context.scaled(60),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical, // or horizontal if needed
-                      child: _buildDailyActivityChart(dailyPlayTime, theme),
-                    ),
-                  ),
-                ],
-              )),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAchievementProgress(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return _buildStatSection(
-      title: l10n.stAchievementProgress,
-      icon: Icons.emoji_events,
-      theme: theme,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-        ),
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 8,
-          child: Row(
+  List<Widget> _performanceOverview(AppLocalizations l10n) => [
+        LBSectionLabel(l10n.stPerformanceOverview),
+        LBTwoColumns(
           children: [
-            Container(
-              width: context.scaled(60),
-              height: context.scaled(60),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.amber.withValues(alpha: 0.2),
-                border: Border.all(color: Colors.amber, width: 3),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: CircularProgressIndicator(
-                      // achievementProgress arrives as a RAW 0..1 fraction
-                      // (double) from getDisplayStatistics — exactly what
-                      // the indicator expects.
-                      value:
-                          ((_displayStats['achievementProgress'] as num?)
-                                      ?.toDouble() ??
-                                  0.0)
-                              .clamp(0.0, 1.0),
-                      strokeWidth: 4,
-                      backgroundColor: Colors.amber.withValues(alpha: 0.3),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.amber,
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Icon(
-                      Icons.military_tech,
-                      color: Colors.amber,
-                      size: context.scaled(24),
-                    ),
-                  ),
-                ],
-              ),
+            LBStatTile(
+              label: l10n.lbStatBest,
+              value: context.formatInt(_stat('highScore')),
+              valueColor: LB.gold,
             ),
-
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.stAchievementProgress,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: theme.accentColor,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    l10n.stPercentComplete(
-                      context.formatPercent(
-                        (_displayStats['achievementProgress'] as num?)
-                                ?.toDouble() ??
-                            0,
-                      ),
-                    ),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  GestureDetector(
-                    onTap: () => context.push(AppRoutes.achievements),
-                    child: Text(
-                      l10n.stViewAllAchievements,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            LBStatTile(label: l10n.stTotalGames, value: context.formatInt(_stat('totalGames'))),
+            LBStatTile(
+              label: l10n.lbStatAverage,
+              value: context.formatInt((_displayStats['averageScore'] as num?) ?? 0),
             ),
+            LBStatTile(label: l10n.stWinStreak, value: context.formatInt(_stat('winStreak'))),
           ],
-        )),
+        ),
+      ];
+
+  List<Widget> _gameActivity(AppLocalizations l10n) => [
+        LBSectionLabel(l10n.stGameActivity),
+        LBTwoColumns(
+          children: [
+            LBStatTile(label: l10n.lbStatPlayTime, value: lbDuration(l10n, _stat('totalPlayTime'))),
+            LBStatTile(label: l10n.stLongestGame, value: lbDuration(l10n, _stat('longestSurvival'))),
+            LBStatTile(label: l10n.stHighestLevel, value: context.formatInt(_stat('highestLevel', 1))),
+            LBStatTile(label: l10n.stPerfectGames, value: context.formatInt(_stat('perfectGames'))),
+          ],
+        ),
+      ];
+
+  List<Widget> _consumption(AppLocalizations l10n) {
+    final foodBreakdown = _displayStats['foodBreakdown'] as Map<String, int>? ?? {};
+    final powerUpBreakdown = _displayStats['powerUpBreakdown'] as Map<String, int>? ?? {};
+    return [
+      LBSectionLabel(l10n.stFoodPowerUps),
+      LBTwoColumns(
+        children: [
+          LBStatTile(label: l10n.lbStatFood, value: context.formatInt(_stat('totalFood'))),
+          LBStatTile(label: l10n.stPowerUpsUsed, value: context.formatInt(_stat('totalPowerUps'))),
+          if (foodBreakdown.isNotEmpty)
+            _BreakdownBlock(
+              title: l10n.stFavoriteFood,
+              favorite: '${_displayStats['favoriteFood'] ?? l10n.stNone}',
+              breakdown: foodBreakdown,
+            ),
+          if (powerUpBreakdown.isNotEmpty)
+            _BreakdownBlock(
+              title: l10n.stFavoritePowerUp,
+              favorite: _displayStats['favoritePowerUp'] != null
+                  ? localizedPowerUpStatName(_displayStats['favoritePowerUp'].toString(), l10n)
+                  : l10n.stNone,
+              breakdown: powerUpBreakdown,
+              nameOf: (k) => localizedPowerUpStatName(k, l10n),
+            ),
+        ],
       ),
-    );
+    ];
   }
 
-  Widget _buildActionButtons(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth < 400) {
-              return Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: GradientButton(
-                      onPressed: () => context.push(AppRoutes.achievements),
-                      text: l10n.stViewAchievements,
-                      primaryColor: Colors.amber,
-                      secondaryColor: Colors.orange,
-                      icon: Icons.emoji_events,
-                    ),
-                  ),
+  List<Widget> _trendsSection(AppLocalizations l10n) {
+    final p = context.lb;
+    final recentScores = (_performanceTrends['recentScores'] as List<int>?) ?? [];
+    final trend = _performanceTrends['trend'] as String? ?? 'stable';
+    final trendLabel = _trendLabel(l10n, trend);
+    final trendColor = _trendColor(trend);
 
-                  const SizedBox(height: 16),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: GradientButton(
-                      onPressed: () => context.push(AppRoutes.replays),
-                      text: l10n.stReplaysUpper,
-                      primaryColor: theme.accentColor,
-                      secondaryColor: theme.foodColor,
-                      icon: Icons.video_library,
-                    ),
-                  ),
-                ],
-              );
-            }
-            return Row(
-              children: [
-                Expanded(
-                  child: GradientButton(
-                    onPressed: () => context.push(AppRoutes.achievements),
-                    text: l10n.stViewAchievements,
-                    primaryColor: Colors.amber,
-                    secondaryColor: Colors.orange,
-                    icon: Icons.emoji_events,
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                Expanded(
-                  child: GradientButton(
-                    onPressed: () => context.push(AppRoutes.replays),
-                    text: l10n.stReplaysUpper,
-                    primaryColor: theme.accentColor,
-                    secondaryColor: theme.foodColor,
-                    icon: Icons.video_library,
-                  ),
-                ),
-              ],
-            );
-          },
+    return [
+      LBSectionLabel(l10n.stPerformanceTrends),
+      LBTwoColumns(
+        children: [
+          LBStatTile(label: l10n.stOverallTrend, value: trendLabel, valueColor: trendColor),
+          LBStatTile(
+            label: l10n.stRecentAverage,
+            value: context.formatInt((_performanceTrends['averageRecentScore'] as num?) ?? 0),
+          ),
+          LBStatTile(
+            label: l10n.stBestRecent,
+            value: context.formatInt((_performanceTrends['bestRecentScore'] as num?) ?? 0),
+            valueColor: LB.gold,
+          ),
+          LBStatTile(label: l10n.stConsistency, value: _calculateConsistencyRating(recentScores, l10n)),
+        ],
+      ),
+      if (recentScores.isNotEmpty) ...[
+        LBBlock(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LBSectionLabel(
+                l10n.stProgressLastGames(recentScores.length),
+                trailing: trendLabel,
+              ),
+              const SizedBox(height: 8),
+              LBCellColumns(
+                values: recentScores,
+                rows: 6,
+                // The latest game in the head colour, so "now" reads first.
+                colorAt: (i) => i == recentScores.length - 1 ? p.head : p.lime.withValues(alpha: .75),
+              ),
+            ],
+          ),
         ),
-
-        const SizedBox(height: 16),
-
-        SizedBox(
-          width: double.infinity,
-          child: GradientButton(
-            onPressed: _showResetDialog,
-            text: l10n.stResetStatistics,
-            primaryColor: Colors.red.shade400,
-            secondaryColor: Colors.red.shade600,
-            icon: Icons.refresh,
+        LBBlock(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LBSectionLabel(l10n.stInsights),
+              for (final insight in _generateInsights(recentScores, trend, l10n))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(top: 5, end: 10),
+                        child: SizedBox.square(
+                          dimension: 6,
+                          child: CustomPaint(painter: _CellDot(p.lime)),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(insight, style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 11.5)),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ],
-    );
+    ];
   }
 
-  Widget _buildStatSection({
-    required String title,
-    required IconData icon,
-    required GameTheme theme,
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      decoration: arcadeSurface(
-        theme,
-        borderRadius: BorderRadius.circular(20),
-        borderColor: theme.accentColor.withValues(alpha: 0.28),
+  List<Widget> _playPatternsSection(AppLocalizations l10n) {
+    final p = context.lb;
+    final dailyPlayTime = (_playPatterns['dailyPlayTime'] as Map<String, int>?) ?? {};
+    final locale = Localizations.localeOf(context);
+    return [
+      LBSectionLabel(l10n.stPlayPatterns),
+      LBTwoColumns(
+        children: [
+          LBStatTile(
+            label: l10n.stWeeklyTime,
+            value: lbDuration(l10n, (_playPatterns['totalWeeklyTime'] as num?)?.toInt() ?? 0),
+          ),
+          LBStatTile(label: l10n.stMostActiveDay, value: _localizedMostActiveDay(l10n)),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The shared eyebrow: emblem, tracked title, rule, terminator.
-            // This was the same header hand-rolled, which is how the screen
-            // ended up looking like a different product to the one next door.
-            screenEyebrow(context, theme, title, icon: icon),
+      if (dailyPlayTime.isNotEmpty)
+        LBBlock(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LBSectionLabel(l10n.stDailyActivity),
+              const SizedBox(height: 8),
+              LBCellColumns(
+                values: dailyPlayTime.values.toList(),
+                rows: 5,
+                labels: [
+                  for (final day in dailyPlayTime.keys) AppFormats.weekdayShortFromEn(day, locale),
+                ],
+                colorAt: (_) => p.lime,
+              ),
+            ],
+          ),
+        ),
+    ];
+  }
 
-            const SizedBox(height: 4),
-
-            child,
-          ],
+  List<Widget> _achievementProgress(AppLocalizations l10n) {
+    final p = context.lb;
+    // achievementProgress arrives as a RAW 0..1 fraction (double) from
+    // getDisplayStatistics.
+    final progress = ((_displayStats['achievementProgress'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
+    final pct = l10n.stPercentComplete(context.formatPercent(progress));
+    return [
+      LBSectionLabel(l10n.stAchievementProgress),
+      LBBlock(
+        kind: LBBlockKind.gold,
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        semanticLabel: '${l10n.stAchievementProgress}, $pct',
+        onTap: () => context.push(AppRoutes.achievements),
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const LBPixelIcon(LBIcon.trophy, cell: 3.4, color: LB.gold),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(pct.toUpperCase(), style: LBText.button(p, color: LB.gold, size: 12.5)),
+                  ),
+                  LBPixelIcon(LBIcon.next, cell: 2, color: LB.gold.withValues(alpha: .8)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              LBCellsBar(count: 16, value: progress, color: LB.gold, offColor: LB.goldFill),
+            ],
+          ),
         ),
       ),
-    ).gameZoomIn();
+    ];
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-    GameTheme theme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
+  List<Widget> _actions(AppLocalizations l10n) {
+    return [
+      LBTwoColumns(
         children: [
-          Icon(icon, color: color, size: context.scaled(28)),
-
-          const SizedBox(height: 8),
-
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: theme.accentColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
+          LBLinkBlock(
+            icon: LBIcon.trophy,
+            label: l10n.lbTrophies,
+            onTap: () => context.push(AppRoutes.achievements),
           ),
-
-          const SizedBox(height: 4),
-
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.accentColor.withValues(alpha: 0.7),
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
+          LBLinkBlock(
+            icon: LBIcon.film,
+            label: l10n.lbReplays,
+            onTap: () => context.push(AppRoutes.replays),
           ),
         ],
-      )),
-    );
-  }
-
-  Widget _buildTrendCard(
-    String label,
-    String trend,
-    IconData icon,
-    Color color,
-    GameTheme theme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        children: [
-          Icon(icon, color: color, size: context.scaled(28)),
-
-          const SizedBox(height: 8),
-
-          Text(
-            trend.toUpperCase(),
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      )),
-    );
-  }
-
-  Widget _buildBreakdownCard(
-    String title,
-    String favorite,
-    Map<String, int> breakdown,
-    GameTheme theme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
+      LBRow(
+        title: l10n.stResetStatistics,
+        kind: LBBlockKind.danger,
+        leading: const LBPixelIcon(LBIcon.skull, cell: 3, color: LB.bonk),
+        trailing: LBPixelIcon(LBIcon.next, cell: 2, color: LB.bonk.withValues(alpha: .7)),
+        onTap: _showResetDialog,
       ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: theme.accentColor.withValues(alpha: 0.8),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            favorite,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          ...breakdown.entries
-              .take(3)
-              .map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        entry.key,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      Text(
-                        '${entry.value}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: theme.accentColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-        ],
-      )),
-    );
+    ];
   }
 
-  Widget _buildDailyActivityChart(Map<String, int> dailyData, GameTheme theme) {
-    final maxTime = dailyData.values.isNotEmpty
-        ? dailyData.values.reduce((a, b) => a > b ? a : b)
-        : 0;
+  String _trendLabel(AppLocalizations l10n, String trend) => switch (trend) {
+        'improving' => l10n.lbTrendUp,
+        'declining' => l10n.lbTrendDown,
+        _ => l10n.lbTrendFlat,
+      };
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: dailyData.entries.map((entry) {
-        final day = entry.key;
-        final time = entry.value;
-        final height = maxTime > 0 ? (time / maxTime) * 40 : 8.0;
-
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              width: 20,
-              height: height + 8,
-              decoration: BoxDecoration(
-                color: time > 0
-                    ? theme.accentColor.withValues(alpha: 0.7)
-                    : theme.accentColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              AppFormats.weekdayShortFromEn(day, Localizations.localeOf(context)),
-              style: TextStyle(
-                fontSize: 10,
-                color: theme.accentColor.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        );
-      }).toList(),
-    );
-  }
-
-  IconData _getTrendIcon(String trend) {
-    switch (trend) {
-      case 'improving':
-        return Icons.trending_up;
-      case 'declining':
-        return Icons.trending_down;
-      default:
-        return Icons.trending_flat;
-    }
-  }
-
-  Color _getTrendColor(String trend) {
-    switch (trend) {
-      case 'improving':
-        return Colors.green;
-      case 'declining':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  /// Localized duration for the stats cards. The service returns raw
-  /// seconds; the stDur* ARB keys carry the per-locale unit letters.
-  String _formatDuration(AppLocalizations l10n, int seconds) {
-    if (seconds < 60) {
-      return l10n.stDurSeconds(seconds);
-    } else if (seconds < 3600) {
-      final m = seconds ~/ 60;
-      final s = seconds % 60;
-      return s == 0 ? l10n.stDurMinutes(m) : l10n.stDurMinSec(m, s);
-    } else {
-      final h = seconds ~/ 3600;
-      final m = (seconds % 3600) ~/ 60;
-      return m == 0 ? l10n.stDurHours(h) : l10n.stDurHourMin(h, m);
-    }
-  }
+  Color _trendColor(String trend) => switch (trend) {
+        'improving' => context.lb.lime,
+        'declining' => LB.bonk,
+        _ => context.lb.inkMuted,
+      };
 
   /// The service keys mostActiveDay by English 'Sun'..'Sat' (or the literal
   /// 'None' when empty) — map to the locale's weekday abbreviation here.
@@ -1143,45 +355,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (mounted) setState(() {});
   }
 
-  void _showResetDialog() {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
+  Future<void> _showResetDialog() async {
     final l10n = AppLocalizations.of(context)!;
-
-    showDialog(
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-        ),
-        title: Text(
-          l10n.stResetTitle,
-          style: TextStyle(color: theme.accentColor),
-        ),
-        content: Text(
-          l10n.stResetBody,
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _statisticsService.resetStatistics();
-              await _refreshStatistics();
-            },
-            child: Text(l10n.stReset, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: l10n.stResetTitle,
+      titleColor: LB.bonk,
+      body: l10n.stResetBody,
+      primaryLabel: l10n.stReset,
+      primaryKind: LBBlockKind.danger,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
     );
+    if (confirmed != true) return;
+    await _statisticsService.resetStatistics();
+    await _refreshStatistics();
   }
 
   String _calculateConsistencyRating(List<int> scores, AppLocalizations l10n) {
@@ -1189,10 +378,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final average = scores.reduce((a, b) => a + b) / scores.length;
     final variance =
-        scores
-            .map((score) => (score - average) * (score - average))
-            .reduce((a, b) => a + b) /
-        scores.length;
+        scores.map((score) => (score - average) * (score - average)).reduce((a, b) => a + b) /
+            scores.length;
     final standardDeviation = sqrt(variance);
     final coefficient = average > 0 ? standardDeviation / average : 0;
 
@@ -1200,130 +387,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (coefficient < 0.5) return l10n.stGood;
     if (coefficient < 0.7) return l10n.stFair;
     return l10n.stPoor;
-  }
-
-  Widget _buildEnhancedTrendChart(
-    List<int> scores,
-    GameTheme theme,
-    String trend,
-  ) {
-    if (scores.isEmpty) {
-      return Center(child: Text(AppLocalizations.of(context)!.stNoData));
-    }
-
-    final maxScore = scores.reduce((a, b) => a > b ? a : b);
-    final minScore = scores.reduce((a, b) => a < b ? a : b);
-
-    return CustomPaint(
-      painter: TrendChartPainter(
-        scores: scores,
-        maxScore: maxScore,
-        minScore: minScore,
-        barColor: theme.accentColor,
-        trendColor: _getTrendColor(trend),
-        trend: trend,
-      ),
-      child: Container(),
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color, GameTheme theme) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 3,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.7),
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPerformanceInsights(
-    List<int> scores,
-    String trend,
-    GameTheme theme,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final insights = _generateInsights(scores, trend, l10n);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                color: theme.primaryColor,
-                size: context.scaled(18),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.stInsights,
-                style: TextStyle(
-                  color: theme.primaryColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...insights.map(
-            (insight) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 4,
-                    // Directional: in Arabic the Row reverses, so the gap
-                    // between the bullet and its text has to follow.
-                    margin: const EdgeInsetsDirectional.only(top: 6, end: 8),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor.withValues(alpha: 0.6),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      insight,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      )),
-    );
   }
 
   List<String> _generateInsights(
@@ -1336,9 +399,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (scores.isEmpty) return [l10n.stInsightPlayMore];
 
     final average = scores.reduce((a, b) => a + b) / scores.length;
-    final recent = scores.length >= 3
-        ? scores.sublist(scores.length - 3)
-        : scores;
+    final recent = scores.length >= 3 ? scores.sublist(scores.length - 3) : scores;
     final recentAvg = recent.reduce((a, b) => a + b) / recent.length;
 
     if (trend == 'improving') {
@@ -1370,94 +431,73 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 }
 
-class TrendChartPainter extends CustomPainter {
-  final List<int> scores;
-  final int maxScore;
-  final int minScore;
-  final Color barColor;
-  final Color trendColor;
-  final String trend;
-
-  TrendChartPainter({
-    required this.scores,
-    required this.maxScore,
-    required this.minScore,
-    required this.barColor,
-    required this.trendColor,
-    required this.trend,
+/// Favourite food / power-up with its top three counts.
+class _BreakdownBlock extends StatelessWidget {
+  const _BreakdownBlock({
+    required this.title,
+    required this.favorite,
+    required this.breakdown,
+    this.nameOf,
   });
+
+  final String title;
+  final String favorite;
+  final Map<String, int> breakdown;
+  final String Function(String key)? nameOf;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    return LBBlock(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: LBText.label(p)),
+          const SizedBox(height: 6),
+          Text(
+            favorite,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LBText.value(p, size: 15),
+          ),
+          const SizedBox(height: 6),
+          for (final entry in breakdown.entries.take(3))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1.5),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      nameOf?.call(entry.key) ?? entry.key,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LBText.body(p, size: 10.5),
+                    ),
+                  ),
+                  Text(
+                    context.formatInt(entry.value),
+                    style: LBText.body(p, color: p.ink, size: 10.5).copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CellDot extends CustomPainter {
+  _CellDot(this.color);
+
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (scores.isEmpty) return;
-
-    final barPaint = Paint()
-      ..color = barColor.withValues(alpha: 0.6)
-      ..style = PaintingStyle.fill;
-
-    final trendPaint = Paint()
-      ..color = trendColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final barWidth = size.width / scores.length;
-    final range = maxScore > minScore ? maxScore - minScore : 1;
-
-    // Draw bars
-    for (int i = 0; i < scores.length; i++) {
-      final score = scores[i];
-      final normalizedHeight =
-          ((score - minScore) / range) * (size.height - 10) + 5;
-      final barHeight = normalizedHeight;
-
-      final rect = Rect.fromLTWH(
-        i * barWidth + barWidth * 0.1,
-        size.height - barHeight,
-        barWidth * 0.8,
-        barHeight,
-      );
-
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(2)),
-        barPaint,
-      );
-    }
-
-    // Draw trend line
-    if (scores.length > 1) {
-      final path = Path();
-      for (int i = 0; i < scores.length; i++) {
-        final score = scores[i];
-        final x = i * barWidth + barWidth * 0.5;
-        final normalizedHeight =
-            ((score - minScore) / range) * (size.height - 10) + 5;
-        final y = size.height - normalizedHeight;
-
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      canvas.drawPath(path, trendPaint);
-
-      // Draw trend line points
-      final pointPaint = Paint()
-        ..color = trendColor
-        ..style = PaintingStyle.fill;
-
-      for (int i = 0; i < scores.length; i++) {
-        final score = scores[i];
-        final x = i * barWidth + barWidth * 0.5;
-        final normalizedHeight =
-            ((score - minScore) / range) * (size.height - 10) + 5;
-        final y = size.height - normalizedHeight;
-
-        canvas.drawCircle(Offset(x, y), 3, pointPaint);
-      }
-    }
+    canvas.drawRRect(lbCellRect(0, 0, size.width), Paint()..color = color);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(_CellDot old) => old.color != color;
 }

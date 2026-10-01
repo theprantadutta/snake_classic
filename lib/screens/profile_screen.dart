@@ -1,43 +1,58 @@
+import 'dart:math' as math;
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
-import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/models/achievement.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/providers/friends_provider.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/progression_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/services/sync/sync_status.dart';
 import 'package:snake_classic/widgets/account_switch_confirmation.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/not_backed_up_notice.dart';
-import 'package:snake_classic/widgets/themed_loading.dart';
+import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/profile/lb_profile_parts.dart';
 
-class ProfileScreen extends StatefulWidget {
+/// Profile (Living Board screen 13): who you are, your numbers, a fun fact,
+/// links to the deeper screens, and where your progress lives. Every account
+/// action the screen had (sign in / link, sign out, delete) is still here,
+/// below the sync block.
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late final AppDataCache _appCache;
+  final AchievementService _achievements = AchievementService();
+  late final ProgressionService _progression;
+  SyncEngine? _sync;
+
+  /// Which fun fact is showing. Seeded per visit; a tap moves to the next.
+  late int _factIndex;
 
   @override
   void initState() {
     super.initState();
     _appCache = getIt<AppDataCache>();
+    _progression = getIt<ProgressionService>();
+    if (getIt.isRegistered<SyncEngine>()) _sync = getIt<SyncEngine>();
+    _factIndex = math.Random().nextInt(3);
     // Trigger background refresh for fresh data (non-blocking)
     _appCache.refreshInBackground();
 
@@ -53,41 +68,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Convenience getters using cached data
   Map<String, dynamic> get _displayStats => _appCache.statistics ?? {};
-  List<Achievement> get _recentAchievements =>
-      _appCache.recentAchievements ?? [];
+
   // Gated on the LOCAL group only — this panel renders statistics that come
   // straight from Drift. isFullyLoaded also requires the network group, which
   // is skipped on a first-run preload, so using it here left the spinner up
   // for the entire first session on data that was already in hand.
   bool get _isLoading => !_appCache.isLocalDataLoaded;
 
-  /// Localized duration for the play-time stat. getDisplayStatistics()
-  /// returns RAW seconds; the stDur* ARB keys carry per-locale unit letters.
-  String _formatDuration(AppLocalizations l10n, int seconds) {
-    if (seconds < 60) {
-      return l10n.stDurSeconds(seconds);
-    } else if (seconds < 3600) {
-      final m = seconds ~/ 60;
-      final s = seconds % 60;
-      return s == 0 ? l10n.stDurMinutes(m) : l10n.stDurMinSec(m, s);
-    } else {
-      final h = seconds ~/ 3600;
-      final m = (seconds % 3600) ~/ 60;
-      return m == 0 ? l10n.stDurHours(h) : l10n.stDurHourMin(h, m);
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  int _stat(String key) => (_displayStats[key] as num?)?.toInt() ?? 0;
 
   @override
   Widget build(BuildContext context) {
-    final themeState = context.watch<ThemeCubit>().state;
-    final theme = themeState.currentTheme;
+    final l10n = AppLocalizations.of(context)!;
+    // Watched here, in the consumer's own build, so the subscription is
+    // tracked per build. Only when the provider is already alive: creating
+    // it from the profile would start its network refresh timer.
+    final liveFriends = ref.exists(friendsProvider) ? ref.watch(friendsProvider).friends : null;
 
     // BlocListener routes the user to the sign-in screen as soon as they
     // become unauthenticated (i.e. after a successful sign-out). This is the
@@ -105,51 +102,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       },
       // Subscribe to AppDataCache so a post-game refreshStatistics() call
-      // rebuilds the stat row with the updated high score / totals. Without
-      // this, the cached snapshot from app startup stays visible.
+      // rebuilds the stat tiles with the updated high score / totals.
+      // Progression and achievements notify on their own schedules.
       child: ListenableBuilder(
-        listenable: _appCache,
+        listenable: Listenable.merge([_appCache, _progression, _achievements]),
         builder: (context, _) => BlocBuilder<AuthCubit, AuthState>(
           builder: (context, authState) {
-            return Scaffold(
-              bottomNavigationBar: const SnakeBannerAd(),
-              extendBodyBehindAppBar: true,
-              // Was a hand-copied match of SettingsScreen's bar, with a comment
-              // saying so. Both come from the shared bar now, so "matches
-              // Settings exactly" is enforced rather than asserted.
-              appBar: appScreenBar(
-                context,
-                theme,
-                AppLocalizations.of(context)!.pfTitle,
-                leading: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.backgroundColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      color: theme.primaryColor,
-                    ),
-                    onPressed: () => context.pop(),
-                  ),
+            // Loading takes priority over content so we never render a
+            // half-rendered profile while sign-out is in flight.
+            if (authState.isLoading || !authState.isSignedIn) {
+              return LBScaffold(
+                title: l10n.lbProfileTitle,
+                body: LBLoadingCells(
+                  label: authState.isLoading ? l10n.pfSigningOut : null,
                 ),
-              ),
-              body: AnimatedAppBackground(
-                theme: theme,
-                child: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.0 + context.sideInset(),
-                    ),
-                    child: _buildBody(context, authState, themeState),
-                  ),
-                ),
-              ),
+              );
+            }
+            return LBScaffold(
+              title: l10n.lbProfileTitle,
+              subtitle: l10n.lbProfileSubtitle,
+              children: _content(context, authState, liveFriends),
             );
           },
         ),
@@ -157,755 +129,344 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Pick the right body view for the current auth state. Loading takes
-  /// priority over content so we never render a half-rendered profile
-  /// (with stale name/badge/sections) while sign-out is in flight.
-  Widget _buildBody(
-    BuildContext context,
-    AuthState authState,
-    ThemeState themeState,
-  ) {
-    if (authState.isLoading) {
-      return _buildFullScreenLoader(
-        themeState,
-        message: AppLocalizations.of(context)!.pfSigningOut,
-      );
-    }
-    if (authState.isSignedIn) {
-      return _buildProfileContent(context, authState, themeState);
-    }
-    // Unauthenticated and not loading — the BlocListener will navigate us
-    // away on the next frame, but show a clean spinner so we don't flash
-    // the inline sign-in content during the redirect.
-    return _buildFullScreenLoader(themeState);
-  }
+  List<Widget> _content(BuildContext context, AuthState authState, List<UserProfile>? liveFriends) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
+    final isGuest = authState.hasNoCredential;
 
-  Widget _buildFullScreenLoader(ThemeState themeState, {String? message}) {
-    final theme = themeState.currentTheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: theme.accentColor, strokeWidth: 3),
-          if (message != null) ...[
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+    return [
+      _Identity(
+        name: authState.publicLabel,
+        chip: isGuest ? l10n.lbGuest : _providerChip(l10n),
+        isGuest: isGuest,
+        level: _progression.level,
+        into: _progression.xpIntoLevel,
+        needed: _progression.xpForNextLevel,
+      ),
+      SizedBox(height: cell * .9),
+
+      if (_isLoading)
+        LBBlock(
+          height: cell * 6,
+          child: LBLoadingCells(label: l10n.pfLoadingStats),
+        )
+      else ...[
+        LBTwoColumns(
+          children: [
+            LBStatTile(
+              label: l10n.lbStatBest,
+              value: context.formatInt(_stat('highScore')),
+              valueColor: LB.gold,
             ),
+            LBStatTile(label: l10n.lbStatGames, value: context.formatInt(_stat('totalGames'))),
+            LBStatTile(label: l10n.lbStatPlayTime, value: lbDuration(l10n, _stat('totalPlayTime'))),
+            LBStatTile(
+              label: l10n.lbStatAverage,
+              value: context.formatInt((_displayStats['averageScore'] as num?) ?? 0),
+            ),
+            LBStatTile(label: l10n.lbStatFood, value: context.formatInt(_stat('totalFood'))),
+            LBStatTile(label: l10n.lbStatPowerups, value: context.formatInt(_stat('totalPowerUps'))),
           ],
+        ),
+        _funFact(context, l10n),
+      ],
+
+      LBTwoColumns(
+        children: [
+          LBLinkBlock(
+            icon: LBIcon.chart,
+            label: l10n.lbStats,
+            onTap: _isLoading ? null : () => context.push(AppRoutes.statistics),
+          ),
+          LBLinkBlock(
+            icon: LBIcon.film,
+            label: l10n.lbReplays,
+            onTap: () => context.push(AppRoutes.replays),
+          ),
+          LBLinkBlock(
+            icon: LBIcon.friends,
+            label: l10n.lbFriends,
+            trailing: _friendsOnline(context, l10n, liveFriends),
+            onTap: () => context.push(AppRoutes.friends),
+          ),
+          LBLinkBlock(
+            icon: LBIcon.trophy,
+            label: l10n.lbTrophies,
+            trailing: context.formatInt(_achievements.getUnlockedAchievements().length),
+            onTap: () => context.push(AppRoutes.achievements),
+          ),
         ],
       ),
-    );
+
+      if (isGuest) _guestBlock(context, l10n, p) else _syncBlock(context, l10n, p),
+
+      if (isGuest) ...[
+        SizedBox(height: cell),
+        // "Sign in" rather than pfUpgradeTitle ("Upgrade to Google
+        // Account"): it is wrong on iOS, where Apple is offered alongside
+        // Google.
+        LBSectionLabel(l10n.eaSignIn),
+        _signInBlock(context, l10n, p),
+      ],
+
+      SizedBox(height: cell),
+      LBSectionLabel(l10n.pfAccountManagement),
+      LBRow(
+        title: l10n.pfSignOut,
+        leading: LBPixelIcon(LBIcon.back, cell: 3, color: p.lime),
+        onTap: () => _showSignOutDialog(context),
+      ),
+      // App Store Guideline 5.1.1(v): deletion must be initiable in-app
+      // wherever accounts can be created.
+      LBRow(
+        title: l10n.pfDeleteAccount,
+        kind: LBBlockKind.danger,
+        leading: const LBPixelIcon(LBIcon.skull, cell: 3, color: LB.bonk),
+        onTap: () => _showDeleteAccountDialog(context),
+      ),
+    ];
   }
 
-  // ===========================================================================
-  // PROFILE CONTENT
-  //
-  // Rebuilt to the language the rest of the app settled on (see SettingsScreen):
-  // an uppercase accent eyebrow over a hairline-bordered translucent card, one
-  // column, everything monochrome against the active theme. The screen it
-  // replaced predated that language — multicolour gradient tiles, per-section
-  // borders in blue / amber / purple / red, and a drop shadow on every block —
-  // which is why it read as a different app.
-  //
-  // Two structural changes beyond restyling:
-  //
-  //  * The identity block absorbs the old level card. Avatar, name, account
-  //    state and level progress are one fact about the player, so they are one
-  //    element: the XP ring IS the avatar's border.
-  //  * The three quick-action tiles are gone. Each one duplicated a "View all"
-  //    link already sitting in that section's header, and they were the
-  //    loudest thing on the screen.
-  // ===========================================================================
+  /// "SIGNED IN · GOOGLE" — the provider comes from the live Firebase
+  /// session (read-only). Unknown or unavailable → plain "SIGNED IN".
+  String _providerChip(AppLocalizations l10n) {
+    try {
+      final ids = {
+        for (final info in FirebaseAuth.instance.currentUser?.providerData ?? const <UserInfo>[])
+          info.providerId,
+      };
+      if (ids.contains('google.com')) return l10n.lbSignedInWith(l10n.lbProviderGoogle);
+      if (ids.contains('apple.com')) return l10n.lbSignedInWith(l10n.lbProviderApple);
+      if (ids.contains('password')) return l10n.lbSignedInWith(l10n.lbProviderEmail);
+    } catch (_) {
+      // Firebase not initialised (offline cold start): fall through.
+    }
+    return l10n.lbSignedIn;
+  }
 
-  Widget _buildProfileContent(
-    BuildContext context,
-    AuthState authState,
-    ThemeState themeState,
-  ) {
-    final theme = themeState.currentTheme;
-    final l10n = AppLocalizations.of(context)!;
-    final replayKeys = _appCache.replayKeys ?? [];
+  /// "{n} ON" from the friends provider when it is already alive (the
+  /// Friends screen created it), else from the AppDataCache snapshot.
+  /// Null (arrow instead) when nobody is on or nothing is known.
+  String? _friendsOnline(BuildContext context, AppLocalizations l10n, List<UserProfile>? liveFriends) {
+    final friends = liveFriends ?? _appCache.friendsList;
+    if (friends == null) return null;
+    final on = friends.where((f) => f.status != UserStatus.offline).length;
+    return on > 0 ? l10n.lbFriendsOn(context.formatInt(on)) : null;
+  }
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-
-          // Qualifies everything below it — the high score, the achievements
-          // and the replays are all device-local until this is resolved.
-          if (authState.hasNoCredential) ...[
-            NotBackedUpNotice(theme: theme),
-            const SizedBox(height: 24),
-          ],
-
-          _buildIdentity(context, authState, theme),
-          const SizedBox(height: 28),
-
-          _buildSection(
-            theme: theme,
-            title: l10n.pfStatistics,
-            onViewAll: _isLoading ? null : () => _navigateToStatistics(context),
-            child: _isLoading
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: ThemedLoading(
-                      theme: theme,
-                      label: l10n.pfLoadingStats,
+  Widget _funFact(BuildContext context, AppLocalizations l10n) {
+    final p = context.lb;
+    final apples = _stat('totalFood');
+    final minutes = _stat('totalPlayTime') ~/ 60;
+    final powerUps = _stat('totalPowerUps');
+    final facts = <String>[
+      if (apples > 0) l10n.lbFunApples(context.formatInt(apples), context.formatInt(apples ~/ 10)),
+      if (minutes > 0) l10n.lbFunMinutes(context.formatInt(minutes)),
+      if (powerUps > 0) l10n.lbFunPowerups(context.formatInt(powerUps)),
+    ];
+    if (facts.isEmpty) {
+      facts.add(l10n.lbFunApples(context.formatInt(apples), context.formatInt(apples ~/ 10)));
+    }
+    final fact = facts[_factIndex % facts.length];
+    return LBBlock(
+      kind: LBBlockKind.gold,
+      onTap: facts.length > 1 ? () => setState(() => _factIndex++) : null,
+      semanticLabel: '${l10n.lbFunFact}. $fact',
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            LBPixelIcon(LBIcon.apple, cell: 4.4, color: LB.apple, accent: p.lime),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.lbFunFact, style: LBText.label(p, color: LB.gold)),
+                  const SizedBox(height: 5),
+                  AnimatedSwitcher(
+                    duration: LB.reveal,
+                    child: Text(
+                      fact,
+                      key: ValueKey(fact),
+                      style: LBText.body(p, color: p.ink, size: 12).copyWith(fontWeight: FontWeight.w600),
                     ),
-                  )
-                : _buildStatGrid(l10n, theme),
-          ),
-
-          if (_recentAchievements.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            _buildSection(
-              theme: theme,
-              title: l10n.pfAchievements,
-              onViewAll: () => _navigateToAchievements(context),
-              child: Column(
-                children: [
-                  for (var i = 0; i < _recentAchievements.length; i++) ...[
-                    if (i > 0) _hairline(theme),
-                    _buildAchievementRow(_recentAchievements[i], theme),
-                  ],
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 24),
-          _buildSection(
-            theme: theme,
-            title: l10n.pfReplays,
-            onViewAll: replayKeys.isEmpty
-                ? null
-                : () => _navigateToReplays(context),
-            child: replayKeys.isEmpty
-                ? _buildEmptyLine(l10n.pfNoReplays)
-                : Row(
-                    children: [
-                      Icon(
-                        Icons.videocam_rounded,
-                        color: theme.accentColor,
-                        size: context.scaled(20),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        l10n.pfReplaysSaved(replayKeys.length),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-
-          if (authState.hasNoCredential) ...[
-            const SizedBox(height: 24),
-            _buildSection(
-              theme: theme,
-              // "Sign in" rather than pfUpgradeTitle ("Upgrade to Google
-              // Account"): as a section eyebrow that was both shouty and
-              // wrong on iOS, where Apple is offered alongside Google. The
-              // card's first line already explains what signing in buys.
-              title: l10n.eaSignIn,
-              child: _buildSignInBlock(context, l10n, theme),
-            ),
-          ],
-
-          if (!authState.isLoading) ...[
-            const SizedBox(height: 24),
-            _buildSection(
-              theme: theme,
-              title: l10n.pfAccountManagement,
-              child: Column(
-                children: [
-                  _buildAccountAction(
-                    icon: Icons.logout_rounded,
-                    label: l10n.pfSignOut,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    onTap: () => _showSignOutDialog(context, theme),
-                  ),
-                  _hairline(theme),
-                  // App Store Guideline 5.1.1(v): deletion must be initiable
-                  // in-app wherever accounts can be created.
-                  _buildAccountAction(
-                    icon: Icons.delete_forever_rounded,
-                    label: l10n.pfDeleteAccount,
-                    color: Colors.redAccent,
-                    onTap: () => _showDeleteAccountDialog(context, theme),
                   ),
                 ],
               ),
             ),
           ],
-
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
     );
   }
 
-  /// Eyebrow + hairline card. Mirrors `SettingsScreen._buildSection` so the two
-  /// screens read as the same product; [onViewAll] renders as a quiet text
-  /// affordance rather than the filled gradient pill this screen used to have,
-  /// which competed with the content it was pointing at.
-  /// A section panel.
-  ///
-  /// Was a hand-rolled twin of `SettingsScreen._buildSection` — the same
-  /// eyebrow and card retyped, kept in step by hand. Both now read from
-  /// `screen_shell.dart`, so the two screens stay the same product because
-  /// they are built from the same parts rather than because somebody
-  /// remembered to copy the change across.
-  Widget _buildSection({
-    required GameTheme theme,
-    required String title,
-    required Widget child,
-    VoidCallback? onViewAll,
-    IconData? icon,
-    int? index,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return screenSection(
-      context,
-      theme,
-      title,
-      child,
-      icon: icon,
-      index: index,
-      trailing: onViewAll == null
-          ? null
-          : GestureDetector(
-              onTap: onViewAll,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+  /// Where the player's progress lives, from the canonical sync engine.
+  Widget _syncBlock(BuildContext context, AppLocalizations l10n, LBPalette p) {
+    Widget block(SyncStatusSnapshot s) {
+      final synced = s.isFullySynced;
+      return LBBlock(
+        kind: LBBlockKind.dashed,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Semantics(
+          liveRegion: true,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.commonViewAll,
-                      style: GameTypography.labelMedium(
-                        color: theme.accentColor.withValues(alpha: 0.9),
-                      ).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+                      synced ? l10n.lbSynced : l10n.lbSyncPending,
+                      style: LBText.button(p, color: synced ? p.lime : p.head, size: 12.5),
                     ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Directionality.of(context) == TextDirection.rtl
-                          ? Icons.chevron_left_rounded
-                          : Icons.chevron_right_rounded,
-                      size: context.scaled(18),
-                      color: theme.accentColor.withValues(alpha: 0.9),
-                    ),
+                    const SizedBox(height: 5),
+                    Text(l10n.lbSyncedLine, style: LBText.body(p, size: 11.5)),
                   ],
                 ),
               ),
-            ),
-    );
-  }
-
-  /// Avatar, name, account state and level in one block.
-  ///
-  /// The XP ring doubles as the avatar's border — the signature element of the
-  /// screen, and the reason the old standalone level card is gone. Progress
-  /// belongs to the player, so it is drawn on the player.
-  Widget _buildIdentity(
-    BuildContext context,
-    AuthState authState,
-    GameTheme theme,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final progression = getIt<ProgressionService>();
-    final isGuest = authState.hasNoCredential;
-    final stateColor = isGuest ? Colors.orange : theme.accentColor;
-
-    return ListenableBuilder(
-      listenable: progression,
-      builder: (context, _) {
-        final level = progression.level;
-        final into = progression.xpIntoLevel;
-        final needed = progression.xpForNextLevel;
-        final fraction = needed <= 0 ? 0.0 : (into / needed).clamp(0.0, 1.0);
-        final ring = context.scaled(128);
-
-        return Column(
-          children: [
-            SizedBox(
-              width: ring,
-              height: ring,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox.expand(
-                    child: CircularProgressIndicator(
-                      value: fraction,
-                      strokeWidth: 3,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: theme.accentColor.withValues(
-                        alpha: 0.15,
-                      ),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.accentColor,
-                      ),
-                    ),
-                  ),
-                  CircleAvatar(
-                    radius: ring / 2 - 10,
-                    backgroundColor: theme.backgroundColor.withValues(
-                      alpha: 0.6,
-                    ),
-                    backgroundImage: authState.photoURL != null
-                        ? NetworkImage(authState.photoURL!)
-                        : null,
-                    // Avatars fail to load on flaky connections constantly;
-                    // swallow it and keep the fallback icon.
-                    onBackgroundImageError: authState.photoURL != null
-                        ? (e, s) {}
-                        : null,
-                    child: authState.photoURL == null
-                        ? Icon(
-                            Icons.person_rounded,
-                            size: context.scaled(52),
-                            color: theme.accentColor,
-                          )
-                        : null,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              authState.publicLabel,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            // Outlined, not filled: the account state is information, not a
-            // call to action. The action lives in the sign-in section below.
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: stateColor.withValues(alpha: 0.6)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isGuest
-                        ? Icons.person_outline_rounded
-                        : Icons.verified_rounded,
-                    size: context.scaled(14),
-                    color: stateColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isGuest ? l10n.pfGuestPlayer : l10n.pfVerifiedAccount,
-                    style: TextStyle(
-                      color: stateColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: context.letterSpacing(0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              '${l10n.ppgLevel(level)}  ·  $into / $needed XP',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 13,
-                letterSpacing: context.letterSpacing(0.3),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Six stats, label above value, two per row.
-  ///
-  /// Icons were dropped: six of them competing at the same weight made the
-  /// block read as a toolbar rather than a set of numbers, and the label
-  /// already says what each one is.
-  Widget _buildStatGrid(AppLocalizations l10n, GameTheme theme) {
-    final cells = <_Stat>[
-      _Stat(l10n.pfHighScore, _displayStats['highScore']?.toString() ?? '0'),
-      _Stat(l10n.pfGamesPlayed, _displayStats['totalGames']?.toString() ?? '0'),
-      _Stat(
-        l10n.pfPlayTime,
-        _formatDuration(
-          l10n,
-          (_displayStats['totalPlayTime'] as num?)?.toInt() ?? 0,
-        ),
-      ),
-      _Stat(
-        l10n.pfAverageScore,
-        _displayStats['averageScore']?.toString() ?? '0',
-      ),
-      _Stat(l10n.pfFoodConsumed, _displayStats['totalFood']?.toString() ?? '0'),
-      _Stat(l10n.pfPowerUps, _displayStats['totalPowerUps']?.toString() ?? '0'),
-    ];
-
-    return Column(
-      children: [
-        for (var row = 0; row < cells.length; row += 2) ...[
-          if (row > 0) const SizedBox(height: 20),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _buildStatCell(cells[row])),
-              const SizedBox(width: 16),
-              Expanded(
-                child: row + 1 < cells.length
-                    ? _buildStatCell(cells[row + 1])
-                    : const SizedBox.shrink(),
+              const SizedBox(width: 10),
+              LBPixelIcon(
+                synced ? LBIcon.check : LBIcon.hourglass,
+                cell: 3.2,
+                color: synced ? p.lime : p.inkMuted,
               ),
             ],
           ),
-        ],
-      ],
+        ),
+      );
+    }
+
+    final engine = _sync;
+    if (engine == null) return block(const SyncStatusSnapshot());
+    return StreamBuilder<SyncStatusSnapshot>(
+      initialData: engine.status,
+      stream: engine.statusStream,
+      builder: (context, snap) => block(snap.data ?? const SyncStatusSnapshot()),
     );
   }
 
-  Widget _buildStatCell(_Stat stat) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          stat.label.toUpperCase(),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: context.letterSpacing(0.8),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          stat.value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAchievementRow(Achievement achievement, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Icon(
-            Icons.emoji_events_rounded,
-            color: theme.accentColor,
-            size: context.scaled(22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  achievement.localizedTitle(l10n),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  achievement.localizedDescription(l10n),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12.5,
-                    height: 1.3,
-                  ),
-                ),
-              ],
+  /// Guests: their progress is tied to this install. Plain account copy.
+  /// Tapping opens the same upgrade sheet the old "not backed up" notice did.
+  Widget _guestBlock(BuildContext context, AppLocalizations l10n, LBPalette p) {
+    return LBBlock(
+      kind: LBBlockKind.dashed,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      semanticLabel: '${l10n.lbGuest}. ${l10n.lbGuestLine}',
+      onTap: () => showAccountUpgradeSheet(context),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.lbGuest, style: LBText.button(p, color: p.head, size: 12.5)),
+                  const SizedBox(height: 5),
+                  Text(l10n.lbGuestLine, style: LBText.body(p, size: 11.5)),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            LBPixelIcon(LBIcon.next, cell: 2.4, color: p.lime),
+          ],
+        ),
       ),
     );
   }
 
   /// What signing in buys, then the ways to do it.
-  Widget _buildSignInBlock(
-    BuildContext context,
-    AppLocalizations l10n,
-    GameTheme theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.pfUpgradeSubtitle,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 13.5,
-            height: 1.35,
-          ),
-        ),
-        const SizedBox(height: 18),
-        _buildBenefitRow(
-          theme,
-          Icons.cloud_done_rounded,
-          l10n.pfBenefitSync,
-          l10n.pfBenefitSyncSub,
-        ),
-        const SizedBox(height: 12),
-        _buildBenefitRow(
-          theme,
-          Icons.leaderboard_rounded,
-          l10n.pfBenefitLeaderboards,
-          l10n.pfBenefitLeaderboardsSub,
-        ),
-        const SizedBox(height: 12),
-        _buildBenefitRow(
-          theme,
-          Icons.people_alt_rounded,
-          l10n.pfBenefitSocial,
-          l10n.pfBenefitSocialSub,
-        ),
-        const SizedBox(height: 20),
-        _buildSignInButton(
-          theme: theme,
-          icon: FaIcon(
-            FontAwesomeIcons.google,
-            color: Colors.white,
-            size: context.scaled(17),
-          ),
-          label: l10n.pfSignInGoogle,
-          onTap: () => _handleGoogleUpgrade(context, theme),
-        ),
-        // Guideline 4.8: wherever Google is offered on an Apple platform,
-        // Sign in with Apple rides along.
-        if (defaultTargetPlatform == TargetPlatform.iOS ||
-            defaultTargetPlatform == TargetPlatform.macOS) ...[
-          const SizedBox(height: 10),
-          _buildSignInButton(
-            theme: theme,
-            icon: FaIcon(
-              FontAwesomeIcons.apple,
-              color: Colors.white,
-              size: context.scaled(19),
-            ),
-            label: l10n.pfSignInApple,
-            onTap: () => _handleAppleUpgrade(context, theme),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildBenefitRow(
-    GameTheme theme,
-    IconData icon,
-    String title,
-    String subtitle,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: context.scaled(18),
-          color: theme.accentColor.withValues(alpha: 0.9),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
+  Widget _signInBlock(BuildContext context, AppLocalizations l10n, LBPalette p) {
+    Widget benefit(LBIcon icon, String title, String sub) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              LBPixelIcon(icon, cell: 2.6, color: p.lime),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: title,
+                        style: LBText.body(p, color: p.ink, size: 11.5).copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(text: '  $sub', style: LBText.body(p, size: 11)),
+                    ],
                   ),
                 ),
-                TextSpan(
-                  text: '  $subtitle',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Filled with the theme accent rather than a brand colour: a blue Google
-  /// slab and a black Apple slab were the two loudest blocks on the screen and
-  /// belonged to neither the theme nor each other.
-  Widget _buildSignInButton({
-    required GameTheme theme,
-    required Widget icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: Material(
-        color: theme.accentColor.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.55),
               ),
-            ),
+            ],
+          ),
+        );
+
+    Widget signInButton(Widget icon, String label, VoidCallback onTap) => LBBlock(
+          height: context.lbCell * 2.5 - LB.inset * 2,
+          alignment: Alignment.center,
+          semanticLabel: label,
+          onTap: onTap,
+          child: ExcludeSemantics(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 icon,
                 const SizedBox(width: 10),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LBText.button(p, size: 12.5),
                   ),
                 ),
               ],
             ),
           ),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LBBlock(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.pfUpgradeSubtitle, style: LBText.body(p, color: p.ink, size: 12)),
+              const SizedBox(height: 4),
+              benefit(LBIcon.check, l10n.pfBenefitSync, l10n.pfBenefitSyncSub),
+              benefit(LBIcon.trophy, l10n.pfBenefitLeaderboards, l10n.pfBenefitLeaderboardsSub),
+              benefit(LBIcon.friends, l10n.pfBenefitSocial, l10n.pfBenefitSocialSub),
+            ],
+          ),
         ),
-      ),
+        signInButton(
+          FaIcon(FontAwesomeIcons.google, color: p.head, size: 15),
+          l10n.pfSignInGoogle,
+          () => _handleGoogleUpgrade(context),
+        ),
+        // Guideline 4.8: wherever Google is offered on an Apple platform,
+        // Sign in with Apple rides along, at the same size.
+        if (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS)
+          signInButton(
+            FaIcon(FontAwesomeIcons.apple, color: p.head, size: 17),
+            l10n.pfSignInApple,
+            () => _handleAppleUpgrade(context),
+          ),
+      ],
     );
   }
 
-  /// Sign out and delete are rows, not filled red slabs. Destructive actions
-  /// should be findable and unmistakable, not the brightest thing on screen —
-  /// the confirmation dialog is where the weight belongs.
-  Widget _buildAccountAction({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: context.scaled(20)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: color.withValues(alpha: 0.5),
-              size: context.scaled(20),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _hairline(GameTheme theme) => Divider(
-    height: 1,
-    thickness: 1,
-    color: theme.accentColor.withValues(alpha: 0.15),
-  );
-
-  Widget _buildEmptyLine(String message) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Text(
-      message,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.55),
-        fontSize: 14,
-      ),
-    ),
-  );
-
-  void _navigateToStatistics(BuildContext context) {
-    context.push(AppRoutes.statistics);
-  }
-
-  void _navigateToAchievements(BuildContext context) {
-    context.push(AppRoutes.achievements);
-  }
-
-  void _navigateToReplays(BuildContext context) {
-    context.push(AppRoutes.replays);
-  }
-
-  /// This screen's own snack bar helper, from before there was a shared one.
-  ///
-  /// Kept as a thin shim so the nine call sites here do not all have to change
-  /// shape; the colour they pass is translated to the tone that now decides
-  /// the whole appearance. New code should call [arcadeSnackBar] directly.
-  void _showStyledSnackBar(
-    BuildContext context,
-    String message,
-    Color color,
-    GameTheme theme,
-  ) {
-    final tone = switch (color) {
-      Colors.red => ArcadeSnackTone.error,
-      Colors.green => ArcadeSnackTone.success,
-      _ => ArcadeSnackTone.info,
-    };
+  void _snack(BuildContext context, String message, ArcadeSnackTone tone) {
+    final theme = context.read<ThemeCubit>().state.currentTheme;
     ScaffoldMessenger.of(context).showSnackBar(
       arcadeSnackBarFor(theme, message: message, tone: tone),
     );
   }
 
-  Future<void> _handleAppleUpgrade(
-    BuildContext context,
-    GameTheme theme,
-  ) async {
+  Future<void> _handleAppleUpgrade(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
@@ -917,207 +478,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (success && context.mounted) {
-        _showStyledSnackBar(
-          context,
-          l10n.pfAppleUpgradeSuccess,
-          Colors.green,
-          theme,
-        );
+        _snack(context, l10n.pfAppleUpgradeSuccess, ArcadeSnackTone.success);
       } else if (context.mounted) {
         final isInUse =
             authCubit.state.errorMessage == 'credential-already-in-use';
-        _showStyledSnackBar(
+        _snack(
           context,
           isInUse ? l10n.pfAppleIdInUse : l10n.pfUpgradeFailed,
-          Colors.red,
-          theme,
+          ArcadeSnackTone.error,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        _showStyledSnackBar(context, l10n.pfUpgradeError, Colors.red, theme);
+        _snack(context, l10n.pfUpgradeError, ArcadeSnackTone.error);
       }
     }
   }
 
-  Future<void> _handleGoogleUpgrade(
-    BuildContext context,
-    GameTheme theme,
-  ) async {
+  Future<void> _handleGoogleUpgrade(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     try {
       final authCubit = context.read<AuthCubit>();
       // connectAccountWithGoogle, NOT signInWithGoogle: for a Firebase
       // anonymous user this LINKS the credential, preserving the UID and
       // with it the backend account holding their coins and progress. A
-      // plain sign-in mints a different UID and strands all of it. The
-      // store sheet has always used the connect path; this screen didn't,
-      // so the same button meant two different things depending on where
-      // you tapped it.
+      // plain sign-in mints a different UID and strands all of it.
       final success = await authCubit.connectAccountWithGoogle(
         confirmAccountSwitch: () => confirmAccountSwitch(context),
       );
 
       if (success && context.mounted) {
-        _showStyledSnackBar(
-          context,
-          l10n.pfGoogleUpgradeSuccess,
-          Colors.green,
-          theme,
-        );
+        _snack(context, l10n.pfGoogleUpgradeSuccess, ArcadeSnackTone.success);
       } else if (context.mounted) {
-        _showStyledSnackBar(context, l10n.pfUpgradeFailed, Colors.red, theme);
+        _snack(context, l10n.pfUpgradeFailed, ArcadeSnackTone.error);
       }
     } catch (e) {
       if (context.mounted) {
-        _showStyledSnackBar(context, l10n.pfUpgradeError, Colors.red, theme);
+        _snack(context, l10n.pfUpgradeError, ArcadeSnackTone.error);
       }
     }
   }
 
-  void _showDeleteAccountDialog(BuildContext context, GameTheme theme) {
+  Future<void> _showDeleteAccountDialog(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    final p = context.lb;
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
-        ),
-        title: Text(
-          l10n.pfDeleteAccountTitle,
-          style: const TextStyle(
-            color: Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          l10n.pfDeleteAccountBody(
-            defaultTargetPlatform == TargetPlatform.iOS
-                ? l10n.pfAppStore
-                : l10n.pfDeviceAppStore,
-          ),
-          style: const TextStyle(color: Colors.white, fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-              ),
+      title: l10n.pfDeleteAccountTitle,
+      titleColor: LB.bonk,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .45),
+        child: SingleChildScrollView(
+          child: Text(
+            l10n.pfDeleteAccountBody(
+              defaultTargetPlatform == TargetPlatform.iOS
+                  ? l10n.pfAppStore
+                  : l10n.pfDeviceAppStore,
             ),
+            style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade800,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final authCubit = context.read<AuthCubit>();
-              final deleted = await authCubit.deleteAccount();
-              if (context.mounted) {
-                _showStyledSnackBar(
-                  context,
-                  deleted ? l10n.pfAccountDeleted : l10n.pfDeleteFailed,
-                  deleted ? Colors.blue : Colors.red,
-                  theme,
-                );
-              }
-              // Navigation back to the sign-in screen is handled by the
-              // BlocListener watching for AuthStatus.unauthenticated, same
-              // as sign-out.
-            },
-            child: Text(
-              l10n.pfDeleteForever,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+      primaryLabel: l10n.pfDeleteForever,
+      primaryKind: LBBlockKind.danger,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
     );
+    if (confirmed != true || !context.mounted) return;
+
+    final authCubit = context.read<AuthCubit>();
+    final deleted = await authCubit.deleteAccount();
+    if (context.mounted) {
+      _snack(
+        context,
+        deleted ? l10n.pfAccountDeleted : l10n.pfDeleteFailed,
+        deleted ? ArcadeSnackTone.info : ArcadeSnackTone.error,
+      );
+    }
+    // Navigation back to the sign-in screen is handled by the BlocListener
+    // watching for AuthStatus.unauthenticated, same as sign-out.
   }
 
-  void _showSignOutDialog(BuildContext context, GameTheme theme) {
+  Future<void> _showSignOutDialog(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-        ),
-        title: Text(
-          l10n.pfSignOut,
-          style: TextStyle(
-            color: theme.primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          l10n.pfSignOutBody,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final authCubit = context.read<AuthCubit>();
-              await authCubit.signOut();
-              if (context.mounted) {
-                _showStyledSnackBar(
-                  context,
-                  l10n.pfSignedOut,
-                  Colors.blue,
-                  theme,
-                );
-              }
-            },
-            child: Text(
-              l10n.pfSignOut,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+      title: l10n.pfSignOut,
+      body: l10n.pfSignOutBody,
+      primaryLabel: l10n.pfSignOut,
+      primaryKind: LBBlockKind.danger,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
     );
+    if (confirmed != true || !context.mounted) return;
+
+    final authCubit = context.read<AuthCubit>();
+    await authCubit.signOut();
+    if (context.mounted) {
+      _snack(context, l10n.pfSignedOut, ArcadeSnackTone.info);
+    }
   }
 }
 
-/// One label/value pair in the statistics grid. A record would do, but a named
-/// type keeps the grid builder readable at the call site.
-class _Stat {
-  const _Stat(this.label, this.value);
+/// Avatar (initial in the cell font), name, account chip and level bar.
+class _Identity extends StatelessWidget {
+  const _Identity({
+    required this.name,
+    required this.chip,
+    required this.isGuest,
+    required this.level,
+    required this.into,
+    required this.needed,
+  });
 
-  final String label;
-  final String value;
+  final String name;
+  final String chip;
+  final bool isGuest;
+  final int level;
+  final int into;
+  final int needed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
+    final fraction = needed <= 0 ? 0.0 : (into / needed).clamp(0.0, 1.0);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        LBInitialAvatar(name: name, size: cell * 5),
+        SizedBox(width: cell * .5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.value(p, size: 16),
+              ),
+              const SizedBox(height: 8),
+              LBChip(
+                label: chip,
+                icon: isGuest ? LBIcon.user : LBIcon.check,
+                height: 24,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    l10n.lbLevelShort(context.formatInt(level)),
+                    style: LBText.button(p, size: 12.5),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: cell * 6),
+                        child: LBCellsBar(
+                          count: 10,
+                          value: fraction,
+                          semanticsLabel: l10n.lbLevelShort(context.formatInt(level)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${context.formatInt(into)}/${context.formatInt(needed)}',
+                    style: LBText.body(p, size: 10.5).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/providers/friends_provider.dart';
-import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/widgets/themed_loading.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/profile/lb_profile_parts.dart';
 
+/// Friends on the Living Board: search, the friends list, requests in and
+/// out, and the per-friend actions (challenge, profile, remove, block).
 class FriendsScreen extends ConsumerStatefulWidget {
   const FriendsScreen({super.key});
 
@@ -24,20 +20,14 @@ class FriendsScreen extends ConsumerStatefulWidget {
   ConsumerState<FriendsScreen> createState() => _FriendsScreenState();
 }
 
-class _FriendsScreenState extends ConsumerState<FriendsScreen>
-    with SingleTickerProviderStateMixin {
+class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late TabController _tabController;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
+  /// 0 friends · 1 requests · 2 search.
+  int _tab = 0;
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -54,254 +44,168 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   Widget build(BuildContext context) {
     // Watch the friends state from Riverpod
     final friendsState = ref.watch(friendsProvider);
-
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-
-        final l10n = AppLocalizations.of(context)!;
-
-        return Scaffold(
-          bottomNavigationBar: const SnakeBannerAd(),
-          extendBodyBehindAppBar: true,
-          appBar: appScreenBar(
-            context,
-            theme,
-            l10n.frTitle,
-            actions: [
-              IconButton(
-                tooltip: l10n.frBlockedUsers,
-                onPressed: _showBlockedUsersDialog,
-                icon: Icon(Icons.block, color: theme.accentColor, size: 22),
-              ),
-              IconButton(
-                onPressed: _loadData,
-                icon: Icon(Icons.refresh, color: theme.accentColor),
-              ),
-            ],
-          ),
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildSearchBar(theme, friendsState),
-                  _buildTabBar(theme, friendsState),
-                  // "Updated X ago" — Drift cache freshness signal so
-                  // an offline view doesn't look identical to a live
-                  // one. Hidden when no refresh has ever landed AND
-                  // there's no cached data to put a date on.
-                  AnimatedBuilder(
-                    animation: _tabController,
-                    builder: (context, _) =>
-                        _buildStalenessChip(theme, friendsState),
-                  ),
-                  Expanded(
-                    child: friendsState.isLoading
-                        ? _buildLoadingIndicator(theme)
-                        : TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildFriendsList(theme, friendsState),
-                              _buildFriendRequestsList(theme, friendsState),
-                              _buildSearchResults(theme, friendsState),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchBar(GameTheme theme, FriendsState friendsState) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context)!.frSearchHint,
-          hintStyle: TextStyle(color: theme.accentColor.withValues(alpha: 0.5)),
-          prefixIcon: Icon(
-            Icons.search,
-            color: theme.accentColor.withValues(alpha: 0.7),
-          ),
-          suffixIcon: friendsState.searchQuery.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    ref.read(friendsProvider.notifier).clearSearch();
-                    _tabController.animateTo(0);
-                  },
-                  icon: Icon(
-                    Icons.clear,
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                  ),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        style: TextStyle(color: theme.accentColor),
-        onChanged: (value) {
-          _searchUsers(value);
-          if (value.isNotEmpty) {
-            _tabController.animateTo(2);
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildTabBar(GameTheme theme, FriendsState friendsState) {
     final l10n = AppLocalizations.of(context)!;
-    final friends = friendsState.friends;
-    final friendRequests = friendsState.friendRequests;
+    final p = context.lb;
+    final g = context.lbGutter;
+    final cell = context.lbCell;
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: theme.accentColor,
-        labelColor: theme.accentColor,
-        unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.frTitle),
-                if (friends.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.accentColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${friends.length}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ],
+    return LBScaffold(
+      title: l10n.lbFriends,
+      subtitle: l10n.lbFriendsSubtitle,
+      trailing: LBIconBlock(
+        icon: LBIcon.lock,
+        semanticLabel: l10n.frBlockedUsers,
+        onTap: _showBlockedUsersDialog,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(g, cell * .9, g, 0),
+            child: _buildSearchBar(friendsState),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: g),
+            child: LBTabStrip(
+              labels: [l10n.frTitle, l10n.frRequests, l10n.frSearch],
+              index: _tab,
+              counts: [friendsState.friends.length, friendsState.friendRequests.length, null],
+              alertAt: 1,
+              onChanged: (i) => setState(() => _tab = i),
             ),
           ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.frRequests),
-                if (friendRequests.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${friendRequests.length}',
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
-                    ),
+          // "Updated X ago" — Drift cache freshness signal so an offline
+          // view doesn't look identical to a live one.
+          _buildStalenessChip(friendsState),
+          Expanded(
+            child: friendsState.isLoading
+                ? LBLoadingCells(label: l10n.frLoadingFriends)
+                : RefreshIndicator(
+                    onRefresh: _loadData,
+                    color: p.lime,
+                    backgroundColor: p.deep,
+                    child: switch (_tab) {
+                      1 => _buildFriendRequestsList(friendsState),
+                      2 => _buildSearchResults(friendsState),
+                      _ => _buildFriendsList(friendsState),
+                    },
                   ),
-                ],
-              ],
-            ),
           ),
-          Tab(text: l10n.frSearch),
         ],
       ),
     );
   }
 
-  /// Inline chip surfacing Drift cache freshness for the active tab.
-  /// Tap → forced refresh. Hidden when the cache has never been
-  /// populated AND there's no data — avoids a "Never updated" label
-  /// on a first-launch offline session.
-  Widget _buildStalenessChip(GameTheme theme, FriendsState state) {
+  EdgeInsets _listPadding(BuildContext context) {
+    final g = context.lbGutter;
+    return EdgeInsets.fromLTRB(g, context.lbCell * .3, g, context.lbCell * 1.5);
+  }
+
+  Widget _buildSearchBar(FriendsState friendsState) {
+    final p = context.lb;
     final l10n = AppLocalizations.of(context)!;
-    final tabIndex = _tabController.index;
+    return LBBlock(
+      padding: const EdgeInsetsDirectional.only(start: 14, end: 2),
+      height: context.lbCell * 2.5 - LB.inset * 2,
+      child: Row(
+        children: [
+          LBPixelIcon(LBIcon.eye, cell: 2.6, color: p.inkMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              cursorColor: p.lime,
+              style: LBText.body(p, color: p.ink, size: 13),
+              decoration: InputDecoration(
+                hintText: l10n.frSearchHint,
+                hintStyle: LBText.body(p, color: p.inkDim, size: 12.5),
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              onChanged: (value) {
+                _searchUsers(value);
+                if (value.isNotEmpty && _tab != 2) setState(() => _tab = 2);
+              },
+            ),
+          ),
+          if (friendsState.searchQuery.isNotEmpty)
+            LBIconBlock(
+              icon: LBIcon.x,
+              size: context.lbCell * 2,
+              semanticLabel: MaterialLocalizations.of(context).deleteButtonTooltip,
+              onTap: () {
+                _searchController.clear();
+                ref.read(friendsProvider.notifier).clearSearch();
+                setState(() => _tab = 0);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Inline line surfacing Drift cache freshness for the active tab.
+  /// Tap → forced refresh. Hidden when the cache has never been populated
+  /// AND there's no data — avoids a "Never updated" label on a first-launch
+  /// offline session.
+  Widget _buildStalenessChip(FriendsState state) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     DateTime? ts;
     bool hasData;
-    switch (tabIndex) {
+    switch (_tab) {
       case 1:
         ts = state.requestsLastRefreshedAt;
         hasData = state.friendRequests.isNotEmpty;
         break;
       case 2:
-        // Search tab — no cache. Suppress the chip entirely; the
-        // search box itself is the freshness signal there.
-        return const SizedBox.shrink();
+        // Search tab — no cache. The search box itself is the freshness
+        // signal there.
+        return SizedBox(height: context.lbCell * .3);
       case 0:
       default:
         ts = state.friendsLastRefreshedAt;
         hasData = state.friends.isNotEmpty;
     }
-    if (ts == null && !hasData) return const SizedBox.shrink();
+    if (ts == null && !hasData) return SizedBox(height: context.lbCell * .3);
     // "Updated 3h ago" alone reads as healthy — append the failure note
     // when the latest refresh attempt errored behind the cached view.
     final failed = state.refreshFailed;
-    final base = ts == null
-        ? l10n.frNoCacheYet
-        : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
+    final base = ts == null ? l10n.frNoCacheYet : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
     final label = failed ? l10n.frRefreshFailed(base) : base;
-    final chipColor = failed ? kRewardGold : theme.accentColor;
+    final color = failed ? LB.gold : p.inkMuted;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16 + context.sideInset(),
-        6,
-        16 + context.sideInset(),
-        0,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
       child: Align(
-        alignment: Alignment.centerLeft,
-        child: InkWell(
-          onTap: () => ref.read(friendsProvider.notifier).refresh(),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            // No box. Padding keeps the tap target without drawing one.
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  failed ? Icons.cloud_off_rounded : Icons.refresh_rounded,
-                  color: chipColor.withValues(alpha: 0.7),
-                  size: 12,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
+        alignment: AlignmentDirectional.centerStart,
+        child: Semantics(
+          button: true,
+          label: label,
+          excludeSemantics: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              LBFeedback.tap();
+              ref.read(friendsProvider.notifier).refresh();
+            },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 40),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LBPixelIcon(failed ? LBIcon.x : LBIcon.hourglass, cell: 2, color: color),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LBText.body(p, color: color, size: 10.5),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -318,507 +222,174 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     return l10n.frDaysAgo(diff.inDays);
   }
 
-  Widget _buildLoadingIndicator(GameTheme theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context)!.frLoadingFriends,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _emptyList(LBIcon icon, String title, String subtitle) => LBCenteredScroll(
+        padding: _listPadding(context),
+        child: LBEmptyBlock(icon: icon, title: title, subtitle: subtitle),
+      );
 
-  Widget _buildFriendsList(GameTheme theme, FriendsState friendsState) {
+  Widget _buildFriendsList(FriendsState friendsState) {
     final l10n = AppLocalizations.of(context)!;
     final friends = friendsState.friends;
 
     if (friends.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.people_outline,
-        title: l10n.frNoFriendsYet,
-        subtitle: l10n.frNoFriendsSub,
-        theme: theme,
-      );
+      return _emptyList(LBIcon.friends, l10n.frNoFriendsYet, l10n.frNoFriendsSub);
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: _listPadding(context),
       itemCount: friends.length,
       itemBuilder: (context, index) {
         final friend = friends[index];
-        return _buildUserCard(
+        return _UserRow(
           user: friend,
-          theme: theme,
-          trailing: PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'ping_match',
-                child: Row(
-                  children: [
-                    Icon(Icons.sports_esports, color: theme.accentColor),
-                    const SizedBox(width: 8),
-                    Text(l10n.frChallengeMenu),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'view_profile',
-                child: Row(
-                  children: [
-                    Icon(Icons.person, color: theme.accentColor),
-                    const SizedBox(width: 8),
-                    Text(l10n.frViewProfile),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'remove_friend',
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_remove, color: Colors.red),
-                    const SizedBox(width: 8),
-                    Text(l10n.frRemoveFriend),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'block',
-                child: Row(
-                  children: [
-                    const Icon(Icons.block, color: Colors.red),
-                    const SizedBox(width: 8),
-                    Text(l10n.frBlockUser),
-                  ],
-                ),
-              ),
-            ],
-            onSelected: (value) => _handleFriendAction(value, friend),
-          ),
+          onTap: () => _showFriendActions(friend),
+          trailing: LBPixelIcon(LBIcon.next, cell: 2, color: context.lb.lime),
         );
       },
     );
   }
 
-  Widget _buildFriendRequestsList(GameTheme theme, FriendsState friendsState) {
+  Widget _buildFriendRequestsList(FriendsState friendsState) {
     final l10n = AppLocalizations.of(context)!;
     final receivedRequests = friendsState.receivedRequests;
     final sentRequests = friendsState.sentRequests;
 
     if (receivedRequests.isEmpty && sentRequests.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.mail_outline,
-        title: l10n.frNoRequests,
-        subtitle: l10n.frNoRequestsSub,
-        theme: theme,
-      );
+      return _emptyList(LBIcon.invite, l10n.frNoRequests, l10n.frNoRequestsSub);
     }
 
     return ListView(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: _listPadding(context),
       children: [
         if (receivedRequests.isNotEmpty) ...[
-          Text(
-            l10n.frReceivedHeader(receivedRequests.length),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...receivedRequests.map(
-            (request) => _buildFriendRequestCard(request, theme),
-          ),
-          const SizedBox(height: 20),
+          LBSectionLabel(l10n.frReceivedHeader(receivedRequests.length)),
+          ...receivedRequests.map(_buildFriendRequestCard),
+          SizedBox(height: context.lbCell),
         ],
         if (sentRequests.isNotEmpty) ...[
-          Text(
-            l10n.frSentHeader(sentRequests.length),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...sentRequests.map(
-            (request) => _buildSentRequestCard(request, theme),
-          ),
+          LBSectionLabel(l10n.frSentHeader(sentRequests.length)),
+          ...sentRequests.map(_buildSentRequestCard),
         ],
       ],
     );
   }
 
-  Widget _buildSearchResults(GameTheme theme, FriendsState friendsState) {
+  Widget _buildSearchResults(FriendsState friendsState) {
     final l10n = AppLocalizations.of(context)!;
     final searchQuery = friendsState.searchQuery;
     final isSearching = friendsState.isSearching;
     final searchResults = friendsState.searchResults;
 
     if (searchQuery.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.search,
-        title: l10n.frSearchTitle,
-        subtitle: l10n.frSearchSubtitle,
-        theme: theme,
-      );
+      return _emptyList(LBIcon.eye, l10n.frSearchTitle, l10n.frSearchSubtitle);
     }
 
     if (isSearching) {
-      return ThemedLoading(theme: theme, label: l10n.frSearching);
+      return LBLoadingCells(label: l10n.frSearching);
     }
 
     if (searchResults.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.search_off,
-        title: l10n.frNoUsersFound,
-        subtitle: l10n.frNoUsersFoundSub,
-        theme: theme,
-      );
+      return _emptyList(LBIcon.x, l10n.frNoUsersFound, l10n.frNoUsersFoundSub);
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: _listPadding(context),
       itemCount: searchResults.length,
       itemBuilder: (context, index) {
         final user = searchResults[index];
-        return _buildUserCard(
+        return _UserRow(
           user: user,
-          theme: theme,
-          trailing: _buildSearchUserActions(user, theme, friendsState),
+          trailing: _buildSearchUserActions(user),
         );
       },
     );
   }
 
-  Widget _buildUserCard({
-    required UserProfile user,
-    required GameTheme theme,
-    Widget? trailing,
-  }) {
-    return Card(
-      color: theme.backgroundColor.withValues(alpha: 0.5),
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-              backgroundImage: user.photoUrl != null
-                  ? NetworkImage(user.photoUrl!)
-                  : null,
-              onBackgroundImageError: user.photoUrl != null ? (e, s) {} : null,
-              child: user.photoUrl == null
-                  ? Text(
-                      user.publicLabel.isNotEmpty
-                          ? user.publicLabel[0].toUpperCase()
-                          : 'U',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          user.publicLabel,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: theme.accentColor,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        user.status.emoji,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        user.status.localizedName(
-                          AppLocalizations.of(context)!,
-                        ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _getStatusColor(user.status),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.emoji_events, size: 14, color: kRewardGold),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${user.highScore}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Icon(
-                        Icons.games,
-                        size: 14,
-                        color: theme.accentColor.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        AppLocalizations.of(context)!
-                            .frGamesCount(user.totalGamesPlayed),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (user.statusMessage != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      user.statusMessage!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.accentColor.withValues(alpha: 0.5),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            ?trailing,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFriendRequestCard(FriendRequest request, GameTheme theme) {
+  Widget _buildFriendRequestCard(FriendRequest request) {
     final l10n = AppLocalizations.of(context)!;
-    return Card(
-      color: theme.backgroundColor.withValues(alpha: 0.5),
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: theme.accentColor.withValues(alpha: 0.2),
-              backgroundImage: request.fromUserPhotoUrl != null
-                  ? NetworkImage(request.fromUserPhotoUrl!)
-                  : null,
-              onBackgroundImageError: request.fromUserPhotoUrl != null
-                  ? (e, s) {}
-                  : null,
-              child: request.fromUserPhotoUrl == null
-                  ? Text(
-                      request.fromUserName.isNotEmpty
-                          ? request.fromUserName[0].toUpperCase()
-                          : 'U',
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    request.fromUserName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: theme.accentColor,
-                    ),
-                  ),
-                  Text(
-                    l10n.frSentDate(request.formattedDate),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+    final p = context.lb;
+    return LBBlock(
+      padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
+      child: Row(
+        children: [
+          LBInitialAvatar(name: request.fromUserName, size: context.lbCell * 2.5),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton(
-                  onPressed: () => _rejectFriendRequest(request.fromUserId),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: Text(l10n.frReject),
+                Text(
+                  request.fromUserName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.button(p, color: p.ink, size: 12.5),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => _acceptFriendRequest(request.fromUserId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.accentColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(l10n.frAccept),
-                ),
+                const SizedBox(height: 2),
+                Text(l10n.frSentDate(request.formattedDate), style: LBText.body(p, size: 10.5)),
               ],
             ),
-          ],
-        ),
+          ),
+          LBIconBlock(
+            icon: LBIcon.x,
+            kind: LBBlockKind.danger,
+            color: LB.bonk,
+            semanticLabel: l10n.frReject,
+            onTap: () => _rejectFriendRequest(request.fromUserId),
+          ),
+          LBIconBlock(
+            icon: LBIcon.check,
+            semanticLabel: l10n.frAccept,
+            onTap: () => _acceptFriendRequest(request.fromUserId),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSentRequestCard(FriendRequest request, GameTheme theme) {
+  Widget _buildSentRequestCard(FriendRequest request) {
     final l10n = AppLocalizations.of(context)!;
-    return Card(
-      color: theme.backgroundColor.withValues(alpha: 0.3),
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.accentColor.withValues(alpha: 0.1)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: theme.accentColor.withValues(alpha: 0.1),
-              child: Text(
-                request.toUserName.isNotEmpty
-                    ? request.toUserName[0].toUpperCase()
-                    : 'U',
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+    final p = context.lb;
+    return LBBlock(
+      kind: LBBlockKind.muted,
+      padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
+      child: Row(
+        children: [
+          LBInitialAvatar(name: request.toUserName, size: context.lbCell * 2.5, dim: true),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  request.toUserName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.button(p, color: p.inkMuted, size: 12.5),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(l10n.frSentDate(request.formattedDate), style: LBText.body(p, color: p.inkDim, size: 10.5)),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    request.toUserName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: theme.accentColor.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  Text(
-                    l10n.frSentDate(request.formattedDate),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.accentColor.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: kRewardGold.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                l10n.frPending,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: kRewardGold,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            // Withdraw the request — the sender's counterpart to the
-            // recipient's reject button.
-            IconButton(
-              tooltip: l10n.frCancelRequest,
-              icon: Icon(
-                Icons.close,
-                size: 20,
-                color: theme.accentColor.withValues(alpha: 0.6),
-              ),
-              onPressed: () => _cancelSentRequest(request.toUserId),
-            ),
-          ],
-        ),
+          ),
+          LBChip(label: l10n.frPending.toUpperCase(), kind: LBChipKind.gold),
+          // Withdraw the request — the sender's counterpart to the
+          // recipient's reject button.
+          LBIconBlock(
+            icon: LBIcon.x,
+            kind: LBBlockKind.muted,
+            color: p.inkMuted,
+            semanticLabel: l10n.frCancelRequest,
+            onTap: () => _cancelSentRequest(request.toUserId),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSearchUserActions(
-    UserProfile user,
-    GameTheme theme,
-    FriendsState friendsState,
-  ) {
+  Widget _buildSearchUserActions(UserProfile user) {
     final l10n = AppLocalizations.of(context)!;
     // Check if already friends or have pending request using provider helper methods
     final notifier = ref.read(friendsProvider.notifier);
@@ -827,115 +398,27 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     final hasReceivedRequest = notifier.hasReceivedRequestFrom(user.uid);
 
     if (isFriend) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          l10n.frAlreadyFriends,
-          style: TextStyle(
-            fontSize: 12,
-            color: theme.accentColor,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
+      return LBChip(label: l10n.frAlreadyFriends.toUpperCase());
     }
 
     if (hasSentRequest) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: kRewardGold.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          l10n.frPending,
-          style: TextStyle(
-            fontSize: 12,
-            color: kRewardGold,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
+      return LBChip(label: l10n.frPending.toUpperCase(), kind: LBChipKind.gold);
     }
 
     if (hasReceivedRequest) {
-      return ElevatedButton(
-        onPressed: () => _acceptFriendRequest(user.uid),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.accentColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: Text(l10n.frAccept),
+      return _SmallAction(
+        label: l10n.frAccept,
+        icon: LBIcon.check,
+        onTap: () => _acceptFriendRequest(user.uid),
       );
     }
 
-    return ElevatedButton(
-      onPressed: () => _sendFriendRequest(user.uid),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.accentColor,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Text(l10n.frAddFriend),
+    return _SmallAction(
+      label: l10n.frAddFriend,
+      icon: LBIcon.plus,
+      onTap: () => _sendFriendRequest(user.uid),
     );
   }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required GameTheme theme,
-  }) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 80, color: theme.accentColor.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.5),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Presence, in two states rather than three colours. Green-online,
-  /// blue-playing and grey-offline was three hues carrying what the label
-  /// beside the dot already spells out; the dot only has to say "here" or
-  /// "not here".
-  Color _getStatusColor(UserStatus status) {
-    switch (status) {
-      case UserStatus.online:
-      case UserStatus.playing:
-        return _theme.accentColor;
-      case UserStatus.offline:
-        return Colors.white.withValues(alpha: 0.3);
-    }
-  }
-
-  GameTheme get _theme => context.read<ThemeCubit>().state.currentTheme;
 
   /// Failure feedback for friend mutations. Previously failures were
   /// SILENT (snackbar only on success) — a guest with no backend JWT, or
@@ -946,9 +429,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       arcadeSnackBar(
         context,
-        message: signedIn
-            ? failureMessage
-            : AppLocalizations.of(context)!.frSignInSocial,
+        message: signedIn ? failureMessage : AppLocalizations.of(context)!.frSignInSocial,
         tone: ArcadeSnackTone.error,
       ),
     );
@@ -956,14 +437,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _sendFriendRequest(String userId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref
-        .read(friendsProvider.notifier)
-        .sendFriendRequest(userId);
+    final success = await ref.read(friendsProvider.notifier).sendFriendRequest(userId);
     if (!mounted) return;
     if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(arcadeSnackBar(context, message: l10n.frRequestSent));
+      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestSent));
     } else {
       _showMutationError(l10n.frSendRequestFailed);
     }
@@ -971,15 +449,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _acceptFriendRequest(String fromUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref
-        .read(friendsProvider.notifier)
-        .acceptFriendRequest(fromUserId);
+    final success = await ref.read(friendsProvider.notifier).acceptFriendRequest(fromUserId);
     if (!mounted) return;
     if (success) {
       getIt<AnalyticsFacade>().trackFriendAdded();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestAccepted));
+      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestAccepted));
     } else {
       _showMutationError(l10n.frAcceptFailed);
     }
@@ -987,17 +461,60 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _rejectFriendRequest(String fromUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref
-        .read(friendsProvider.notifier)
-        .rejectFriendRequest(fromUserId);
+    final success = await ref.read(friendsProvider.notifier).rejectFriendRequest(fromUserId);
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestRejected));
+      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestRejected));
     } else {
       _showMutationError(l10n.frRejectFailed);
     }
+  }
+
+  /// The per-friend menu (was a popup menu): challenge, profile, remove,
+  /// block — the same four actions, as a sheet.
+  void _showFriendActions(UserProfile friend) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    showLBSheet<void>(
+      context: context,
+      title: friend.publicLabel,
+      builder: (sheetContext) {
+        void run(String action) {
+          Navigator.of(sheetContext).pop();
+          _handleFriendAction(action, friend);
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LBRow(
+                title: l10n.frChallengeMenu,
+                leading: LBPixelIcon(LBIcon.swords, cell: 3, color: p.lime),
+                onTap: () => run('ping_match'),
+              ),
+              LBRow(
+                title: l10n.frViewProfile,
+                leading: LBPixelIcon(LBIcon.user, cell: 3, color: p.lime),
+                onTap: () => run('view_profile'),
+              ),
+              LBRow(
+                title: l10n.frRemoveFriend,
+                kind: LBBlockKind.danger,
+                leading: const LBPixelIcon(LBIcon.x, cell: 3, color: LB.bonk),
+                onTap: () => run('remove_friend'),
+              ),
+              LBRow(
+                title: l10n.frBlockUser,
+                kind: LBBlockKind.danger,
+                leading: const LBPixelIcon(LBIcon.lock, cell: 3, color: LB.bonk),
+                onTap: () => run('block'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _handleFriendAction(String action, UserProfile friend) {
@@ -1006,7 +523,6 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         _pingFriendForMatch(friend);
         break;
       case 'view_profile':
-        // Navigate to user profile view
         _showUserProfile(friend);
         break;
       case 'remove_friend':
@@ -1020,14 +536,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
 
   Future<void> _cancelSentRequest(String toUserId) async {
     final l10n = AppLocalizations.of(context)!;
-    final success = await ref
-        .read(friendsProvider.notifier)
-        .cancelSentRequest(toUserId);
+    final success = await ref.read(friendsProvider.notifier).cancelSentRequest(toUserId);
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestCancelled));
+      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.frRequestCancelled));
     } else {
       _showMutationError(l10n.frCancelFailed);
     }
@@ -1038,243 +550,289 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   /// verbatim so the user knows when to retry.
   Future<void> _pingFriendForMatch(UserProfile friend) async {
     final l10n = AppLocalizations.of(context)!;
-    final (sent, message) = await ref
-        .read(friendsProvider.notifier)
-        .pingFriendForMatch(friend.uid);
+    final (sent, message) = await ref.read(friendsProvider.notifier).pingFriendForMatch(friend.uid);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       arcadeSnackBar(
         context,
-        message: sent
-            ? l10n.frChallengeSent(friend.displayName)
-            : (message ?? l10n.frChallengeFailed),
+        message: sent ? l10n.frChallengeSent(friend.displayName) : (message ?? l10n.frChallengeFailed),
         tone: sent ? ArcadeSnackTone.success : ArcadeSnackTone.error,
       ),
     );
   }
 
-  void _showBlockUserDialog(UserProfile friend) {
+  Future<void> _showBlockUserDialog(UserProfile friend) async {
     final l10n = AppLocalizations.of(context)!;
-    showDialog<void>(
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.frBlockTitle(friend.displayName)),
-        content: Text(l10n.frBlockBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final success = await ref
-                  .read(friendsProvider.notifier)
-                  .blockUser(friend.uid);
-              if (!mounted) return;
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  arcadeSnackBar(
-                    context,
-                    message: l10n.frBlocked(friend.displayName),
-                  ),
-                );
-              } else {
-                _showMutationError(l10n.frBlockFailed);
-              }
-            },
-            child: Text(
-              l10n.frBlock,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+      title: l10n.frBlockTitle(friend.displayName),
+      body: l10n.frBlockBody,
+      primaryLabel: l10n.frBlock,
+      primaryKind: LBBlockKind.danger,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
     );
+    if (confirmed != true || !mounted) return;
+    final success = await ref.read(friendsProvider.notifier).blockUser(friend.uid);
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        arcadeSnackBar(context, message: l10n.frBlocked(friend.displayName)),
+      );
+    } else {
+      _showMutationError(l10n.frBlockFailed);
+    }
   }
 
   /// Blocked-users manager — live-fetched list with per-row unblock.
   Future<void> _showBlockedUsersDialog() async {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
     final blocked = await ref.read(friendsProvider.notifier).getBlockedUsers();
     if (!mounted) return;
-    showDialog<void>(
+    final p = context.lb;
+    showLBSheet<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        title: Text(
-          l10n.frBlockedUsers,
-          style: TextStyle(color: theme.accentColor),
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: blocked.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    l10n.frNoBlocked,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                    ),
+      title: l10n.frBlockedUsers,
+      builder: (sheetContext) => SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (blocked.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(l10n.frNoBlocked, style: LBText.body(p, size: 12)),
+              )
+            else
+              for (final user in blocked)
+                LBRow(
+                  title: user.displayName,
+                  leading: LBInitialAvatar(name: user.displayName, size: context.lbCell * 2, dim: true),
+                  trailing: _SmallAction(
+                    label: l10n.frUnblock,
+                    icon: LBIcon.lock,
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      final ok = await ref.read(friendsProvider.notifier).unblockUser(user.uid);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        arcadeSnackBar(
+                          context,
+                          message: ok ? l10n.frUnblocked(user.displayName) : l10n.frUnblockFailed,
+                        ),
+                      );
+                    },
                   ),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: blocked.length,
-                  itemBuilder: (_, i) {
-                    final user = blocked[i];
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        user.displayName,
-                        style: TextStyle(color: theme.accentColor),
-                      ),
-                      trailing: TextButton(
-                        onPressed: () async {
-                          Navigator.of(dialogContext).pop();
-                          final ok = await ref
-                              .read(friendsProvider.notifier)
-                              .unblockUser(user.uid);
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            arcadeSnackBar(
-                              context,
-                              message: ok
-                                  ? l10n.frUnblocked(user.displayName)
-                                  : l10n.frUnblockFailed,
-                            ),
-                          );
-                        },
-                        child: Text(l10n.frUnblock),
-                      ),
-                    );
-                  },
                 ),
+            const SizedBox(height: 8),
+            LBBlock(
+              kind: LBBlockKind.muted,
+              height: 46,
+              alignment: Alignment.center,
+              onTap: () => Navigator.of(sheetContext).pop(),
+              child: Text(l10n.commonClose.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.commonClose),
-          ),
-        ],
       ),
     );
   }
 
   void _showUserProfile(UserProfile friend) {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    final p = context.lb;
+    Widget line(String text) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(text, style: LBText.body(p, color: p.ink.withValues(alpha: .85), size: 12.5)),
+        );
+    showLBSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+      title: friend.username,
+      builder: (sheetContext) => SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(Icons.person, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(friend.username, style: TextStyle(color: theme.accentColor)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.frHighScoreLine(friend.highScore),
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.frTotalGamesLine(friend.totalGamesPlayed),
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.frLevelLine(friend.level),
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-            ),
-            if (friend.statusMessage?.isNotEmpty == true) ...[
-              const SizedBox(height: 12),
-              Text(
-                l10n.frStatusLine(friend.statusMessage!),
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  fontStyle: FontStyle.italic,
+            line(l10n.frHighScoreLine(friend.highScore)),
+            line(l10n.frTotalGamesLine(friend.totalGamesPlayed)),
+            line(l10n.frLevelLine(friend.level)),
+            if (friend.statusMessage?.isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text(
+                  l10n.frStatusLine(friend.statusMessage!),
+                  style: LBText.body(p, size: 12).copyWith(fontStyle: FontStyle.italic),
                 ),
               ),
-            ],
+            const SizedBox(height: 8),
+            LBBlock(
+              kind: LBBlockKind.muted,
+              height: 46,
+              alignment: Alignment.center,
+              onTap: () => Navigator.of(sheetContext).pop(),
+              child: Text(l10n.commonClose.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              l10n.commonClose,
-              style: TextStyle(color: theme.accentColor),
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  void _showRemoveFriendDialog(UserProfile friend) {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
+  Future<void> _showRemoveFriendDialog(UserProfile friend) async {
     final l10n = AppLocalizations.of(context)!;
-
-    showDialog(
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-        ),
-        title: Text(
-          l10n.frRemoveFriend,
-          style: TextStyle(color: theme.accentColor),
-        ),
-        content: Text(
-          l10n.frRemoveBody(friend.displayName),
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final navigator = Navigator.of(dialogContext);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-              final success = await ref
-                  .read(friendsProvider.notifier)
-                  .removeFriend(friend.uid);
-              if (success) {
-                getIt<AnalyticsFacade>().trackFriendRemoved();
-              }
-              if (success && mounted) {
-                scaffoldMessenger.showSnackBar(
-                  arcadeSnackBar(
-                    context,
-                    message: l10n.frRemoved(friend.displayName),
+      title: l10n.frRemoveFriend,
+      body: l10n.frRemoveBody(friend.displayName),
+      primaryLabel: l10n.frRemove,
+      primaryKind: LBBlockKind.danger,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
+    );
+    if (confirmed != true || !mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final success = await ref.read(friendsProvider.notifier).removeFriend(friend.uid);
+    if (success) {
+      getIt<AnalyticsFacade>().trackFriendRemoved();
+    }
+    if (success && mounted) {
+      scaffoldMessenger.showSnackBar(
+        arcadeSnackBar(context, message: l10n.frRemoved(friend.displayName)),
+      );
+    }
+  }
+}
+
+/// A player row: initial avatar, name, presence, best score and games.
+class _UserRow extends StatelessWidget {
+  const _UserRow({required this.user, this.trailing, this.onTap});
+
+  final UserProfile user;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final here = user.status != UserStatus.offline;
+    final status = user.status.localizedName(l10n);
+    return LBBlock(
+      onTap: onTap,
+      semanticLabel: onTap == null ? null : '${user.publicLabel}, $status',
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      child: Row(
+        children: [
+          LBInitialAvatar(name: user.publicLabel, size: context.lbCell * 2.5, dim: !here),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.publicLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.button(p, color: p.ink, size: 12.5),
+                ),
+                const SizedBox(height: 3),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 2,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox.square(
+                          dimension: 7,
+                          child: CustomPaint(painter: _Dot(here ? p.lime : p.cellOff)),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          status.toUpperCase(),
+                          style: LBText.label(p, color: here ? p.lime : p.inkDim).copyWith(fontSize: 8.5),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const LBPixelIcon(LBIcon.trophy, cell: 1.8, color: LB.gold),
+                        const SizedBox(width: 5),
+                        Text(
+                          context.formatInt(user.highScore),
+                          style: LBText.body(p, color: LB.gold, size: 10.5).copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      l10n.frGamesCount(user.totalGamesPlayed),
+                      style: LBText.body(p, size: 10.5),
+                    ),
+                  ],
+                ),
+                if (user.statusMessage != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    user.statusMessage!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: LBText.body(p, color: p.inkDim, size: 10.5).copyWith(fontStyle: FontStyle.italic),
                   ),
-                );
-              }
-            },
-            child: Text(
-              l10n.frRemove,
-              style: const TextStyle(color: Colors.red),
+                ],
+              ],
             ),
           ),
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );
   }
+}
+
+/// A compact labelled action (ADD FRIEND, ACCEPT, UNBLOCK).
+class _SmallAction extends StatelessWidget {
+  const _SmallAction({required this.label, required this.icon, required this.onTap});
+
+  final String label;
+  final LBIcon icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    return LBBlock(
+      selected: true,
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
+      semanticLabel: label,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LBPixelIcon(icon, cell: 2, color: p.lime),
+            const SizedBox(width: 7),
+            Text(label.toUpperCase(), style: LBText.button(p, size: 10.5)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Dot extends CustomPainter {
+  _Dot(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRRect(lbCellRect(0, 0, size.width), Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_Dot old) => old.color != color;
 }
