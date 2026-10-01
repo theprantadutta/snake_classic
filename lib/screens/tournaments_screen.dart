@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/l10n/catalog_l10n.dart';
-import 'package:snake_classic/l10n/server_text_l10n.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/providers/tournaments_provider.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/ranks/lb_list_bits.dart';
+import 'package:snake_classic/widgets/lb_screens/tournaments/tournament_widgets.dart';
 
+/// Tournaments on the Living Board: ACTIVE / HISTORY / MY STATS as block
+/// tabs over the offline-first lists from [tournamentsProvider].
 class TournamentsScreen extends ConsumerStatefulWidget {
   const TournamentsScreen({super.key});
 
@@ -46,97 +42,50 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
   Widget build(BuildContext context) {
     // Watch the tournaments state from Riverpod
     final tournamentsState = ref.watch(tournamentsProvider);
+    final l10n = AppLocalizations.of(context)!;
+    final g = context.lbGutter;
 
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-
-        final l10n = AppLocalizations.of(context)!;
-
-        return Scaffold(
-          bottomNavigationBar: const SnakeBannerAd(),
-          extendBodyBehindAppBar: true,
-          appBar: appScreenBar(
-            context,
-            theme,
-            l10n.tnTitle,
-            actions: [
-              IconButton(
-                onPressed: _loadData,
-                icon: Icon(Icons.refresh, color: theme.accentColor),
-              ),
-            ],
-          ),
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildTabBar(theme),
-                  // "Updated X ago" chip — surfaces Drift cache
-                  // freshness for the currently-active tab so the user
-                  // can tell if they're looking at stale offline data.
-                  AnimatedBuilder(
-                    animation: _tabController,
-                    builder: (context, _) =>
-                        _buildStalenessChip(theme, tournamentsState),
-                  ),
-                  Expanded(
-                    child: tournamentsState.isLoading
-                        ? _buildLoadingIndicator(theme)
-                        : TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildActiveTournaments(
-                                theme,
-                                tournamentsState.activeTournaments,
-                              ),
-                              _buildTournamentHistory(
-                                theme,
-                                tournamentsState.historyTournaments,
-                              ),
-                              _buildUserStats(
-                                theme,
-                                tournamentsState.userStats,
-                              ),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
+    return LBScaffold(
+      title: l10n.tnTitle,
+      subtitle: l10n.lbTournamentsLine,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, 0),
+            child: LBTabBlocks(
+              controller: _tabController,
+              labels: [l10n.tnActive, l10n.tnHistory, l10n.tnMyStats],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTabBar(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16 + context.sideInset()),
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: theme.accentColor,
-        labelColor: theme.accentColor,
-        unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-        tabs: [
-          Tab(text: l10n.tnActive),
-          Tab(text: l10n.tnHistory),
-          Tab(text: l10n.tnMyStats),
+          // "Updated X ago · REFRESH": Drift cache freshness for the active
+          // tab, so a stale offline view is labelled, and the refresh action.
+          AnimatedBuilder(
+            animation: _tabController,
+            builder: (context, _) => _buildStalenessRow(tournamentsState),
+          ),
+          Expanded(
+            child: tournamentsState.isLoading
+                ? LBLoadingState(label: l10n.tnLoading)
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildActiveTournaments(tournamentsState.activeTournaments),
+                      _buildTournamentHistory(tournamentsState.historyTournaments),
+                      _buildUserStats(tournamentsState.userStats),
+                    ],
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  /// Inline chip showing how stale the Drift cache for the active tab
-  /// is. Tap triggers a forced refresh. The My Stats tab has no cache
-  /// of its own — fall back to whichever list was most recently
-  /// touched so the user still gets a signal.
-  Widget _buildStalenessChip(GameTheme theme, TournamentsState state) {
-    final tabIndex = _tabController.index;
-    DateTime? ts;
-    switch (tabIndex) {
+  /// The My Stats tab has no cache of its own — fall back to whichever list
+  /// was most recently touched so the user still gets a signal.
+  Widget _buildStalenessRow(TournamentsState state) {
+    final DateTime? ts;
+    switch (_tabController.index) {
       case 0:
         ts = state.activeLastRefreshedAt;
         break;
@@ -150,134 +99,59 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     final l10n = AppLocalizations.of(context)!;
     final label = ts == null
         ? l10n.frNoCacheYet
-        : l10n.frUpdatedAgo(_relativeAge(l10n, ts));
-
+        : l10n.frUpdatedAgo(lbRelativeAge(l10n, ts));
+    final g = context.lbGutter;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16 + context.sideInset(),
-        6,
-        16 + context.sideInset(),
-        0,
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: InkWell(
-          onTap: () => ref.read(tournamentsProvider.notifier).refresh(),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            // No box. Padding keeps the tap target without drawing one.
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.refresh_rounded,
-                  color: Colors.white.withValues(alpha: 0.45),
-                  size: 13,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      padding: EdgeInsets.fromLTRB(g + 2, 2, g + 2, 2),
+      child: LBStaleRow(label: label, onTap: _loadData),
     );
   }
 
-  String _relativeAge(AppLocalizations l10n, DateTime ts) {
-    final diff = DateTime.now().difference(ts);
-    if (diff.inSeconds < 5) return l10n.frJustNow;
-    if (diff.inSeconds < 60) return l10n.frSecondsAgo(diff.inSeconds);
-    if (diff.inMinutes < 60) return l10n.frMinutesAgo(diff.inMinutes);
-    if (diff.inHours < 24) return l10n.frHoursAgo(diff.inHours);
-    return l10n.frDaysAgo(diff.inDays);
+  EdgeInsets _listPadding() {
+    final g = context.lbGutter;
+    return EdgeInsets.fromLTRB(g, 4, g, context.lbCell);
   }
 
-  Widget _buildLoadingIndicator(GameTheme theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(theme.accentColor),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context)!.tnLoading,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveTournaments(
-    GameTheme theme,
-    List<Tournament> activeTournaments,
-  ) {
+  Widget _buildActiveTournaments(List<Tournament> activeTournaments) {
+    final l10n = AppLocalizations.of(context)!;
     if (activeTournaments.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
-      return _buildEmptyState(
-        icon: Icons.emoji_events,
+      return LBEmptyState(
+        icon: LBIcon.trophy,
         title: l10n.tnNoActive,
-        subtitle: l10n.tnNoActiveSub,
-        theme: theme,
+        line: l10n.tnNoActiveSub,
       );
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
+      padding: _listPadding(),
       itemCount: activeTournaments.length,
       itemBuilder: (context, index) {
         final tournament = activeTournaments[index];
-        return _buildTournamentCard(
+        return TournamentCard(
           tournament: tournament,
-          theme: theme,
           onTap: () => _openTournamentDetail(tournament),
         );
       },
     );
   }
 
-  Widget _buildTournamentHistory(
-    GameTheme theme,
-    List<Tournament> historyTournaments,
-  ) {
+  Widget _buildTournamentHistory(List<Tournament> historyTournaments) {
+    final l10n = AppLocalizations.of(context)!;
     if (historyTournaments.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
-      return _buildEmptyState(
-        icon: Icons.history,
+      return LBEmptyState(
+        icon: LBIcon.hourglass,
         title: l10n.tnNoHistory,
-        subtitle: l10n.tnNoHistorySub,
-        theme: theme,
+        line: l10n.tnNoHistorySub,
       );
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
+      padding: _listPadding(),
       itemCount: historyTournaments.length,
       itemBuilder: (context, index) {
         final tournament = historyTournaments[index];
-        return _buildTournamentCard(
+        return TournamentCard(
           tournament: tournament,
-          theme: theme,
           showResults: true,
           onTap: () => _openTournamentDetail(tournament),
         );
@@ -285,575 +159,84 @@ class _TournamentsScreenState extends ConsumerState<TournamentsScreen>
     );
   }
 
-  Widget _buildUserStats(GameTheme theme, Map<String, dynamic> userStats) {
+  Widget _buildUserStats(Map<String, dynamic> userStats) {
+    final l10n = AppLocalizations.of(context)!;
     if (userStats.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
-      return _buildEmptyState(
-        icon: Icons.bar_chart,
+      return LBEmptyState(
+        icon: LBIcon.chart,
         title: l10n.tnNoStats,
-        subtitle: l10n.tnNoStatsSub,
-        theme: theme,
+        line: l10n.tnNoStatsSub,
       );
     }
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
-      child: Column(
-        children: [
-          _buildStatsOverview(theme, userStats),
-          const SizedBox(height: 24),
-          _buildStatsDetails(theme, userStats),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTournamentCard({
-    required Tournament tournament,
-    required GameTheme theme,
-    bool showResults = false,
-    required VoidCallback onTap,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    return Card(
-      color: theme.backgroundColor.withValues(alpha: 0.5),
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _getTournamentStatusColor(
-            tournament.status,
-          ).withValues(alpha: 0.3),
+    return ListView(
+      padding: _listPadding(),
+      children: [
+        LBSectionLabel(l10n.tnOverviewCard),
+        Row(
+          children: [
+            Expanded(
+              child: TournamentStatTile(
+                label: l10n.tnTitle,
+                value: '${userStats['totalTournaments'] ?? 0}',
+                icon: LBIcon.trophy,
+              ),
+            ),
+            Expanded(
+              child: TournamentStatTile(
+                label: l10n.tnWins,
+                value: '${userStats['wins'] ?? 0}',
+                icon: LBIcon.crown,
+                gold: true,
+              ),
+            ),
+          ],
         ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        Row(
+          children: [
+            Expanded(
+              child: TournamentStatTile(
+                label: l10n.tnTopThree,
+                value: '${userStats['topThreeFinishes'] ?? 0}',
+                icon: LBIcon.star,
+              ),
+            ),
+            Expanded(
+              child: TournamentStatTile(
+                label: l10n.tnBestScore,
+                value: '${userStats['bestScore'] ?? 0}',
+                icon: LBIcon.target,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        TournamentSection(
+          title: l10n.tnDetailedStats,
+          icon: LBIcon.chart,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _getTournamentTypeColor(
-                        tournament.type,
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      tournament.type.emoji,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tournament.localizedName(
-                            l10n,
-                            Localizations.localeOf(context),
-                          ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: theme.accentColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          tournament.type.localizedName(l10n),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _getTournamentTypeColor(tournament.type),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getTournamentStatusColor(
-                        tournament.status,
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      tournament.status.localizedName(l10n),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: _getTournamentStatusColor(tournament.status),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              TournamentDetailLine(
+                label: l10n.tnTotalAttempts,
+                value: '${userStats['totalAttempts'] ?? 0}',
               ),
-
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                tournament.localizedDescription(l10n),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                ),
+              TournamentDetailLine(
+                label: l10n.tnWinRate,
+                value: l10n.tnPercentValue('${userStats['winRate'] ?? 0}'),
               ),
-
-              const SizedBox(height: 12),
-
-              // Game mode and time info
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.accentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          tournament.gameMode.emoji,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          tournament.gameMode.localizedName(l10n),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: theme.accentColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.schedule,
-                    size: 14,
-                    color: theme.accentColor.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    tournament.timeRemainingFormatted,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              TournamentDetailLine(
+                label: l10n.tnAvgPerformance,
+                value: l10n.tnTopPercent('${100 - (userStats['winRate'] ?? 0)}'),
               ),
-
-              const SizedBox(height: 12),
-
-              // Participation info
-              Row(
-                children: [
-                  Icon(
-                    Icons.people,
-                    size: 16,
-                    color: theme.accentColor.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.tnPlayersCount(
-                      tournament.currentParticipants,
-                      tournament.maxParticipants,
-                    ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.accentColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (tournament.hasJoined) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.accentColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.tnJoined,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: theme.accentColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (tournament.userBestScore != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.tnBestScoreChip(tournament.userBestScore!),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: kRewardGold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ],
-                ],
-              ),
-
-              // Show rewards for active tournaments or results for history
-              if (showResults && tournament.userReward != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: kRewardGold.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: kRewardGold.withValues(alpha: 0.30),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.emoji_events, color: kRewardGold, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.tnRankReward(
-                                tournament.userRank,
-                                localizedTournamentRewardName(
-                                  tournament.userReward!.name,
-                                  l10n,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: kRewardGold,
-                              ),
-                            ),
-                            if (tournament.userReward!.coins > 0)
-                              Text(
-                                l10n.mpCoinReward(tournament.userReward!.coins),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else if (!showResults && tournament.rewards.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.card_giftcard,
-                        color: theme.accentColor,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          l10n.tnRewardsAvailable(tournament.rewards.length),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.accentColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l10n.tnViewDetails,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
-      ),
+      ],
     );
   }
-
-  Widget _buildStatsOverview(GameTheme theme, Map<String, dynamic> userStats) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: screenCardDecoration(theme),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.tnOverviewCard,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  l10n.tnTitle,
-                  '${userStats['totalTournaments'] ?? 0}',
-                  Icons.emoji_events,
-                  theme.accentColor,
-                  theme,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  l10n.tnWins,
-                  '${userStats['wins'] ?? 0}',
-                  Icons.emoji_events,
-                  kRewardGold,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  l10n.tnTopThree,
-                  '${userStats['topThreeFinishes'] ?? 0}',
-                  Icons.military_tech,
-                  theme.accentColor,
-                  theme,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  l10n.tnBestScore,
-                  '${userStats['bestScore'] ?? 0}',
-                  Icons.star,
-                  theme.accentColor,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-        ],
-      )),
-    );
-  }
-
-  Widget _buildStatsDetails(GameTheme theme, Map<String, dynamic> userStats) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: screenCardDecoration(theme),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.tnDetailedStats,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildDetailRow(
-            l10n.tnTotalAttempts,
-            '${userStats['totalAttempts'] ?? 0}',
-            theme,
-          ),
-          _buildDetailRow(
-            l10n.tnWinRate,
-            l10n.tnPercentValue('${userStats['winRate'] ?? 0}'),
-            theme,
-          ),
-          _buildDetailRow(
-            l10n.tnAvgPerformance,
-            l10n.tnTopPercent('${100 - (userStats['winRate'] ?? 0)}'),
-            theme,
-          ),
-        ],
-      )),
-    );
-  }
-
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-    GameTheme theme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, GameTheme theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.8),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required GameTheme theme,
-  }) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 80, color: theme.accentColor.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: theme.accentColor.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.accentColor.withValues(alpha: 0.5),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Green / blue / grey for status and blue / orange / pink for type meant
-  /// six colours describing two facts, none of them the theme's. A tournament
-  /// that is running is the one worth looking at, so it gets the accent; the
-  /// rest are white, and the words already say which is which.
-  Color _getTournamentStatusColor(TournamentStatus status) {
-    switch (status) {
-      case TournamentStatus.active:
-        return _theme.accentColor;
-      case TournamentStatus.upcoming:
-        return Colors.white.withValues(alpha: 0.55);
-      case TournamentStatus.ended:
-        return Colors.white.withValues(alpha: 0.35);
-    }
-  }
-
-  /// Type is a label, not a warning. It reads in white at the weight the rest
-  /// of the card's secondary text uses.
-  Color _getTournamentTypeColor(TournamentType type) => switch (type) {
-    TournamentType.special => kRewardGold,
-    _ => Colors.white.withValues(alpha: 0.5),
-  };
-
-  /// The active theme, for the two colour helpers above.
-  GameTheme get _theme => context.read<ThemeCubit>().state.currentTheme;
 
   void _openTournamentDetail(Tournament tournament) {
+    // Always the Guid `id`, never the `tournamentId` slug.
     context.push(
       AppRoutes.tournamentDetailPath(tournament.id),
       extra: tournament,
