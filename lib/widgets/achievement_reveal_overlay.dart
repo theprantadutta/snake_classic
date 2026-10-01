@@ -8,13 +8,13 @@ import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/daily/lb_daily_parts.dart';
 
-/// Full-screen cinematic achievement reveal — replaces the old top-banner
-/// toast (`AchievementNotification`) with a real "you earned a trophy"
-/// moment: dim scrim, rotating shine, radial light rays, particle burst,
-/// rarity-themed medallion, and a queue indicator when multiple unlocks
-/// landed from the same game.
+/// Full-screen achievement reveal on the Living Board — a real "you earned a
+/// trophy" moment: dimmed board, a square cell medallion in the rarity
+/// colour with a stepping halo and a cell burst, the name in snake cells,
+/// and a queue indicator when multiple unlocks landed from the same game.
 ///
 /// Use [show] to push one or more unlocks into the overlay queue. Calling
 /// [show] while another reveal is already on screen appends to that
@@ -183,7 +183,7 @@ class _AchievementRevealStackState extends State<_AchievementRevealStack>
               onTap: () {}, // swallow background taps
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                child: Container(color: Colors.black.withValues(alpha: 0.72)),
+                child: Container(color: context.lb.board.withValues(alpha: 0.86)),
               ),
             ),
           ),
@@ -288,10 +288,13 @@ class _RevealCardState extends State<_RevealCard>
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
     final achievement = widget.achievement;
-    final rarityColor = achievement.rarityColor;
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final rarityColor = lbRarityColor(achievement.rarity);
 
     return Positioned.fill(
       child: GestureDetector(
@@ -302,32 +305,25 @@ class _RevealCardState extends State<_RevealCard>
             child: SingleChildScrollView(
               physics: const NeverScrollableScrollPhysics(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _RaysAndMedallion(
+                    _CellMedallion(
                       achievement: achievement,
                       rarityColor: rarityColor,
                       ringController: _ringController,
                       shineController: _shineController,
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
                     // "ACHIEVEMENT UNLOCKED" eyebrow — slide-up + fade in.
                     Text(
-                      AppLocalizations.of(context)!.aroUnlocked,
+                      l10n.aroUnlocked,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: rarityColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: context.letterSpacing(4.0),
-                        shadows: [
-                          Shadow(
-                            color: rarityColor.withValues(alpha: 0.7),
-                            blurRadius: 12,
-                          ),
-                        ],
+                      style: LBText.label(p, color: rarityColor).copyWith(
+                        fontSize: 11,
+                        letterSpacing: 3.6,
+                        shadows: [Shadow(color: rarityColor.withValues(alpha: .6), blurRadius: 12)],
                       ),
                     )
                         .animate()
@@ -340,22 +336,12 @@ class _RevealCardState extends State<_RevealCard>
                         )
                         .fadeIn(duration: 400.ms, delay: 350.ms),
                     const SizedBox(height: 14),
-                    Text(
-                      achievement.localizedTitle(AppLocalizations.of(context)!),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: context.letterSpacing(0.5),
-                        height: 1.1,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black54,
-                            offset: Offset(0, 2),
-                            blurRadius: 6,
-                          ),
-                        ],
+                    Center(
+                      child: LBCellText(
+                        achievement.localizedTitle(l10n),
+                        cell: 5 * context.uiScale,
+                        color: p.head,
+                        glow: true,
                       ),
                     )
                         .animate()
@@ -367,16 +353,11 @@ class _RevealCardState extends State<_RevealCard>
                           curve: Curves.easeOutCubic,
                         )
                         .fadeIn(duration: 450.ms, delay: 500.ms),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Text(
-                      achievement.localizedDescription(
-                          AppLocalizations.of(context)!),
+                      achievement.localizedDescription(l10n),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.78),
-                        fontSize: 14,
-                        height: 1.35,
-                      ),
+                      style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 13),
                     )
                         .animate()
                         .slideY(
@@ -387,11 +368,8 @@ class _RevealCardState extends State<_RevealCard>
                           curve: Curves.easeOutCubic,
                         )
                         .fadeIn(duration: 450.ms, delay: 650.ms),
-                    const SizedBox(height: 22),
-                    _RewardChips(
-                      achievement: achievement,
-                      rarityColor: rarityColor,
-                    )
+                    const SizedBox(height: 20),
+                    _RewardChips(achievement: achievement)
                         .animate()
                         .slideY(
                           begin: 0.5,
@@ -403,13 +381,8 @@ class _RevealCardState extends State<_RevealCard>
                         .fadeIn(duration: 450.ms, delay: 850.ms),
                     const SizedBox(height: 24),
                     Text(
-                      AppLocalizations.of(context)!.aroTapToContinue,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: context.letterSpacing(2.0),
-                      ),
+                      l10n.aroTapToContinue.toUpperCase(),
+                      style: LBText.label(p, color: p.inkDim),
                     )
                         .animate(
                           onPlay: (c) => c.repeat(reverse: true),
@@ -430,145 +403,81 @@ class _RevealCardState extends State<_RevealCard>
   }
 }
 
-/// The hero piece — light rays, halo ring, particle sparkles, and the
-/// medallion with the achievement's icon framed by a rotating shine.
-class _RaysAndMedallion extends StatelessWidget {
+/// The hero piece, on the grid: a square block with the trophy's pixel
+/// icon in its rarity colour, a square halo that steps outward once, cells
+/// bursting off the block, a slow scanning shine, and the rarity tag.
+class _CellMedallion extends StatelessWidget {
   final Achievement achievement;
   final Color rarityColor;
   final AnimationController ringController;
   final AnimationController shineController;
 
-  const _RaysAndMedallion({
+  const _CellMedallion({
     required this.achievement,
     required this.rarityColor,
     required this.ringController,
     required this.shineController,
   });
 
+  static const double _box = 260;
+  static const double _medal = 128;
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     return SizedBox(
-      width: 280,
-      height: 280,
+      width: _box,
+      height: _box,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Radial light rays — slowly rotating sunburst sitting behind
-          // everything else. The ring controller drives the entry growth;
-          // shineController drives a slow continuous spin.
-          AnimatedBuilder(
-            animation: Listenable.merge([ringController, shineController]),
-            builder: (_, _) => Transform.rotate(
-              angle: shineController.value * 2 * math.pi,
-              child: CustomPaint(
-                size: const Size(280, 280),
-                painter: _LightRaysPainter(
-                  color: rarityColor,
-                  progress: ringController.value,
-                ),
-              ),
-            ),
-          ),
-          // Expanding halo ring — fires once on entry, fades as it
-          // expands past the medallion.
+          // Halo + cell burst — fire once on entry.
           AnimatedBuilder(
             animation: ringController,
             builder: (_, _) => CustomPaint(
-              size: const Size(280, 280),
-              painter: _HaloRingPainter(
-                color: rarityColor,
-                progress: Curves.easeOutCubic.transform(ringController.value),
-              ),
-            ),
-          ),
-          // Confetti / sparkle burst — short-lived particles flying outward
-          // from the medallion.
-          AnimatedBuilder(
-            animation: ringController,
-            builder: (_, _) => CustomPaint(
-              size: const Size(280, 280),
-              painter: _SparkleBurstPainter(
+              size: const Size(_box, _box),
+              painter: _CellBurstPainter(
                 color: rarityColor,
                 progress: ringController.value,
                 seed: achievement.id.hashCode,
+                medal: _medal,
               ),
             ),
           ),
-          // Rotating shine sweep behind the medallion glass.
-          AnimatedBuilder(
-            animation: shineController,
-            builder: (_, child) => Transform.rotate(
-              angle: shineController.value * 2 * math.pi,
-              child: child,
-            ),
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: SweepGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.0),
-                    Colors.white.withValues(alpha: 0.35),
-                    Colors.white.withValues(alpha: 0.0),
-                    Colors.white.withValues(alpha: 0.0),
-                  ],
-                  stops: const [0.0, 0.12, 0.25, 1.0],
-                ),
-              ),
-            ),
-          ),
-          // Medallion — the centerpiece.
+          // The medallion block.
           Container(
-            width: 150,
-            height: 150,
+            width: _medal,
+            height: _medal,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  rarityColor.withValues(alpha: 0.95),
-                  rarityColor.withValues(alpha: 0.55),
-                  rarityColor.withValues(alpha: 0.85),
-                ],
-                stops: const [0.0, 0.65, 1.0],
-              ),
+              color: Color.lerp(p.deep, rarityColor, .12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: rarityColor, width: 2),
               boxShadow: [
-                BoxShadow(
-                  color: rarityColor.withValues(alpha: 0.75),
-                  blurRadius: 40,
-                  spreadRadius: 4,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
+                BoxShadow(color: rarityColor.withValues(alpha: .45), blurRadius: 36, spreadRadius: 2),
               ],
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.85),
-                width: 3,
-              ),
             ),
-            child: Container(
-              margin: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: Icon(
-                achievement.icon,
-                color: Colors.white,
-                size: 72,
-                shadows: const [
-                  Shadow(
-                    color: Colors.black54,
-                    offset: Offset(0, 3),
-                    blurRadius: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // A shine band scanning down the block, cell row by row.
+                  AnimatedBuilder(
+                    animation: shineController,
+                    builder: (_, _) => CustomPaint(
+                      size: const Size(_medal, _medal),
+                      painter: _ScanPainter(
+                        progress: shineController.value,
+                        color: rarityColor,
+                      ),
+                    ),
+                  ),
+                  LBPixelIcon(
+                    lbTrophyIcon(achievement.type),
+                    cell: 13,
+                    color: rarityColor,
+                    accent: LB.goldHead,
                   ),
                 ],
               ),
@@ -583,42 +492,21 @@ class _RaysAndMedallion extends StatelessWidget {
               )
               .fadeIn(duration: 250.ms),
 
-          // Rarity ribbon — sits at the bottom of the medallion area.
+          // Rarity tag — under the medallion.
           Positioned(
-            bottom: 6,
+            bottom: 18,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    rarityColor.withValues(alpha: 0.95),
-                    rarityColor.withValues(alpha: 0.75),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: rarityColor.withValues(alpha: 0.5),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
+                color: rarityColor,
+                borderRadius: BorderRadius.circular(5),
+                boxShadow: [BoxShadow(color: rarityColor.withValues(alpha: .5), blurRadius: 12)],
               ),
               child: Text(
-                achievement
-                    .localizedRarityName(AppLocalizations.of(context)!)
-                    .toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: context.letterSpacing(2.0),
-                ),
+                achievement.localizedRarityName(l10n).toUpperCase(),
+                style: LBText.label(p, color: const Color(0xFF0A0F06)).copyWith(fontSize: 10),
               ),
             )
                 .animate()
@@ -639,237 +527,147 @@ class _RaysAndMedallion extends StatelessWidget {
 
 class _RewardChips extends StatelessWidget {
   final Achievement achievement;
-  final Color rarityColor;
 
-  const _RewardChips({
-    required this.achievement,
-    required this.rarityColor,
-  });
+  const _RewardChips({required this.achievement});
 
   @override
   Widget build(BuildContext context) {
-    final chips = <Widget>[];
-    if (achievement.xpReward > 0) {
-      chips.add(_chip(
-        context: context,
-        icon: Icons.auto_awesome,
-        label: '+${achievement.xpReward} XP',
-        color: Colors.purpleAccent,
-      ));
-    }
-    if (achievement.coinReward > 0) {
-      chips.add(_chip(
-        context: context,
-        icon: Icons.monetization_on,
-        label: '+${achievement.coinReward}',
-        color: Colors.amber,
-      ));
-    }
-    if (achievement.points > 0) {
-      chips.add(_chip(
-        context: context,
-        icon: Icons.star,
-        label: '${achievement.points} pts',
-        color: rarityColor,
-      ));
-    }
+    final l10n = AppLocalizations.of(context)!;
+    final chips = <Widget>[
+      if (achievement.coinReward > 0)
+        LBChip(
+          kind: LBChipKind.gold,
+          icon: LBIcon.coin,
+          height: 28,
+          label: l10n.lbCoinsReward(context.formatInt(achievement.coinReward)),
+        ),
+      if (achievement.xpReward > 0)
+        LBChip(
+          icon: LBIcon.bolt,
+          height: 28,
+          label: l10n.acXpReward(context.formatInt(achievement.xpReward)),
+        ),
+      if (achievement.points > 0)
+        LBChip(
+          icon: LBIcon.star,
+          height: 28,
+          label: l10n.lbPoints(context.formatInt(achievement.points)),
+        ),
+    ];
     if (chips.isEmpty) return const SizedBox.shrink();
     return Wrap(
-      spacing: 10,
+      spacing: 8,
       runSpacing: 8,
       alignment: WrapAlignment.center,
       children: chips,
     );
   }
-
-  Widget _chip({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.55), width: 1.4),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.25),
-            blurRadius: 12,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              letterSpacing: context.letterSpacing(0.3),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _LightRaysPainter extends CustomPainter {
-  final Color color;
-  final double progress;
-
-  _LightRaysPainter({required this.color, required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = size.width / 2;
-
-    final rayCount = 14;
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..blendMode = BlendMode.plus;
-
-    for (int i = 0; i < rayCount; i++) {
-      final angle = (i / rayCount) * 2 * math.pi;
-      final innerRadius = 70.0;
-      // Stagger ray growth so they feel like they're being painted out.
-      final localProgress = (progress - (i % 3) * 0.05).clamp(0.0, 1.0);
-      final outerRadius =
-          innerRadius + (maxRadius - innerRadius) * localProgress;
-
-      final p1 = Offset(
-        center.dx + math.cos(angle - 0.04) * innerRadius,
-        center.dy + math.sin(angle - 0.04) * innerRadius,
-      );
-      final p2 = Offset(
-        center.dx + math.cos(angle + 0.04) * innerRadius,
-        center.dy + math.sin(angle + 0.04) * innerRadius,
-      );
-      final p3 = Offset(
-        center.dx + math.cos(angle + 0.005) * outerRadius,
-        center.dy + math.sin(angle + 0.005) * outerRadius,
-      );
-      final p4 = Offset(
-        center.dx + math.cos(angle - 0.005) * outerRadius,
-        center.dy + math.sin(angle - 0.005) * outerRadius,
-      );
-
-      paint.shader = LinearGradient(
-        colors: [
-          color.withValues(alpha: 0.55 * localProgress),
-          color.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromPoints(p1, p3));
-
-      final path = Path()
-        ..moveTo(p1.dx, p1.dy)
-        ..lineTo(p2.dx, p2.dy)
-        ..lineTo(p3.dx, p3.dy)
-        ..lineTo(p4.dx, p4.dy)
-        ..close();
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _LightRaysPainter old) =>
-      old.progress != progress || old.color != color;
-}
-
-class _HaloRingPainter extends CustomPainter {
-  final Color color;
-  final double progress;
-
-  _HaloRingPainter({required this.color, required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final startRadius = 60.0;
-    final endRadius = size.width / 2 - 4;
-    final radius = startRadius + (endRadius - startRadius) * progress;
-    // Fade as it expands outward — last 30% is mostly invisible.
-    final alpha = (1.0 - progress).clamp(0.0, 1.0) * 0.85;
-    if (alpha <= 0.01) return;
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0 + (1.0 - progress) * 4.0
-      ..color = color.withValues(alpha: alpha);
-    canvas.drawCircle(center, radius, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _HaloRingPainter old) =>
-      old.progress != progress || old.color != color;
-}
-
-class _SparkleBurstPainter extends CustomPainter {
+/// A square halo that steps outward from the medallion and fades, plus
+/// cells thrown off the block along the grid.
+class _CellBurstPainter extends CustomPainter {
   final Color color;
   final double progress;
   final int seed;
+  final double medal;
 
-  _SparkleBurstPainter({
+  _CellBurstPainter({
     required this.color,
     required this.progress,
     required this.seed,
+    required this.medal,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (progress >= 1.0) return;
-    final center = Offset(size.width / 2, size.height / 2);
-    final random = math.Random(seed);
-    const sparkleCount = 18;
-    for (int i = 0; i < sparkleCount; i++) {
-      final angle = random.nextDouble() * 2 * math.pi;
-      final maxDistance = 70.0 + random.nextDouble() * 60.0;
-      // Each sparkle has its own delay + duration so they don't all fire
-      // in lockstep.
-      final delay = random.nextDouble() * 0.25;
-      final local = ((progress - delay) / (1.0 - delay)).clamp(0.0, 1.0);
-      if (local <= 0) continue;
-      final eased = Curves.easeOutCubic.transform(local);
-      final distance = maxDistance * eased;
-      final position = Offset(
-        center.dx + math.cos(angle) * distance,
-        center.dy + math.sin(angle) * distance,
+    final center = size.center(Offset.zero);
+
+    // Halo: grows in whole 10 dp steps, so it snaps like the board does.
+    final eased = Curves.easeOutCubic.transform(progress);
+    final reach = (size.width - medal) / 2;
+    final step = ((reach * eased) / 10).floor() * 10.0;
+    final haloAlpha = (1 - progress).clamp(0.0, 1.0) * .8;
+    if (haloAlpha > .01) {
+      final r = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: center, width: medal + step * 2, height: medal + step * 2),
+        const Radius.circular(14),
       );
-      final radius = (1.0 - local) * 2.5 + 1.0;
-      final alpha = (1.0 - local) * 0.95;
-      final paint = Paint()
-        ..color = color.withValues(alpha: alpha)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(position, radius, paint);
-      // White hot core
-      canvas.drawCircle(
-        position,
-        radius * 0.5,
+      canvas.drawRRect(
+        r,
         Paint()
-          ..color = Colors.white.withValues(alpha: alpha)
-          ..style = PaintingStyle.fill,
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2 + (1 - progress) * 3
+          ..color = color.withValues(alpha: haloAlpha),
+      );
+    }
+
+    // Burst: cells leave the block in the four grid directions and the
+    // diagonals, each on its own delay.
+    final random = math.Random(seed);
+    const count = 20;
+    for (var i = 0; i < count; i++) {
+      final dir = i % 8;
+      final dx = const [1, -1, 0, 0, 1, -1, 1, -1][dir].toDouble();
+      final dy = const [0, 0, 1, -1, 1, 1, -1, -1][dir].toDouble();
+      final spread = (random.nextDouble() - .5) * medal * .8;
+      final delay = random.nextDouble() * .25;
+      final local = ((progress - delay) / (1 - delay)).clamp(0.0, 1.0);
+      if (local <= 0) continue;
+      final t = Curves.easeOutCubic.transform(local);
+      final dist = medal / 2 + (40 + random.nextDouble() * 50) * t;
+      final pos = center +
+          Offset(
+            dx * dist + (dx == 0 ? spread : 0),
+            dy * dist + (dy == 0 ? spread : 0),
+          );
+      final cell = 7 * (1 - local) + 3;
+      final alpha = (1 - local) * .95;
+      canvas.drawRRect(
+        lbCellRect(pos.dx - cell / 2, pos.dy - cell / 2, cell),
+        Paint()..color = (i.isEven ? color : LB.goldHead).withValues(alpha: alpha),
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _SparkleBurstPainter old) =>
+  bool shouldRepaint(covariant _CellBurstPainter old) =>
       old.progress != progress || old.color != color;
 }
 
-/// Tasteful skip pill in the top-right corner. Labels with "SKIP" when
-/// the current card is the last one, "SKIP (3)" when 3 more are queued.
-/// Fades in a beat after the medallion so it doesn't compete with the
-/// reveal entrance, then stays put until the overlay tears down.
+/// A soft band of light passing down the medallion, row by row.
+class _ScanPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _ScanPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const rows = 8;
+    final rowH = size.height / rows;
+    final head = (progress * (rows + 3)).floor() - 1;
+    for (var r = 0; r < rows; r++) {
+      final d = head - r;
+      if (d < 0 || d > 2) continue;
+      final a = const [.16, .08, .03][d];
+      canvas.drawRect(
+        Rect.fromLTWH(0, r * rowH, size.width, rowH),
+        Paint()..color = color.withValues(alpha: a),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScanPainter old) =>
+      old.progress != progress || old.color != color;
+}
+
+/// The skip block in the top-right corner. Labels with "SKIP" when the
+/// current card is the last one, "SKIP (3)" when 3 more are queued. Fades in
+/// a beat after the medallion so it doesn't compete with the reveal
+/// entrance, then stays put until the overlay tears down.
 class _SkipButton extends StatelessWidget {
   final int remaining;
   final VoidCallback onTap;
@@ -879,47 +677,24 @@ class _SkipButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final label = remaining > 0 ? l10n.aroSkipCount(remaining) : l10n.aroSkip;
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: () {
-          HapticService().selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.35),
-              width: 1.2,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: context.letterSpacing(1.4),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.skip_next_rounded,
-                size: 16,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ],
-          ),
-        ),
+    return LBBlock(
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.center,
+      feedback: false,
+      onTap: () {
+        HapticService().selectionClick();
+        onTap();
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label.toUpperCase(), style: LBText.button(p, color: p.head, size: 11.5)),
+          const SizedBox(width: 8),
+          LBPixelIcon(LBIcon.next, cell: 2.6, color: p.lime),
+        ],
       ),
     )
         .animate()

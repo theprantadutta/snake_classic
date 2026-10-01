@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:snake_classic/utils/contrast.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Data class for daily bonus reward
 class DailyBonusReward {
@@ -219,6 +217,8 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final todayReward = widget.status.todayReward;
     final currentDay = widget.status.currentStreak > 0
         ? widget.status.currentStreak
@@ -226,417 +226,214 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      child:
-          Container(
-            constraints: const BoxConstraints(maxWidth: 360),
-            decoration: BoxDecoration(
-              color: widget.theme.backgroundColor,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.amber.withValues(alpha: 0.5),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.3),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
+        child: LBBlock(
+          kind: LBBlockKind.sheet,
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(l10n, p),
+              const SizedBox(height: 16),
+              _buildWeekProgress(currentDay),
+              const SizedBox(height: 14),
+              if (todayReward != null) ...[
+                _buildTodayReward(todayReward),
+                const SizedBox(height: 14),
               ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                _buildHeader(),
-
-                // Week progress
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildWeekProgress(currentDay),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Today's reward
-                if (todayReward != null) _buildTodayReward(todayReward),
-
-                const SizedBox(height: 20),
-
-                // Claim button
-                _buildClaimButton(),
-
-                const SizedBox(height: 16),
-
-                // Close button (if can't claim)
-                if (!widget.status.canClaim) _buildCloseButton(),
-
-                const SizedBox(height: 16),
-              ],
-            ),
-          ).animate().scale(
-            begin: const Offset(0.8, 0.8),
+              _buildClaimButton(),
+              if (!widget.status.canClaim) _buildCloseButton(),
+            ],
+          ),
+        ),
+      ).animate().scale(
+            begin: const Offset(0.9, 0.9),
             end: const Offset(1, 1),
-            duration: 300.ms,
+            duration: 220.ms,
             curve: Curves.easeOutBack,
           ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.amber.withValues(alpha: 0.3),
-            Colors.orange.withValues(alpha: 0.2),
-          ],
-        ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      child: HudCorners(
-        color: kRewardGold,
-        inset: 9,
-        child: Column(
-        children: [
-          // Close button
-          Align(
-            alignment: Alignment.topRight,
-            child: GestureDetector(
-              onTap: widget.onClose,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: widget.theme.backgroundColor.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.close,
-                  color: widget.theme.accentColor.withValues(alpha: 0.7),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-
-          // Gift icon with animation
-          Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.amber, Colors.orange],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withValues(alpha: 0.5),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: const Text('🎁', style: TextStyle(fontSize: 40)),
-              )
-              .animate(onPlay: (controller) => controller.repeat(reverse: true))
-              .scale(
-                begin: const Offset(1, 1),
-                end: const Offset(1.1, 1.1),
-                duration: 1000.ms,
-              ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            AppLocalizations.of(context)!.dbTitle,
-            style: TextStyle(
-              color: widget.theme.accentColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(1),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            widget.status.canClaim
-                ? AppLocalizations.of(context)!.dbClaimToday
-                : AppLocalizations.of(context)!.dbComeBack,
-            style: TextStyle(
-              color: widget.theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
-          ),
-
-          if (widget.status.currentStreak > 1) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🔥', style: TextStyle(fontSize: 14)),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${widget.status.currentStreak} day streak!',
-                    style: const TextStyle(
-                      color: Colors.amber,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      )),
-    );
-  }
-
-  Widget _buildWeekProgress(int currentDay) {
+  Widget _buildHeader(AppLocalizations l10n, LBPalette p) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(7, (index) {
-            final day = index + 1;
-            final reward = widget.status.weekRewards.length > index
-                ? widget.status.weekRewards[index]
-                : DailyBonusReward(day: day, coins: 10 + (day * 5));
-
-            final isClaimed = reward.claimed;
-            final isToday = day == currentDay;
-            final isFuture = day > currentDay;
-
-            return Expanded(
-              child: _buildDayCircle(
-                day: day,
-                coins: reward.coins,
-                hasBonus: reward.bonusItem != null,
-                isClaimed: isClaimed,
-                isToday: isToday,
-                isFuture: isFuture,
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: LBCellText(l10n.dbTitle, cell: 4.4, color: LB.gold, glow: true),
               ),
-            );
-          }),
+            ),
+            const SizedBox(width: 10),
+            LBIconBlock(
+              icon: LBIcon.x,
+              semanticLabel: l10n.commonClose,
+              onTap: widget.onClose,
+              size: 44,
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
+        Text(
+          widget.status.canClaim ? l10n.dbClaimToday : l10n.dbComeBack,
+          style: LBText.body(p, size: 12),
+        ),
+        if (widget.status.currentStreak > 1) ...[
+          const SizedBox(height: 10),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: LBChip(
+              kind: LBChipKind.gold,
+              icon: LBIcon.flame,
+              label: l10n.lbBonusStreak(widget.status.currentStreak),
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  Widget _buildDayCircle({
+  Widget _buildWeekProgress(int currentDay) {
+    return Row(
+      children: List.generate(7, (index) {
+        final day = index + 1;
+        final reward = widget.status.weekRewards.length > index
+            ? widget.status.weekRewards[index]
+            : DailyBonusReward(day: day, coins: 10 + (day * 5));
+
+        return Expanded(
+          child: _buildDayCell(
+            day: day,
+            coins: reward.coins,
+            hasBonus: reward.bonusItem != null,
+            isClaimed: reward.claimed,
+            isToday: day == currentDay,
+          ),
+        );
+      }),
+    );
+  }
+
+  /// One rung of the 7-day ladder: a block per day. Claimed days carry a
+  /// check, today is the gold one, the rest wait in muted outline.
+  Widget _buildDayCell({
     required int day,
     required int coins,
     required bool hasBonus,
     required bool isClaimed,
     required bool isToday,
-    required bool isFuture,
   }) {
-    Color bgColor;
-    Color borderColor;
-    Widget icon;
+    final p = context.lb;
+    final l10n = AppLocalizations.of(context)!;
+    final kind = isToday
+        ? LBBlockKind.gold
+        : isClaimed
+            ? LBBlockKind.outline
+            : LBBlockKind.muted;
+    final fg = isToday ? LB.gold : (isClaimed ? p.lime : p.inkDim);
 
-    if (isClaimed) {
-      bgColor = Colors.green.withValues(alpha: 0.3);
-      borderColor = Colors.green;
-      icon = const Icon(Icons.check, color: Colors.green, size: 16);
-    } else if (isToday) {
-      bgColor = Colors.amber.withValues(alpha: 0.3);
-      borderColor = Colors.amber;
-      icon = Text('🎁', style: TextStyle(fontSize: hasBonus ? 14 : 12));
-    } else {
-      bgColor = widget.theme.backgroundColor.withValues(alpha: 0.5);
-      borderColor = widget.theme.accentColor.withValues(alpha: 0.3);
-      icon = Text(
-        hasBonus ? '⭐' : '🪙',
-        style: TextStyle(fontSize: 12, color: isFuture ? Colors.grey : null),
-      );
-    }
-
-    Widget circle = Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: isToday ? 2 : 1),
-        boxShadow: isToday
-            ? [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
+    Widget cell = LBBlock(
+      kind: kind,
+      selected: isToday,
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          LBPixelIcon(
+            isClaimed ? LBIcon.check : (hasBonus ? LBIcon.gift : LBIcon.coin),
+            cell: 2.8,
+            color: fg,
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              l10n.dbDayChip(day),
+              maxLines: 1,
+              style: LBText.label(p, color: fg).copyWith(fontSize: 9, letterSpacing: 1),
+            ),
+          ),
+        ],
       ),
-      child: Center(child: icon),
     );
 
     if (isToday && widget.status.canClaim) {
-      circle = circle
+      cell = cell
           .animate(onPlay: (c) => c.repeat(reverse: true))
           .scale(
             begin: const Offset(1, 1),
-            end: const Offset(1.1, 1.1),
+            end: const Offset(1.06, 1.06),
             duration: 800.ms,
           );
     }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        circle,
-        const SizedBox(height: 4),
-        Text(
-          AppLocalizations.of(context)!.dbDayChip(day),
-          style: TextStyle(
-            color: isToday
-                ? Colors.amber
-                : widget.theme.accentColor.withValues(
-                    alpha: isFuture ? 0.4 : 0.7,
-                  ),
-            fontSize: 10,
-            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
+    return Semantics(
+      label: '${l10n.dbDayChip(day)}, ${l10n.lbCoinsReward('$coins')}',
+      excludeSemantics: true,
+      child: cell,
     );
   }
 
   Widget _buildTodayReward(DailyBonusReward reward) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.amber.withValues(alpha: 0.15),
-            Colors.orange.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-      ),
-      child: HudCorners(
-        color: kRewardGold,
-        inset: 8,
-        child: Column(
+    final p = context.lb;
+    final l10n = AppLocalizations.of(context)!;
+    return LBBlock(
+      kind: LBBlockKind.gold,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Column(
         children: [
           Text(
-            AppLocalizations.of(context)!.dbTodaysReward,
-            style: TextStyle(
-              color: widget.theme.accentColor.withValues(alpha: 0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            l10n.dbTodaysReward.toUpperCase(),
+            style: LBText.label(p, color: LB.gold.withValues(alpha: .8)),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Coins
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🪙', style: TextStyle(fontSize: 24)),
-                    const SizedBox(width: 8),
-                    Text(
-                      '+${reward.coins}',
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+              const LBPixelIcon(LBIcon.coin, cell: 5, color: LB.gold),
+              const SizedBox(width: 12),
+              Flexible(
+                child: LBCellText(
+                  '+${reward.coins}',
+                  cell: 6,
+                  color: LB.gold,
+                  glow: true,
+                  semanticsLabel: l10n.lbCoinsReward('${reward.coins}'),
                 ),
               ),
-
-              // Bonus item if any
-              if (reward.bonusItem != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.purple.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🎁', style: TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text(
-                        reward.bonusItem!,
-                        style: const TextStyle(
-                          color: Colors.purple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
+          if (reward.bonusItem != null) ...[
+            const SizedBox(height: 12),
+            LBChip(icon: LBIcon.gift, label: reward.bonusItem!.toUpperCase()),
+          ],
         ],
-      )),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0);
+      ),
+    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.15, end: 0);
   }
 
   Widget _buildClaimButton() {
+    final p = context.lb;
+    final l10n = AppLocalizations.of(context)!;
     if (!widget.status.canClaim) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: widget.theme.accentColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: widget.theme.accentColor.withValues(alpha: 0.2),
-          ),
-        ),
+      return LBBlock(
+        kind: LBBlockKind.muted,
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.access_time,
-              color: widget.theme.accentColor.withValues(alpha: 0.6),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              AppLocalizations.of(context)!.dbAlreadyClaimed,
-              style: TextStyle(
-                color: widget.theme.accentColor.withValues(alpha: 0.6),
-                fontSize: 14,
+            LBPixelIcon(LBIcon.hourglass, cell: 3, color: p.inkDim),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                l10n.dbAlreadyClaimed,
+                style: LBText.body(p, color: p.inkMuted, size: 12),
               ),
             ),
           ],
@@ -644,61 +441,32 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
       );
     }
 
-    final claimButton = GestureDetector(
-      onTap: (widget.isLoading || _isClaiming) ? null : _handleClaim,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-        decoration: BoxDecoration(
-          // Amber and orange are both far too light to carry white text —
-          // white measures under 2:1 on them. Shaded, and the label takes
-          // whichever ink actually contrasts.
-          gradient: LinearGradient(
-            colors: [shadeFill(Colors.amber, 0.86), shadeFill(Colors.orange, 0.78)],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.22),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: widget.isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('🎉', style: TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context)!.dbClaim,
-                    style: TextStyle(
-                      color: inkOn(
-                        shadeFill(Colors.amber, 0.86),
-                        shadeFill(Colors.orange, 0.78),
-                      ),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: context.letterSpacing(1),
-                    ),
+    final busy = widget.isLoading || _isClaiming;
+    final claimButton = LBBlock(
+      kind: LBBlockKind.fill,
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.center,
+      onTap: busy ? null : _handleClaim,
+      child: widget.isLoading
+          ? LBCellsBar(count: 3, value: 1, cell: 10, color: p.onLime)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LBPixelIcon(LBIcon.gift, cell: 3.6, color: p.onLime),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    l10n.dbClaim.toUpperCase(),
+                    style: LBText.button(p, color: p.onLime, size: 14).copyWith(letterSpacing: 2),
                   ),
-                ],
-              ),
-      ),
+                ),
+              ],
+            ),
     );
 
     Widget animate(Widget w) =>
-        w.animate(delay: 300.ms).fadeIn().scale(begin: const Offset(0.9, 0.9));
+        w.animate(delay: 200.ms).fadeIn().scale(begin: const Offset(0.95, 0.95));
 
     // No ad option → just the normal claim button.
     if (widget.onClaimDoubled == null) return animate(claimButton);
@@ -707,41 +475,28 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
     return animate(
       Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           claimButton,
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: (widget.isLoading || _isClaiming)
-                ? null
-                : _handleClaimDoubled,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: widget.theme.accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: widget.theme.accentColor.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.play_circle_fill,
-                      color: widget.theme.accentColor, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context)!.dbClaim2x,
-                    style: TextStyle(
-                      color: widget.theme.accentColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: context.letterSpacing(0.5),
-                    ),
+          LBBlock(
+            kind: LBBlockKind.gold,
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            alignment: Alignment.center,
+            feedback: false,
+            onTap: busy ? null : _handleClaimDoubled,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const LBPixelIcon(LBIcon.tv, cell: 3.2, color: LB.gold),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    l10n.dbClaim2x,
+                    style: LBText.button(p, color: LB.gold, size: 12.5),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -750,14 +505,15 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
   }
 
   Widget _buildCloseButton() {
-    return TextButton(
-      onPressed: widget.onClose,
+    final p = context.lb;
+    return LBBlock(
+      kind: LBBlockKind.muted,
+      height: 48,
+      alignment: Alignment.center,
+      onTap: widget.onClose,
       child: Text(
-        AppLocalizations.of(context)!.commonClose,
-        style: TextStyle(
-          color: widget.theme.accentColor.withValues(alpha: 0.6),
-          fontSize: 14,
-        ),
+        AppLocalizations.of(context)!.commonClose.toUpperCase(),
+        style: LBText.button(p, color: p.inkMuted, size: 12),
       ),
     );
   }

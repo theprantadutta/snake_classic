@@ -1,30 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/l10n/catalog_l10n.dart';
-import 'package:snake_classic/l10n/server_text_l10n.dart';
-import 'package:snake_classic/services/haptic_service.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
+import 'package:snake_classic/l10n/server_text_l10n.dart';
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
-import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
-import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/services/weekly_quest_service.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/daily/lb_daily_parts.dart';
 
+/// Daily (Living Board screen 09): progress with streak and reset, one block
+/// per challenge, CLAIM ALL ×2 (the existing `challenge_2x` rewarded double)
+/// and the weekly-quests teaser.
 class DailyChallengesScreen extends ConsumerStatefulWidget {
   const DailyChallengesScreen({super.key});
 
@@ -35,6 +38,27 @@ class DailyChallengesScreen extends ConsumerStatefulWidget {
 
 class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   final AudioService _audioService = AudioService();
+  final WeeklyQuestService _weekly = WeeklyQuestService();
+
+  /// Re-renders the "resets in" countdown once a minute.
+  Timer? _clock;
+  bool _claimingAll = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _clock = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    // For the weekly teaser's count. No-op when already hydrated.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _weekly.initialize());
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    super.dispose();
+  }
 
   Future<void> _refreshChallenges() async {
     await ref.read(dailyChallengesProvider.notifier).refresh();
@@ -68,72 +92,90 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     }
   }
 
-  Future<void> _claimAllRewards() async {
-    final totalClaimed = await ref
-        .read(dailyChallengesProvider.notifier)
-        .claimAllRewards();
-    if (totalClaimed > 0) {
-      // Same as _claimReward: claimAllRewards already credited the total.
-      // The 2x rewarded-ad grant further down IS a separate, additional
-      // reward and stays.
-      HapticService().heavyImpact();
-      _audioService.playSound('coin_collect');
-      if (mounted) {
-        // Offer a rewarded "2×" on the claimed total when an ad is available.
-        final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
-        // Deliberately NOT gated on isRewardedReady. Rewarded is the
-        // highest-eCPM format in the app and the pool is empty a large share
-        // of the time, so requiring a loaded ad meant the "2×" offer silently
-        // vanished exactly when it was worth the most — and the tap that would
-        // have triggered the load never happened. showRewardedOrWait waits out
-        // a short load window and reports failure to the user instead.
-        final canDouble = ads != null && ads.adsEnabled;
-        final coins = context.read<CoinsCubit>();
-        // Capture before the ad — onReward fires after dismissal, an async
-        // gap where reading context is unsafe.
-        final messenger = ScaffoldMessenger.of(context);
-        final l10n = AppLocalizations.of(context)!;
-        final snackTheme = context.read<ThemeCubit>().state.currentTheme;
-        messenger.showSnackBar(
-          arcadeSnackBarFor(
-            snackTheme,
-            message: l10n.dchClaimedCoins(totalClaimed),
-            tone: ArcadeSnackTone.success,
-            icon: Icons.celebration,
-            duration: Duration(seconds: canDouble ? 6 : 2),
-            actionLabel: canDouble ? l10n.dchWatchTo2x : null,
-            onAction: canDouble
-                ? () async {
-                    final outcome = await ads.showRewardedOrWait(
-                      placement: 'challenge_2x',
-                      onReward: () {
-                        coins.earnCoins(
-                          CoinEarningSource.dailyChallenge,
-                          customAmount: totalClaimed,
-                          itemName: 'Daily Challenges 2x',
-                          metadata: const {'doubled': true},
-                        );
-                        showRewardToast(
-                          messenger,
-                          l10n.dchDoubledBonus(totalClaimed),
-                          icon: Icons.monetization_on,
-                        );
-                      },
-                    );
-                    if (outcome == RewardedOutcome.unavailable) {
-                      messenger.showSnackBar(
-                        arcadeSnackBarFor(
-                          snackTheme,
-                          message: l10n.goNoAdAvailable,
-                          icon: Icons.hourglass_empty,
-                        ),
-                      );
-                    }
-                  }
-                : null,
-          ),
-        );
+  /// Whether the rewarded "2×" on a claim-all is offered. Deliberately NOT
+  /// gated on isRewardedReady. Rewarded is the highest-eCPM format in the
+  /// app and the pool is empty a large share of the time, so requiring a
+  /// loaded ad meant the "2×" offer silently vanished exactly when it was
+  /// worth the most — and the tap that would have triggered the load never
+  /// happened. showRewardedOrWait waits out a short load window and reports
+  /// failure to the user instead.
+  bool get _canDouble {
+    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+    return ads != null && ads.adsEnabled;
+  }
+
+  /// Claims every completed challenge. With [watchAdToDouble] (the CLAIM
+  /// ALL ×2 block) the `challenge_2x` rewarded ad runs straight after the
+  /// claim; otherwise the claimed snackbar offers it, as before.
+  Future<void> _claimAllRewards({bool watchAdToDouble = false}) async {
+    if (_claimingAll) return;
+    setState(() => _claimingAll = true);
+    try {
+      final totalClaimed = await ref
+          .read(dailyChallengesProvider.notifier)
+          .claimAllRewards();
+      if (totalClaimed > 0) {
+        // Same as _claimReward: claimAllRewards already credited the total.
+        // The 2x rewarded-ad grant further down IS a separate, additional
+        // reward and stays.
+        HapticService().heavyImpact();
+        _audioService.playSound('coin_collect');
+        if (mounted) {
+          // Offer a rewarded "2×" on the claimed total (see [_canDouble]).
+          final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+          final canDouble = ads != null && ads.adsEnabled;
+          final coins = context.read<CoinsCubit>();
+          // Capture before the ad — onReward fires after dismissal, an async
+          // gap where reading context is unsafe.
+          final messenger = ScaffoldMessenger.of(context);
+          final l10n = AppLocalizations.of(context)!;
+          final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+
+          Future<void> doubleIt() async {
+            final outcome = await ads!.showRewardedOrWait(
+              placement: 'challenge_2x',
+              onReward: () {
+                coins.earnCoins(
+                  CoinEarningSource.dailyChallenge,
+                  customAmount: totalClaimed,
+                  itemName: 'Daily Challenges 2x',
+                  metadata: const {'doubled': true},
+                );
+                showRewardToast(
+                  messenger,
+                  l10n.dchDoubledBonus(totalClaimed),
+                  icon: Icons.monetization_on,
+                );
+              },
+            );
+            if (outcome == RewardedOutcome.unavailable) {
+              messenger.showSnackBar(
+                arcadeSnackBarFor(
+                  snackTheme,
+                  message: l10n.goNoAdAvailable,
+                  icon: Icons.hourglass_empty,
+                ),
+              );
+            }
+          }
+
+          final runAdNow = watchAdToDouble && canDouble;
+          messenger.showSnackBar(
+            arcadeSnackBarFor(
+              snackTheme,
+              message: l10n.dchClaimedCoins(totalClaimed),
+              tone: ArcadeSnackTone.success,
+              icon: Icons.celebration,
+              duration: Duration(seconds: canDouble && !runAdNow ? 6 : 2),
+              actionLabel: canDouble && !runAdNow ? l10n.dchWatchTo2x : null,
+              onAction: canDouble && !runAdNow ? doubleIt : null,
+            ),
+          );
+          if (runAdNow) await doubleIt();
+        }
       }
+    } finally {
+      if (mounted) setState(() => _claimingAll = false);
     }
   }
 
@@ -159,579 +201,223 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     return challenge.localizedDescription(l10n);
   }
 
+  /// The daily-bonus login streak, only while it is alive (claimed today or
+  /// yesterday). It comes straight from the Drift-backed CoinsCubit state;
+  /// 0 means "no streak to show" and the line omits it.
+  static int _liveStreak(CoinsState s) {
+    final ms = s.dailyBonusLastClaimUtcMs;
+    if (ms == null || s.dailyBonusCurrentStreak <= 0) return 0;
+    if (s.wasDailyBonusClaimedToday) return s.dailyBonusCurrentStreak;
+    final last = DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true)
+        .add(Duration(minutes: s.dailyBonusLastClaimTzOffsetMinutes ?? 0));
+    final now = DateTime.now();
+    final lastDay = DateTime.utc(last.year, last.month, last.day);
+    final today = DateTime.utc(now.year, now.month, now.day);
+    return today.difference(lastDay).inDays == 1 ? s.dailyBonusCurrentStreak : 0;
+  }
+
+  /// The mode a "play N games of X" challenge asks for, if it maps to one.
+  static GameMode? _modeFor(DailyChallenge c) {
+    final raw = c.requiredGameMode;
+    if (c.type != ChallengeType.gameMode || raw == null) return null;
+    final key = raw.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+    for (final m in GameMode.values) {
+      if (m.wireName.toLowerCase() == key ||
+          m.name.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '') == key) {
+        return m;
+      }
+    }
+    return null;
+  }
+
+  static LBIcon _challengeIcon(ChallengeType type) => switch (type) {
+        ChallengeType.score => LBIcon.star,
+        ChallengeType.foodEaten => LBIcon.apple,
+        ChallengeType.gameMode => LBIcon.grid,
+        ChallengeType.survival => LBIcon.hourglass,
+        ChallengeType.gamesPlayed => LBIcon.play,
+      };
+
   @override
   Widget build(BuildContext context) {
-    // Watch the daily challenges state from Riverpod
     final challengesState = ref.watch(dailyChallengesProvider);
-
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-        return _buildContent(context, theme, challengesState);
-      },
-    );
-  }
-
-  /// The screen, in the language Settings and Profile settled on: an
-  /// uppercase accent eyebrow over a hairline-bordered translucent card, one
-  /// column, monochrome against the active theme.
-  ///
-  /// It had drifted a long way from that. The summary was a primary-to-accent
-  /// gradient; every challenge card changed its own fill AND its border colour
-  /// with state (green when done, amber when claimable, primary otherwise);
-  /// difficulty was a red, orange or green pill; the two rewards were an amber
-  /// chip and a purple chip; the all-complete banner was an amber-to-orange
-  /// gradient with a shimmer running across it. Six palettes and four entrance
-  /// animations on one screen, which leaves nothing for the one thing that
-  /// actually needs attention — the challenge you can claim right now.
-  ///
-  /// Now colour means one thing here: gold is a reward, the theme's accent is
-  /// progress and action, and everything else is white at some opacity. State
-  /// is carried by the status glyph and the claim button, not by repainting
-  /// the whole row.
-  Widget _buildContent(
-    BuildContext context,
-    GameTheme theme,
-    DailyChallengesState challengesState,
-  ) {
+    // Rebuild on theme changes (the palette re-skins through context.lb).
+    context.watch<ThemeCubit>();
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final g = context.lbGutter;
+
     final isRefreshing = challengesState.isLoading;
     final challenges = challengesState.challenges;
-    final hasUnclaimedRewards = challengesState.hasUnclaimedRewards;
-    final allCompleted = challengesState.allCompleted;
+    final claimable = challenges.where((c) => c.canClaim).toList();
+    final claimableCoins = claimable.fold<int>(0, (s, c) => s + c.coinReward);
+    final allClaimed = challenges.isNotEmpty &&
+        challenges.every((c) => c.claimedReward) &&
+        (!challengesState.allCompleted || challengesState.isBonusClaimed);
 
-    return Scaffold(
-      bottomNavigationBar: const SnakeBannerAd(),
-      extendBodyBehindAppBar: true,
-      appBar: appScreenBar(
-        context,
-        theme,
-        l10n.dcTitle,
-        actions: [
-          if (hasUnclaimedRewards)
-            TextButton(
-              onPressed: _claimAllRewards,
-              child: Text(
-                l10n.dchClaimAll.toUpperCase(),
-                style: TextStyle(
-                  color: _gold,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                  letterSpacing: context.letterSpacing(1),
-                ),
-              ),
-            ),
-          IconButton(
-            tooltip: l10n.dchLoading,
-            icon: isRefreshing
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(theme.accentColor),
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Icon(Icons.refresh, color: theme.accentColor),
-            onPressed: isRefreshing ? null : _refreshChallenges,
-          ),
-        ],
-      ),
-      body: AppBackground(
-        theme: theme,
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _refreshChallenges,
-            color: theme.accentColor,
-            backgroundColor: theme.backgroundColor,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: 24 + context.sideInset(),
-                vertical: 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _section(
-                    context,
-                    theme,
-                    l10n.dchTodaysProgress,
-                    _buildProgressSummary(theme, challengesState),
-                    icon: Icons.today_rounded,
-                    index: 0,
-                  ),
-                  const SizedBox(height: 32),
+    final streak = _liveStreak(context.watch<CoinsCubit>().state);
+    final resets = lbResetCountdown(l10n, lbUntilLocalMidnight());
 
-                  _sectionHeader(
-                    context,
-                    theme,
-                    l10n.dchSectionChallenges,
-                    icon: Icons.checklist_rounded,
-                  ),
-                  if (isRefreshing && challenges.isEmpty)
-                    // Skeleton rows rather than a spinner: the list that
-                    // arrives is this tall, so nothing below it moves when it
-                    // does.
-                    ...List.generate(3, (_) => _skeletonCard(theme))
-                  else if (challenges.isEmpty)
-                    _buildEmptyState(theme)
-                  else
-                    ...challenges.map((c) => _buildChallengeCard(c, theme)),
-
-                  if (allCompleted) ...[
-                    const SizedBox(height: 8),
-                    _buildAllCompleteBonusCard(theme, challengesState),
-                  ],
-
-                  const SizedBox(height: 32),
-
-                  _section(
-                    context,
-                    theme,
-                    l10n.dchAbout,
-                    _buildInfoList(l10n),
-                    icon: Icons.info_outline_rounded,
-                    index: 1,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==================== Shared shapes ====================
-
-  /// Gold means a reward, here and on the home screen's best-score medal. It
-  /// is the only colour on this screen that is not the theme's own.
-  /// The one gold in the app, from the shared language rather than a second
-  /// copy of the same hex.
-  static const Color _gold = kRewardGold;
-
-  Widget _sectionHeader(
-    BuildContext context,
-    GameTheme theme,
-    String title, {
-    IconData? icon,
-  }) => screenEyebrow(context, theme, title, icon: icon);
-
-  Widget _card(GameTheme theme, {required Widget child, Color? borderColor}) =>
-      screenCard(theme, borderColor: borderColor, child: child);
-
-  /// One section panel. Was a hand-rolled copy of the shell's eyebrow and
-  /// card, with a doc comment saying it was "in the language Settings and
-  /// Profile settled on" — which it now is by construction rather than by
-  /// retyping.
-  Widget _section(
-    BuildContext context,
-    GameTheme theme,
-    String title,
-    Widget child, {
-    IconData? icon,
-    int? index,
-  }) => screenSection(context, theme, title, child, icon: icon, index: index);
-
-  /// A progress bar in the theme's accent. One shape for every bar on the
-  /// screen, so a full one and a half-full one are the same object.
-  Widget _bar(GameTheme theme, double value, {double height = 6}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(height),
-      child: LinearProgressIndicator(
-        value: value.clamp(0.0, 1.0),
-        backgroundColor: Colors.white.withValues(alpha: 0.10),
-        valueColor: AlwaysStoppedAnimation(theme.accentColor),
-        minHeight: height,
-      ),
-    );
-  }
-
-  // ==================== Sections ====================
-
-  Widget _buildProgressSummary(
-    GameTheme theme,
-    DailyChallengesState challengesState,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final completed = challengesState.completedCount;
-    final total = challengesState.totalCount;
-    final progress = total > 0 ? completed / total : 0.0;
-
-    // One statement of progress, not three. It used to say the same thing as
-    // a sentence, a ring and a bar, all at once.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Text(
-                l10n.dchProgressSummary(completed, total),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Text(
-              '${(progress * 100).round()}%',
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                height: 1.0,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _bar(theme, progress, height: 8),
-      ],
-    );
-  }
-
-  Widget _buildChallengeCard(DailyChallenge challenge, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final isCompleted = challenge.isCompleted;
-    final canClaim = challenge.canClaim;
-    final claimed = challenge.claimedReward;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: _card(
-        theme,
-        // The one thing on this screen that wants attention is a reward you
-        // can take. That — and only that — gets the gold edge.
-        borderColor: canClaim ? _gold.withValues(alpha: 0.65) : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Status, in one glyph. The card used to repaint its fill and
-                // its border to say the same thing.
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
-                    claimed
-                        ? Icons.check_circle
-                        : isCompleted
-                        ? Icons.check_circle_outline
-                        : _challengeTypeIcon(challenge.type),
-                    color: claimed
-                        ? Colors.white.withValues(alpha: 0.45)
-                        : isCompleted
-                        ? _gold
-                        : theme.accentColor.withValues(alpha: 0.85),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _localizedChallengeTitle(challenge, l10n),
-                        style: TextStyle(
-                          color: claimed
-                              ? Colors.white.withValues(alpha: 0.55)
-                              : Colors.white,
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _localizedChallengeDescription(challenge, l10n),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                          fontSize: 13,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Difficulty as a word, not a red/orange/green pill. A hard
-                // challenge is a description, not a warning.
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    challenge.difficulty.localizedName(l10n).toUpperCase(),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: context.letterSpacing(1),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(child: _bar(theme, challenge.progressPercentage)),
-                const SizedBox(width: 12),
-                Text(
-                  '${challenge.currentProgress}/${challenge.targetValue}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.monetization_on, color: _gold, size: 15),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    l10n.dchRewardLine(
-                      challenge.coinReward,
-                      challenge.xpReward,
-                    ),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (canClaim)
-                  GradientButton(
-                    onPressed: () => _claimReward(challenge),
-                    text: l10n.dchClaim,
-                    primaryColor: _gold,
-                    secondaryColor: theme.accentColor,
-                    icon: Icons.redeem,
-                    width: 132,
-                    height: 40,
-                  )
-                else if (claimed)
-                  Text(
-                    l10n.dchClaimed.toUpperCase(),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: context.letterSpacing(1),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAllCompleteBonusCard(
-    GameTheme theme,
-    DailyChallengesState challengesState,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final claimed = challengesState.isBonusClaimed;
-
-    return _card(
-      theme,
-      borderColor: claimed ? null : _gold.withValues(alpha: 0.65),
-      child: Row(
+    return LBScaffold(
+      title: l10n.lbDailyTitle,
+      subtitle: l10n.lbDailySubtitle,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            claimed ? Icons.check_circle : Icons.celebration,
-            color: claimed ? Colors.white.withValues(alpha: 0.45) : _gold,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.dchAllCompleteTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  claimed ? l10n.dchBonusClaimed : l10n.dchBonusPending,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 12.5,
-                  ),
-                ),
-              ],
+          if (challengesState.hasUnclaimedRewards)
+            LBBlock(
+              kind: LBBlockKind.gold,
+              height: context.lbCell * 2 - LB.inset * 2,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.center,
+              onTap: _claimingAll ? null : _claimAllRewards,
+              child: Text(
+                l10n.lbClaimAll,
+                style: LBText.button(p, color: LB.gold, size: 11.5).copyWith(letterSpacing: 1.8),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            '+${challengesState.bonusCoins}',
-            style: TextStyle(
-              color: claimed ? Colors.white.withValues(alpha: 0.45) : _gold,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
+          LBRefreshBlock(busy: isRefreshing, onTap: _refreshChallenges),
         ],
       ),
-    );
-  }
-
-  /// A challenge-shaped placeholder. The list used to be replaced by a
-  /// centred spinner, so everything below it jumped when the challenges
-  /// arrived.
-  Widget _skeletonCard(GameTheme theme) {
-    Widget bone(double width, double height) => Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6),
-      ),
-    );
-
-    return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _card(
-            theme,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      body: RefreshIndicator(
+        onRefresh: _refreshChallenges,
+        color: p.lime,
+        backgroundColor: p.deep,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * 1.5),
+          children: [
+            LBDailyProgressBlock(
+              done: challengesState.completedCount,
+              total: challengesState.totalCount,
+              subline: streak > 0
+                  ? l10n.lbDailyStreak(streak, resets)
+                  : l10n.lbResetsIn(resets),
+            ),
+            if (isRefreshing && challenges.isEmpty)
+              // Skeleton rows rather than a spinner: the list that arrives is
+              // this tall, so nothing below it moves when it does.
+              ...List.generate(3, (_) => const LBQuestSkeleton())
+            else if (challenges.isEmpty)
+              LBEmptyBlock(
+                icon: LBIcon.calendar,
+                title: l10n.dcNoChallenges,
+                line: l10n.dchCheckBack,
+              )
+            else
+              for (final c in challenges) _challengeBlock(context, l10n, c),
+            if (challengesState.allCompleted) _bonusBlock(context, l10n, challengesState),
+            if (allClaimed)
+              LBEmptyBlock(icon: LBIcon.check, title: l10n.lbDailyAllFed),
+            if (claimable.isNotEmpty && _canDouble)
+              LBRow(
+                kind: LBBlockKind.gold,
+                height: context.lbCell * 3.5,
+                leading: const LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
+                title: l10n.lbClaimAllDouble,
+                subtitle: l10n.lbClaimAllDoubleLine,
+                titleColor: LB.gold,
+                onTap: _claimingAll ? null : () => _claimAllRewards(watchAdToDouble: true),
+                trailing: Text(
+                  l10n.lbCoinsReward(context.formatInt(claimableCoins * 2)),
+                  style: LBText.value(p, color: LB.gold, size: 17),
+                ),
+              ),
+            ListenableBuilder(
+              listenable: _weekly,
+              builder: (context, _) {
+                final quests = _weekly.quests;
+                return LBRow(
+                  height: context.lbCell * 3.5,
+                  leading: LBPixelIcon(LBIcon.calendar, cell: 4, color: p.lime),
+                  title: quests.isEmpty
+                      ? l10n.wqTitle
+                      : l10n.lbWeeklyTeaser(
+                          context.formatInt(_weekly.completedCount),
+                          context.formatInt(quests.length),
+                        ),
+                  titleColor: p.head,
+                  subtitle: l10n.lbWeeklyTeaserLine,
+                  trailing: Text('→', style: LBText.button(p, color: p.lime, size: 14)),
+                  onTap: () => context.push(AppRoutes.weeklyQuests),
+                );
+              },
+            ),
+            SizedBox(height: context.lbCell),
+            LBSectionLabel(l10n.dchAbout),
+            for (final line in [l10n.dchAbout1, l10n.dchAbout2, l10n.dchAbout3, l10n.dchAbout4])
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    bone(22, 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          bone(140, 14),
-                          const SizedBox(height: 8),
-                          bone(200, 11),
-                        ],
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: LBCellsBar(count: 1, value: 1, cell: 6, color: p.inkDim),
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(line, style: LBText.body(p, size: 11))),
                   ],
                 ),
-                const SizedBox(height: 18),
-                bone(double.infinity, 6),
-                const SizedBox(height: 16),
-                bone(110, 12),
-              ],
-            ),
-          ),
-        )
-        .animate(onPlay: (c) => c.repeat(reverse: true))
-        .fade(begin: 0.55, end: 1.0, duration: 800.ms);
-  }
-
-  Widget _buildEmptyState(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return _card(
-      theme,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.dcNoChallenges,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.dchCheckBack,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 13,
-              height: 1.35,
-            ),
-          ),
-        ],
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoList(AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildInfoItem(l10n.dchAbout1),
-        _buildInfoItem(l10n.dchAbout2),
-        _buildInfoItem(l10n.dchAbout3),
-        _buildInfoItem(l10n.dchAbout4),
-      ],
-    );
-  }
-
-  /// A hanging bullet, so a wrapped line aligns with the text above it rather
-  /// than sliding back under the marker.
-  Widget _buildInfoItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 7),
-            child: Container(
-              width: 5,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 13.5,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _challengeTypeIcon(ChallengeType type) {
-    switch (type) {
-      case ChallengeType.score:
-        return Icons.stars;
-      case ChallengeType.foodEaten:
-        return Icons.restaurant;
-      case ChallengeType.gameMode:
-        return Icons.games;
-      case ChallengeType.survival:
-        return Icons.timer;
-      case ChallengeType.gamesPlayed:
-        return Icons.play_circle_outline;
+  Widget _challengeBlock(BuildContext context, AppLocalizations l10n, DailyChallenge c) {
+    final mode = _modeFor(c);
+    final LBQuestAction? action;
+    if (c.canClaim) {
+      action = LBQuestClaim(() => _claimReward(c));
+    } else if (c.claimedReward) {
+      action = const LBQuestClaimed();
+    } else if (mode != null && !c.isCompleted) {
+      action = LBQuestPlay(
+        l10n.lbPlayMode(mode.localizedName(l10n).toUpperCase()),
+        () {
+          context.read<GameSettingsCubit>().setGameMode(mode);
+          context.push(AppRoutes.runSetup);
+        },
+      );
+    } else {
+      action = null;
     }
+    return LBQuestBlock(
+      icon: _challengeIcon(c.type),
+      title: _localizedChallengeTitle(c, l10n),
+      description: _localizedChallengeDescription(c, l10n),
+      difficulty: c.difficulty,
+      current: c.currentProgress,
+      target: c.targetValue,
+      progress: c.progressPercentage,
+      completed: c.isCompleted,
+      rewardLine: l10n.lbRewardCoinsXp(
+        context.formatInt(c.coinReward),
+        context.formatInt(c.xpReward),
+      ),
+      action: action,
+    );
+  }
+
+  Widget _bonusBlock(BuildContext context, AppLocalizations l10n, DailyChallengesState s) {
+    final p = context.lb;
+    final claimed = s.isBonusClaimed;
+    return LBRow(
+      kind: claimed ? LBBlockKind.muted : LBBlockKind.gold,
+      leading: LBPixelIcon(
+        claimed ? LBIcon.check : LBIcon.gift,
+        cell: 4,
+        color: claimed ? p.inkDim : LB.gold,
+      ),
+      title: l10n.dchAllCompleteTitle,
+      titleColor: claimed ? p.inkMuted : LB.gold,
+      subtitle: claimed ? l10n.dchBonusClaimed : l10n.dchBonusPending,
+      trailing: Text(
+        l10n.lbCoinsReward(context.formatInt(s.bonusCoins)),
+        style: LBText.value(p, color: claimed ? p.inkDim : LB.gold, size: 17),
+      ),
+    );
   }
 }

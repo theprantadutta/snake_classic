@@ -4,7 +4,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// "Come back tomorrow for X" strip on the game-over screen.
 ///
@@ -42,65 +42,36 @@ class TomorrowRewardCard extends StatelessWidget {
         if (next == null || next.coins <= 0) return const SizedBox.shrink();
 
         final l10n = AppLocalizations.of(context)!;
+        final p = context.lb;
 
-        return Container(
-          width: double.infinity,
-          margin: EdgeInsets.symmetric(vertical: compact ? 6 : 8),
-          padding: EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: compact ? 10 : 12,
-          ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.amber.withValues(alpha: 0.16),
-                theme.accentColor.withValues(alpha: 0.10),
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: compact ? 4 : 6),
+          child: LBBlock(
+            kind: LBBlockKind.gold,
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: compact ? 10 : 12),
+            child: Row(
+              children: [
+                LBPixelIcon(LBIcon.gift, cell: compact ? 3.4 : 4, color: LB.gold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.goTomorrowLabel.toUpperCase(),
+                        style: LBText.label(p, color: LB.gold),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        l10n.goTomorrowReward(next.coins, next.day),
+                        style: LBText.body(p, color: p.ink, size: compact ? 11.5 : 12.5),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.amber.withValues(alpha: 0.35),
-              width: 1.2,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.card_giftcard_rounded,
-                color: Colors.amber.withValues(alpha: 0.95),
-                size: compact ? 20 : 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.goTomorrowLabel,
-                      style: TextStyle(
-                        fontSize: compact ? 9 : 10,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.amber.withValues(alpha: 0.9),
-                        letterSpacing: context.letterSpacing(1.4),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      l10n.goTomorrowReward(next.coins, next.day),
-                      style: TextStyle(
-                        fontSize: compact ? 12 : 13.5,
-                        height: 1.3,
-                        fontWeight: FontWeight.w600,
-                        color: theme.primaryColor.withValues(alpha: 0.95),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         );
       },

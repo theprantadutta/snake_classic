@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Celebratory dialog shown when the player crosses a level threshold.
 /// Shows the coin reward that ProgressionService credited for the level.
@@ -30,144 +29,73 @@ class LevelUpPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final coins = ProgressionService.coinRewardForLevel(level);
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.backgroundColor,
-              theme.backgroundColor.withValues(alpha: 0.92),
+      insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
+        child: LBBlock(
+          kind: LBBlockKind.sheet,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: LBPixelIcon(LBIcon.star, cell: 11, color: p.lime)
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scale(
+                      duration: 900.ms,
+                      begin: const Offset(1, 1),
+                      end: const Offset(1.08, 1.08),
+                    ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: Semantics(
+                  header: true,
+                  child: LBCellText(l10n.luLevelUp, cell: 5, glow: true),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                l10n.luReached(level),
+                textAlign: TextAlign.center,
+                style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 13),
+              ),
+              const SizedBox(height: 14),
+              // Coin reward — the amount ProgressionService credited for this
+              // level (already in the balance by the time this dialog shows).
+              Center(
+                child: LBChip(
+                  kind: LBChipKind.gold,
+                  icon: LBIcon.coin,
+                  height: 28,
+                  label: l10n.lbCoinsReward(context.formatInt(coins)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              LBBlock(
+                kind: LBBlockKind.fill,
+                height: 52,
+                alignment: Alignment.center,
+                onTap: () => dialogContextPop(context),
+                child: Text(
+                  l10n.luNice.toUpperCase(),
+                  style: LBText.button(p, color: p.onLime, size: 14).copyWith(letterSpacing: 2.4),
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.45),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: theme.accentColor.withValues(alpha: 0.35),
-              blurRadius: 28,
-              spreadRadius: 2,
-            ),
-          ],
         ),
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 10,
-          child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [theme.accentColor, theme.foodColor],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.foodColor.withValues(alpha: 0.5),
-                    blurRadius: 24,
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.military_tech_rounded,
-                color: Colors.white,
-                size: 56,
-              ),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .scale(
-                  duration: 900.ms,
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.08, 1.08),
-                ),
-            const SizedBox(height: 20),
-            Text(
-              AppLocalizations.of(context)!.luLevelUp,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                letterSpacing: context.letterSpacing(2),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.luReached(level),
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.85),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Coin reward chip — the amount ProgressionService credited
-            // for this level (already in the balance by the time this
-            // dialog shows).
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.amber.withValues(alpha: 0.45),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🪙', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 6),
-                  Text(
-                    '+${ProgressionService.coinRewardForLevel(level)} coins',
-                    style: const TextStyle(
-                      color: Colors.amber,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () => dialogContextPop(context),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.accentColor, theme.foodColor],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.luNice,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: context.letterSpacing(1),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        )),
       )
           .animate()
           .fadeIn(duration: 250.ms)
-          .scale(begin: const Offset(0.85, 0.85)),
+          .scale(begin: const Offset(0.9, 0.9)),
     );
   }
 

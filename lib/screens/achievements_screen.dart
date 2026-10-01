@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/achievement_l10n.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/achievement.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/achievement_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/daily/lb_daily_parts.dart';
 
+/// Trophies (Living Board screen 10): ALL / UNLOCKED / LOCKED filter blocks,
+/// a cells progress bar with the summary line, and one row per achievement
+/// with its rarity stripe.
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
 
@@ -27,14 +24,17 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 3, vsync: this)
+      ..addListener(_onTabChanged);
     _achievementService.addListener(_onAchievementsChanged);
   }
 
   @override
   void dispose() {
     _achievementService.removeListener(_onAchievementsChanged);
-    _tabController.dispose();
+    _tabController
+      ..removeListener(_onTabChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -44,484 +44,272 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     }
   }
 
+  void _onTabChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-        return _buildContent(context, theme);
-      },
-    );
-  }
-
-  Widget _buildContent(BuildContext context, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      bottomNavigationBar: const SnakeBannerAd(),
-      extendBodyBehindAppBar: true,
-      // The last hand-rolled bar in the app. It only ever differed because it
-      // needed a tab strip, which the shared one now takes.
-      appBar: appScreenBar(
-        context,
-        theme,
-        l10n.pfAchievements,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: theme.accentColor,
-          labelColor: theme.accentColor,
-          unselectedLabelColor: theme.accentColor.withValues(alpha: 0.6),
-          tabs: [
-            Tab(text: l10n.acAll),
-            Tab(text: l10n.acUnlocked),
-            Tab(text: l10n.acLocked),
-          ],
-        ),
-      ),
-      body: AppBackground(
-        theme: theme,
-        child: Column(
-          children: [
-            // Clear the app bar and its tab strip.
-            //
-            // extendBodyBehindAppBar draws the themed background up behind
-            // the bar, which is what the other screens want — but the body
-            // then starts at y=0, so without this the summary card was drawn
-            // underneath the title and the tab labels landed on top of it.
-            SizedBox(
-              height:
-                  MediaQuery.of(context).padding.top +
-                  kToolbarHeight +
-                  kTextTabBarHeight,
-            ),
-
-            // Progress Summary
-            _buildProgressSummary(theme),
-
-            // Achievements List
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildAchievementsList(
-                    _achievementService.achievements,
-                    theme,
-                  ),
-                  _buildAchievementsList(
-                    _achievementService.getUnlockedAchievements(),
-                    theme,
-                  ),
-                  _buildAchievementsList(
-                    _achievementService.getLockedAchievements(),
-                    theme,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressSummary(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    // Stat counts use the same logic as the dashboard's AchievementsGrid:
-    // - Total: every row in the catalog
-    // - Unlocked: isUnlocked = true
-    // - Claimed: rewardClaimed = true
-    // - Pending: isUnlocked = false (locked, regardless of progress)
+    final g = context.lbGutter;
+    // Counts use the same logic as the dashboard's AchievementsGrid:
+    // total = every catalog row, unlocked = isUnlocked, claimed =
+    // rewardClaimed; "waiting" = unlocked but its reward not yet credited.
     final all = _achievementService.achievements;
-    final total = all.length;
-    final unlocked = all.where((a) => a.isUnlocked).length;
+    final unlocked = _achievementService.getUnlockedAchievements();
+    final locked = _achievementService.getLockedAchievements();
     final claimed = all.where((a) => a.rewardClaimed).length;
-    final pending = all.where((a) => !a.isUnlocked).length;
-    final completionPercentage = _achievementService.completionPercentage;
-    final claimedOfUnlocked = unlocked > 0
-        ? ((claimed / unlocked) * 100).round()
-        : 0;
-    final completionPct = (completionPercentage * 100).round();
+    final waiting = all.where((a) => a.isUnlocked && !a.rewardClaimed).length;
+    final completion = _achievementService.completionPercentage;
 
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
+    return LBScaffold(
+      title: l10n.lbTrophiesTitle,
+      subtitle: l10n.lbTrophiesSubtitle(
+        context.formatInt(unlocked.length),
+        context.formatInt(all.length),
+        context.formatInt(locked.length),
       ),
-      padding: const EdgeInsets.all(16),
-      decoration: screenCardDecoration(theme),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 8,
-        child: Column(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 4-tile grid — same labels and counting logic as the dashboard
-          // AchievementsGrid header so the operator and the player see the
-          // same numbers when troubleshooting.
-          Row(
-            children: [
-              Expanded(
-                child: _StatTile(
-                  label: l10n.acTotalUpper,
-                  value: '$total',
-                  accent: Colors.white70,
+          Padding(
+            padding: EdgeInsets.fromLTRB(g, context.lbCell * .7, g, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    for (final (i, label) in [
+                      l10n.lbFilterAll,
+                      l10n.lbFilterUnlocked(context.formatInt(unlocked.length)),
+                      l10n.lbFilterLocked(context.formatInt(locked.length)),
+                    ].indexed)
+                      Expanded(
+                        flex: i == 0 ? 4 : 5,
+                        child: _FilterBlock(
+                          label: label,
+                          selected: _tabController.index == i,
+                          onTap: () => _tabController.animateTo(i),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(
-                  label: l10n.acUnlockedUpper,
-                  value: '$unlocked',
-                  accent: kRewardGold,
-                  hint: l10n.acPercentComplete(completionPct),
+                const SizedBox(height: 8),
+                LBCellsBar(
+                  count: 16,
+                  value: completion,
+                  semanticsLabel: l10n.acPercentComplete((completion * 100).round()),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(
-                  label: l10n.acClaimedUpper,
-                  value: '$claimed',
-                  accent: theme.accentColor,
-                  hint: unlocked > 0
-                      ? l10n.acPercentOfUnlocked(claimedOfUnlocked)
-                      : null,
+                const SizedBox(height: 10),
+                Text(
+                  l10n.lbTrophiesSummary(
+                    '${(completion * 100).round()}',
+                    context.formatInt(claimed),
+                    context.formatInt(waiting),
+                  ),
+                  style: LBText.label(context.lb, color: context.lb.inkDim).copyWith(fontSize: 9.5),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(
-                  label: l10n.acPendingUpper,
-                  value: '$pending',
-                  accent: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Completion bar, in the accent — it was a gradient.
-          Container(
-            height: context.scaled(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(4),
+                const SizedBox(height: 8),
+              ],
             ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: completionPercentage,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.accentColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _TrophyList(achievements: all),
+                _TrophyList(achievements: unlocked),
+                _TrophyList(achievements: locked),
+              ],
             ),
           ),
         ],
-      )),
-    );
-  }
-
-  Widget _buildAchievementsList(
-    List<Achievement> achievements,
-    GameTheme theme,
-  ) {
-    if (achievements.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.workspace_premium_outlined,
-              size: context.scaled(64),
-              color: theme.primaryColor.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context)!.acEmpty,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(),
-        vertical: 16,
-      ),
-      itemCount: achievements.length,
-      itemBuilder: (context, index) {
-        final achievement = achievements[index];
-
-        return _buildAchievementCard(achievement, theme);
-      },
-    );
-  }
-
-  /// One achievement.
-  ///
-  /// It was three columns — icon, a text block, and a stack of chips — with
-  /// the rarity as a filled pill in one of four hues and the two rewards as
-  /// a cyan chip above a gold chip. Every row was a different height because
-  /// the middle column wrapped while the right column did not, and the four
-  /// rarity colours plus cyan meant five hues per screenful. Nothing in it
-  /// pointed at what the row was for.
-  ///
-  /// Now it is two columns and three lines: what it is called, what it asks
-  /// of you, and what it pays. Rarity is a word in its own colour rather
-  /// than a filled chip, the rewards read as one line of text, and the
-  /// progress bar only appears when there is progress to show.
-  Widget _buildAchievementCard(Achievement achievement, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    final isUnlocked = achievement.isUnlocked;
-    final claimed = achievement.rewardClaimed;
-    final progress = achievement.progressPercentage;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: screenCardDecoration(
-          theme,
-          borderColor: isUnlocked
-              ? achievement.rarityColor.withValues(alpha: 0.45)
-              : null,
-        ),
-        padding: const EdgeInsets.all(16),
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 8,
-          child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The badge. Filled in the rarity colour once earned, a quiet
-            // outline until then — "not yet", rather than the dead grey
-            // square it used to be.
-            Container(
-              width: context.scaled(44),
-              height: context.scaled(44),
-              decoration: BoxDecoration(
-                color: isUnlocked
-                    ? achievement.rarityColor.withValues(alpha: 0.9)
-                    : theme.accentColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isUnlocked
-                      ? achievement.rarityColor
-                      : theme.accentColor.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Icon(
-                achievement.icon,
-                color: isUnlocked
-                    ? Colors.white
-                    : theme.accentColor.withValues(alpha: 0.55),
-                size: context.scaled(22),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          achievement.localizedTitle(l10n),
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            height: 1.2,
-                            color: claimed
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Rarity as a word, not a filled chip. The colour still
-                      // says which tier it is; it just no longer draws a
-                      // coloured box around every row on the screen.
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          achievement.localizedRarityName(l10n).toUpperCase(),
-                          style: TextStyle(
-                            color: achievement.rarityColor.withValues(
-                              alpha: 0.9,
-                            ),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: context.letterSpacing(1),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    achievement.localizedDescription(l10n),
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.35,
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
-                  ),
-                  if (!isUnlocked && progress > 0) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(3),
-                            child: LinearProgressIndicator(
-                              value: progress.clamp(0.0, 1.0),
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.10,
-                              ),
-                              valueColor: AlwaysStoppedAnimation(
-                                theme.accentColor,
-                              ),
-                              minHeight: 5,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${achievement.currentProgress}/'
-                          '${achievement.targetValue}',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  // The reward, as one line. It was a cyan chip stacked over
-                  // a gold chip in a third column, which is what made every
-                  // row a different height.
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.monetization_on,
-                        size: 13,
-                        color: kRewardGold.withValues(
-                          alpha: claimed ? 0.4 : 0.9,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          '${l10n.coinsAmount(achievement.coinReward)}'
-                          '  ·  ${l10n.acXpReward(achievement.xpReward)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(
-                              alpha: claimed ? 0.4 : 0.6,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (isUnlocked)
-                        Text(
-                          (claimed ? l10n.acClaimedUpper : l10n.acUnlockedUpper)
-                              .toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: context.letterSpacing(1),
-                            color: claimed
-                                ? Colors.white.withValues(alpha: 0.4)
-                                : kRewardGold,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        )),
       ),
     );
   }
 }
 
-/// One figure in the summary row. Mirrors the dashboard's StatTile primitive
-/// so a Total / Unlocked / Claimed / Pending row reads identically in both
-/// surfaces.
-class _StatTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color accent;
-  final String? hint;
+class _FilterBlock extends StatelessWidget {
+  const _FilterBlock({required this.label, required this.selected, required this.onTap});
 
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.accent,
-    this.hint,
-  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.scaled(8),
-        vertical: context.scaled(10),
-      ),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.30)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
+    final p = context.lb;
+    final kind = selected ? LBBlockKind.fill : LBBlockKind.outline;
+    return Semantics(
+      selected: selected,
+      child: LBBlock(
+        kind: kind,
+        height: context.lbCell * 2.5,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        alignment: Alignment.center,
+        onTap: onTap,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
             label,
-            style: TextStyle(
-              color: accent,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: context.letterSpacing(1.0),
+            maxLines: 1,
+            style: LBText.button(p, color: LBBlock.foregroundOf(kind, p), size: 12)
+                .copyWith(letterSpacing: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrophyList extends StatelessWidget {
+  const _TrophyList({required this.achievements});
+
+  final List<Achievement> achievements;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = context.lbGutter;
+    if (achievements.isEmpty) {
+      return ListView(
+        padding: EdgeInsets.fromLTRB(g, 4, g, context.lbCell),
+        children: [
+          LBEmptyBlock(icon: LBIcon.trophy, title: AppLocalizations.of(context)!.acEmpty),
+        ],
+      );
+    }
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(g, 4, g, context.lbCell * 1.5),
+      itemCount: achievements.length,
+      itemBuilder: (context, i) => _TrophyRow(achievement: achievements[i]),
+    );
+  }
+}
+
+/// One achievement: rarity stripe, icon box, name + rarity word, the
+/// description, and its state on the right — CLAIMED, the coins waiting to
+/// be credited, progress, or a lock.
+class _TrophyRow extends StatelessWidget {
+  const _TrophyRow({required this.achievement});
+
+  final Achievement achievement;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final a = achievement;
+    final rarity = lbRarityColor(a.rarity);
+    final unlocked = a.isUnlocked;
+    final claimed = a.rewardClaimed;
+    final iconBox = context.lbCell * 2;
+
+    final Widget status;
+    if (unlocked && claimed) {
+      status = Text(l10n.lbClaimed, style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10));
+    } else if (unlocked) {
+      // Credited automatically on the next sync — a label, not a button.
+      status = LBChip(
+        kind: LBChipKind.gold,
+        icon: LBIcon.coin,
+        height: 26,
+        label: l10n.lbCoinsReward(context.formatInt(a.coinReward)),
+      );
+    } else if (a.currentProgress > 0) {
+      status = Text(
+        '${context.formatInt(a.currentProgress)}/${context.formatInt(a.targetValue)}',
+        style: LBText.button(
+          p,
+          color: a.rarity == AchievementRarity.legendary ? LB.gold : p.ink,
+          size: 12,
+        ).copyWith(letterSpacing: .4),
+      );
+    } else {
+      status = LBPixelIcon(LBIcon.lock, cell: 3.4, color: p.inkDim, semanticLabel: l10n.acLocked);
+    }
+
+    return LBBlock(
+      padding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 14, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: iconBox,
+                  height: iconBox,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: unlocked ? rarity.withValues(alpha: .08) : p.lime.withValues(alpha: .03),
+                    borderRadius: BorderRadius.circular(LB.blockRadius),
+                    border: Border.all(
+                      color: unlocked ? rarity.withValues(alpha: .55) : p.cellOff,
+                    ),
+                  ),
+                  child: LBPixelIcon(
+                    lbTrophyIcon(a.type),
+                    cell: iconBox / 7,
+                    color: unlocked ? rarity : p.inkDim,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: a.localizedTitle(l10n).toUpperCase(),
+                              style: LBText.button(
+                                p,
+                                color: unlocked ? p.ink : p.inkMuted,
+                                size: 12.5,
+                              ).copyWith(letterSpacing: 1.4),
+                            ),
+                            const TextSpan(text: '  '),
+                            TextSpan(
+                              text: a.localizedRarityName(l10n).toUpperCase(),
+                              style: LBText.label(p, color: rarity).copyWith(fontSize: 8.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        a.localizedDescription(l10n),
+                        style: LBText.body(p, color: p.ink.withValues(alpha: unlocked ? .7 : .5), size: 11),
+                      ),
+                      if (!unlocked) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          l10n.lbRewardCoinsXp(
+                            context.formatInt(a.coinReward),
+                            context.formatInt(a.xpReward),
+                          ),
+                          style: LBText.label(p, color: LB.gold.withValues(alpha: .7)).copyWith(fontSize: 9),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                status,
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              height: 1.0,
-            ),
+          // The rarity stripe. The rarity word beside the name says the same
+          // thing, so colour never carries it alone.
+          PositionedDirectional(
+            start: 0,
+            top: 0,
+            bottom: 0,
+            width: 5,
+            child: ColoredBox(color: rarity.withValues(alpha: unlocked ? 1 : .55)),
           ),
-          if (hint != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              hint!,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ],
       ),
     );
