@@ -43,26 +43,42 @@ class AudioService {
   SoLoud get _soloud => SoLoud.instance;
   final Map<String, AudioSource> _loadedSounds = {};
 
-  // List of sounds to pre-load
+  // The Living Board sound set (assets/audio/lb/sfx/, DESIGN_SPEC §6). The
+  // file names are the contract: a final mix can replace any of them
+  // without touching code.
   static const List<String> _soundsToPreload = [
     'eat',
+    'eat_bonus',
+    'eat_special',
+    'combo_up',
+    'combo_break',
     'level_up',
-    'game_over',
-    'game_start',
     'power_up',
-    'button_click',
-    // Ships as an asset but was missing from this list — playSound fell
-    // through to a generic OS click on every high-score/achievement moment.
-    'high_score',
+    'power_down',
+    'crash_wall',
+    'crash_self',
+    'revive',
+    'game_over',
+    'new_best',
+    'coin',
+    'claim',
+    'ad_reward',
+    'ui_tap',
+    'ui_back',
+    'countdown_tick',
+    'countdown_go',
+    'match_found',
+    'victory',
+    'defeat',
+    'turn',
   ];
 
-  // Logical sound ids with no dedicated asset, mapped onto a shipped one.
-  // 'coin_collect' is used by every coin-claim surface (game over, daily
-  // challenges, weekly quests) but coin_collect.wav never shipped — the
-  // fallback switch had no case for it either, so those moments were
-  // completely silent.
+  // Older logical ids still used by call sites, mapped onto the set above.
   static const Map<String, String> _soundAliases = {
-    'coin_collect': 'power_up',
+    'button_click': 'ui_tap',
+    'game_start': 'countdown_go',
+    'high_score': 'new_best',
+    'coin_collect': 'claim',
   };
 
   bool _soundEnabled = true;
@@ -196,7 +212,7 @@ class AudioService {
   Future<void> _preloadSounds() async {
     for (final soundName in _soundsToPreload) {
       try {
-        final source = await _soloud.loadAsset('assets/audio/$soundName.wav');
+        final source = await _soloud.loadAsset('assets/audio/lb/sfx/$soundName.wav');
         _loadedSounds[soundName] = source;
       } catch (e) {
         debugPrint('Failed to preload sound $soundName: $e');
@@ -338,7 +354,7 @@ class AudioService {
       final generation = _engineGeneration;
       final source = _musicSource ??
           await _soloud.loadAsset(
-            'assets/audio/background_music.mp3',
+            'assets/audio/lb/music/run_loop_140bpm.wav',
             mode: LoadMode.disk,
           );
       if (generation != _engineGeneration) return;

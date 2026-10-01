@@ -197,7 +197,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
           // Match found! Stop timer and transition to lobby
           _stopMatchmakingTimer();
           _startReadyDeadline();
-          _audioService.playSound('high_score');
+          _audioService.playSound('match_found');
           _hapticService.mediumImpact();
 
           // First emit the status change with clear matchmaking
@@ -1270,10 +1270,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         : null;
 
     if (won) {
-      _audioService.playSound('level_up');
+      _audioService.playSound('victory');
       _hapticService.heavyImpact();
     } else {
-      _audioService.playSound('game_over');
+      _audioService.playSound('defeat');
       _hapticService.mediumImpact();
     }
     _analytics.trackMultiplayerGameEnded(

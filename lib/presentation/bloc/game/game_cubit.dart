@@ -1235,14 +1235,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackRemaining = null;
 
     // Play crash sound and haptic feedback immediately. Music freezes with
-    // the run; revive() resumes it. Self-collision plays the same asset
-    // pitch-shifted down — a duller "thud" that matches the distinct
-    // haptic patterns the two death causes already have.
+    // the run; revive() resumes it. Wall and self have their own cues.
     _audioService.playSound(
-      'game_over',
-      volume: 1.0,
-      playbackRate:
-          reason == model.CrashReason.selfCollision ? 0.85 : 1.0,
+      reason == model.CrashReason.selfCollision ? 'crash_self' : 'crash_wall',
     );
     unawaited(_audioService.pauseGameplayMusic());
     _hapticService.heavyImpact();
@@ -1434,6 +1429,7 @@ class GameCubit extends Cubit<GameCubitState> {
   void _resumeFromCrash() {
     final current = state.gameState;
     if (current == null) return;
+    _audioService.playSound('revive', volume: 0.8);
 
     // Restore the last valid (in-bounds) snake from the pinned pre-crash state,
     // not the fatal crash-frame snake; only steer it somewhere safe to continue.
