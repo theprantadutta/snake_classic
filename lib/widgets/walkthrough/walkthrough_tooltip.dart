@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
 /// Styled tooltip widget for walkthrough steps
@@ -45,255 +46,117 @@ class WalkthroughTooltip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.backgroundColor,
-            theme.backgroundColor.withValues(alpha: 0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.5),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    final p = context.lb;
+    return LBBlock(
+      kind: LBBlockKind.sheet,
+      padding: const EdgeInsets.fromLTRB(18, 18, 14, 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header with icon and title
-          _buildHeader(context),
+          Row(
+            children: [
+              if (step.icon != null) ...[
+                LBMappedIcon(step.icon!, cell: 4, color: p.lime),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  step.title.toUpperCase(),
+                  style: LBText.button(p, color: p.head, size: 14).copyWith(letterSpacing: 1.8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
 
           // Message content
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            padding: const EdgeInsets.only(right: 4),
             child: Text(
               step.message,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.85),
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: LBText.body(p, color: p.ink.withValues(alpha: .82), size: 12.5),
             ),
           ),
+          const SizedBox(height: 14),
 
-          // Progress dots
-          _buildProgressDots(),
-
-          const SizedBox(height: 12),
+          // Progress cells
+          Center(child: LBStepCells(total: totalSteps, index: currentStepIndex)),
+          const SizedBox(height: 8),
 
           // Action buttons
-          _buildButtons(context, l10n),
-
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.accentColor.withValues(alpha: 0.15),
-            theme.accentColor.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(22),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (step.icon != null) ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                step.icon,
-                color: theme.accentColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: Text(
-              step.title,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(0.5),
-              ),
-            ),
+          Row(
+            children: [
+              if (step.canSkip)
+                Flexible(
+                  child: TextButton(
+                    onPressed: onSkip,
+                    style: lbTextButtonStyle(p),
+                    child: Text(
+                      l10n.wtSkip.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              Flexible(flex: 3, child: _buildPrimaryButton(context, l10n)),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressDots() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(totalSteps, (index) {
-          final isActive = index == currentStepIndex;
-          final isPast = index < currentStepIndex;
-
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: isActive ? 24 : 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? theme.accentColor
-                  : isPast
-                      ? theme.accentColor.withValues(alpha: 0.5)
-                      : theme.accentColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildButtons(BuildContext context, AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          // Skip button
-          if (step.canSkip)
-            TextButton(
-              onPressed: onSkip,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              child: Text(
-                l10n.wtSkip,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-
-          const Spacer(),
-
-          // Next/Done/Wait button
-          _buildPrimaryButton(context, l10n),
         ],
       ),
     );
   }
 
   Widget _buildPrimaryButton(BuildContext context, AppLocalizations l10n) {
+    final p = context.lb;
     // If awaiting input, show a "waiting" state
     if (isAwaitingInput) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.foodColor.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.foodColor.withValues(alpha: 0.4),
+      return LBBlock(
+        kind: LBBlockKind.gold,
+        height: context.lbCell * 2.4,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LBCellSpinner(count: 3, cell: 6, color: LB.gold),
+              const SizedBox(width: 10),
+              Text(
+                l10n.wtWaiting.toUpperCase(),
+                style: LBText.button(p, color: LB.gold, size: 12),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(theme.foodColor),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              l10n.wtWaiting,
-              style: TextStyle(
-                color: theme.foodColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ),
       );
     }
 
     // Normal next/done button
-    final buttonText =
-        step.actionLabel ?? (isLastStep ? l10n.wtGotIt : l10n.wtNext);
+    final buttonText = step.actionLabel ?? (isLastStep ? l10n.wtGotIt : l10n.wtNext);
 
-    return GestureDetector(
+    return LBBlock(
+      kind: LBBlockKind.fill,
+      height: context.lbCell * 2.4,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       onTap: onNext,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.accentColor,
-              theme.foodColor,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: theme.accentColor.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              buttonText,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(0.5),
-              ),
+              buttonText.toUpperCase(),
+              style: LBText.button(p, color: p.onLime, size: 12.5).copyWith(letterSpacing: 1.8),
             ),
             if (!isLastStep) ...[
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward,
-                color: Colors.white,
-                size: 18,
+              const SizedBox(width: 10),
+              LBPixelIcon(
+                Directionality.of(context) == TextDirection.rtl ? LBIcon.back : LBIcon.next,
+                cell: 2.6,
+                color: p.onLime,
               ),
             ],
           ],

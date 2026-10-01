@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// The controls the options panels are built from.
 ///
-/// A Material [Switch] and a plain bordered box are what made the settings
-/// screen read as a phone settings screen. These are the same two controls
-/// with the same semantics and a different physical metaphor: a switch you
-/// can see the throw of, and a selection that lights up.
+/// Living Board versions of the settings controls: the two-cell switch, a
+/// selectable outline block and a link row with a pixel icon. Same
+/// semantics and hit targets as before; only the drawing changed.
 ///
 /// Both route their feedback through [HapticService] rather than
 /// `HapticFeedback` directly, so the app's vibration setting actually
@@ -69,122 +68,41 @@ class ArcadeSwitchTile extends StatelessWidget {
       excludeSemantics: true,
       child: Opacity(
         opacity: enabled ? 1 : 0.45,
-        child: InkWell(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: enabled ? toggle : null,
-          borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 9 * scale, horizontal: 2),
-            child: Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 17 * scale,
-                    color: theme.accentColor.withValues(alpha: 0.75),
-                  ),
-                  SizedBox(width: 10 * scale),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: GameTypography.bodyLarge(color: Colors.white)
-                            .copyWith(fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      if (description != null) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          description!,
-                          style: GameTypography.bodySmall(
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ).copyWith(fontSize: 12.5, height: 1.3),
-                        ),
-                      ],
+            child: Builder(
+              builder: (context) {
+                final p = context.lb;
+                return Row(
+                  children: [
+                    if (icon != null) ...[
+                      LBMappedIcon(icon!, cell: 3.2 * scale, color: p.lime.withValues(alpha: .8)),
+                      SizedBox(width: 12 * scale),
                     ],
-                  ),
-                ),
-                SizedBox(width: 12 * scale),
-                _ThrowSwitch(value: value, theme: theme),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The switch itself. Chunky, with a lit track and a knob that carries a core.
-class _ThrowSwitch extends StatelessWidget {
-  const _ThrowSwitch({required this.value, required this.theme});
-
-  final bool value;
-  final GameTheme theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = context.uiScale;
-    final w = 52.0 * scale;
-    final h = 28.0 * scale;
-    final knob = h - 8;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-      width: w,
-      height: h,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: value
-            ? theme.accentColor.withValues(alpha: 0.28)
-            : Colors.black.withValues(alpha: 0.34),
-        border: Border.all(
-          color: value
-              ? theme.accentColor
-              : Colors.white.withValues(alpha: 0.22),
-          width: 1.5,
-        ),
-        borderRadius: BorderRadius.circular(h / 2),
-        boxShadow: value
-            ? [
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.45),
-                  blurRadius: 10,
-                  spreadRadius: -2,
-                ),
-              ]
-            : null,
-      ),
-      child: AnimatedAlign(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        // Directional, so the throw runs label-to-edge in Arabic too.
-        alignment: value
-            ? AlignmentDirectional.centerEnd
-            : AlignmentDirectional.centerStart,
-        child: Container(
-          width: knob,
-          height: knob,
-          decoration: BoxDecoration(
-            color: value
-                ? theme.accentColor
-                : Colors.white.withValues(alpha: 0.45),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Container(
-              width: knob * 0.34,
-              height: knob * 0.34,
-              decoration: BoxDecoration(
-                // A darker core rather than a lighter one: on the bright
-                // themes (crystal, desert) a white pip on a white knob
-                // disappears entirely.
-                color: Colors.black.withValues(alpha: value ? 0.45 : 0.28),
-                shape: BoxShape.circle,
-              ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title.toUpperCase(),
+                            style: LBText.button(p, color: p.head, size: 12.5),
+                          ),
+                          if (description != null) ...[
+                            const SizedBox(height: 3),
+                            Text(description!, style: LBText.body(p, size: 11)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 12 * scale),
+                    LBSwitchFace(value: value, cell: 16 * scale, enabled: enabled),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -244,64 +162,36 @@ class ArcadeOptionChip extends StatelessWidget {
                   HapticService().selectionClick();
                   onTap!();
                 },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(
-              horizontal: 14 * scale,
-              vertical: 10 * scale,
-            ),
-            decoration: BoxDecoration(
-              color: selected
-                  ? theme.accentColor.withValues(alpha: 0.22)
-                  : Colors.white.withValues(alpha: 0.04),
-              border: Border.all(
-                color: selected
-                    ? theme.accentColor
-                    : theme.accentColor.withValues(alpha: 0.28),
-                width: selected ? 2 : 1,
-              ),
-              borderRadius: BorderRadius.circular(11),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.30),
-                        blurRadius: 12,
-                        spreadRadius: -3,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  leading == null ? label : '$leading $label',
-                  textAlign: TextAlign.center,
-                  style: GameTypography.bodyMedium(
-                    color: selected
-                        ? theme.accentColor
-                        : Colors.white.withValues(alpha: 0.82),
-                  ).copyWith(
-                    fontSize: 13.5,
-                    // Rajdhani ships no weight above 700. w700 is the ceiling
-                    // here, not a preference.
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+          child: Builder(
+            builder: (context) {
+              final p = context.lb;
+              return LBBlock(
+                selected: selected,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 14 * scale,
+                  vertical: 10 * scale,
                 ),
-                if (sublabel != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    sublabel!,
-                    textAlign: TextAlign.center,
-                    style: GameTypography.labelSmall(
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ).copyWith(fontSize: 10.5),
-                  ),
-                ],
-              ],
-            ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      leading == null ? label : '$leading $label',
+                      textAlign: TextAlign.center,
+                      style: LBText.button(p, color: selected ? p.head : p.ink.withValues(alpha: .82), size: 12.5),
+                    ),
+                    if (sublabel != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        sublabel!,
+                        textAlign: TextAlign.center,
+                        style: LBText.body(p, color: p.inkDim, size: 10.5),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -335,69 +225,64 @@ class ArcadeLinkTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scale = context.uiScale;
-    final color = tint ?? theme.accentColor;
 
     return Semantics(
       label: description == null ? label : '$label. $description',
       button: true,
       onTap: onTap,
       excludeSemantics: true,
-      child: InkWell(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticService().selectionClick();
           onTap();
         },
-        borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 9 * scale, horizontal: 2),
-          child: Row(
-            children: [
-              Container(
-                width: 32 * scale,
-                height: 32 * scale,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  border: Border.all(color: color.withValues(alpha: 0.4)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 16 * scale, color: color),
-              ),
-              SizedBox(width: 12 * scale),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: GameTypography.bodyLarge(color: Colors.white)
-                          .copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
+          child: Builder(
+            builder: (context) {
+              final p = context.lb;
+              final color = tint ?? p.lime;
+              return Row(
+                children: [
+                  Container(
+                    width: 32 * scale,
+                    height: 32 * scale,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.08),
+                      border: Border.all(color: color.withValues(alpha: 0.4)),
+                      borderRadius: BorderRadius.circular(LB.blockRadius),
                     ),
-                    if (description != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        description!,
-                        style: GameTypography.bodySmall(
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ).copyWith(fontSize: 12),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                // Chosen from the text direction rather than left to the
-                // Icon widget: Material's chevrons are not among the icons
-                // Flutter auto-mirrors, so in Arabic the default would point
-                // back the way you came.
-                Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left_rounded
-                    : Icons.chevron_right_rounded,
-                size: 20 * scale,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ],
+                    child: LBMappedIcon(icon, cell: 3 * scale, color: color),
+                  ),
+                  SizedBox(width: 12 * scale),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label.toUpperCase(),
+                          style: LBText.button(p, color: tint ?? p.head, size: 12.5),
+                        ),
+                        if (description != null) ...[
+                          const SizedBox(height: 3),
+                          Text(description!, style: LBText.body(p, size: 11)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Chosen from the text direction: in Arabic the chevron
+                  // must point the way you are going, not back.
+                  LBPixelIcon(
+                    Directionality.of(context) == TextDirection.rtl ? LBIcon.back : LBIcon.next,
+                    cell: 2.6 * scale,
+                    color: p.inkDim,
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// What a snack bar is telling you, which is the only thing a caller should
 /// have to decide. Everything else — colour, icon, contrast — follows.
@@ -31,23 +31,24 @@ extension _ToneStyle on ArcadeSnackTone {
   /// not depend on which skin the player picked: `theme.snakeColor` made
   /// success and info the same green on Classic and Forest, so "claimed" and
   /// "working on it" were the same colour on the themes most people use.
+  /// Gold and bonk are the Living Board's constant reward / danger colours.
   Color color(GameTheme theme) => switch (this) {
-    ArcadeSnackTone.info => theme.accentColor,
+    ArcadeSnackTone.info => LBPalette.of(theme).head,
     ArcadeSnackTone.success => const Color(0xFF4ADE80),
-    ArcadeSnackTone.warning => kRewardGold,
-    ArcadeSnackTone.error => const Color(0xFFFF5C5C),
+    ArcadeSnackTone.warning => LB.gold,
+    ArcadeSnackTone.error => LB.bonk,
   };
 
-  IconData get icon => switch (this) {
-    ArcadeSnackTone.info => Icons.info_outline_rounded,
-    ArcadeSnackTone.success => Icons.check_rounded,
-    ArcadeSnackTone.warning => Icons.warning_amber_rounded,
-    ArcadeSnackTone.error => Icons.error_outline_rounded,
+  LBIcon get icon => switch (this) {
+    ArcadeSnackTone.info => LBIcon.eye,
+    ArcadeSnackTone.success => LBIcon.check,
+    ArcadeSnackTone.warning => LBIcon.bolt,
+    ArcadeSnackTone.error => LBIcon.x,
   };
 }
 
-/// A snack bar in the app's own language: bracketed corners, the top-lit
-/// panel, Rajdhani body text.
+/// A snack bar in the app's own language: a Living Board sheet block with a
+/// pixel tone icon and JetBrains Mono body text.
 ///
 /// Every other surface in this app is an instrument panel — see the notes at
 /// the top of `screen_shell.dart`. Snack bars were the one thing that still
@@ -136,7 +137,8 @@ SnackBar arcadeSnackBarFor(
             : const Duration(seconds: 4)),
     content: _ArcadeSnackPanel(
       message: message,
-      icon: icon ?? tone.icon,
+      icon: icon,
+      toneIcon: tone.icon,
       accent: accent,
       theme: theme,
       actionLabel: actionLabel,
@@ -149,6 +151,7 @@ class _ArcadeSnackPanel extends StatelessWidget {
   const _ArcadeSnackPanel({
     required this.message,
     required this.icon,
+    required this.toneIcon,
     required this.accent,
     required this.theme,
     this.actionLabel,
@@ -156,7 +159,10 @@ class _ArcadeSnackPanel extends StatelessWidget {
   });
 
   final String message;
-  final IconData icon;
+
+  /// The caller's icon override, drawn as its pixel equivalent.
+  final IconData? icon;
+  final LBIcon toneIcon;
   final Color accent;
   final GameTheme theme;
   final String? actionLabel;
@@ -164,103 +170,86 @@ class _ArcadeSnackPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(14);
+    // The panel is painted from the theme it was handed (callers capture it
+    // before an await), not from the context it lands in.
+    final p = LBPalette.of(theme);
+    final radius = BorderRadius.circular(LB.blockRadius);
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: DecoratedBox(
-        // An opaque floor under the panel. `arcadeSurface` is translucent by
-        // design — it sits on a screen whose own background it is meant to
-        // show through. A snack bar floats over the game board, a leaderboard,
-        // anything; without this the message competes with whatever is behind
-        // it and the failure case is an unreadable error.
-        decoration: BoxDecoration(
-          color: Color.lerp(theme.backgroundColor, Colors.black, 0.35)!,
-          borderRadius: radius,
-        ),
-        child: Container(
-          decoration: arcadeSurface(
-            theme,
-            tint: accent,
-            borderRadius: radius,
-            borderColor: accent.withValues(alpha: 0.55),
-            baseAlpha: 0.95,
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
-          child: HudCorners(
-            color: accent,
-            inset: 5,
-            arm: 11,
-            // The panel is the thing being decorated, not resized — see the
-            // note on HudCorners. Without passthrough the row shrink-wraps
-            // into the corner.
-            clipBehavior: Clip.none,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(7),
-                    border: Border.all(color: accent.withValues(alpha: 0.45)),
-                  ),
-                  child: Icon(icon, size: 15, color: accent),
+    // An opaque floor: a snack bar floats over the game board, a leaderboard,
+    // anything, and the message must not compete with whatever is behind it.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: p.deep,
+        borderRadius: radius,
+        border: Border.all(color: accent.withValues(alpha: 0.55)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x8C000000), blurRadius: 14, offset: Offset(0, 6)),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: accent.withValues(alpha: 0.45)),
+              ),
+              child: icon == null
+                  ? LBPixelIcon(toneIcon, cell: 3, color: accent)
+                  : LBMappedIcon(icon!, cell: 3, color: accent),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: LBText.body(p, color: p.ink, size: 12.5).copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
                 ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: GameTypography.bodyMedium(
-                      color: Colors.white.withValues(alpha: 0.92),
-                    ).copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ),
-                if (actionLabel != null) ...[
-                  const SizedBox(width: 8),
-                  // Builder so the dismiss below resolves the messenger from a
-                  // context INSIDE it. Looking it up from the calling screen's
-                  // context is the crash this app already shipped once: a
-                  // snack bar outlives the screen that showed it, and by the
-                  // time the button is tapped that element is defunct.
-                  Builder(
-                    builder: (inner) => TextButton(
-                      // Caller's callback first, dismiss second — the order
-                      // SnackBarAction uses. Dismissing first tears down the
-                      // subtree this button lives in, and anything the
-                      // callback wanted from it is gone by the time it runs.
-                      onPressed: () {
-                        onAction?.call();
-                        ScaffoldMessenger.of(inner).hideCurrentSnackBar();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: accent,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        minimumSize: const Size(0, 34),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                            color: accent.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        actionLabel!,
-                        style: GameTypography.bodyMedium(color: accent)
-                            .copyWith(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: context.letterSpacing(0.5),
-                            ),
-                      ),
+              ),
+            ),
+            if (actionLabel != null) ...[
+              const SizedBox(width: 8),
+              // Builder so the dismiss below resolves the messenger from a
+              // context INSIDE it. Looking it up from the calling screen's
+              // context is the crash this app already shipped once: a
+              // snack bar outlives the screen that showed it, and by the
+              // time the button is tapped that element is defunct.
+              Builder(
+                builder: (inner) => TextButton(
+                  // Caller's callback first, dismiss second — the order
+                  // SnackBarAction uses. Dismissing first tears down the
+                  // subtree this button lives in, and anything the
+                  // callback wanted from it is gone by the time it runs.
+                  onPressed: () {
+                    onAction?.call();
+                    ScaffoldMessenger.of(inner).hideCurrentSnackBar();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: accent,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(0, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                      side: BorderSide(color: accent.withValues(alpha: 0.5)),
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
+                  child: Text(
+                    actionLabel!.toUpperCase(),
+                    style: LBText.button(p, color: accent, size: 11.5),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

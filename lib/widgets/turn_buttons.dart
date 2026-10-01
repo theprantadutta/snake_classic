@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// Two-button relative steering: TURN LEFT in the bottom-left corner, TURN
 /// RIGHT in the bottom-right, each measured from where the snake is heading.
@@ -49,8 +51,8 @@ class TurnButtons extends StatelessWidget {
           flex: 5,
           child: _TurnButton(
             turn: RelativeTurn.left,
-            icon: Icons.turn_left_rounded,
             label: l10n.gameTurnLeft,
+            caption: l10n.lbTurnLeft,
             theme: theme,
             height: height,
             opacity: opacity,
@@ -65,8 +67,8 @@ class TurnButtons extends StatelessWidget {
           flex: 5,
           child: _TurnButton(
             turn: RelativeTurn.right,
-            icon: Icons.turn_right_rounded,
             label: l10n.gameTurnRight,
+            caption: l10n.lbTurnRight,
             theme: theme,
             height: height,
             opacity: opacity,
@@ -81,8 +83,8 @@ class TurnButtons extends StatelessWidget {
 class _TurnButton extends StatefulWidget {
   const _TurnButton({
     required this.turn,
-    required this.icon,
     required this.label,
+    required this.caption,
     required this.theme,
     required this.height,
     required this.opacity,
@@ -90,8 +92,12 @@ class _TurnButton extends StatefulWidget {
   });
 
   final RelativeTurn turn;
-  final IconData icon;
+
+  /// What assistive tech hears ("Turn left").
   final String label;
+
+  /// What the button shows (TURN LEFT).
+  final String caption;
   final GameTheme theme;
   final double height;
   final double opacity;
@@ -123,8 +129,10 @@ class _TurnButtonState extends State<_TurnButton> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = widget.theme;
-    final opacity = widget.opacity;
+    final p = context.lb;
+    // Ink strength follows the bar's opacity; a press always lights fully.
+    final strength = _pressed ? 1.0 : (0.55 + 0.45 * widget.opacity).clamp(0.0, 1.0);
+    final fg = p.lime.withValues(alpha: strength);
     return Semantics(
       button: true,
       label: widget.label,
@@ -134,65 +142,34 @@ class _TurnButtonState extends State<_TurnButton> {
         onPointerDown: _down,
         onPointerUp: _end,
         onPointerCancel: _end,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 90),
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: _pressed
-                ? theme.accentColor.withValues(alpha: opacity * 0.5)
-                : theme.accentColor.withValues(alpha: opacity * 0.16),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.accentColor.withValues(
-                alpha: _pressed ? opacity * 0.9 : opacity * 0.45,
-              ),
-              width: _pressed ? 2 : 1.2,
-            ),
-            boxShadow: _pressed
-                ? [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(alpha: 0.35),
-                      blurRadius: 14,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-          ),
-          child: ExcludeSemantics(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+        child: ExcludeSemantics(
+          child: AnimatedScale(
+            scale: _pressed ? .97 : 1,
+            duration: LB.tap,
+            curve: Curves.easeOut,
+            // An outline block that lights to the selected stroke while held.
+            // Visual only: the Listener above owns every press.
+            child: LBBlock(
+              height: widget.height - LB.inset * 2,
+              selected: _pressed,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              alignment: Alignment.center,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      widget.icon,
-                      size: widget.height * 0.42,
-                      color: theme.accentColor.withValues(
-                        alpha: _pressed ? opacity : opacity * 0.85,
-                      ),
+                    LBTurnGlyph(
+                      left: widget.turn == RelativeTurn.left,
+                      cell: (widget.height * .075).clamp(3.0, 6.0),
+                      color: fg,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: (widget.height * .1).clamp(6.0, 14.0)),
                     Text(
-                      widget.label.toUpperCase(),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(
-                          alpha: opacity * 0.85,
-                        ),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
+                      widget.caption,
+                      maxLines: 1,
+                      style: LBText.button(p, color: p.head.withValues(alpha: strength), size: 12)
+                          .copyWith(letterSpacing: 2.6),
                     ),
                   ],
                 ),

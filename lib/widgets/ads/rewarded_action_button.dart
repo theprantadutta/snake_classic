@@ -5,6 +5,8 @@ import 'package:get_it/get_it.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// Generic "watch an ad for X" card used by the rewarded placements (free
 /// power-up, bonus XP, …). Self-hides for Pro / when ads are disabled, disables
@@ -81,57 +83,40 @@ class _RewardedActionButtonState extends State<RewardedActionButton> {
     final ads = _ads;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
 
-    final theme = widget.theme;
     final enabled = _enabled(ads);
     final l10n = AppLocalizations.of(context)!;
     final subtitle = enabled ? l10n.raOptIn : l10n.rcNoAd;
+    final p = context.lb;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,
-      child: GestureDetector(
-        onTap: enabled ? _onTap : null,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.accentColor.withValues(alpha: 0.18),
-                theme.foodColor.withValues(alpha: 0.10),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.4)),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: LBBlock(
+          kind: LBBlockKind.gold,
+          onTap: enabled ? _onTap : null,
+          // The ad flow owns its own feedback.
+          feedback: false,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             children: [
-              Icon(Icons.play_circle_fill, color: theme.accentColor, size: 28),
-              const SizedBox(width: 12),
+              const LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.label,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
+                      widget.label.toUpperCase(),
+                      style: LBText.button(p, color: LB.gold, size: 12.5),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 12,
-                      ),
-                    ),
+                    const SizedBox(height: 3),
+                    Text(subtitle, style: LBText.body(p, size: 11)),
                   ],
                 ),
               ),
-              Icon(widget.icon,
-                  color: theme.accentColor.withValues(alpha: 0.9), size: 22),
+              const SizedBox(width: 10),
+              LBMappedIcon(widget.icon, cell: 3.6, color: LB.gold),
             ],
           ),
         ),

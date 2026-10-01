@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
-import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// First-launch modal asking the player to pick gestures or the D-Pad.
 /// Now called before [GameCubit.startGame], so the snake isn't already
@@ -14,146 +12,89 @@ import 'package:snake_classic/utils/constants.dart';
 /// footer.
 Future<void> showControlChoiceDialog(BuildContext context) async {
   final settingsCubit = context.read<GameSettingsCubit>();
-  final theme = context.read<ThemeCubit>().state.currentTheme;
   final l10n = AppLocalizations.of(context)!;
 
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) => PopScope(
-      canPop: false,
-      child: AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: theme.accentColor.withValues(alpha: 0.4),
-            width: 1.5,
+    barrierColor: Colors.black.withValues(alpha: .65),
+    builder: (dialogContext) {
+      final p = dialogContext.lb;
+      return PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: LBBlock(
+              kind: LBBlockKind.sheet,
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.ccTitle.toUpperCase(),
+                      style: LBText.button(p, color: p.head, size: 15).copyWith(letterSpacing: 2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n.ccBody, style: LBText.body(p, size: 12)),
+                  const SizedBox(height: 14),
+                  _ControlChoiceRow(
+                    icon: LBIcon.next,
+                    title: l10n.ccSwipe,
+                    subtitle: l10n.ccSwipeSub,
+                    onTap: () async {
+                      await settingsCubit.updateDPadEnabled(false);
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                  _ControlChoiceRow(
+                    icon: LBIcon.plus,
+                    title: l10n.ccDpad,
+                    subtitle: l10n.ccDpadSub,
+                    onTap: () async {
+                      await settingsCubit.updateDPadEnabled(true);
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.ccTitle,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.ccBody,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.7),
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildControlChoiceCard(
-              dialogContext: dialogContext,
-              theme: theme,
-              icon: Icons.swipe_rounded,
-              title: l10n.ccSwipe,
-              subtitle: l10n.ccSwipeSub,
-              onTap: () async {
-                await settingsCubit.updateDPadEnabled(false);
-                if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildControlChoiceCard(
-              dialogContext: dialogContext,
-              theme: theme,
-              icon: Icons.gamepad_rounded,
-              title: l10n.ccDpad,
-              subtitle: l10n.ccDpadSub,
-              onTap: () async {
-                await settingsCubit.updateDPadEnabled(true);
-                if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-              },
-            ),
-          ],
-        ),
-      ),
-    ),
+      );
+    },
   );
 }
 
-Widget _buildControlChoiceCard({
-  required BuildContext dialogContext,
-  required GameTheme theme,
-  required IconData icon,
-  required String title,
-  required String subtitle,
-  required Future<void> Function() onTap,
-}) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(14),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 7,
-        child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: theme.accentColor, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: theme.accentColor.withValues(alpha: 0.6),
-          ),
-        ],
-      )),
-    ),
-  );
+class _ControlChoiceRow extends StatelessWidget {
+  const _ControlChoiceRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final LBIcon icon;
+  final String title;
+  final String subtitle;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    final next = Directionality.of(context) == TextDirection.rtl ? LBIcon.back : LBIcon.next;
+    return LBRow(
+      title: title,
+      subtitle: subtitle,
+      leading: LBPixelIcon(icon, cell: 4.4, color: p.lime),
+      trailing: LBPixelIcon(next, cell: 2.6, color: p.inkDim),
+      onTap: onTap,
+    );
+  }
 }

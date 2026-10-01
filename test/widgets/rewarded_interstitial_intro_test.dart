@@ -49,16 +49,21 @@ void main() {
 
   testWidgets('states the reward before anything plays', (tester) async {
     await open(tester);
-    expect(find.text('Bonus coins!'), findsOneWidget);
-    expect(find.text('Watch a short ad and get +25 coins.'), findsOneWidget);
-    expect(find.text('Ad starts in 5s'), findsOneWidget);
-    expect(find.text('No thanks'), findsOneWidget);
+    expect(find.bySemanticsLabel('AD BREAK'), findsOneWidget);
+    expect(find.text('A short ad. 25 coins for you.'), findsOneWidget);
+    expect(find.text('+25¢ WHEN IT ENDS'), findsOneWidget);
+    expect(
+      find.text('STARTS IN 5 · OR SKIP, NO HARD FEELINGS'),
+      findsOneWidget,
+    );
+    expect(find.text('WATCH NOW'), findsOneWidget);
+    expect(find.text('NO THANKS'), findsOneWidget);
   });
 
   testWidgets('NO THANKS skips the ad', (tester) async {
     final answers = await open(tester);
     await tester.pump(const Duration(milliseconds: 600)); // armed
-    await tester.tap(find.text('No thanks'));
+    await tester.tap(find.text('NO THANKS'));
     await tester.pumpAndSettle();
     expect(answers, [false]);
   });
@@ -74,7 +79,7 @@ void main() {
   testWidgets('WATCH NOW plays it', (tester) async {
     final answers = await open(tester);
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.tap(find.text('Watch now'));
+    await tester.tap(find.text('WATCH NOW'));
     await tester.pumpAndSettle();
     expect(answers, [true]);
   });
@@ -102,13 +107,13 @@ void main() {
       (tester) async {
     final answers = await open(tester);
     // Still inside the arming window.
-    await tester.tap(find.text('No thanks'), warnIfMissed: false);
+    await tester.tap(find.text('NO THANKS'), warnIfMissed: false);
     await tester.pump();
     expect(answers, isEmpty);
-    expect(find.text('Bonus coins!'), findsOneWidget);
+    expect(find.bySemanticsLabel('AD BREAK'), findsOneWidget);
     // And once armed, the same tap counts.
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.tap(find.text('No thanks'));
+    await tester.tap(find.text('NO THANKS'));
     await tester.pumpAndSettle();
     expect(answers, [false]);
   });

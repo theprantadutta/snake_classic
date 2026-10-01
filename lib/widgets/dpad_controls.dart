@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// On-screen D-Pad controller for touch-based directional input.
 /// Provides an alternative to swipe controls for users who prefer buttons.
@@ -120,16 +122,15 @@ class _DPadControlsState extends State<DPadControls> {
 
   @override
   Widget build(BuildContext context) {
-    // Button ratio dialled to 0.38 — the geometric ceiling for this
-    // layout: with the 0.04 edge spacing, diagonal-neighbour circles
-    // touch at ~0.381, so this is as large as the targets can get
-    // without overlapping. Combined with the small-screen dpadSize bump
-    // in game_bottom_bar.dart this puts the visible circles at ~46px on
-    // small phones. Note these are now the DRAWN size only — the live
-    // hit area is the full square, so the effective target is larger.
-    final buttonSize = widget.size * 0.38;
+    // Square arms in a plus. 0.30 is the largest square that keeps the
+    // diagonal neighbours from touching with the 0.04 edge spacing (squares
+    // reach further into the corners than the old circles did). These are
+    // the DRAWN size only — the live hit area is the full square, so the
+    // effective target is the whole control.
+    final buttonSize = widget.size * 0.30;
     final spacing = widget.size * 0.04;
     final hubSize = widget.size * 0.10;
+    final p = context.lb;
 
     return Listener(
       // Opaque so presses anywhere in the square are captured, including
@@ -147,63 +148,33 @@ class _DPadControlsState extends State<DPadControls> {
         width: widget.size,
         height: widget.size,
         decoration: BoxDecoration(
-          color: widget.theme.backgroundColor.withValues(
-            alpha: widget.opacity * 0.25,
-          ),
-          borderRadius: BorderRadius.circular(widget.size * 0.18),
-          border: Border.all(
-            color: widget.theme.accentColor.withValues(
-              alpha: widget.opacity * 0.18,
-            ),
-            width: 1,
-          ),
+          color: p.board.withValues(alpha: .55),
+          borderRadius: BorderRadius.circular(LB.blockRadius * 1.5),
+          border: Border.all(color: p.lime.withValues(alpha: widget.opacity * 0.2)),
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Decorative center hub — small dot so the cross of buttons
-            // reads as one coherent control instead of four loose circles.
-            Container(
-              width: hubSize,
-              height: hubSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.theme.accentColor.withValues(
-                  alpha: widget.opacity * 0.25,
-                ),
-              ),
+            // Centre hub: one dim cell, so the plus reads as one control.
+            SizedBox.square(
+              dimension: hubSize,
+              child: CustomPaint(painter: _HubPainter(p.cellOff)),
             ),
             Positioned(
               top: spacing,
-              child: _buildDirectionButton(
-                direction: Direction.up,
-                icon: Icons.keyboard_arrow_up_rounded,
-                buttonSize: buttonSize,
-              ),
+              child: _buildDirectionButton(direction: Direction.up, buttonSize: buttonSize),
             ),
             Positioned(
               bottom: spacing,
-              child: _buildDirectionButton(
-                direction: Direction.down,
-                icon: Icons.keyboard_arrow_down_rounded,
-                buttonSize: buttonSize,
-              ),
+              child: _buildDirectionButton(direction: Direction.down, buttonSize: buttonSize),
             ),
             Positioned(
               left: spacing,
-              child: _buildDirectionButton(
-                direction: Direction.left,
-                icon: Icons.keyboard_arrow_left_rounded,
-                buttonSize: buttonSize,
-              ),
+              child: _buildDirectionButton(direction: Direction.left, buttonSize: buttonSize),
             ),
             Positioned(
               right: spacing,
-              child: _buildDirectionButton(
-                direction: Direction.right,
-                icon: Icons.keyboard_arrow_right_rounded,
-                buttonSize: buttonSize,
-              ),
+              child: _buildDirectionButton(direction: Direction.right, buttonSize: buttonSize),
             ),
           ],
         ),
@@ -213,7 +184,6 @@ class _DPadControlsState extends State<DPadControls> {
 
   Widget _buildDirectionButton({
     required Direction direction,
-    required IconData icon,
     required double buttonSize,
   }) {
     // The accessible half of the control. Sighted players drive the single
@@ -225,9 +195,8 @@ class _DPadControlsState extends State<DPadControls> {
       label: _labelFor(context, direction),
       onTap: () => widget.onDirection(direction),
       child: _DPadButton(
-        icon: icon,
+        direction: direction,
         size: buttonSize,
-        theme: widget.theme,
         opacity: widget.opacity,
         isPressed: _activeDirection == direction,
       ),
@@ -249,63 +218,53 @@ class _DPadControlsState extends State<DPadControls> {
   }
 }
 
-/// Pure visual for one arm of the d-pad. Pointer handling lives in the
-/// parent's single pointer layer.
+/// Pure visual for one arm of the d-pad: an outline block with a pixel
+/// arrow, lit to the selected stroke while pressed. Pointer handling lives in
+/// the parent's single pointer layer.
 class _DPadButton extends StatelessWidget {
-  final IconData icon;
+  final Direction direction;
   final double size;
-  final GameTheme theme;
   final double opacity;
   final bool isPressed;
 
   const _DPadButton({
-    required this.icon,
+    required this.direction,
     required this.size,
-    required this.theme,
     required this.opacity,
     required this.isPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isPressed
-            ? theme.accentColor.withValues(alpha: opacity * 0.55)
-            : theme.accentColor.withValues(alpha: opacity * 0.22),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: opacity * 0.5),
-          width: isPressed ? 2 : 1.2,
-        ),
-        boxShadow: isPressed
-            ? [
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  spreadRadius: 1.5,
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Center(
-        child: Icon(
-          icon,
-          size: size * 0.62,
-          color: theme.accentColor.withValues(
-            alpha: isPressed ? opacity : opacity * 0.85,
-          ),
+    final p = context.lb;
+    final strength = isPressed ? 1.0 : (0.55 + 0.45 * opacity).clamp(0.0, 1.0);
+    return SizedBox.square(
+      dimension: size,
+      child: LBBlock(
+        width: size - LB.inset * 2,
+        height: size - LB.inset * 2,
+        selected: isPressed,
+        padding: EdgeInsets.zero,
+        alignment: Alignment.center,
+        child: LBArrowIcon(
+          direction: direction,
+          cell: (size * .11).clamp(2.5, 7.0),
+          color: p.lime.withValues(alpha: strength),
         ),
       ),
     );
   }
+}
+
+class _HubPainter extends CustomPainter {
+  _HubPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) =>
+      canvas.drawRRect(lbCellRect(0, 0, size.width), Paint()..color = color);
+
+  @override
+  bool shouldRepaint(_HubPainter old) => old.color != color;
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Turns thumb movement into four-way steering. Pure; no widgets, no time.
 ///
@@ -160,7 +161,6 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = widget.theme;
     final origin = _tracker.origin;
     final thumb = _thumb;
 
@@ -172,6 +172,9 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
           : origin + push / push.distance * widget.knobTravel;
     }
 
+    final p = context.lb;
+    final ink = (0.55 + 0.45 * widget.opacity).clamp(0.0, 1.0);
+
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: _down,
@@ -179,45 +182,35 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
       onPointerUp: _end,
       onPointerCancel: _end,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(LB.blockRadius),
         child: Container(
           decoration: BoxDecoration(
-            color: theme.backgroundColor.withValues(
-              alpha: widget.opacity * 0.25,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: widget.opacity * 0.18),
-            ),
+            color: p.lime.withValues(alpha: .05),
+            borderRadius: BorderRadius.circular(LB.blockRadius),
+            border: Border.all(color: p.lime.withValues(alpha: .32 * ink)),
           ),
           child: Stack(
             children: [
               // Idle hint, gone the moment a thumb is down.
               if (origin == null)
                 Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.control_camera_rounded,
-                        size: 18,
-                        color: theme.accentColor.withValues(
-                          alpha: widget.opacity * 0.45,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.gameJoystickHint.toUpperCase(),
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(
-                            alpha: widget.opacity * 0.45,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          LBPixelIcon(LBIcon.plus, cell: 3.4, color: p.lime.withValues(alpha: .7 * ink)),
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.gameJoystickHint.toUpperCase(),
+                            style: LBText.button(p, color: p.head.withValues(alpha: .75 * ink), size: 11)
+                                .copyWith(letterSpacing: 2.2),
                           ),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.4,
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               if (origin != null)
@@ -226,21 +219,15 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
                   top: origin.dy - widget.knobTravel - 10,
                   child: _Ring(
                     diameter: (widget.knobTravel + 10) * 2,
-                    color: theme.accentColor.withValues(
-                      alpha: widget.opacity * 0.35,
-                    ),
+                    color: p.lime.withValues(alpha: .4 * ink),
+                    fill: p.lime.withValues(alpha: .05),
                   ),
                 ),
               if (knob != null)
                 Positioned(
                   left: knob.dx - 18,
                   top: knob.dy - 18,
-                  child: _Knob(
-                    diameter: 36,
-                    color: theme.accentColor.withValues(
-                      alpha: widget.opacity * 0.75,
-                    ),
-                  ),
+                  child: _Knob(diameter: 36, color: p.head.withValues(alpha: ink)),
                 ),
             ],
           ),
@@ -250,10 +237,12 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
   }
 }
 
+/// The base: a rounded-square block outline where the thumb landed.
 class _Ring extends StatelessWidget {
-  const _Ring({required this.diameter, required this.color});
+  const _Ring({required this.diameter, required this.color, required this.fill});
   final double diameter;
   final Color color;
+  final Color fill;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +251,8 @@ class _Ring extends StatelessWidget {
         width: diameter,
         height: diameter,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          color: fill,
+          borderRadius: BorderRadius.circular(diameter * .22),
           border: Border.all(color: color, width: 1.5),
         ),
       ),
@@ -270,6 +260,7 @@ class _Ring extends StatelessWidget {
   }
 }
 
+/// The knob: one lit snake cell, glowing like the head.
 class _Knob extends StatelessWidget {
   const _Knob({required this.diameter, required this.color});
   final double diameter;
@@ -282,8 +273,8 @@ class _Knob extends StatelessWidget {
         width: diameter,
         height: diameter,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
           color: color,
+          borderRadius: BorderRadius.circular(diameter * .22),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.45),

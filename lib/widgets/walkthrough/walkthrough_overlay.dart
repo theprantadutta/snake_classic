@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_tooltip.dart';
 
@@ -127,8 +128,8 @@ class _WalkthroughOverlayState extends State<WalkthroughOverlay>
               size: screenSize,
               painter: _SpotlightPainter(
                 targetRect: _targetRect,
-                overlayColor: Colors.black.withValues(alpha: 0.85),
-                glowColor: widget.theme.accentColor,
+                overlayColor: context.lb.board.withValues(alpha: 0.86),
+                glowColor: context.lb.lime,
                 borderRadius: widget.step.spotlightBorderRadius,
               ),
             ),
@@ -305,23 +306,23 @@ class _SpotlightPainter extends CustomPainter {
 
       canvas.drawPath(combinedPath, paint);
 
-      // Draw glow around spotlight
+      // Lime glow around the spotlight, like a filled block's halo.
       final glowPaint = Paint()
-        ..color = glowColor.withValues(alpha: 0.3)
+        ..color = glowColor.withValues(alpha: 0.38)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
-        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 8);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 10);
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(targetRect!, Radius.circular(borderRadius)),
         glowPaint,
       );
 
-      // Draw inner border
+      // Selected-block stroke.
       final borderPaint = Paint()
-        ..color = glowColor.withValues(alpha: 0.5)
+        ..color = glowColor.withValues(alpha: 0.95)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
+        ..strokeWidth = 1.5;
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(targetRect!, Radius.circular(borderRadius)),

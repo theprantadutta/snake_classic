@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 
 /// A full-screen, tap-absorbing "Ad starting…" beat laid over everything
 /// between the button press that triggers a full-screen ad and the moment the
@@ -48,38 +51,36 @@ class _CurtainView extends StatelessWidget {
   const _CurtainView({required this.theme, required this.label});
 
   final GameTheme theme;
+
+  /// The caller's label. Shown only if the Living Board copy is unavailable
+  /// (no localizations above the root overlay).
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.lb;
+    final text = AppLocalizations.of(context)?.lbAdStarting ?? label;
     return Positioned.fill(
       child: AbsorbPointer(
         child: Material(
-          color: Colors.black.withValues(alpha: 0.72),
+          color: p.board.withValues(alpha: 0.86),
           child: Center(
             child: Semantics(
               liveRegion: true,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation(theme.accentColor),
+              label: text,
+              child: ExcludeSemantics(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const LBCellSpinner(count: 5, cell: 10),
+                    const SizedBox(height: 16),
+                    Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      style: LBText.button(p, color: p.ink, size: 13).copyWith(letterSpacing: 2.6),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.9),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

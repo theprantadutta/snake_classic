@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/overlays/lb_overlay_parts.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_step.dart';
 
 /// How a tutorial run ended.
@@ -378,11 +378,12 @@ class WalkthroughOverlayWidget extends StatelessWidget {
     // For non-interactive steps, show the normal centered modal
     return Material(
       type: MaterialType.transparency,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.85),
+      child: ColoredBox(
+        color: context.lb.board.withValues(alpha: 0.86),
         child: SafeArea(
           child: Center(
-            child: Padding(
+            // Scrolls only when a long step meets a short phone or large text.
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: _buildTooltip(context),
             ),
@@ -412,8 +413,10 @@ class WalkthroughOverlayWidget extends StatelessWidget {
       child: Stack(
         children: [
           // Dim, so the instruction reads over a busy board. Non-interactive.
-          const Positioned.fill(
-            child: IgnorePointer(child: ColoredBox(color: Color(0x4D000000))),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ColoredBox(color: context.lb.board.withValues(alpha: .3)),
+            ),
           ),
           SafeArea(
             child: Align(
@@ -430,7 +433,7 @@ class WalkthroughOverlayWidget extends StatelessWidget {
               child: IgnorePointer(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: _buildSwipeHint(l10n),
+                  child: _buildSwipeHint(context, l10n),
                 ),
               ),
             ),
@@ -441,396 +444,233 @@ class WalkthroughOverlayWidget extends StatelessWidget {
   }
 
   Widget _buildInteractiveCard(BuildContext context, AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.foodColor.withValues(alpha: 0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.foodColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: HudCorners(
-        color: theme.foodColor,
-        inset: 8,
+    final p = context.lb;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: LBBlock(
+        kind: LBBlockKind.sheet,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Title with icon
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(step.icon ?? Icons.swipe, color: theme.foodColor, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                step.title,
-                style: TextStyle(
-                  color: theme.foodColor,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title with icon
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (step.icon != null)
+                  LBMappedIcon(step.icon!, cell: 4, color: LB.gold)
+                else
+                  const LBPixelIcon(LBIcon.next, cell: 4, color: LB.gold),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    step.title.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: LBText.button(p, color: LB.gold, size: 15).copyWith(letterSpacing: 1.8),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Direction arrow
-          if (expectedDirection != null)
-            _buildLargeDirectionArrow(context, l10n),
-          const SizedBox(height: 12),
-          // Skip button
-          TextButton(
-            onPressed: onSkip,
-            child: Text(
-              l10n.wtSkipTutorial,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-                fontSize: 14,
-              ),
+              ],
             ),
-          ),
-        ],
-      )),
+            const SizedBox(height: 12),
+            // Direction arrow
+            if (expectedDirection != null) _buildLargeDirectionArrow(context, l10n),
+            const SizedBox(height: 4),
+            // Skip button
+            TextButton(
+              onPressed: onSkip,
+              style: lbTextButtonStyle(p),
+              child: Text(l10n.wtSkipTutorial.toUpperCase()),
+            ),
+          ],
+        ),
+      ),
     );
   }
+
+  String? _directionText(AppLocalizations l10n) => switch (expectedDirection) {
+    Direction.right => l10n.wtSwipeRightUpper,
+    Direction.left => l10n.wtSwipeLeftUpper,
+    Direction.up => l10n.wtSwipeUpUpper,
+    Direction.down => l10n.wtSwipeDownUpper,
+    null => null,
+  };
 
   Widget _buildLargeDirectionArrow(
     BuildContext context,
     AppLocalizations l10n,
   ) {
-    IconData icon;
-    String text;
+    final direction = expectedDirection;
+    final text = _directionText(l10n);
+    if (direction == null || text == null) return const SizedBox.shrink();
+    final p = context.lb;
 
-    switch (expectedDirection) {
-      case Direction.right:
-        icon = Icons.arrow_forward_rounded;
-        text = l10n.wtSwipeRightUpper;
-        break;
-      case Direction.left:
-        icon = Icons.arrow_back_rounded;
-        text = l10n.wtSwipeLeftUpper;
-        break;
-      case Direction.up:
-        icon = Icons.arrow_upward_rounded;
-        text = l10n.wtSwipeUpUpper;
-        break;
-      case Direction.down:
-        icon = Icons.arrow_downward_rounded;
-        text = l10n.wtSwipeDownUpper;
-        break;
-      default:
-        return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [theme.foodColor, theme.accentColor]),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 36),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(1),
+    return LBBlock(
+      kind: LBBlockKind.fill,
+      height: context.lbCell * 3,
+      padding: const EdgeInsets.symmetric(horizontal: 26),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LBArrowIcon(direction: direction, cell: 6, color: p.onLime),
+            const SizedBox(width: 14),
+            Text(
+              text,
+              style: LBText.button(p, color: p.onLime, size: 17).copyWith(letterSpacing: 2.4),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSwipeHint(AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.touch_app,
-            color: theme.accentColor.withValues(alpha: 0.8),
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l10n.wtSwipeAnywhereScreen,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+  Widget _buildSwipeHint(BuildContext context, AppLocalizations l10n) {
+    final p = context.lb;
+    return LBBlock(
+      kind: LBBlockKind.sheet,
+      height: context.lbCell * 2.2,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LBPixelIcon(LBIcon.plus, cell: 3, color: p.lime),
+            const SizedBox(width: 10),
+            Text(
+              l10n.wtSwipeAnywhereScreen,
+              style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTooltip(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
+    final p = context.lb;
+    return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 340),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.backgroundColor,
-            theme.backgroundColor.withValues(alpha: 0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.5),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          _buildHeader(),
+      child: LBBlock(
+        kind: LBBlockKind.sheet,
+        padding: const EdgeInsets.fromLTRB(18, 20, 14, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            if (step.icon != null) ...[
+              LBMappedIcon(step.icon!, cell: 5, color: p.lime),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              step.title.toUpperCase(),
+              style: LBText.button(p, color: p.head, size: 15).copyWith(letterSpacing: 1.8),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
 
-          // Message
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: Text(
+            // Message
+            Text(
               step.message,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.85),
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: LBText.body(p, color: p.ink.withValues(alpha: .82), size: 12.5),
               textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 14),
 
-          // Direction hint for interactive steps
-          if (isAwaitingInput && expectedDirection != null)
-            _buildDirectionHint(context, l10n),
+            // Direction hint for interactive steps
+            if (isAwaitingInput && expectedDirection != null) _buildDirectionHint(context, l10n),
 
-          // Progress dots
-          _buildProgressDots(),
+            // Progress cells
+            LBStepCells(total: totalSteps, index: currentStepIndex),
+            const SizedBox(height: 8),
 
-          const SizedBox(height: 12),
-
-          // Buttons
-          _buildButtons(l10n),
-
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.accentColor.withValues(alpha: 0.15),
-            theme.accentColor.withValues(alpha: 0.05),
+            // Buttons
+            _buildButtons(context, l10n),
           ],
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (step.icon != null) ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(step.icon, color: theme.accentColor, size: 24),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Flexible(
-            child: Text(
-              step.title,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildDirectionHint(BuildContext context, AppLocalizations l10n) {
-    final IconData directionIcon;
-    final String directionText;
-
-    switch (expectedDirection) {
-      case Direction.up:
-        directionIcon = Icons.arrow_upward;
-        directionText = l10n.wtSwipeUpUpper;
-        break;
-      case Direction.down:
-        directionIcon = Icons.arrow_downward;
-        directionText = l10n.wtSwipeDownUpper;
-        break;
-      case Direction.left:
-        directionIcon = Icons.arrow_back;
-        directionText = l10n.wtSwipeLeftUpper;
-        break;
-      case Direction.right:
-        directionIcon = Icons.arrow_forward;
-        directionText = l10n.wtSwipeRightUpper;
-        break;
-      default:
-        return const SizedBox.shrink();
-    }
+    final direction = expectedDirection;
+    final text = _directionText(l10n);
+    if (direction == null || text == null) return const SizedBox.shrink();
+    final p = context.lb;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: theme.foodColor.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.foodColor.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(directionIcon, color: theme.foodColor, size: 28),
-            const SizedBox(width: 12),
-            Text(
-              directionText,
-              style: TextStyle(
-                color: theme.foodColor,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(1),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: LBBlock(
+        kind: LBBlockKind.gold,
+        height: context.lbCell * 2.4,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LBArrowIcon(direction: direction, cell: 4.4, color: LB.gold),
+              const SizedBox(width: 12),
+              Text(
+                text,
+                style: LBText.button(p, color: LB.gold, size: 14).copyWith(letterSpacing: 2),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildProgressDots() {
+  Widget _buildButtons(BuildContext context, AppLocalizations l10n) {
+    final p = context.lb;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(totalSteps, (index) {
-        final isActive = index == currentStepIndex;
-        final isPast = index < currentStepIndex;
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: isActive ? 24 : 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: isActive
-                ? theme.accentColor
-                : isPast
-                ? theme.accentColor.withValues(alpha: 0.5)
-                : theme.accentColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildButtons(AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          // Always show skip button (even for interactive steps)
-          TextButton(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Always show skip button (even for interactive steps)
+        Flexible(
+          child: TextButton(
             onPressed: onSkip,
+            style: lbTextButtonStyle(p),
             child: Text(
-              l10n.wtSkipTutorial,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.6),
-                fontSize: 14,
-              ),
+              l10n.wtSkipTutorial.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          if (!isAwaitingInput)
-            GestureDetector(
+        ),
+        const SizedBox(width: 8),
+        if (!isAwaitingInput)
+          Flexible(
+            child: LBBlock(
+              kind: LBBlockKind.fill,
+              height: context.lbCell * 2.4,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               onTap: onNext,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.accentColor, theme.foodColor],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
-                  step.actionLabel ??
-                      (currentStepIndex == totalSteps - 1
-                          ? l10n.wtGotIt
-                          : l10n.wtNext),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  (step.actionLabel ??
+                          (currentStepIndex == totalSteps - 1 ? l10n.wtGotIt : l10n.wtNext))
+                      .toUpperCase(),
+                  maxLines: 1,
+                  style: LBText.button(p, color: p.onLime, size: 12.5).copyWith(letterSpacing: 1.8),
                 ),
-              ),
-            )
-          else
-            // Show hint text for interactive steps
-            Text(
-              l10n.wtSwipeAnywhere,
-              style: TextStyle(
-                color: theme.foodColor.withValues(alpha: 0.8),
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
               ),
             ),
-        ],
-      ),
+          )
+        else
+          // Show hint text for interactive steps
+          Flexible(
+            child: Text(
+              l10n.wtSwipeAnywhere,
+              textAlign: TextAlign.end,
+              style: LBText.body(p, color: LB.gold, size: 12),
+            ),
+          ),
+      ],
     );
   }
 }

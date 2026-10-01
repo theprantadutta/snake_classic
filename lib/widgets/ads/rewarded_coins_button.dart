@@ -8,6 +8,7 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 
 /// Shared show-ad-then-credit flow for the free-coins placements. Captures
@@ -90,58 +91,42 @@ class _RewardedCoinsButtonState extends State<RewardedCoinsButton> {
     final ads = _ads;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
 
-    final theme = widget.theme;
     final enabled = ads.canShowFreeCoinAd;
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,
-      child: GestureDetector(
-        onTap: enabled ? _watch : null,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.amber.withValues(alpha: 0.18),
-                Colors.orange.withValues(alpha: 0.10),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: LBBlock(
+          kind: LBBlockKind.gold,
+          onTap: enabled ? _watch : null,
+          // The ad flow owns its own feedback.
+          feedback: false,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             children: [
-              const Icon(Icons.play_circle_fill, color: Colors.amber, size: 28),
-              const SizedBox(width: 12),
+              const LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!
-                          .rcWatchAd(AdService.freeCoinsPerAd),
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
+                      l10n.lbFreeCoins(context.formatInt(AdService.freeCoinsPerAd)),
+                      style: LBText.button(p, color: LB.gold, size: 12.5),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      enabled
-                          ? AppLocalizations.of(context)!.raOptIn
-                          : AppLocalizations.of(context)!.rcNoAd,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 12,
-                      ),
+                      enabled ? l10n.lbFreeCoinsLine : l10n.rcNoAd,
+                      style: LBText.body(p, size: 11),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.monetization_on,
-                  color: Colors.amber.withValues(alpha: 0.9), size: 22),
+              const SizedBox(width: 10),
+              const LBPixelIcon(LBIcon.coin, cell: 3.6, color: LB.gold),
             ],
           ),
         ),
@@ -197,37 +182,34 @@ class _RewardedCoinsPillState extends State<RewardedCoinsPill> {
     final ads = _ads;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
     final enabled = ads.canShowFreeCoinAd;
+    final p = context.lb;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,
-      child: GestureDetector(
-        onTap: enabled ? _watch : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.amber.withValues(alpha: 0.25),
-                Colors.orange.withValues(alpha: 0.15),
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        child: GestureDetector(
+          onTap: enabled ? _watch : null,
+          child: Container(
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 9),
+            decoration: BoxDecoration(
+              color: LB.goldFill,
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: LB.goldStroke),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const LBPixelIcon(LBIcon.tv, cell: 3, color: LB.gold),
+                const SizedBox(width: 6),
+                Text(
+                  AppLocalizations.of(context)!.lbCoinsReward(context.formatInt(AdService.freeCoinsPerAd)),
+                  style: LBText.button(p, color: LB.gold, size: 12),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_circle_fill, color: Colors.amber, size: 18),
-              const SizedBox(width: 5),
-              Text(
-                '+${AdService.freeCoinsPerAd}',
-                style: const TextStyle(
-                  color: Colors.amber,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
           ),
         ),
       ),

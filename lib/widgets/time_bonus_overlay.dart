@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/tap_arm_guard.dart';
-import 'package:snake_classic/utils/typography.dart';
 
 /// Time-Attack "out of time" offer shown over the frozen board when the clock
 /// hits zero with a rewarded extension still available. Counts down, then
@@ -104,157 +103,135 @@ class _TimeBonusOverlayState extends State<TimeBonusOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = widget.theme;
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
     return Positioned.fill(
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.78),
-        alignment: Alignment.center,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 28),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.backgroundColor,
-                theme.backgroundColor.withValues(alpha: 0.92),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.45),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                blurRadius: 26,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          // The offer lands while the player may still be mid-swipe; a tap
-          // meant for the board must not be taken as "watch an ad".
-          child: TapArmGuard(
-            child: HudCorners(
-            color: kRewardGold,
-            inset: 10,
-            child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Countdown ring with a stopwatch.
-              SizedBox(
-                width: 72,
-                height: 72,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 72,
-                      height: 72,
-                      child: CircularProgressIndicator(
-                        value: widget.seconds == 0
-                            ? 0
-                            : _remaining / widget.seconds,
-                        strokeWidth: 5,
-                        backgroundColor:
-                            theme.accentColor.withValues(alpha: 0.15),
-                        valueColor: AlwaysStoppedAnimation(theme.accentColor),
-                      ),
-                    ),
-                    Icon(Icons.timer, color: theme.foodColor, size: 30),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.tbTimesUp,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: context.letterSpacing(2),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.tbKeepGoing(_remaining),
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Watch ad — the only way to extend.
-              Opacity(
-                opacity: _loadingAd ? 0.6 : 1,
-                child: GestureDetector(
-                  onTap: _loadingAd ? null : _onWatchAd,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [theme.accentColor, theme.foodColor],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _loadingAd
-                              ? Icons.hourglass_top
-                              : Icons.play_circle_fill,
-                          color: Colors.white,
-                          size: 20,
+      child: ColoredBox(
+        color: p.board.withValues(alpha: .82),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: context.lbGutter + cell, vertical: 20),
+              // The offer lands while the player may still be mid-swipe; a tap
+              // meant for the board must not be taken as "watch an ad".
+              child: TapArmGuard(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Semantics(
+                          header: true,
+                          child: LBCellText(l10n.tbTimesUp, cell: 9 * context.uiScale, color: LB.bonk, glow: true),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _loadingAd
-                              ? l10n.rvoLoadingAd
-                              : l10n.tbWatchAd(widget.bonusSeconds),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      SizedBox(height: cell * 1.2),
+                      LBBlock(
+                        kind: LBBlockKind.sheet,
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                const LBPixelIcon(LBIcon.hourglass, cell: 3.4, color: LB.gold),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Semantics(
+                                    liveRegion: true,
+                                    child: Text(
+                                      l10n.tbKeepGoing(_remaining),
+                                      style: LBText.button(p, color: LB.gold, size: 13),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 62,
+                                  child: LBCellsBar(
+                                    count: 5,
+                                    value: widget.seconds == 0 ? 0 : _remaining / widget.seconds,
+                                    color: LB.gold,
+                                    offColor: LB.gold.withValues(alpha: .15),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            // Watch ad — the only way to extend.
+                            Opacity(
+                              opacity: _loadingAd ? 0.6 : 1,
+                              child: LBBlock(
+                                kind: LBBlockKind.fill,
+                                height: cell * 3.2,
+                                onTap: _loadingAd ? null : _onWatchAd,
+                                // The ad flow owns its feedback.
+                                feedback: false,
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    LBPixelIcon(
+                                      _loadingAd ? LBIcon.hourglass : LBIcon.tv,
+                                      cell: 3.6,
+                                      color: p.onLime,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Flexible(
+                                      child: Text(
+                                        _loadingAd ? l10n.rvoLoadingAd : l10n.tbWatchAd(widget.bonusSeconds),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: LBText.button(p, color: p.onLime, size: 15).copyWith(letterSpacing: 1.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (_adUnavailable)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  l10n.lbNoAdNow,
+                                  textAlign: TextAlign.center,
+                                  style: LBText.body(p, color: p.inkMuted, size: 11.5),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Semantics(
+                          button: true,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              LBFeedback.back();
+                              _resolve(widget.onDecline);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                              child: Text(
+                                l10n.tbEndRun.toUpperCase(),
+                                style: LBText.button(p, color: p.inkMuted, size: 12).copyWith(
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: p.inkDim,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              if (_adUnavailable) ...[
-                const SizedBox(height: 6),
-                Text(
-                  l10n.goNoAdAvailable,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.75),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 6),
-              TextButton(
-                onPressed: () => _resolve(widget.onDecline),
-                child: Text(
-                  l10n.tbEndRun,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.6),
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ))),
+            ),
+          ),
         ),
       ),
     );

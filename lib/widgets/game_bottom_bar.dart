@@ -3,9 +3,9 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
 import 'package:snake_classic/widgets/joystick_controls.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/turn_buttons.dart';
 
@@ -73,11 +73,11 @@ class GameBottomBar extends StatelessWidget {
     return l10n.gbSpeedMax;
   }
 
-  // Get icon for current speed level
-  IconData _getSpeedIcon(int gameSpeed) {
-    if (gameSpeed >= 230) return Icons.speed;
-    if (gameSpeed >= 130) return Icons.local_fire_department;
-    return Icons.bolt;
+  // Pixel icon for the current speed level
+  LBIcon _getSpeedIcon(int gameSpeed) {
+    if (gameSpeed >= 230) return LBIcon.next;
+    if (gameSpeed >= 130) return LBIcon.flame;
+    return LBIcon.bolt;
   }
 
   @override
@@ -153,58 +153,65 @@ class GameBottomBar extends StatelessWidget {
             // player had just read. Length and speed stay because neither is
             // stated elsewhere — but as quiet inline chips, not as headline
             // cards competing with the board.
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _buildInlineStat(
-                    '${gameState.snake.length}',
-                    Icons.straighten,
-                    theme,
-                    isSmallScreen,
+            // Scales down rather than overflowing in long locales.
+            : Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildInlineStat(
+                        l10n.gbLength,
+                        '${gameState.snake.length}',
+                        null,
+                        isSmallScreen,
+                      ),
+                      SizedBox(width: 20 * scale),
+                      _buildInlineStat(
+                        l10n.gbSpeed,
+                        _getSpeedLabel(l10n, gameState.gameSpeed),
+                        _getSpeedIcon(gameState.gameSpeed),
+                        isSmallScreen,
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 20 * scale),
-                  _buildInlineStat(
-                    _getSpeedLabel(l10n, gameState.gameSpeed),
-                    _getSpeedIcon(gameState.gameSpeed),
-                    theme,
-                    isSmallScreen,
-                  ),
-                ],
+                ),
               ),
       ),
     );
   }
 
-  /// Single-line stat for the swipe-mode strip: icon and value side by side,
-  /// no stacked label. Sized to sit in a ~44dp bar rather than an ~80dp card,
+  /// Single-line stat for the swipe-mode strip: a compact Living Board label
+  /// and value side by side. Sized to sit in a ~44dp bar rather than an ~80dp card,
   /// which is where the board's reclaimed height comes from.
   Widget _buildInlineStat(
+    String label,
     String value,
-    IconData icon,
-    GameTheme theme,
+    LBIcon? icon,
     bool isSmallScreen,
   ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: theme.accentColor.withValues(alpha: 0.55),
-          size: isSmallScreen ? 14 : 16,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.75),
-            fontWeight: FontWeight.w600,
-            fontSize: isSmallScreen ? 12 : 13,
-          ),
-        ),
-      ],
+    return Builder(
+      builder: (context) {
+        final p = context.lb;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              LBPixelIcon(icon, cell: isSmallScreen ? 2.4 : 2.8, color: p.lime.withValues(alpha: .7)),
+              const SizedBox(width: 7),
+            ],
+            Text(label.toUpperCase(), style: LBText.label(p, color: p.inkDim)),
+            const SizedBox(width: 7),
+            Text(
+              value.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LBText.button(p, color: p.head, size: isSmallScreen ? 12 : 13),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -233,8 +240,7 @@ class GameBottomBar extends StatelessWidget {
         _buildControlBarStat(
           l10n.gbLength,
           '${gameState.snake.length}',
-          Icons.straighten,
-          theme,
+          null,
           isSmallScreen,
           alignment: Alignment.centerLeft,
         ),
@@ -252,7 +258,6 @@ class GameBottomBar extends StatelessWidget {
           l10n.gbSpeed,
           _getSpeedLabel(l10n, gameState.gameSpeed),
           _getSpeedIcon(gameState.gameSpeed),
-          theme,
           isSmallScreen,
           alignment: Alignment.centerRight,
         ),
@@ -278,16 +283,16 @@ class GameBottomBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildInlineStat(
+              l10n.gbLength,
               '${gameState.snake.length}',
-              Icons.straighten,
-              theme,
+              null,
               isSmallScreen,
             ),
             const SizedBox(height: 8),
             _buildInlineStat(
+              l10n.gbSpeed,
               _getSpeedLabel(l10n, gameState.gameSpeed),
               _getSpeedIcon(gameState.gameSpeed),
-              theme,
               isSmallScreen,
             ),
           ],
@@ -312,8 +317,7 @@ class GameBottomBar extends StatelessWidget {
     Widget lengthStat(Alignment alignment) => _buildControlBarStat(
       l10n.gbLength,
       '${gameState.snake.length}',
-      Icons.straighten,
-      theme,
+      null,
       isSmallScreen,
       alignment: alignment,
     );
@@ -322,7 +326,6 @@ class GameBottomBar extends StatelessWidget {
       l10n.gbSpeed,
       _getSpeedLabel(l10n, gameState.gameSpeed),
       _getSpeedIcon(gameState.gameSpeed),
-      theme,
       isSmallScreen,
       alignment: alignment,
     );
@@ -338,61 +341,49 @@ class GameBottomBar extends StatelessWidget {
   Widget _buildControlBarStat(
     String label,
     String value,
-    IconData icon,
-    GameTheme theme,
+    LBIcon? icon,
     bool isSmallScreen, {
     required Alignment alignment,
   }) {
     return Align(
       alignment: alignment,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 10 : 14,
-          vertical: isSmallScreen ? 8 : 10,
-        ),
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.6),
-          border: Border.all(color: theme.accentColor.withValues(alpha: 0.25)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        // A three-line readout in a row whose height is set by the d-pad
-        // beside it. At a 2.0 text scale the labels alone were 90px taller
-        // than the space they had. Accessibility text scaling is honoured up
-        // to a point and then the whole chip shrinks to fit rather than
-        // painting over the board — the number stays legible either way, and
-        // the row height (and therefore the board) never moves.
-        child: MediaQuery.withClampedTextScaling(
-          maxScaleFactor: 1.3,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  size: isSmallScreen ? 16 : 20,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: isSmallScreen ? 14 : 16,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    fontSize: isSmallScreen ? 9 : 10,
-                  ),
-                ),
-              ],
+      child: Builder(
+        builder: (context) {
+          final p = context.lb;
+          return LBBlock(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 10 : 14,
+              vertical: isSmallScreen ? 8 : 10,
             ),
-          ),
-        ),
+            // A three-line readout in a row whose height is set by the d-pad
+            // beside it. At a 2.0 text scale the labels alone were 90px taller
+            // than the space they had. Accessibility text scaling is honoured
+            // up to a point and then the whole chip shrinks to fit rather than
+            // painting over the board — the number stays legible either way,
+            // and the row height (and therefore the board) never moves.
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.3,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      LBPixelIcon(icon, cell: isSmallScreen ? 2.6 : 3.2, color: p.lime.withValues(alpha: .7)),
+                      const SizedBox(height: 6),
+                    ],
+                    Text(
+                      value.toUpperCase(),
+                      style: LBText.value(p, color: p.head, size: isSmallScreen ? 15 : 17),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(label.toUpperCase(), style: LBText.label(p, color: p.inkDim)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
