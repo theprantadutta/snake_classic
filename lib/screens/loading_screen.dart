@@ -2,14 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
@@ -24,13 +22,10 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/formatting.dart';
-import 'package:snake_classic/utils/game_animations.dart';
 import 'package:snake_classic/utils/logger.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/animated_snake_logo.dart';
+import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -41,10 +36,6 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
-  late AnimationController _logoController;
-  late AnimationController _progressController;
-  late AnimationController _particleController;
-  late AnimationController _pulseController;
 
   _InitStep _step = _InitStep.initializing;
   double _progress = 0.0;
@@ -52,14 +43,11 @@ class _LoadingScreenState extends State<LoadingScreen>
   String _errorMessage = '';
   bool _showRetryButton = false;
 
-  // Game-like loading elements
-  final List<LoadingParticle> _particles = [];
-  final Random _random = Random();
+  /// One tip per launch (COPY.md: "rotate one per launch").
+  final int _tipIndex = Random().nextInt(8);
 
-  // Rotating "Did you know?" tips shown in the center while loading.
-  Timer? _tipTimer;
-  int _tipIndex = 0;
-  static const int _tipCount = 10;
+  /// App version for the footer; filled in once PackageInfo resolves.
+  String? _version;
 
   /// Backstop for a stalled init.
   ///
@@ -100,16 +88,14 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   // Resolved at render time so the tips follow the ambient locale.
   List<String> _tips(AppLocalizations l10n) => [
-        l10n.ldTip1,
-        l10n.ldTip2,
-        l10n.ldTip3,
-        l10n.ldTip4,
-        l10n.ldTip5,
-        l10n.ldTip6,
-        l10n.ldTip7,
-        l10n.ldTip8,
-        l10n.ldTip9,
-        l10n.ldTip10,
+        l10n.lbTip1,
+        l10n.lbTip2,
+        l10n.lbTip3,
+        l10n.lbTip4,
+        l10n.lbTip5,
+        l10n.lbTip6,
+        l10n.lbTip7,
+        l10n.lbTip8,
       ];
 
   @override
@@ -119,41 +105,9 @@ class _LoadingScreenState extends State<LoadingScreen>
     // Hide the Splash Screen after initialization
     FlutterNativeSplash.remove();
 
-    _logoController = AnimationController(
-      duration: const Duration(milliseconds: 1000), // Faster logo animation
-      vsync: this,
-    );
-
-    _progressController = AnimationController(
-      duration: const Duration(milliseconds: 200), // Faster progress updates
-      vsync: this,
-    );
-
-    _particleController = AnimationController(
-      duration: const Duration(milliseconds: 2000), // Faster particles
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000), // Faster pulse
-      vsync: this,
-    );
-
-    // Start animations
-    _logoController.repeat();
-    _particleController.repeat();
-    _pulseController.repeat();
-
-    // Generate particles for game-like effect
-    _generateParticles();
-
-    // Seed a random starting tip so it's not always the same on every launch,
-    // then rotate through them with a gentle fade while loading.
-    _tipIndex = _random.nextInt(_tipCount);
-    _tipTimer = Timer.periodic(const Duration(milliseconds: 3500), (_) {
-      if (!mounted) return;
-      setState(() => _tipIndex = (_tipIndex + 1) % _tipCount);
-    });
+    unawaited(PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _version = info.version);
+    }));
 
     // Arm the watchdog BEFORE init starts, so a step that hangs on its very
     // first await is still covered. Home is the right universal fallback:
@@ -176,28 +130,8 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   void dispose() {
-    _tipTimer?.cancel();
     _watchdogTimer?.cancel();
-    _logoController.dispose();
-    _progressController.dispose();
-    _particleController.dispose();
-    _pulseController.dispose();
     super.dispose();
-  }
-
-  void _generateParticles() {
-    _particles.clear();
-    for (int i = 0; i < 20; i++) {
-      _particles.add(
-        LoadingParticle(
-          x: _random.nextDouble(),
-          y: _random.nextDouble(),
-          speed: 0.2 + _random.nextDouble() * 0.3,
-          size: 2 + _random.nextDouble() * 4,
-          opacity: 0.3 + _random.nextDouble() * 0.4,
-        ),
-      );
-    }
   }
 
   Future<void> _initializeApp() async {
@@ -576,9 +510,6 @@ class _LoadingScreenState extends State<LoadingScreen>
       _step = step;
     });
 
-    _progressController.reset();
-    _progressController.forward();
-
     // Minimal delay for UI update (reduced from 50ms)
     await Future.delayed(const Duration(milliseconds: 16)); // ~1 frame
   }
@@ -647,873 +578,142 @@ class _LoadingScreenState extends State<LoadingScreen>
         _InitStep.retrying => l10n.ldRetrying,
       };
 
-  /// Localized subtitle for the current init step ('' when there is none).
-  String _stepSubtitle(AppLocalizations l10n) => switch (_step) {
-        _InitStep.initializing || _InitStep.retrying => '',
-        _InitStep.core => l10n.ldStepCoreSub,
-        _InitStep.profile => l10n.ldStepProfileSub,
-        _InitStep.prefs => l10n.ldStepPrefsSub,
-        _InitStep.cloud => l10n.ldStepCloudSub,
-        _InitStep.gameData => l10n.ldStepGameDataSub,
-        _InitStep.ads => l10n.ldStepAdsSub,
-        _InitStep.audio => l10n.ldStepAudioSub,
-        _InitStep.setup => l10n.ldStepSetupSub,
-        _InitStep.welcome => l10n.ldWelcomeSub,
-        _InitStep.ready => l10n.ldReadySub,
-      };
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 1.2,
-                colors: [
-                  theme.backgroundColor,
-                  theme.backgroundColor.withValues(alpha: 0.8),
-                  Colors.black.withValues(alpha: 0.9),
-                ],
-                stops: const [0.0, 0.6, 1.0],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Animated particles background
-                _buildParticleBackground(theme),
-
-                SafeArea(
-                  child: _hasError
-                      ? _buildErrorView(theme)
-                      : _buildLoadingView(theme),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    return Scaffold(
+      body: LBGridBackground(
+        child: SafeArea(
+          child: _hasError ? _buildErrorView(context) : _buildLoadingView(context),
+        ),
+      ),
     );
   }
 
-  Widget _buildParticleBackground(GameTheme theme) {
-    return AnimatedBuilder(
-      animation: _particleController,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: ParticlePainter(
-            _particles,
-            _particleController.value,
-            theme,
-          ),
-          size: Size.infinite,
-        );
-      },
-    );
-  }
-
-  Widget _buildLoadingView(GameTheme theme) {
+  Widget _buildLoadingView(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final s = context.uiScale;
+    final pct = (_progress.clamp(0.0, 1.0) * 100).round();
     return LayoutBuilder(
       builder: (context, constraints) {
-        final screenHeight = constraints.maxHeight;
-        final screenWidth = constraints.maxWidth;
-        final isSmallScreen = screenHeight < 600;
-
-        // Decorative extras are shown only when there's vertical room, so the
-        // core content sits at full size on a normal phone. The footer needs a
-        // medium screen; the features grid needs a tall one.
-        final showFooter = screenHeight >= 660;
-        final showFeatures = !isSmallScreen && screenHeight >= 820;
-
-        final content = Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Game-style header
-            _buildGameHeader(theme, isSmallScreen),
-
-            SizedBox(height: isSmallScreen ? 12 : 20),
-
-            // Central loading area with enhanced content
-            _buildEnhancedLoadingArea(theme, isSmallScreen),
-
-            SizedBox(height: isSmallScreen ? 16 : 24),
-
-            // Progress section with game-like design
-            _buildProgressSection(theme, isSmallScreen),
-
-            SizedBox(height: isSmallScreen ? 14 : 22),
-
-            // Rotating gameplay tip — keeps the center alive while loading
-            _buildTipCard(theme, isSmallScreen),
-
-            // Game features preview (only when there's plenty of room)
-            if (showFeatures) ...[
-              const SizedBox(height: 24),
-              _buildFeaturesPreview(theme),
-            ],
-
-            // Branded footer (dropped on short screens to keep things on-screen)
-            if (showFooter) ...[
-              SizedBox(height: isSmallScreen ? 12 : 20),
-              _buildBrandedFooter(theme, isSmallScreen),
-            ],
-          ],
-        );
-
-        // Fill the screen height and center the content. FittedBox(scaleDown)
-        // is the guarantee: if the content would ever still be taller than the
-        // screen, it scales down to fit — so this view NEVER scrolls and NEVER
-        // overflows, on any device.
-        return SizedBox(
-          height: screenHeight,
-          width: screenWidth,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: screenWidth,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 16),
-                child: content,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildGameHeader(GameTheme theme, [bool isSmallScreen = false]) {
-    return Column(
-      children: [
-        // Pulsing snake logo with glow effect
-        AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            final pulseScale =
-                1.0 + (sin(_pulseController.value * 2 * pi) * 0.05);
-            return Transform.scale(
-              scale: pulseScale,
-              child: Container(
-                width: isSmallScreen ? 80 : 100,
-                height: isSmallScreen ? 80 : 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(
-                        alpha:
-                            0.3 + (sin(_pulseController.value * 2 * pi) * 0.2),
-                      ),
-                      blurRadius: 30,
-                      spreadRadius: 10,
-                    ),
-                  ],
-                ),
-                child: AnimatedSnakeLogo(
-                  theme: theme,
-                  controller: _logoController,
-                  useTextLogo: true, // Use the logo with text on loading screen
-                ),
-              ),
-            );
-          },
-        ),
-
-        SizedBox(height: isSmallScreen ? 16 : 24),
-
-        Text(
-          AppLocalizations.of(context)!.ldTagline,
-          style: TextStyle(
-            fontSize: isSmallScreen ? 10 : 12,
-            fontWeight: FontWeight.w600,
-            color: theme.accentColor.withValues(alpha: 0.7),
-            letterSpacing: context.letterSpacing(1.5),
-          ),
-        ).gameEntrance(delay: 200.ms),
-      ],
-    );
-  }
-
-  Widget _buildEnhancedLoadingArea(
-    GameTheme theme, [
-    bool isSmallScreen = false,
-  ]) {
-    final l10n = AppLocalizations.of(context)!;
-    final subTask = _stepSubtitle(l10n);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        children: [
-          // Loading status card with enhanced design and fixed height
-          Container(
-            height: isSmallScreen
-                ? 80
-                : 100, // Responsive fixed height to prevent layout shifts
-            padding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 16 : 24,
-              vertical: isSmallScreen ? 12 : 16,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.backgroundColor.withValues(alpha: 0.4),
-                  theme.backgroundColor.withValues(alpha: 0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-             child: HudCorners(
-               color: theme.accentColor,
-               inset: isSmallScreen ? 7 : 9,
-               child: SingleChildScrollView(
+        // Same never-scroll, never-overflow guarantee as before: on a very
+        // short screen the whole column scales down instead.
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight < 560 ? 560 : constraints.maxHeight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Current task with icon - fixed height area
+                  const Spacer(flex: 5),
+                  LBCellSMark(size: 146 * s),
+                  SizedBox(height: 40 * s),
+                  LBCellText('SNAKE', cell: 9 * s, glow: true, semanticsLabel: 'Snake Classic'),
+                  SizedBox(height: 14 * s),
+                  ExcludeSemantics(
+                    child: Text(
+                      'CLASSIC',
+                      style: LBText.label(p, color: p.lime.withValues(alpha: .75))
+                          .copyWith(fontSize: 13, letterSpacing: 13),
+                    ),
+                  ),
+                  const Spacer(flex: 4),
                   SizedBox(
-                    height: isSmallScreen
-                        ? 28
-                        : 38, // Responsive fixed height for main task area
+                    width: 144 * s,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(end: _progress),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, v, _) => LBCellsBar(
+                        count: 12,
+                        value: v,
+                        semanticsLabel: _stepTitle(l10n),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16 * s),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      l10n.lbSplashStatus(context.formatInt(pct)),
+                      style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10),
+                    ),
+                  ),
+                  SizedBox(height: 40 * s),
+                  LBBlock(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: theme.accentColor,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.accentColor.withValues(
-                                      alpha: 0.5,
-                                    ),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            )
-                            .animate(
-                              onPlay: (controller) => controller.repeat(),
-                            )
-                            .scale(
-                              begin: const Offset(0.8, 0.8),
-                              end: const Offset(1.2, 1.2),
-                            )
-                            .then(delay: 200.ms)
-                            .scale(
-                              begin: const Offset(1.2, 1.2),
-                              end: const Offset(0.8, 0.8),
-                            ),
-
+                        const LBPixelIcon(LBIcon.flame, cell: 3.4, color: LB.gold, accent: LB.bonk),
                         const SizedBox(width: 12),
-
                         Expanded(
-                          child: Text(
-                            _stepTitle(l10n),
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 14 : 16,
-                              fontWeight: FontWeight.w700,
-                              color: theme.primaryColor,
-                              height: 1.2,
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '${l10n.lbTipLabel} · ',
+                                  style: TextStyle(color: p.head, fontWeight: FontWeight.w800),
+                                ),
+                                TextSpan(text: _tips(l10n)[_tipIndex]),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            style: LBText.body(p, color: p.ink, size: 11.5),
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // Subtask area - fixed height whether content exists or not
-                  SizedBox(
-                    height: isSmallScreen
-                        ? 16
-                        : 20, // Responsive fixed height for subtask area
-                    child: subTask.isNotEmpty
-                        ? Text(
-                            subTask,
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 11 : 13,
-                              color: theme.accentColor.withValues(alpha: 0.8),
-                              fontStyle: FontStyle.italic,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        : const SizedBox(), // Empty space when no subtask
+                  const Spacer(flex: 3),
+                  Text(
+                    l10n.lbSplashFooter(_version ?? ''),
+                    style: LBText.label(p, color: p.inkDim.withValues(alpha: .3)).copyWith(fontSize: 8.5),
                   ),
-                ],
-              ),
-            )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressSection(GameTheme theme, [bool isSmallScreen = false]) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        children: [
-          // Progress bar with game-like styling
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Stack(
-                children: [
-                  // Background
-                  Container(
-                    width: double.infinity,
-                    color: theme.backgroundColor.withValues(alpha: 0.5),
-                  ),
-
-                  // Progress fill with animation
-                  AnimatedBuilder(
-                    animation: _progressController,
-                    builder: (context, child) {
-                      return FractionallySizedBox(
-                        widthFactor: _progress,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.accentColor,
-                                theme.foodColor,
-                                theme.accentColor,
-                              ],
-                              stops: const [0.0, 0.5, 1.0],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Shimmer effect
-                  AnimatedBuilder(
-                    animation: _progressController,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(_progressController.value * 200 - 50, 0),
-                        child: Container(
-                          width: 50,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.white.withValues(alpha: 0.0),
-                                Colors.white.withValues(alpha: 0.4),
-                                Colors.white.withValues(alpha: 0.0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  SizedBox(height: 20 * s),
                 ],
               ),
             ),
           ),
-
-          SizedBox(height: isSmallScreen ? 12 : 16),
-
-          // Progress percentage with enhanced styling
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.ldLoadingUpper,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  letterSpacing: context.letterSpacing(1),
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  context.formatPercent(_progress),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).gameZoomIn(delay: 300.ms);
-  }
-
-  Widget _buildTipCard(GameTheme theme, [bool isSmallScreen = false]) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 16 : 20,
-        vertical: isSmallScreen ? 12 : 16,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.accentColor.withValues(alpha: 0.12),
-            theme.foodColor.withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.accentColor.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-       child: HudCorners(
-         color: theme.accentColor,
-         inset: isSmallScreen ? 7 : 9,
-         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header: glowing bulb + label
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.lightbulb_rounded,
-                size: isSmallScreen ? 14 : 16,
-                color: theme.foodColor,
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .fadeIn(duration: 900.ms)
-                  .then()
-                  .fade(begin: 1.0, end: 0.5, duration: 900.ms),
-              const SizedBox(width: 8),
-              Text(
-                l10n.ldDidYouKnow,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 10 : 11,
-                  fontWeight: FontWeight.w700,
-                  color: theme.accentColor.withValues(alpha: 0.8),
-                  letterSpacing: context.letterSpacing(1.5),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: isSmallScreen ? 8 : 10),
-
-          // Rotating tip text with a smooth fade/slide between tips. Fixed
-          // height keeps the layout from jumping as tip lengths change.
-          SizedBox(
-            height: isSmallScreen ? 46 : 54,
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.25),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: Text(
-                  _tips(l10n)[_tipIndex],
-                  key: ValueKey<int>(_tipIndex),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 12 : 13.5,
-                    height: 1.3,
-                    color: theme.primaryColor.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      )),
-    ).gameZoomIn(delay: 400.ms);
-  }
-
-  Widget _buildFeaturesPreview(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          // Features header
-          Text(
-            l10n.ldGameFeatures,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: theme.accentColor.withValues(alpha: 0.8),
-              letterSpacing: context.letterSpacing(2),
-            ),
-          ).gameEntrance(delay: 350.ms),
-
-          const SizedBox(height: 16),
-
-          // Feature grid
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildFeatureItem(
-                theme,
-                Icons.speed_rounded,
-                l10n.ldFeatFps,
-                l10n.ldFeatFpsSub,
-                0,
-              ),
-              _buildFeatureItem(
-                theme,
-                Icons.auto_awesome_rounded,
-                l10n.ldFeatEffects,
-                l10n.ldFeatEffectsSub,
-                1,
-              ),
-              _buildFeatureItem(
-                theme,
-                Icons.emoji_events_rounded,
-                l10n.ldFeatLevels,
-                l10n.ldFeatLevelsSub,
-                2,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildFeatureItem(
-                theme,
-                Icons.volume_up_rounded,
-                l10n.ldFeatAudio,
-                l10n.ldFeatAudioSub,
-                3,
-              ),
-              _buildFeatureItem(
-                theme,
-                Icons.leaderboard_rounded,
-                l10n.ldFeatScores,
-                l10n.ldFeatScoresSub,
-                4,
-              ),
-              _buildFeatureItem(
-                theme,
-                Icons.palette_rounded,
-                l10n.ldFeatThemes,
-                l10n.ldFeatThemesSub,
-                5,
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildFeatureItem(
-    GameTheme theme,
-    IconData icon,
-    String title,
-    String subtitle,
-    int index,
-  ) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
+  Widget _buildErrorView(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    return Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: context.lbGutter, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 24,
-              color: theme.accentColor.withValues(alpha: 0.8),
-            ),
-            const SizedBox(height: 6),
+            const LBCellText('BONK!', cell: 10, color: LB.bonk, glow: true),
+            const SizedBox(height: 20),
             Text(
-              title,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: theme.primaryColor,
-                letterSpacing: context.letterSpacing(0.5),
-              ),
+              l10n.ldInitFailedUpper,
               textAlign: TextAlign.center,
+              style: LBText.button(p, color: LB.bonk, size: 13),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 10),
             Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 8,
-                color: theme.accentColor.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w500,
-              ),
+              l10n.ldInitFailed(_errorMessage),
               textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              style: LBText.body(p, size: 11),
             ),
+            if (_showRetryButton) ...[
+              const SizedBox(height: 28),
+              LBBlock(
+                kind: LBBlockKind.fill,
+                height: 58,
+                alignment: Alignment.center,
+                onTap: _retryInitialization,
+                child: Text(l10n.ldRetryUpper, style: LBText.button(p, color: p.onLime, size: 14)),
+              ),
+            ],
           ],
         ),
-      ).gameGridItem(index),
-    );
-  }
-
-  Widget _buildBrandedFooter(GameTheme theme, [bool isSmallScreen = false]) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        children: [
-          // Decorative divider
-          Container(
-            height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  theme.accentColor.withValues(alpha: 0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ).gameEntrance(delay: 700.ms),
-
-          SizedBox(height: isSmallScreen ? 16 : 24),
-
-          // Developer attribution
-          Column(
-            children: [
-              Text(
-                AppLocalizations.of(context)!.ldDevelopedBy,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 8 : 10,
-                  fontWeight: FontWeight.w600,
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  letterSpacing: context.letterSpacing(1.5),
-                ),
-              ).gameEntrance(delay: 750.ms),
-
-              SizedBox(height: isSmallScreen ? 6 : 8),
-
-              Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.accentColor.withValues(alpha: 0.1),
-                          theme.foodColor.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.code_rounded,
-                          size: 18,
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Pranta Dutta',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 14 : 16,
-                            fontWeight: FontWeight.w700,
-                            color: theme.primaryColor,
-                            letterSpacing: context.letterSpacing(0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                  .gamePop(delay: 800.ms),
-
-              SizedBox(height: isSmallScreen ? 8 : 12),
-
-              // Tagline
-              Text(
-                AppLocalizations.of(context)!.ldDevTagline,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 9 : 11,
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
-                ),
-              ).gameEntrance(delay: 900.ms),
-            ],
-          ),
-        ],
       ),
-    );
-  }
-
-  Widget _buildErrorView(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Error icon with animation
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.red.withValues(alpha: 0.3),
-              width: 2,
-            ),
-          ),
-          child: const Icon(Icons.error_outline, size: 64, color: Colors.red),
-        ).animate().scale(delay: 200.ms).shake(),
-
-        const SizedBox(height: 32),
-
-        Text(
-          l10n.ldInitFailedUpper,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: theme.primaryColor,
-            letterSpacing: context.letterSpacing(1),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            l10n.ldInitFailed(_errorMessage),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-
-        if (_showRetryButton) ...[
-          const SizedBox(height: 32),
-
-          ElevatedButton(
-                onPressed: _retryInitialization,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.accentColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.refresh),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.ldRetryUpper,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              .gameZoomIn(delay: 300.ms),
-        ],
-      ],
     );
   }
 }
@@ -1533,55 +733,4 @@ enum _InitStep {
   welcome,
   ready,
   retrying,
-}
-
-// Helper classes for loading screen effects
-class LoadingParticle {
-  double x;
-  double y;
-  final double speed;
-  final double size;
-  final double opacity;
-
-  LoadingParticle({
-    required this.x,
-    required this.y,
-    required this.speed,
-    required this.size,
-    required this.opacity,
-  });
-}
-
-class ParticlePainter extends CustomPainter {
-  final List<LoadingParticle> particles;
-  final double animationValue;
-  final GameTheme theme;
-
-  ParticlePainter(this.particles, this.animationValue, this.theme);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    for (final particle in particles) {
-      // Update particle position
-      particle.y -= particle.speed * 0.01;
-      if (particle.y < -0.1) {
-        particle.y = 1.1;
-        particle.x = Random().nextDouble();
-      }
-
-      paint.color = theme.accentColor.withValues(alpha: particle.opacity * 0.6);
-
-      final position = Offset(
-        particle.x * size.width,
-        particle.y * size.height,
-      );
-
-      canvas.drawCircle(position, particle.size, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
