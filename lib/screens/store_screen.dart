@@ -1,19 +1,16 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
-import 'package:snake_classic/widgets/ads/rewarded_coins_button.dart';
 import 'package:snake_classic/widgets/subscription_legal_footer.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -23,21 +20,18 @@ import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/formatting.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/store/store_parts.dart';
+import 'package:snake_classic/widgets/lb_screens/store/store_pro_parts.dart';
 
-/// The store's filled gold.
+/// The store (Living Board screens 14/15).
 ///
-/// [kRewardGold] is tuned for small marks on a dark card — a coin glyph, a
-/// price, a medal. The store fills whole plates and buttons with it, and at
-/// full strength a screen of those glares. This is the same hue with the
-/// brightness taken off, for areas rather than marks.
-const Color _goldFill = Color(0xFFE0A92F);
-
+/// Presentation follows the Living Board; everything that touches money is
+/// unchanged from the pre-redesign screen: product IDs, purchase / restore /
+/// equip calls, the pending-purchase ("Verifying…") bookkeeping, the guest
+/// upgrade gate, analytics and every ad call.
 class StoreScreen extends StatefulWidget {
   final int initialTab;
 
@@ -51,7 +45,8 @@ class _StoreScreenState extends State<StoreScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  /// Index of the visible tab. Drives the banner suppression below.
+  /// Index of the visible tab. Drives the banner suppression and the
+  /// per-tab subtitle.
   int _tabIndex = 0;
 
   /// The Pro tab. Order is fixed by CLAUDE.md: Pro / Coins / Themes / Skins /
@@ -71,6 +66,17 @@ class _StoreScreenState extends State<StoreScreen>
   // out of the store sheet or the payment fails — instead of spinning until
   // the 45s safety timeout in _markPending.
   StreamSubscription<String>? _purchaseStatusSub;
+
+  /// Pro tab plan selection; GO PRO buys this one. Yearly by default.
+  bool _proYearly = true;
+
+  // Which item each catalogue tab shows in its featured card. Null = the
+  // default (the first item the player can still buy, else the equipped one).
+  // Browsing only — nothing is bought or equipped by focusing.
+  String? _focusCoinId;
+  GameTheme? _focusTheme;
+  SnakeSkinType? _focusSkin;
+  TrailEffectType? _focusTrail;
 
   // Tab order: Pro / Coins / Themes / Skins / Trails / Power-Ups.
   // Keeps Coins at index 1 so existing `?tab=1` deep links still land on
@@ -179,93 +185,60 @@ class _StoreScreenState extends State<StoreScreen>
             return BlocBuilder<CoinsCubit, CoinsState>(
               builder: (context, coinsState) {
                 final theme = themeState.currentTheme;
-                return Scaffold(
+                final g = context.lbGutter;
+                return LBScaffold(
+                  title: l10n.lbStoreTitle,
+                  subtitle: _subtitleFor(l10n, _tabIndex),
                   // No banner on the Pro tab. Running an ad on the screen
                   // that sells ad removal undercuts the pitch on the very
                   // surface where it has to land, and it is the one place in
                   // the app where the ad and the product are in direct
                   // conflict. Every other tab keeps it.
-                  bottomNavigationBar: _tabIndex == _proTabIndex
-                      ? null
-                      : const SnakeBannerAd(),
-                  extendBodyBehindAppBar: true,
-                  appBar: appScreenBar(context, theme, l10n.storeTitle),
-                  body: AppBackground(
-                    theme: theme,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height:
-                              MediaQuery.of(context).padding.top +
-                              kToolbarHeight,
+                  banner: _tabIndex != _proTabIndex,
+                  body: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          g,
+                          context.lbCell * .8,
+                          g,
+                          2,
                         ),
-                        _buildCoinsHeader(theme, coinsState),
-                        TabBar(
+                        child: StoreBalanceRow(
+                          balance: coinsState.balance.total,
+                          bonusLabel: coinsState.hasPremiumBonus
+                              ? l10n.storeBonusMultiplier(
+                                  '${coinsState.earningMultiplier}',
+                                )
+                              : null,
+                        ),
+                      ),
+                      StoreTabStrip(
+                        controller: _tabController,
+                        labels: [
+                          l10n.storeTabPro,
+                          l10n.storeTabCoins,
+                          l10n.storeTabThemes,
+                          l10n.storeTabSkins,
+                          l10n.storeTabTrails,
+                          l10n.storeTabPowerUps,
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
                           controller: _tabController,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: context.sideInset(maxWidth: 760),
-                          ),
-                          indicatorColor: theme.accentColor,
-                          labelColor: theme.accentColor,
-                          unselectedLabelColor: theme.accentColor.withValues(
-                            alpha: 0.6,
-                          ),
-                          isScrollable: true,
-                          tabs: [
-                            Tab(
-                              text: l10n.storeTabPro,
-                              icon: const Icon(Icons.diamond, size: 16),
-                            ),
-                            Tab(
-                              text: l10n.storeTabCoins,
-                              icon: const Icon(Icons.monetization_on, size: 16),
-                            ),
-                            Tab(
-                              text: l10n.storeTabThemes,
-                              icon: const Icon(Icons.color_lens, size: 16),
-                            ),
-                            Tab(
-                              text: l10n.storeTabSkins,
-                              icon: const Icon(Icons.pets, size: 16),
-                            ),
-                            Tab(
-                              text: l10n.storeTabTrails,
-                              icon: const Icon(Icons.auto_awesome, size: 16),
-                            ),
-                            Tab(
-                              text: l10n.storeTabPowerUps,
-                              icon: const Icon(Icons.flash_on, size: 16),
-                            ),
+                          children: [
+                            _buildProTab(theme, premiumState),
+                            _buildCoinsTab(theme, coinsState),
+                            _buildThemesTab(theme, premiumState),
+                            _buildSkinsTab(theme, premiumState),
+                            _buildTrailsTab(theme, premiumState),
+                            _buildPowerUpsTab(theme, premiumState, coinsState),
                           ],
                         ),
-                        Expanded(
-                          // Cap tab content width on tablets (via side padding
-                          // so TabBarView keeps its strict height constraints)
-                          // so cards/grids form a centered column instead of
-                          // stretching edge-to-edge. No effect on phones.
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: context.sideInset(maxWidth: 760),
-                            ),
-                            child: TabBarView(
-                              controller: _tabController,
-                              children: [
-                                _buildProTab(theme, premiumState),
-                                _buildCoinsTab(theme, coinsState),
-                                _buildThemesTab(theme, premiumState),
-                                _buildSkinsTab(theme, premiumState),
-                                _buildTrailsTab(theme, premiumState),
-                                _buildPowerUpsTab(
-                                  theme,
-                                  premiumState,
-                                  coinsState,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -276,118 +249,55 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
-  // ===========================================================================
-  // Coins header (top of every tab)
-  // ===========================================================================
+  String _subtitleFor(AppLocalizations l10n, int tab) => switch (tab) {
+    0 => l10n.lbStoreSubPro,
+    1 => l10n.lbStoreSubCoins,
+    2 => l10n.lbStoreSubThemes,
+    3 => l10n.lbStoreSubSkins,
+    4 => l10n.lbStoreSubTrails,
+    _ => l10n.lbStoreSubPowerups,
+  };
 
-  Widget _buildCoinsHeader(GameTheme theme, CoinsState coinsState) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16 + context.sideInset(maxWidth: 760),
-        vertical: 16,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        // The balance, on the same card as everything else with a wash of
-        // gold over it. It was an amber-to-orange gradient inside a glow —
-        // the loudest thing on a screen whose entire job is to make the
-        // products look good.
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              kRewardGold.withValues(alpha: 0.10),
-              theme.backgroundColor.withValues(alpha: 0.30),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kRewardGold.withValues(alpha: 0.21)),
-        ),
-        child: HudCorners(
-          color: kRewardGold,
-          inset: 8,
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(8)),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_goldFill, _goldFill],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: kRewardGold.withValues(alpha: 0.28),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.monetization_on,
-                  color: Colors.white,
-                  size: context.scaled(20),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.storeYourCoins,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      '${coinsState.balance.total}',
-                      style: const TextStyle(
-                        color: _goldFill,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (coinsState.hasPremiumBonus)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [_goldFill, _goldFill],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    l10n.storeBonusMultiplier(
-                      '${coinsState.earningMultiplier}',
-                    ),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              // Compact "watch ad → +25 coins" pill (replaces the COINS
-              // button that used to live on the home action row). Self-hides
-              // for Pro / when ads are unavailable.
-              const SizedBox(width: 8),
-              const RewardedCoinsPill(),
-            ],
-          ),
-        ),
-      ),
+  /// One tab's scrolling body, on the content gutter.
+  Widget _tabList(List<Widget> children) {
+    final g = context.lbGutter;
+    return ListView(
+      padding: EdgeInsets.fromLTRB(g, 8, g, context.lbCell * 1.5),
+      children: children,
     );
+  }
+
+  /// A catalogue grid that scrolls with its tab.
+  Widget _grid(List<StoreItemBlock> items) => StoreCatalogGrid(items: items);
+
+  /// The Pro tab's body: fills the viewport so the Pro card (the [Expanded]
+  /// child) takes up spare height on tall phones; scrolls on short ones.
+  Widget _proFill(List<Widget> children) {
+    final g = context.lbGutter;
+    return StoreFillScroll(
+      padding: EdgeInsets.fromLTRB(g, 8, g, context.lbCell * .75),
+      children: children,
+    );
+  }
+
+  /// Living Board confirm step in front of every store sheet. Resolves true
+  /// only on the buy action; cancel, back and barrier taps are a no.
+  Future<bool> _confirmPurchase({
+    required String title,
+    required String body,
+    required String buyLabel,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showLBDialog<bool>(
+      context: context,
+      title: title,
+      body: body,
+      primaryLabel: buyLabel,
+      onPrimary: () => Navigator.of(context, rootNavigator: true).pop(true),
+      secondaryLabel: l10n.commonCancel,
+      onSecondary: () => Navigator.of(context, rootNavigator: true).pop(false),
+    );
+    return confirmed == true;
   }
 
   // ===========================================================================
@@ -397,427 +307,136 @@ class _StoreScreenState extends State<StoreScreen>
   Widget _buildProTab(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
     // Drops any Pro SKU from the pending set once PremiumCubit reports
-    // hasPremium=true — the spinner on the plan cards stops the moment the
+    // hasPremium=true — the spinner on the GO PRO button stops the moment the
     // backend's VerifyPurchase response lands.
     _reconcilePendingPurchases(premiumState);
+    final perks = lbProPerks(l10n);
+    final restore = StoreFooter(onRestore: () => lbRestorePurchases(context));
 
     // Paid Pro user — status, then the one action they might actually want
-    // here: moving between billing periods. The plan CARDS stay hidden (they
+    // here: moving between billing periods. The plan blocks stay hidden (they
     // are a buy surface, and this user has already bought), but a subscriber
     // who wants yearly should not have to hunt for it.
     if (premiumState.hasPremium && !premiumState.isOnPromo) {
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildProActiveBanner(theme, premiumState),
-            if (premiumState.hasPaidSubscription) ...[
-              const SizedBox(height: 16),
-              _buildProPlanSwitchRow(theme, premiumState),
-            ],
-            const SizedBox(height: 16),
-            _buildProFeatureGrid(theme),
-          ],
-        ),
-      );
+      return _proFill([
+        _buildProActiveBanner(theme, premiumState),
+        if (premiumState.hasPaidSubscription) ...[
+          const SizedBox(height: 4),
+          _buildProPlanSwitchRow(theme, premiumState),
+        ],
+        const SizedBox(height: 4),
+        Expanded(child: StoreProCard(perks: perks, expand: true)),
+        const SizedBox(height: 12),
+        restore,
+      ]);
     }
 
-    // Promo user — banner with FREE PRO badge + feature grid + plan picker
-    // below so they can convert without leaving the tab. Banner's
-    // "Keep Pro" CTA defaults to monthly; this section lets them choose.
+    // Promo user — status block with FREE PRO chip + perks + plan picker
+    // below so they can convert without leaving the tab. The block's
+    // "Keep Pro" action defaults to monthly; the picker lets them choose.
     if (premiumState.hasPremium && premiumState.isOnPromo) {
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildProActiveBanner(theme, premiumState),
-            const SizedBox(height: 20),
-            _buildProFeatureGrid(theme),
-            const SizedBox(height: 24),
-            Text(
-              l10n.storeSubscribeBeforePromoEnds,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildProPlanCard(
-                    theme: theme,
-                    title: l10n.storeMonthly,
-                    productId: ProductIds.snakeClassicProMonthly,
-                    fallbackPrice: 4.99,
-                    cadence: l10n.storePerMonth,
-                    savingsLabel: null,
-                    highlight: false,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildProPlanCard(
-                    theme: theme,
-                    title: l10n.storeYearly,
-                    productId: ProductIds.snakeClassicProYearly,
-                    fallbackPrice: 49.99,
-                    cadence: l10n.storePerYear,
-                    savingsLabel: l10n.storeSave17,
-                    highlight: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SubscriptionLegalFooter(theme: theme),
-          ],
-        ),
-      );
+      return _proFill([
+        _buildProActiveBanner(theme, premiumState),
+        const SizedBox(height: 4),
+        Expanded(child: StoreProCard(perks: perks, expand: true)),
+        const SizedBox(height: 14),
+        LBSectionLabel(l10n.storeSubscribeBeforePromoEnds),
+        _buildProPlanPicker(),
+        const SizedBox(height: 12),
+        restore,
+        SubscriptionLegalFooter(theme: theme),
+      ]);
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildProHero(theme),
-          const SizedBox(height: 20),
-          // What it is, then what it costs.
-          //
-          // The plan cards used to come first, which asks somebody to pick
-          // between £4.99 and £49.99 before the page has said what either one
-          // buys. The feature grid is the argument; the prices are the ask,
-          // and an ask reads better after its argument.
-          Text(
-            l10n.storeWhatYouGet,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildProFeatureGrid(theme),
-          const SizedBox(height: 24),
-          Text(
-            l10n.storeChooseYourPlan,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildProPlanCard(
-                  theme: theme,
-                  title: l10n.storeMonthly,
-                  productId: ProductIds.snakeClassicProMonthly,
-                  fallbackPrice: 4.99,
-                  cadence: l10n.storePerMonth,
-                  savingsLabel: null,
-                  highlight: false,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildProPlanCard(
-                  theme: theme,
-                  title: l10n.storeYearly,
-                  productId: ProductIds.snakeClassicProYearly,
-                  fallbackPrice: 49.99,
-                  cadence: l10n.storePerYear,
-                  savingsLabel: l10n.storeSave17,
-                  highlight: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SubscriptionLegalFooter(theme: theme),
-        ],
-      ),
-    );
+    // What it is, then what it costs: the perks are the argument, the plan
+    // blocks are the ask.
+    return _proFill([
+      Expanded(child: StoreProCard(perks: perks, expand: true)),
+      _buildProPlanPicker(),
+      const SizedBox(height: 12),
+      restore,
+      SubscriptionLegalFooter(theme: theme),
+    ]);
   }
 
-  Widget _buildProHero(GameTheme theme) {
+  /// MONTHLY / YEARLY blocks (yearly selected by default) and GO PRO, which
+  /// buys the selected plan through [_purchaseSubscription].
+  Widget _buildProPlanPicker() {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            kRewardGold.withValues(alpha: 0.13),
-            kRewardGold.withValues(alpha: 0.07),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: kRewardGold.withValues(alpha: 0.24),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: kRewardGold.withValues(alpha: 0.13),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: HudCorners(
-        color: kRewardGold,
-        inset: 9,
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.scaled(14)),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.diamond,
-                color: Colors.white,
-                size: context.scaled(32),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              l10n.settingsProTitle,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.storeProHeroSubtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.75),
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final monthlyPrice = PurchaseService().getStorePriceOrDefault(
+      ProductIds.snakeClassicProMonthly,
+      4.99,
+      localeTag: localeTag,
     );
-  }
-
-  Widget _buildProPlanCard({
-    required GameTheme theme,
-    required String title,
-    required String productId,
-    required double fallbackPrice,
-    required String cadence,
-    required String? savingsLabel,
-    required bool highlight,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final price = PurchaseService().getStorePriceOrDefault(
-      productId,
-      fallbackPrice,
-      localeTag: Localizations.localeOf(context).toLanguageTag(),
+    final yearlyPrice = PurchaseService().getStorePriceOrDefault(
+      ProductIds.snakeClassicProYearly,
+      49.99,
+      localeTag: localeTag,
     );
-    // Whatever Play / App Store Connect actually offers on THIS plan for THIS
+    // Whatever Play / App Store Connect actually offers on each plan for THIS
     // user — null when there is none, including for someone who has already
     // used their trial. Never hardcoded; see PurchaseService.getFreeTrialDays.
-    final trialDays = PurchaseService().getFreeTrialDays(productId);
-    final isPending = _pendingProductIds.contains(productId);
-    // While a sibling plan card is mid-verify we disable BOTH plan cards so
-    // the user can't kick off a second purchase before the first one's
-    // VerifyPurchase response lands — that would double-charge and bug out
-    // the PremiumCubit's mid-flight state.
+    final monthlyTrial = PurchaseService().getFreeTrialDays(
+      ProductIds.snakeClassicProMonthly,
+    );
+    final yearlyTrial = PurchaseService().getFreeTrialDays(
+      ProductIds.snakeClassicProYearly,
+    );
+    // While either plan is mid-verify, GO PRO and plan switching are
+    // disabled so the user can't kick off a second purchase before the
+    // first one's VerifyPurchase response lands — that would double-charge
+    // and bug out the PremiumCubit's mid-flight state.
     final anyProPending =
         _pendingProductIds.contains(ProductIds.snakeClassicProMonthly) ||
         _pendingProductIds.contains(ProductIds.snakeClassicProYearly);
-    final borderColor = highlight
-        ? kRewardGold.withValues(alpha: 0.42)
-        : theme.accentColor.withValues(alpha: 0.25);
-    return GestureDetector(
-      onTap: anyProPending
-          ? null
-          : () => _purchaseSubscription(
-              productId,
-              l10n.storePlanDisplayName(title),
-            ),
-      child: Container(
-        padding: EdgeInsets.all(context.scaled(16)),
-        decoration: BoxDecoration(
-          color: theme.accentColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: highlight ? 2 : 1),
-          boxShadow: highlight
-              ? [
-                  BoxShadow(
-                    color: kRewardGold.withValues(alpha: 0.17),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: HudCorners(
-          color: kRewardGold,
-          inset: 8,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (savingsLabel != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _goldFill,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        savingsLabel,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                price,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                cadence,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-              if (trialDays != null) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kRewardGold.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: kRewardGold.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  child: Text(
-                    l10n.storeFreeTrialBadge(trialDays),
-                    maxLines: 2,
-                    style: TextStyle(
-                      color: kRewardGold,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: anyProPending
-                      ? null
-                      : () => _purchaseSubscription(
-                          productId,
-                          l10n.storePlanDisplayName(title),
-                        ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: highlight
-                        ? kRewardGold
-                        : theme.primaryColor.withValues(alpha: 0.9),
-                    foregroundColor: highlight ? Colors.black : Colors.white,
-                    disabledBackgroundColor:
-                        (highlight ? kRewardGold : theme.primaryColor)
-                            .withValues(alpha: 0.45),
-                    disabledForegroundColor: highlight
-                        ? Colors.black.withValues(alpha: 0.7)
-                        : Colors.white.withValues(alpha: 0.85),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: isPending
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  highlight ? Colors.black : Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              l10n.storeVerifyingEllipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          // "Subscribe" is wrong when the first charge is days
-                          // away — and "Start free trial" is the wording the
-                          // stores expect next to a trial offer.
-                          trialDays != null
-                              ? l10n.storeStartFreeTrial
-                              : l10n.storeSubscribe,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+    final productId = _proYearly
+        ? ProductIds.snakeClassicProYearly
+        : ProductIds.snakeClassicProMonthly;
+    final title = _proYearly ? l10n.storeYearly : l10n.storeMonthly;
+    final trialDays = _proYearly ? yearlyTrial : monthlyTrial;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StorePlanRow(
+          monthly: StorePlanBlock(
+            label: l10n.lbMonthly,
+            price: monthlyPrice,
+            line: l10n.lbPerMonth,
+            selected: !_proYearly,
+            trialLabel: monthlyTrial != null
+                ? l10n.storeFreeTrialBadge(monthlyTrial)
+                : null,
+            onTap: anyProPending
+                ? null
+                : () => setState(() => _proYearly = false),
+          ),
+          yearly: StorePlanBlock(
+            label: l10n.lbYearly,
+            price: yearlyPrice,
+            line: l10n.lbPerYearBestValue,
+            selected: _proYearly,
+            trialLabel: yearlyTrial != null
+                ? l10n.storeFreeTrialBadge(yearlyTrial)
+                : null,
+            onTap: anyProPending
+                ? null
+                : () => setState(() => _proYearly = true),
           ),
         ),
-      ),
+        StoreGoProButton(
+          // "Subscribe" is wrong when the first charge is days away — and
+          // "Start free trial" is the wording the stores expect next to a
+          // trial offer.
+          trialLabel: trialDays != null ? l10n.storeStartFreeTrial : null,
+          busyLabel: anyProPending ? l10n.storeVerifyingEllipsis : null,
+          onTap: () => _purchaseSubscription(
+            productId,
+            l10n.storePlanDisplayName(title),
+          ),
+        ),
+      ],
     );
   }
 
@@ -830,6 +449,7 @@ class _StoreScreenState extends State<StoreScreen>
   /// explanation lives on the Pro screen.
   Widget _buildProPlanSwitchRow(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final target = premiumState.switchTarget;
     if (target == null) return const SizedBox.shrink();
 
@@ -837,68 +457,42 @@ class _StoreScreenState extends State<StoreScreen>
     final productId = toYearly
         ? ProductIds.snakeClassicProYearly
         : ProductIds.snakeClassicProMonthly;
-    final accent = toYearly ? kRewardGold : theme.accentColor;
     final busy = _pendingProductIds.contains(productId);
+    final accent = toYearly ? LB.gold : p.head;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withValues(alpha: 0.32)),
-      ),
+    return LBBlock(
+      kind: toYearly ? LBBlockKind.gold : LBBlockKind.outline,
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       child: Row(
         children: [
-          Icon(
-            toYearly ? Icons.trending_up : Icons.trending_down,
-            color: accent,
-            size: context.scaled(22),
-          ),
-          const SizedBox(width: 12),
+          LBPixelIcon(LBIcon.chart, cell: 4, color: accent),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  toYearly ? l10n.pbSwitchToYearly : l10n.pbSwitchToMonthly,
-                  style: TextStyle(
-                    color: theme.accentColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  (toYearly ? l10n.pbSwitchToYearly : l10n.pbSwitchToMonthly)
+                      .toUpperCase(),
+                  style: LBText.button(p, color: accent, size: 12.5),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   toYearly
                       ? l10n.pbSwitchToYearlyBlurb
                       : l10n.pbSwitchToMonthlyBlurb,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.65),
-                    fontSize: 11.5,
-                    height: 1.35,
-                  ),
+                  style: LBText.body(p, size: 11),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          busy
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(accent),
-                  ),
-                )
-              : TextButton(
-                  onPressed: () => _switchPlan(productId),
-                  style: TextButton.styleFrom(foregroundColor: accent),
-                  child: Text(
-                    toYearly ? l10n.storeYearly : l10n.storeMonthly,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
+          const SizedBox(width: 6),
+          StoreActionBlock(
+            label: toYearly ? l10n.storeYearly : l10n.storeMonthly,
+            busy: busy,
+            feedback: false,
+            onTap: () => _switchPlan(productId),
+          ),
         ],
       ),
     );
@@ -926,8 +520,8 @@ class _StoreScreenState extends State<StoreScreen>
           message: !launched
               ? l10n.storeSubNotAvailable
               : toYearly
-                  ? l10n.pbSwitchedToYearly
-                  : l10n.pbSwitchedToMonthly,
+              ? l10n.pbSwitchedToYearly
+              : l10n.pbSwitchedToMonthly,
           tone: launched ? ArcadeSnackTone.success : ArcadeSnackTone.warning,
         ),
       );
@@ -938,168 +532,40 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildProActiveBanner(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
-    // Promo grants (welcome bonus / app-wide giveaway) get amber-orange
-    // theming + a FREE PRO chip + a convert CTA so the user knows this is a
-    // limited window and there's an action they can take. Paid Pro keeps
-    // the original green/teal "verified" treatment.
+    // Promo grants (welcome bonus / app-wide giveaway) get a PROMO chip + a
+    // convert action so the user knows this is a limited window and there's
+    // an action they can take. Paid Pro gets the plain "Pro is on" status.
     final isPromo = premiumState.isOnPromo;
     final expiry = isPromo
         ? premiumState.promoExpiresAt
         : premiumState.subscriptionExpiry;
-    final gradientColors = isPromo
-        ? [
-            kRewardGold.withValues(alpha: 0.15),
-            kRewardGold.withValues(alpha: 0.08),
-          ]
-        : [
-            theme.accentColor.withValues(alpha: 0.18),
-            Colors.teal.withValues(alpha: 0.10),
-          ];
-    final borderColor = isPromo
-        ? kRewardGold.withValues(alpha: 0.32)
-        : theme.accentColor.withValues(alpha: 0.35);
-    final iconGradient = isPromo
-        ? const LinearGradient(colors: [_goldFill, _goldFill])
-        : LinearGradient(colors: [theme.accentColor, theme.primaryColor]);
-    final icon = isPromo ? Icons.card_giftcard : Icons.verified;
-    final title = isPromo ? l10n.storeYoureOnFreePro : l10n.storeYourePro;
     final expiryLabel = isPromo
         ? (expiry != null ? _formatPromoCountdown(expiry) : l10n.storeFreePro)
         : (expiry != null ? l10n.settingsRenews(_formatDate(expiry)) : null);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: gradientColors),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: HudCorners(
-        color: kRewardGold,
-        inset: 9,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(context.scaled(10)),
-                  decoration: BoxDecoration(
-                    gradient: iconGradient,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: context.scaled(24),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                color: theme.accentColor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (isPromo) ...[
-                            const SizedBox(width: 8),
-                            _buildPromoBadge(),
-                          ],
-                        ],
-                      ),
-                      if (expiryLabel != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          expiryLabel,
-                          style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.78),
-                            fontSize: 12,
-                            fontWeight: isPromo
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (isPromo) ...[
-              const SizedBox(height: 14),
-              // Convert CTA — single tap straight into the plan picker. The
-              // tab swap happens in-screen so the user doesn't lose context.
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Tap inside the Pro tab — toggle the promo-active
-                    // state away so the plan cards become visible (the Pro
-                    // tab's active-banner branch hides the plan cards).
-                    // Simplest: scroll the user's attention by showing a
-                    // dialog explaining their conversion options, OR just
-                    // route through the existing Pro plan purchase via the
-                    // monthly default. We'll fire the monthly purchase to
-                    // keep the path consistent with the Subscribe button.
-                    _purchaseSubscription(
-                      ProductIds.snakeClassicProMonthly,
-                      l10n.storeProMonthly,
-                    );
-                  },
-                  icon: const Icon(Icons.workspace_premium, size: 18),
-                  label: Text(
-                    l10n.storeKeepPro,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _goldFill,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPromoBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [_goldFill, _goldFill]),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(color: kRewardGold.withValues(alpha: 0.42), blurRadius: 6),
-        ],
-      ),
-      child: Text(
-        AppLocalizations.of(context)!.storePromoBadge,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: context.letterSpacing(1.0),
-        ),
+    if (!isPromo) {
+      return StoreProActiveBlock(
+        title: l10n.lbProActive,
+        line: l10n.lbProActiveLine,
+        detail: expiryLabel,
+      );
+    }
+    return StoreProActiveBlock(
+      title: l10n.storeYoureOnFreePro,
+      chip: LBChip(label: l10n.storePromoBadge, kind: LBChipKind.gold),
+      line: expiryLabel!,
+      // Convert action — single tap straight into the store sheet for the
+      // monthly plan, consistent with the GO PRO path.
+      action: StoreActionBlock(
+        label: l10n.storeKeepPro,
+        kind: LBBlockKind.gold,
+        feedback: false,
+        onTap: () {
+          _purchaseSubscription(
+            ProductIds.snakeClassicProMonthly,
+            l10n.storeProMonthly,
+          );
+        },
       ),
     );
   }
@@ -1119,79 +585,6 @@ class _StoreScreenState extends State<StoreScreen>
     if (days > 0) return l10n.storeEndsInDh(days, hours);
     if (hours > 0) return l10n.storeEndsInHm(hours, minutes);
     return l10n.storeEndsInM(minutes);
-  }
-
-  Widget _buildProFeatureGrid(GameTheme theme) {
-    // Honest list — every line maps to an entitlement that's actually
-    // granted. 'No ads' is now real: AdService is Pro-gated so Pro
-    // users never see banners, interstitials, or rewarded offers. (The old
-    // 'Exclusive Game Modes' / vague 'Power-up perks' promises were removed
-    // as unimplemented.)
-    // (icon, label, highlight). The always-free revive is highlighted in amber
-    // so it stands out as the headline Pro perk.
-    final l10n = AppLocalizations.of(context)!;
-    final features = [
-      (Icons.favorite, l10n.storeFeatureExtraLife, true),
-      (Icons.block, l10n.storeFeatureNoAds, false),
-      (Icons.color_lens, l10n.storeFeatureThemes, false),
-      (Icons.pets, l10n.storeFeatureSkins, false),
-      (Icons.gradient, l10n.storeFeatureTrails, false),
-      (Icons.grid_4x4, l10n.storeFeatureBoards, false),
-      (Icons.monetization_on, l10n.storeFeatureCoins, false),
-      (Icons.flash_on, l10n.storeFeaturePowerUps, false),
-      (Icons.emoji_events, l10n.storeFeatureTournaments, false),
-      (Icons.workspace_premium, l10n.storeFeatureBattlePass, false),
-    ];
-    return Column(
-      children: features.map((f) {
-        final hl = f.$3;
-        final accent = hl ? kRewardGold : theme.accentColor;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: hl ? 0.14 : 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: accent.withValues(alpha: hl ? 0.6 : 0.18),
-              width: hl ? 1.5 : 1,
-            ),
-            boxShadow: hl
-                ? [
-                    BoxShadow(
-                      color: kRewardGold.withValues(alpha: 0.14),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              Icon(f.$1, color: accent, size: context.scaled(18)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  f.$2,
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 13,
-                    fontWeight: hl ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.check_circle,
-                color: hl
-                    ? kRewardGold
-                    : theme.accentColor.withValues(alpha: 0.8),
-                size: context.scaled(18),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
   }
 
   String _formatDate(DateTime d) {
@@ -1216,7 +609,7 @@ class _StoreScreenState extends State<StoreScreen>
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    // Mark pending up-front so the plan cards swap to a "Verifying…" state
+    // Mark pending up-front so GO PRO swaps to a "Verifying…" state
     // covering the ~2–15s window between Play Store confirmation and the
     // backend's VerifyPurchase response landing in PremiumCubit. Auto-cleared
     // by _reconcilePendingPurchases when hasPremium flips true, or by the
@@ -1257,58 +650,137 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildCoinsTab(GameTheme theme, CoinsState coinsState) {
     final l10n = AppLocalizations.of(context)!;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final p = context.lb;
+    final options = CoinPurchaseOption.availableOptions;
+    final featured = options.firstWhere(
+      (o) => o.id == _focusCoinId,
+      orElse: () =>
+          options.firstWhere((o) => o.isPopular, orElse: () => options.first),
+    );
+    return _tabList([
+      _buildCoinFeatured(featured, theme),
+      const SizedBox(height: 14),
+      LBSectionLabel(l10n.storeBuyCoins),
+      for (final option in options) _buildCoinPackRow(option, theme),
+      const SizedBox(height: 16),
+      LBSectionLabel(l10n.storeEarnFreeCoins),
+      // Rewarded ad — self-hides for Pro / when no ad is available.
+      const StoreRewardedCoinsRow(),
+      _buildEarnMethodRow(
+        l10n.storeEarnPlay,
+        l10n.storeEarnPlayReward,
+        LBIcon.play,
+        p,
+      ),
+      _buildEarnMethodRow(
+        l10n.storeEarnDaily,
+        l10n.storeEarnDailyReward,
+        LBIcon.calendar,
+        p,
+      ),
+      _buildEarnMethodRow(
+        l10n.storeEarnAchievements,
+        l10n.storeEarnAchievementsReward,
+        LBIcon.trophy,
+        p,
+      ),
+      _buildEarnMethodRow(
+        l10n.storeEarnTournaments,
+        l10n.storeEarnTournamentsReward,
+        LBIcon.swords,
+        p,
+      ),
+    ]);
+  }
+
+  String _coinPackPrice(CoinPurchaseOption option) =>
+      PurchaseService().getStorePriceOrDefault(
+        ProductIds.withPrefix(option.id),
+        option.price,
+        localeTag: Localizations.localeOf(context).toLanguageTag(),
+      );
+
+  Widget _buildCoinFeatured(CoinPurchaseOption option, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    return StoreFeaturedCard(
+      preview: LBPixelIcon(
+        LBIcon.coin,
+        cell: storePreviewCell(context, 16),
+        color: LB.gold,
+      ),
+      title: option.localizedName(l10n),
+      titleColor: LB.gold,
+      line: option.localizedDisplayCoins(l10n),
+      badge: option.isPopular
+          ? LBChip(label: l10n.storePopularBadge, kind: LBChipKind.gold)
+          : null,
+      action: StoreActionBlock(
+        label: l10n.lbBuyPrice(_coinPackPrice(option)),
+        kind: LBBlockKind.goldFill,
+        feedback: false,
+        onTap: () {
+          setState(() => _focusCoinId = option.id);
+          _purchaseCoinPack(option, theme);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCoinPackRow(CoinPurchaseOption option, GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final focused = option.id == (_focusCoinId ?? '') ||
+        (_focusCoinId == null && option.isPopular);
+    return LBBlock(
+      kind: focused ? LBBlockKind.gold : LBBlockKind.outline,
+      selected: focused,
+      feedback: false,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      onTap: () {
+        setState(() => _focusCoinId = option.id);
+        _purchaseCoinPack(option, theme);
+      },
+      child: Row(
         children: [
-          Text(
-            l10n.storeBuyCoins,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          LBPixelIcon(LBIcon.coin, cell: 4, color: LB.gold),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        option.localizedName(l10n).toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LBText.button(p, color: p.ink, size: 12.5),
+                      ),
+                    ),
+                    if (option.isPopular) ...[
+                      const SizedBox(width: 8),
+                      LBChip(
+                        label: l10n.storePopularBadge,
+                        kind: LBChipKind.gold,
+                        height: 18,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  option.localizedDisplayCoins(l10n),
+                  style: LBText.body(p, size: 11),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          ...CoinPurchaseOption.availableOptions.map(
-            (option) => _buildCoinPackCard(option, theme),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(width: 10),
           Text(
-            l10n.storeEarnFreeCoins,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Rewarded ad — self-hides for Pro / when no ad is available.
-          RewardedCoinsButton(theme: theme),
-          _buildEarnMethodCard(
-            l10n.storeEarnPlay,
-            l10n.storeEarnPlayReward,
-            Icons.games,
-            theme,
-          ),
-          _buildEarnMethodCard(
-            l10n.storeEarnDaily,
-            l10n.storeEarnDailyReward,
-            Icons.calendar_today,
-            theme,
-          ),
-          _buildEarnMethodCard(
-            l10n.storeEarnAchievements,
-            l10n.storeEarnAchievementsReward,
-            Icons.emoji_events,
-            theme,
-          ),
-          _buildEarnMethodCard(
-            l10n.storeEarnTournaments,
-            l10n.storeEarnTournamentsReward,
-            Icons.leaderboard,
-            theme,
+            _coinPackPrice(option),
+            style: LBText.value(p, color: LB.gold, size: 16),
           ),
         ],
       ),
@@ -1327,219 +799,50 @@ class _StoreScreenState extends State<StoreScreen>
       option.price,
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.storeBuyItem(option.localizedName(l10n))),
-        content: Text(
-          l10n.storeBuyCoinsBody(option.localizedDisplayCoins(l10n), price),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.commonCancel),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(dialogContext);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-              try {
-                await PurchaseService().purchaseProduct(
-                  ProductIds.withPrefix(option.id),
-                );
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    arcadeSnackBar(
-                      context,
-                      message: l10n.storeInitiatingFor(
-                        option.localizedName(l10n),
-                      ),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  scaffoldMessenger.showSnackBar(
-                    arcadeSnackBar(
-                      context,
-                      message: l10n.storeProductNotAvailable,
-                      tone: ArcadeSnackTone.error,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(l10n.storeBuyForPrice(price)),
-          ),
-        ],
-      ),
+    final confirmed = await _confirmPurchase(
+      title: l10n.storeBuyItem(option.localizedName(l10n)),
+      body: l10n.storeBuyCoinsBody(option.localizedDisplayCoins(l10n), price),
+      buyLabel: l10n.storeBuyForPrice(price),
     );
+    if (!confirmed || !mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      await PurchaseService().purchaseProduct(
+        ProductIds.withPrefix(option.id),
+      );
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: l10n.storeInitiatingFor(option.localizedName(l10n)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: l10n.storeProductNotAvailable,
+            tone: ArcadeSnackTone.error,
+          ),
+        );
+      }
+    }
   }
 
-  Widget _buildCoinPackCard(CoinPurchaseOption option, GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: () => _purchaseCoinPack(option, theme),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(context.scaled(16)),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              kRewardGold.withValues(alpha: 0.10),
-              kRewardGold.withValues(alpha: 0.06),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: option.isPopular
-                ? Colors.red.withValues(alpha: 0.4)
-                : kRewardGold.withValues(alpha: 0.21),
-            width: option.isPopular ? 2 : 1.5,
-          ),
-        ),
-        child: HudCorners(
-          color: kRewardGold,
-          inset: 8,
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(8)),
-                decoration: const BoxDecoration(
-                  color: _goldFill,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.monetization_on,
-                  color: Colors.white,
-                  size: context.scaled(20),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          option.localizedName(l10n),
-                          style: TextStyle(
-                            color: theme.accentColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (option.isPopular) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              AppLocalizations.of(context)!.storePopularBadge,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      option.localizedDisplayCoins(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                PurchaseService().getStorePriceOrDefault(
-                  ProductIds.withPrefix(option.id),
-                  option.price,
-                  localeTag: Localizations.localeOf(context).toLanguageTag(),
-                ),
-                style: const TextStyle(
-                  color: kRewardGold,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEarnMethodCard(
+  Widget _buildEarnMethodRow(
     String title,
     String reward,
-    IconData icon,
-    GameTheme theme,
+    LBIcon icon,
+    LBPalette p,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 7,
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.scaled(8)),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: theme.accentColor,
-                size: context.scaled(20),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Text(
-              reward,
-              style: const TextStyle(
-                color: kRewardGold,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+    return LBRow(
+      title: title,
+      leading: LBPixelIcon(icon, cell: 3.6, color: p.lime),
+      trailing: Text(
+        reward,
+        style: LBText.button(p, color: LB.gold, size: 12.5),
       ),
     );
   }
@@ -1548,8 +851,8 @@ class _StoreScreenState extends State<StoreScreen>
   // THEMES TAB
   // ===========================================================================
 
-  /// Banner atop the cosmetic tabs (themes / skins / trails) telling the user
-  /// a Pro subscription unlocks everything in that tab. Tapping it (when not
+  /// Row on the cosmetic tabs (themes / skins / trails) telling the user a Pro
+  /// subscription unlocks everything in that tab. Tapping it (when not
   /// already Pro) jumps to the Pro tab. Power-Ups are intentionally excluded —
   /// Pro doesn't unlock the power-up catalog.
   Widget _buildProIncludedBanner(
@@ -1560,74 +863,26 @@ class _StoreScreenState extends State<StoreScreen>
   }) {
     final l10n = AppLocalizations.of(context)!;
     final isPro = premiumState.hasPremium;
-    return GestureDetector(
-      onTap: isPro ? null : () => _tabController.animateTo(0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              kRewardGold.withValues(alpha: 0.15),
-              kRewardGold.withValues(alpha: 0.10),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: kRewardGold.withValues(alpha: 0.32)),
-        ),
-        child: HudCorners(
-          color: kRewardGold,
-          inset: 7,
-          child: Row(
-            children: [
-              Icon(
-                isPro ? Icons.check_circle : Icons.diamond,
-                color: kRewardGold,
-                size: context.scaled(22),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isPro
-                          ? l10n.storeUnlockedWithPro
-                          : l10n.storeIncludedWithPro,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isPro ? ownedBody : upsellBody,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isPro)
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  size: context.scaled(20),
-                ),
-            ],
-          ),
-        ),
+    return LBRow(
+      kind: LBBlockKind.gold,
+      titleColor: LB.gold,
+      title: isPro ? l10n.storeUnlockedWithPro : l10n.storeIncludedWithPro,
+      subtitle: isPro ? ownedBody : upsellBody,
+      leading: LBPixelIcon(
+        isPro ? LBIcon.check : LBIcon.crown,
+        cell: 4,
+        color: LB.gold,
       ),
+      trailing: isPro
+          ? null
+          : LBPixelIcon(LBIcon.next, cell: 3, color: LB.gold),
+      onTap: isPro ? null : () => _tabController.animateTo(0),
     );
   }
 
   Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     // Premium themes — listed as products in the Play Store catalog.
     const premiumThemes = [
       GameTheme.crystal,
@@ -1652,63 +907,169 @@ class _StoreScreenState extends State<StoreScreen>
     // set on the next frame so we don't trigger a build-during-build.
     _reconcilePendingPurchases(premiumState);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProIncludedBanner(
-            theme,
-            premiumState,
-            ownedBody: l10n.storeProBannerThemesOwned,
-            upsellBody: l10n.storeProBannerThemesUpsell,
-          ),
-          const SizedBox(height: 16),
-          _buildThemesBundleCard(theme, premiumState),
-          const SizedBox(height: 20),
-          Text(
-            l10n.storePremiumThemes,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          // Horizontal-row list layout — replaces the grid that was
-          // leaving dead space below each card. One row per theme is
-          // more readable and packs more info per pixel of vertical
-          // space.
-          for (final t in premiumThemes)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildThemeRow(t, theme, premiumState),
-            ),
-          const SizedBox(height: 18),
-          Text(
-            l10n.storeFreeThemes,
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l10n.storeFreeThemesSubtitle,
-            style: TextStyle(
-              color: theme.accentColor.withValues(alpha: 0.65),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 10),
-          for (final t in freeThemes)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildThemeRow(t, theme, premiumState),
-            ),
-        ],
+    final focus =
+        _focusTheme ??
+        premiumThemes.firstWhere(
+          (t) => !premiumState.isThemeUnlocked(t),
+          orElse: () => theme,
+        );
+
+    return _tabList([
+      _buildThemeFeatured(focus, theme, premiumState),
+      const SizedBox(height: 4),
+      _buildThemesBundleCard(theme, premiumState),
+      const SizedBox(height: 14),
+      LBSectionLabel(l10n.storePremiumThemes),
+      _grid([
+        for (final t in premiumThemes)
+          _buildThemeBlock(t, theme, premiumState, focus),
+      ]),
+      const SizedBox(height: 14),
+      LBSectionLabel(l10n.storeFreeThemes),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          l10n.storeFreeThemesSubtitle,
+          style: LBText.body(p, size: 11),
+        ),
       ),
+      _grid([
+        for (final t in freeThemes)
+          _buildThemeBlock(t, theme, premiumState, focus),
+      ]),
+      const SizedBox(height: 14),
+      _buildProIncludedBanner(
+        theme,
+        premiumState,
+        ownedBody: l10n.storeProBannerThemesOwned,
+        upsellBody: l10n.storeProBannerThemesUpsell,
+      ),
+    ]);
+  }
+
+  /// The theme's own board, snake and apple, drawn from its [LBPalette].
+  List<Color> _themeSnakeColors(LBPalette pal) {
+    final n = StoreCellSnake.segments;
+    return [
+      for (var i = 0; i < n; i++)
+        i == 0
+            ? pal.head
+            : pal.lime.withValues(alpha: 1 - (i / (n - 1)) * .55),
+    ];
+  }
+
+  Widget _buildThemeFeatured(
+    GameTheme target,
+    GameTheme currentTheme,
+    PremiumState premiumState,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final isOwned = premiumState.isThemeUnlocked(target);
+    final isActive = currentTheme == target;
+    final productId = _productIdForTheme(target);
+    final isPending =
+        productId != null && _pendingProductIds.contains(productId);
+    final pal = LBPalette.of(target);
+
+    final Widget action;
+    if (isPending) {
+      action = StoreActionBlock(
+        label: l10n.storePillVerifying,
+        kind: LBBlockKind.muted,
+        busy: true,
+      );
+    } else if (isActive) {
+      action = StoreActionBlock(
+        label: l10n.storePillActive,
+        kind: LBBlockKind.muted,
+      );
+    } else if (isOwned) {
+      action = StoreActionBlock(
+        label: l10n.storePillApply,
+        onTap: () => context.read<ThemeCubit>().setTheme(target),
+      );
+    } else if (productId != null) {
+      final price = PurchaseService().getStorePriceOrDefault(
+        productId,
+        1.99,
+        localeTag: Localizations.localeOf(context).toLanguageTag(),
+      );
+      action = StoreActionBlock(
+        label: l10n.lbBuyPrice(price),
+        kind: LBBlockKind.goldFill,
+        feedback: false,
+        onTap: () {
+          setState(() => _focusTheme = target);
+          _purchaseThemeProduct(productId, target.name);
+        },
+      );
+    } else {
+      action = const SizedBox.shrink();
+    }
+
+    return StoreFeaturedCard(
+      preview: StoreCellSnake(
+        colors: _themeSnakeColors(pal),
+        cell: storePreviewCell(context, 9.5),
+        board: pal,
+      ),
+      title: target.localizedName(l10n),
+      titleColor: isOwned ? null : LB.gold,
+      line: _shortThemeDescription(target),
+      action: action,
+      footnote: !isOwned && productId != null && !premiumState.hasPremium
+          ? l10n.lbOrFreeWithPro
+          : null,
+    );
+  }
+
+  StoreItemBlock _buildThemeBlock(
+    GameTheme target,
+    GameTheme currentTheme,
+    PremiumState premiumState,
+    GameTheme focus,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final isOwned = premiumState.isThemeUnlocked(target);
+    final isActive = currentTheme == target;
+    final productId = _productIdForTheme(target);
+    final isPending =
+        productId != null && _pendingProductIds.contains(productId);
+    final price = productId == null
+        ? l10n.storePillFree
+        : PurchaseService().getStorePriceOrDefault(
+            productId,
+            1.99,
+            localeTag: Localizations.localeOf(context).toLanguageTag(),
+          );
+    final pal = LBPalette.of(target);
+    final (status, statusColor) = isPending
+        ? (l10n.storePillVerifying, p.inkMuted)
+        : isActive
+        ? (l10n.storePillActive, p.lime)
+        : isOwned
+        ? (l10n.storePillApply, p.head)
+        : (price, p.inkMuted);
+    return StoreItemBlock(
+      swatch: [pal.lime, pal.head, pal.lime, pal.head, pal.food],
+      swatchBackground: pal.board,
+      name: target.localizedName(l10n),
+      status: status,
+      statusColor: statusColor,
+      busy: isPending,
+      focused: target == focus,
+      active: isActive,
+      onTap: isPending
+          ? null
+          : () {
+              setState(() => _focusTheme = target);
+              // Owned themes apply on tap, as before; locked ones are bought
+              // from the featured card above.
+              if (isOwned && !isActive) {
+                context.read<ThemeCubit>().setTheme(target);
+              }
+            },
     );
   }
 
@@ -1733,7 +1094,7 @@ class _StoreScreenState extends State<StoreScreen>
   /// bundles so the pending spinner clears regardless of the cosmetic type.
   bool _isProductOwned(String productId, PremiumState premiumState) {
     // Pro subscription SKUs — once PremiumCubit flips to hasPremium=true the
-    // Pro tab swaps to the "you are Pro" banner, but we also clear pending
+    // Pro tab swaps to the "Pro is on" block, but we also clear pending
     // so any leftover spinner state doesn't survive a tab switch.
     if (productId == ProductIds.snakeClassicProMonthly ||
         productId == ProductIds.snakeClassicProYearly) {
@@ -1767,6 +1128,7 @@ class _StoreScreenState extends State<StoreScreen>
 
   Widget _buildThemesBundleCard(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final bundleOwned = premiumState.isBundleOwned('premium_themes_bundle');
     final isPending = _pendingProductIds.contains(ProductIds.themesBundle);
     final price = PurchaseService().getStorePriceOrDefault(
@@ -1774,235 +1136,61 @@ class _StoreScreenState extends State<StoreScreen>
       7.99,
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
-    return GestureDetector(
+    final Widget status;
+    if (isPending) {
+      status = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StoreSpinner(color: p.inkMuted),
+          const SizedBox(width: 6),
+          Text(
+            l10n.storePillVerifying,
+            style: LBText.button(p, color: p.inkMuted, size: 11.5),
+          ),
+        ],
+      );
+    } else {
+      status = Text(
+        bundleOwned ? l10n.storePillOwned : price,
+        style: bundleOwned
+            ? LBText.button(p, color: p.lime, size: 12)
+            : LBText.value(p, color: LB.gold, size: 16),
+      );
+    }
+    return LBBlock(
+      kind: LBBlockKind.gold,
+      feedback: false,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       onTap: (bundleOwned || isPending)
           ? null
           : () => _purchaseThemeProduct(
               ProductIds.themesBundle,
               l10n.storeAllThemesBundle,
             ),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              kRewardGold.withValues(alpha: 0.13),
-              kRewardGold.withValues(alpha: 0.07),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: kRewardGold.withValues(alpha: 0.35),
-            width: 2,
-          ),
-        ),
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 8,
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(context.scaled(12)),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_goldFill, _goldFill],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          LBPixelIcon(LBIcon.gift, cell: 4.4, color: LB.gold),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.storeAllThemesBundle.toUpperCase(),
+                  style: LBText.button(p, color: LB.gold, size: 12.5),
                 ),
-                child: Icon(
-                  Icons.card_giftcard,
-                  color: Colors.white,
-                  size: context.scaled(24),
+                const SizedBox(height: 3),
+                Text(
+                  l10n.storeAllThemesBundleSubtitle,
+                  style: LBText.body(p, size: 11),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.storeAllThemesBundle,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.storeAllThemesBundleSubtitle,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildBundleStatusPill(
-                theme: theme,
-                isOwned: bundleOwned,
-                isPending: isPending,
-                priceLabel: price,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBundleStatusPill({
-    required GameTheme theme,
-    required bool isOwned,
-    required bool isPending,
-    required String priceLabel,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    if (isPending) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 1.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              l10n.storePillVerifying,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: isOwned ? theme.accentColor : kRewardGold,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        isOwned ? l10n.storePillOwned : priceLabel,
-        style: TextStyle(
-          color: isOwned ? Colors.white : Colors.black,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeRow(
-    GameTheme target,
-    GameTheme currentTheme,
-    PremiumState premiumState,
-  ) {
-    final isOwned = premiumState.isThemeUnlocked(target);
-    final isActive = currentTheme == target;
-    final productId = _productIdForTheme(target);
-    final isPending =
-        productId != null && _pendingProductIds.contains(productId);
-    final price = productId == null
-        ? AppLocalizations.of(context)!.storePillFree
-        : PurchaseService().getStorePriceOrDefault(
-            productId,
-            1.99,
-            localeTag: Localizations.localeOf(context).toLanguageTag(),
-          );
-    return GestureDetector(
-      onTap: isPending
-          ? null
-          : () {
-              if (isOwned) {
-                context.read<ThemeCubit>().setTheme(target);
-              } else if (productId != null) {
-                _purchaseThemeProduct(productId, target.name);
-              }
-            },
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: currentTheme.accentColor.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isActive
-                ? currentTheme.accentColor
-                : currentTheme.accentColor.withValues(alpha: 0.2),
-            width: isActive ? 2 : 1,
           ),
-        ),
-        child: HudCorners(
-          color: currentTheme.accentColor,
-          inset: 7,
-          child: Row(
-            children: [
-              // Preview swatch — fixed height row makes this a small
-              // landscape rectangle, plenty of pixels for the painter
-              // without a tall card.
-              SizedBox(
-                width: context.scaled(84),
-                height: context.scaled(56),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: _ThemePreview(theme: target),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      target.name,
-                      style: TextStyle(
-                        color: currentTheme.accentColor,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _shortThemeDescription(target),
-                      style: TextStyle(
-                        color: currentTheme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              _buildStatusPill(
-                currentTheme: currentTheme,
-                isActive: isActive,
-                isOwned: isOwned,
-                isPending: isPending,
-                fallbackPriceLabel: price,
-              ),
-            ],
-          ),
-        ),
+          const SizedBox(width: 10),
+          status,
+        ],
       ),
     );
   }
@@ -2033,90 +1221,6 @@ class _StoreScreenState extends State<StoreScreen>
     }
   }
 
-  /// The bottom-of-card pill that toggles between ACTIVE / APPLY / price /
-  /// VERIFYING (with spinner). Centralized so the bundle card and theme
-  /// cards stay visually consistent.
-  Widget _buildStatusPill({
-    required GameTheme currentTheme,
-    required bool isActive,
-    required bool isOwned,
-    required bool isPending,
-    required String fallbackPriceLabel,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final Color background;
-    final Color foreground;
-    Widget child;
-    if (isPending) {
-      background = Colors.white.withValues(alpha: 0.25);
-      foreground = Colors.white;
-      child = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 10,
-            height: 10,
-            child: CircularProgressIndicator(
-              strokeWidth: 1.5,
-              valueColor: AlwaysStoppedAnimation<Color>(foreground),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            l10n.storePillVerifying,
-            style: TextStyle(
-              color: foreground,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      );
-    } else if (isActive) {
-      background = currentTheme.accentColor;
-      foreground = currentTheme.backgroundColor;
-      child = Text(
-        l10n.storePillActive,
-        style: TextStyle(
-          color: foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    } else if (isOwned) {
-      background = currentTheme.accentColor;
-      foreground = Colors.white;
-      child = Text(
-        l10n.storePillApply,
-        style: TextStyle(
-          color: foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    } else {
-      background = kRewardGold;
-      foreground = Colors.black;
-      child = Text(
-        fallbackPriceLabel,
-        style: TextStyle(
-          color: foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      alignment: Alignment.center,
-      child: child,
-    );
-  }
-
   String? _productIdForTheme(GameTheme target) {
     switch (target) {
       case GameTheme.crystal:
@@ -2144,39 +1248,15 @@ class _StoreScreenState extends State<StoreScreen>
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final price = PurchaseService().getStorePriceOrDefault(
       productId,
       1.99,
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.color_lens, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(displayName, style: TextStyle(color: theme.accentColor)),
-          ],
-        ),
-        content: Text(
-          l10n.storeUnlockFor(displayName, price),
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.storeBuyForPrice(price)),
-          ),
-        ],
-      ),
+    final confirmed = await _confirmPurchase(
+      title: displayName,
+      body: l10n.storeUnlockFor(displayName, price),
+      buyLabel: l10n.storeBuyForPrice(price),
     );
 
     if (confirmed != true) return;
@@ -2222,253 +1302,181 @@ class _StoreScreenState extends State<StoreScreen>
   // SKINS TAB
   // ===========================================================================
 
-  Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
+  /// The skin's own colours along the S, head lightened so it reads as the
+  /// head. Classic follows the theme's snake colour, as it does in play.
+  List<Color> _skinSnakeColors(SnakeSkinType skin, LBPalette p) {
+    final pal = skin == SnakeSkinType.classic ? [p.lime] : skin.colors;
+    final n = StoreCellSnake.segments;
+    final two = storeSwatch(pal, p.lime, count: 2);
+    return [
+      for (var i = 0; i < n; i++)
+        () {
+          final base = pal.length <= 2
+              ? two[i % 2]
+              : pal[((i * (pal.length - 1)) / (n - 1)).round()];
+          return i == 0 ? Color.lerp(base, Colors.white, .45)! : base;
+        }(),
+    ];
+  }
+
+  String _skinTagline(SnakeSkinType skin, AppLocalizations l10n) =>
+      switch (skin) {
+        SnakeSkinType.classic => skin.localizedDescription(l10n),
+        SnakeSkinType.golden => l10n.lbSkinTagGolden,
+        SnakeSkinType.rainbow => l10n.lbSkinTagRainbow,
+        SnakeSkinType.galaxy => l10n.lbSkinTagGalaxy,
+        SnakeSkinType.dragon => l10n.lbSkinTagDragon,
+        SnakeSkinType.electric => l10n.lbSkinTagElectric,
+        SnakeSkinType.fire => l10n.lbSkinTagFire,
+        SnakeSkinType.ice => l10n.lbSkinTagIce,
+        SnakeSkinType.shadow => l10n.lbSkinTagShadow,
+        SnakeSkinType.neon => l10n.lbSkinTagNeon,
+        SnakeSkinType.crystal => l10n.lbSkinTagCrystal,
+        SnakeSkinType.cosmic => l10n.lbSkinTagCosmic,
+      };
+
+  void _equipSkin(SnakeSkinType skin) {
     final l10n = AppLocalizations.of(context)!;
-    _reconcilePendingPurchases(premiumState);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _buildProIncludedBanner(
-            theme,
-            premiumState,
-            ownedBody: l10n.storeProBannerSkinsOwned,
-            upsellBody: l10n.storeProBannerSkinsUpsell,
-          ),
-        ),
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            // Max-extent delegate: 2 columns on phones (unchanged), more
-            // columns as width grows on tablets, instead of two giant cards.
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: context.scaled(220),
-              // Match the Trails tab aspect ratio so the painted preview
-              // band has room to render the snake silhouette + signature.
-              childAspectRatio: 0.78,
-              crossAxisSpacing: context.scaled(12),
-              mainAxisSpacing: context.scaled(12),
-            ),
-            itemCount: SnakeSkinType.values.length,
-            itemBuilder: (context, index) {
-              final skin = SnakeSkinType.values[index];
-              // Pro subscription unlocks all premium skins (mirrors theme bundling).
-              final isUnlocked = premiumState.isSkinUnlocked(skin);
-              final isSelected = premiumState.selectedSkinId == skin.id;
-              final productId = ProductIds.skinStoreId(skin.id);
-              return _buildSkinCard(
-                skin: skin,
-                isUnlocked: isUnlocked,
-                isSelected: isSelected,
-                isPending: _pendingProductIds.contains(productId),
-                price: skin.isPremium
-                    ? PurchaseService().getStorePriceOrDefault(
-                        productId,
-                        skin.price,
-                        localeTag: Localizations.localeOf(context)
-                            .toLanguageTag(),
-                      )
-                    : l10n.storePillFree,
-                theme: theme,
-                onTap: () {
-                  if (isUnlocked) {
-                    context.read<PremiumCubit>().selectSkin(skin.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      arcadeSnackBar(
-                        context,
-                        message: l10n.storeEquippedToast(
-                          skin.localizedName(l10n),
-                        ),
-                        tone: ArcadeSnackTone.success,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  } else {
-                    _purchaseCosmetic(
-                      productId: productId,
-                      displayName: skin.localizedName(l10n),
-                      fallbackPrice: skin.price,
-                    );
-                  }
-                },
-              );
-            },
-          ),
-        ),
-      ],
+    context.read<PremiumCubit>().selectSkin(skin.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      arcadeSnackBar(
+        context,
+        message: l10n.storeEquippedToast(skin.localizedName(l10n)),
+        tone: ArcadeSnackTone.success,
+        duration: const Duration(seconds: 1),
+      ),
     );
   }
 
-  /// Modernized skin card — mirrors the Trails tab redesign. Each card
-  /// paints a small snake-silhouette preview using the skin's actual
-  /// colors and its per-skin signature (golden shimmer, fire embers,
-  /// galaxy stars, etc.) so users see what the skin will look like
-  /// in-game without leaving the store.
-  Widget _buildSkinCard({
-    required SnakeSkinType skin,
-    required bool isUnlocked,
-    required bool isSelected,
-    required bool isPending,
-    required String price,
-    required GameTheme theme,
-    required VoidCallback onTap,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final palette = skin.colors.isNotEmpty
-        ? skin.colors
-        : [theme.snakeColor, theme.snakeColor.withValues(alpha: 0.6)];
-    final headerStart = palette.first.withValues(alpha: 0.85);
-    final headerEnd = palette.last.withValues(alpha: 0.35);
+  String _skinPrice(SnakeSkinType skin, AppLocalizations l10n) =>
+      skin.isPremium
+      ? PurchaseService().getStorePriceOrDefault(
+          ProductIds.skinStoreId(skin.id),
+          skin.price,
+          localeTag: Localizations.localeOf(context).toLanguageTag(),
+        )
+      : l10n.storePillFree;
 
-    return GestureDetector(
-      onTap: isPending ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? theme.accentColor
+  Widget _buildSkinsTab(GameTheme theme, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    _reconcilePendingPurchases(premiumState);
+    const skins = SnakeSkinType.values;
+    final focus =
+        _focusSkin ??
+        skins.firstWhere(
+          // Pro subscription unlocks all premium skins (mirrors theme
+          // bundling), so for Pro this falls through to the equipped skin.
+          (s) => !premiumState.isSkinUnlocked(s),
+          orElse: () => skins.firstWhere(
+            (s) => s.id == premiumState.selectedSkinId,
+            orElse: () => skins.first,
+          ),
+        );
+
+    return _tabList([
+      _buildSkinFeatured(focus, premiumState),
+      const SizedBox(height: 10),
+      _grid([
+        for (final skin in skins)
+          () {
+            final isUnlocked = premiumState.isSkinUnlocked(skin);
+            final isSelected = premiumState.selectedSkinId == skin.id;
+            final isPending = _pendingProductIds.contains(
+              ProductIds.skinStoreId(skin.id),
+            );
+            final (status, statusColor) = isPending
+                ? (l10n.storePillVerifying, p.inkMuted)
+                : isSelected
+                ? (l10n.lbEquipped, p.lime)
                 : isUnlocked
-                ? Colors.white.withValues(alpha: 0.10)
-                : palette.last.withValues(alpha: 0.45),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.30),
-                    blurRadius: 14,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 8,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Preview band — painted snake silhouette with the skin's
-              // own colors + a stylized signature so each skin reads
-              // instantly distinct from its grid neighbors.
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [headerStart, headerEnd],
-                    ),
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(-0.6, -0.6),
-                            radius: 1.0,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.18),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                      CustomPaint(
-                        painter: _SkinPreviewPainter(
-                          skin: skin,
-                          accentColor: theme.accentColor,
-                        ),
-                      ),
-                      if (!isUnlocked && skin.isPremium)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.lock,
-                                  color: Colors.white,
-                                  size: 11,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppLocalizations.of(context)!
-                                      .settingsProBadge,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: context.letterSpacing(0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                ? (l10n.lbEquip, p.head)
+                : (_skinPrice(skin, l10n), p.inkMuted);
+            return StoreItemBlock(
+              swatch: storeSwatch(
+                skin == SnakeSkinType.classic ? [p.lime] : skin.colors,
+                p.lime,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      skin.localizedName(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: context.letterSpacing(0.2),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      skin.localizedDescription(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 10,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildCosmeticStatusPill(
-                      theme: theme,
-                      isSelected: isSelected,
-                      isUnlocked: isUnlocked,
-                      isPending: isPending,
-                      priceLabel: price,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+              name: skin.localizedName(l10n),
+              status: status,
+              statusColor: statusColor,
+              busy: isPending,
+              focused: skin == focus,
+              active: isSelected,
+              onTap: isPending
+                  ? null
+                  : () {
+                      setState(() => _focusSkin = skin);
+                      // Owned skins equip on tap, as before; locked ones are
+                      // bought from the featured card above.
+                      if (isUnlocked && !isSelected) _equipSkin(skin);
+                    },
+            );
+          }(),
+      ]),
+      const SizedBox(height: 14),
+      _buildProIncludedBanner(
+        theme,
+        premiumState,
+        ownedBody: l10n.storeProBannerSkinsOwned,
+        upsellBody: l10n.storeProBannerSkinsUpsell,
       ),
+    ]);
+  }
+
+  Widget _buildSkinFeatured(SnakeSkinType skin, PremiumState premiumState) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final isUnlocked = premiumState.isSkinUnlocked(skin);
+    final isSelected = premiumState.selectedSkinId == skin.id;
+    final productId = ProductIds.skinStoreId(skin.id);
+    final isPending = _pendingProductIds.contains(productId);
+
+    final Widget action;
+    if (isPending) {
+      action = StoreActionBlock(
+        label: l10n.storePillVerifying,
+        kind: LBBlockKind.muted,
+        busy: true,
+      );
+    } else if (isSelected) {
+      action = StoreActionBlock(
+        label: l10n.lbEquipped,
+        kind: LBBlockKind.muted,
+      );
+    } else if (isUnlocked) {
+      action = StoreActionBlock(
+        label: l10n.lbEquip,
+        onTap: () => _equipSkin(skin),
+      );
+    } else {
+      action = StoreActionBlock(
+        label: l10n.lbBuyPrice(_skinPrice(skin, l10n)),
+        kind: LBBlockKind.goldFill,
+        feedback: false,
+        onTap: () {
+          setState(() => _focusSkin = skin);
+          _purchaseCosmetic(
+            productId: productId,
+            displayName: skin.localizedName(l10n),
+            fallbackPrice: skin.price,
+          );
+        },
+      );
+    }
+
+    return StoreFeaturedCard(
+      preview: StoreCellSnake(
+        colors: _skinSnakeColors(skin, p),
+        cell: storePreviewCell(context, 11.5),
+      ),
+      title: skin.localizedName(l10n),
+      titleColor: isUnlocked ? null : LB.gold,
+      line: _skinTagline(skin, l10n),
+      action: action,
+      footnote: !isUnlocked && !premiumState.hasPremium
+          ? l10n.lbOrFreeWithPro
+          : null,
     );
   }
 
@@ -2476,333 +1484,163 @@ class _StoreScreenState extends State<StoreScreen>
   // TRAILS TAB
   // ===========================================================================
 
+  /// The snake in the theme's colours, its tail painted in the trail's
+  /// colours and fading out. "No trail" just fades.
+  List<Color> _trailSnakeColors(TrailEffectType trail, LBPalette p) {
+    final n = StoreCellSnake.segments;
+    const body = 7;
+    return [
+      for (var i = 0; i < n; i++)
+        if (i == 0)
+          p.head
+        else if (i < body || trail.colors.isEmpty)
+          p.lime.withValues(alpha: 1 - (i / (n - 1)) * .55)
+        else
+          trail.colors[(i - body) % trail.colors.length].withValues(
+            alpha: .95 - ((i - body) / (n - body)) * .65,
+          ),
+    ];
+  }
+
+  void _equipTrail(TrailEffectType trail) {
+    final l10n = AppLocalizations.of(context)!;
+    context.read<PremiumCubit>().selectTrail(trail.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      arcadeSnackBar(
+        context,
+        message: l10n.storeEquippedToast(trail.localizedName(l10n)),
+        tone: ArcadeSnackTone.success,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  String _trailPrice(TrailEffectType trail, AppLocalizations l10n) =>
+      trail.isPremium
+      ? PurchaseService().getStorePriceOrDefault(
+          ProductIds.withPrefix(trail.id),
+          trail.price,
+          localeTag: Localizations.localeOf(context).toLanguageTag(),
+        )
+      : l10n.storePillFree;
+
   Widget _buildTrailsTab(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     _reconcilePendingPurchases(premiumState);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: _buildProIncludedBanner(
-            theme,
-            premiumState,
-            ownedBody: l10n.storeProBannerTrailsOwned,
-            upsellBody: l10n.storeProBannerTrailsUpsell,
+    const trails = TrailEffectType.values;
+    final focus =
+        _focusTrail ??
+        trails.firstWhere(
+          // Pro subscription unlocks all premium trails (mirrors theme
+          // bundling), so for Pro this falls through to the equipped trail.
+          (t) => !premiumState.isTrailUnlocked(t),
+          orElse: () => trails.firstWhere(
+            (t) => t.id == premiumState.selectedTrailId,
+            orElse: () => trails.first,
           ),
-        ),
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            // Max-extent delegate: 2 columns on phones (unchanged), more
-            // columns as width grows on tablets, instead of two giant cards.
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: context.scaled(220),
-              // Slightly more vertical room than the skins tab so the painted
-              // trail preview has space to breathe.
-              childAspectRatio: 0.78,
-              crossAxisSpacing: context.scaled(12),
-              mainAxisSpacing: context.scaled(12),
-            ),
-            itemCount: TrailEffectType.values.length,
-            itemBuilder: (context, index) {
-              final trail = TrailEffectType.values[index];
-              // Pro subscription unlocks all premium trails (mirrors theme bundling).
-              final isUnlocked = premiumState.isTrailUnlocked(trail);
-              final isSelected = premiumState.selectedTrailId == trail.id;
-              final productId = ProductIds.withPrefix(trail.id);
-              return _buildTrailCard(
-                trail: trail,
-                isUnlocked: isUnlocked,
-                isSelected: isSelected,
-                isPending: _pendingProductIds.contains(productId),
-                price: trail.isPremium
-                    ? PurchaseService().getStorePriceOrDefault(
-                        productId,
-                        trail.price,
-                        localeTag: Localizations.localeOf(context)
-                            .toLanguageTag(),
-                      )
-                    : l10n.storePillFree,
-                theme: theme,
-                onTap: () {
-                  if (isUnlocked) {
-                    context.read<PremiumCubit>().selectTrail(trail.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      arcadeSnackBar(
-                        context,
-                        message: l10n.storeEquippedToast(
-                          trail.localizedName(l10n),
-                        ),
-                        tone: ArcadeSnackTone.success,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  } else {
-                    _purchaseCosmetic(
-                      productId: productId,
-                      displayName: trail.localizedName(l10n),
-                      fallbackPrice: trail.price,
-                    );
-                  }
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+        );
 
-  /// Modernized trail card — replaces the generic emoji-in-circle layout
-  /// for the Trails tab. Each card paints a custom preview that uses the
-  /// trail's actual colors and a type-specific signature (sparkles for
-  /// particle, lightning for electric, flames for fire, etc.) so the
-  /// twelve trails read as visually distinct at a glance rather than
-  /// twelve near-identical chip variations.
-  Widget _buildTrailCard({
-    required TrailEffectType trail,
-    required bool isUnlocked,
-    required bool isSelected,
-    required bool isPending,
-    required String price,
-    required GameTheme theme,
-    required VoidCallback onTap,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    // Header palette for the gradient backdrop. Use the trail's own
-    // colors when it has them; fall back to theme accent for the
-    // "No Trail" entry.
-    final palette = trail.colors.isNotEmpty
-        ? trail.colors
-        : [
-            theme.accentColor.withValues(alpha: 0.35),
-            theme.backgroundColor.withValues(alpha: 0.6),
-          ];
-    final headerStart = palette.first.withValues(alpha: 0.85);
-    final headerEnd = palette.last.withValues(alpha: 0.35);
-
-    return GestureDetector(
-      onTap: isPending ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? theme.accentColor
+    return _tabList([
+      _buildTrailFeatured(focus, premiumState),
+      const SizedBox(height: 10),
+      _grid([
+        for (final trail in trails)
+          () {
+            final isUnlocked = premiumState.isTrailUnlocked(trail);
+            final isSelected = premiumState.selectedTrailId == trail.id;
+            final isPending = _pendingProductIds.contains(
+              ProductIds.withPrefix(trail.id),
+            );
+            final (status, statusColor) = isPending
+                ? (l10n.storePillVerifying, p.inkMuted)
+                : isSelected
+                ? (l10n.lbEquipped, p.lime)
                 : isUnlocked
-                ? Colors.white.withValues(alpha: 0.10)
-                : palette.last.withValues(alpha: 0.45),
-            width: isSelected ? 2 : 1,
-          ),
-          // Soft outer glow for the active trail so the selection state
-          // pops without flooding the surrounding grid.
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.accentColor.withValues(alpha: 0.30),
-                    blurRadius: 14,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: HudCorners(
-          color: theme.accentColor,
-          inset: 8,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Preview band — custom-painted trail signature on a
-              // gradient backdrop pulled from the trail's color palette.
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [headerStart, headerEnd],
-                    ),
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Faint radial highlight that gives every card a
-                      // shared "lit from upper-left" feel and prevents
-                      // dark palettes (shadow) from looking flat.
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(-0.6, -0.6),
-                            radius: 1.0,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.18),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                      CustomPaint(
-                        painter: _TrailPreviewPainter(
-                          trail: trail,
-                          accentColor: theme.accentColor,
-                        ),
-                      ),
-                      if (!isUnlocked && trail.isPremium)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.lock,
-                                  color: Colors.white,
-                                  size: 11,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppLocalizations.of(context)!
-                                      .settingsProBadge,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: context.letterSpacing(0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              // Info plate underneath — name, one-line description, status pill.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      trail.localizedName(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: context.letterSpacing(0.2),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      trail.localizedDescription(l10n),
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.65),
-                        fontSize: 10,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildCosmeticStatusPill(
-                      theme: theme,
-                      isSelected: isSelected,
-                      isUnlocked: isUnlocked,
-                      isPending: isPending,
-                      priceLabel: price,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+                ? (l10n.lbEquip, p.head)
+                : (_trailPrice(trail, l10n), p.inkMuted);
+            return StoreItemBlock(
+              swatch: storeSwatch(trail.colors, p.cellOff),
+              name: trail.localizedName(l10n),
+              status: status,
+              statusColor: statusColor,
+              busy: isPending,
+              focused: trail == focus,
+              active: isSelected,
+              onTap: isPending
+                  ? null
+                  : () {
+                      setState(() => _focusTrail = trail);
+                      // Owned trails equip on tap, as before; locked ones are
+                      // bought from the featured card above.
+                      if (isUnlocked && !isSelected) _equipTrail(trail);
+                    },
+            );
+          }(),
+      ]),
+      const SizedBox(height: 14),
+      _buildProIncludedBanner(
+        theme,
+        premiumState,
+        ownedBody: l10n.storeProBannerTrailsOwned,
+        upsellBody: l10n.storeProBannerTrailsUpsell,
       ),
-    );
+    ]);
   }
 
-  Widget _buildCosmeticStatusPill({
-    required GameTheme theme,
-    required bool isSelected,
-    required bool isUnlocked,
-    required bool isPending,
-    required String priceLabel,
-  }) {
+  Widget _buildTrailFeatured(TrailEffectType trail, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final isUnlocked = premiumState.isTrailUnlocked(trail);
+    final isSelected = premiumState.selectedTrailId == trail.id;
+    final productId = ProductIds.withPrefix(trail.id);
+    final isPending = _pendingProductIds.contains(productId);
+
+    final Widget action;
     if (isPending) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 9,
-              height: 9,
-              child: CircularProgressIndicator(
-                strokeWidth: 1.3,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              l10n.storePillVerifying,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+      action = StoreActionBlock(
+        label: l10n.storePillVerifying,
+        kind: LBBlockKind.muted,
+        busy: true,
+      );
+    } else if (isSelected) {
+      action = StoreActionBlock(
+        label: l10n.lbEquipped,
+        kind: LBBlockKind.muted,
+      );
+    } else if (isUnlocked) {
+      action = StoreActionBlock(
+        label: l10n.lbEquip,
+        onTap: () => _equipTrail(trail),
+      );
+    } else {
+      action = StoreActionBlock(
+        label: l10n.lbBuyPrice(_trailPrice(trail, l10n)),
+        kind: LBBlockKind.goldFill,
+        feedback: false,
+        onTap: () {
+          setState(() => _focusTrail = trail);
+          _purchaseCosmetic(
+            productId: productId,
+            displayName: trail.localizedName(l10n),
+            fallbackPrice: trail.price,
+          );
+        },
       );
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? theme.accentColor
-            : isUnlocked
-            ? Colors.green
-            : kRewardGold,
-        borderRadius: BorderRadius.circular(8),
+
+    return StoreFeaturedCard(
+      preview: StoreCellSnake(
+        colors: _trailSnakeColors(trail, p),
+        cell: storePreviewCell(context, 11.5),
       ),
-      child: Text(
-        isSelected
-            ? l10n.storePillEquipped
-            : isUnlocked
-            ? l10n.storePillEquip
-            : priceLabel,
-        style: TextStyle(
-          color: isSelected
-              ? theme.backgroundColor
-              : isUnlocked
-              ? Colors.white
-              : Colors.black,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      title: trail.localizedName(l10n),
+      titleColor: isUnlocked ? null : LB.gold,
+      line: trail.localizedDescription(l10n),
+      action: action,
+      footnote: !isUnlocked && !premiumState.hasPremium
+          ? l10n.lbOrFreeWithPro
+          : null,
     );
   }
 
@@ -2815,39 +1653,15 @@ class _StoreScreenState extends State<StoreScreen>
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final price = PurchaseService().getStorePriceOrDefault(
       productId,
       fallbackPrice,
       localeTag: Localizations.localeOf(context).toLanguageTag(),
     );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.shopping_cart, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(displayName, style: TextStyle(color: theme.accentColor)),
-          ],
-        ),
-        content: Text(
-          l10n.storeUnlockFor(displayName, price),
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.storeBuyForPrice(price)),
-          ),
-        ],
-      ),
+    final confirmed = await _confirmPurchase(
+      title: displayName,
+      body: l10n.storeUnlockFor(displayName, price),
+      buyLabel: l10n.storeBuyForPrice(price),
     );
 
     if (confirmed != true) return;
@@ -2885,10 +1699,11 @@ class _StoreScreenState extends State<StoreScreen>
   // follow-up — for now the inventory accrues server-side and the user
   // can see their count).
 
-  /// Rewarded-ad card granting one free Speed Boost. Self-hides for Pro /
+  /// Rewarded-ad block granting one free Speed Boost. Self-hides for Pro /
   /// web / when the SDK isn't ready; disables when no ad is loaded.
   Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
     // Opt-in placement, uncapped by design (the daily caps were removed) —
@@ -2896,7 +1711,9 @@ class _StoreScreenState extends State<StoreScreen>
     final ready = ads.isRewardedReady;
     return Opacity(
       opacity: ready ? 1 : 0.5,
-      child: GestureDetector(
+      child: LBBlock(
+        feedback: false,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         onTap: ready
             ? () {
                 final powerUps = context.read<PowerUpCubit>();
@@ -2916,63 +1733,29 @@ class _StoreScreenState extends State<StoreScreen>
                 );
               }
             : null,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.accentColor.withValues(alpha: 0.18),
-                theme.foodColor.withValues(alpha: 0.10),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.accentColor.withValues(alpha: 0.4)),
-          ),
-          child: HudCorners(
-            color: theme.accentColor,
-            inset: 8,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.play_circle_fill,
-                  color: theme.accentColor,
-                  size: context.scaled(28),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.storeWatchAdTitle,
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        ready
-                            ? l10n.storeWatchAdReady
-                            : l10n.storeWatchAdNotReady,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.65),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+        child: Row(
+          children: [
+            LBPixelIcon(LBIcon.tv, cell: 4, color: p.lime),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l10n.storeWatchAdTitle.toUpperCase(),
+                    style: LBText.button(p, size: 12.5),
                   ),
-                ),
-                Icon(
-                  Icons.bolt,
-                  color: theme.accentColor.withValues(alpha: 0.9),
-                  size: context.scaled(22),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    ready ? l10n.storeWatchAdReady : l10n.storeWatchAdNotReady,
+                    style: LBText.body(p, size: 11),
+                  ),
+                ],
+              ),
             ),
-          ),
+            LBPixelIcon(LBIcon.bolt, cell: 3.6, color: p.lime),
+          ],
         ),
       ),
     );
@@ -2984,6 +1767,7 @@ class _StoreScreenState extends State<StoreScreen>
     CoinsState coinsState,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     // Power-up types use snake_case to match the JSON dictionary keys
     // returned by the backend (ASP.NET applies DictionaryKeyPolicy =
     // SnakeCaseLower to outgoing dicts). Mapping back to PowerUpType for
@@ -2995,250 +1779,133 @@ class _StoreScreenState extends State<StoreScreen>
         type: 'speed_boost',
         name: l10n.puSpeedBoost,
         description: l10n.puSpeedBoostDesc,
-        icon: Icons.speed,
+        icon: LBIcon.bolt,
         coinCost: 500,
       ),
       _PowerUpCatalogItem(
         type: 'invincibility',
         name: l10n.puInvincibility,
         description: l10n.puInvincibilityDesc,
-        icon: Icons.shield,
+        icon: LBIcon.shield,
         coinCost: 1000,
       ),
       _PowerUpCatalogItem(
         type: 'score_multiplier',
         name: l10n.puScoreMultiplier,
         description: l10n.puScoreMultiplierDesc,
-        icon: Icons.star,
+        icon: LBIcon.star,
         coinCost: 750,
       ),
       _PowerUpCatalogItem(
         type: 'slow_motion',
         name: l10n.puSlowMotion,
         description: l10n.puSlowMotionDesc,
-        icon: Icons.slow_motion_video,
+        icon: LBIcon.hourglass,
         coinCost: 500,
       ),
     ];
 
     return BlocBuilder<PowerUpCubit, PowerUpState>(
       builder: (context, powerUpState) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        return _tabList([
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 0, 2, 8),
+            child: Text(l10n.storePowerUpsInfo, style: LBText.body(p, size: 11)),
+          ),
+          // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
+          _buildFreePowerUpAdCard(context, theme),
+          const SizedBox(height: 12),
+          LBSectionLabel(l10n.storePowerUps),
+          GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 220 * context.uiScale,
+              mainAxisExtent: 26 * context.uiScale + 104 * textScale,
+            ),
             children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: HudCorners(
-                  color: theme.accentColor,
-                  inset: 7,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: theme.accentColor,
-                        size: context.scaled(18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.storePowerUpsInfo,
-                          style: TextStyle(
-                            color: theme.accentColor.withValues(alpha: 0.85),
-                            fontSize: 12,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Rewarded ad — free Speed Boost. Self-hides for Pro / no ad.
-              _buildFreePowerUpAdCard(context, theme),
-              Text(
-                l10n.storePowerUps,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...powerUps.map(
-                (p) => _buildPowerUpCatalogCard(p, theme, powerUpState),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.storePowerUpBundles,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.storeBundlesSubtitle,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.7),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...PowerUpBundle.availableBundles.map(
-                (bundle) => _buildPowerUpBundleCard(
-                  bundle,
-                  theme,
-                  premiumState,
-                  coinsState,
-                ),
-              ),
+              for (final item in powerUps)
+                _buildPowerUpCatalogCard(item, powerUpState),
             ],
           ),
-        );
+          const SizedBox(height: 16),
+          LBSectionLabel(l10n.storePowerUpBundles),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              l10n.storeBundlesSubtitle,
+              style: LBText.body(p, size: 11),
+            ),
+          ),
+          ...PowerUpBundle.availableBundles.map(
+            (bundle) => _buildPowerUpBundleCard(
+              bundle,
+              theme,
+              premiumState,
+              coinsState,
+            ),
+          ),
+        ]);
       },
     );
   }
 
   Widget _buildPowerUpCatalogCard(
     _PowerUpCatalogItem item,
-    GameTheme theme,
     PowerUpState powerUpState,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final owned = powerUpState.countFor(item.type);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.2)),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 7,
-        child: Row(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(context.scaled(10)),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    item.icon,
-                    color: theme.accentColor,
-                    size: context.scaled(22),
-                  ),
+    return LBBlock(
+      feedback: false,
+      padding: const EdgeInsets.fromLTRB(12, 12, 10, 10),
+      onTap: () => _purchasePowerUpWithCoins(item),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              LBPixelIcon(item.icon, cell: 4, color: p.lime),
+              const Spacer(),
+              if (owned > 0)
+                LBChip(
+                  label: l10n.storeOwnedCountBadge(owned),
+                  height: 20,
                 ),
-                if (owned > 0)
-                  Positioned(
-                    top: -6,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!
-                            .storeOwnedCountBadge(owned),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.description,
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.name.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.button(p, color: p.ink, size: 12),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () => _purchasePowerUpWithCoins(item, theme),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor.withValues(alpha: 0.85),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
+              const SizedBox(height: 2),
+              Text(
+                item.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.body(p, size: 10.5).copyWith(height: 1.3),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    size: 14,
-                    color: kRewardGold,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${item.coinCost}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          Text(
+            l10n.lbBuyCoins(context.formatInt(item.coinCost)),
+            style: LBText.button(p, color: LB.gold, size: 12),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _purchasePowerUpWithCoins(
-    _PowerUpCatalogItem item,
-    GameTheme theme,
-  ) async {
+  Future<void> _purchasePowerUpWithCoins(_PowerUpCatalogItem item) async {
     final l10n = AppLocalizations.of(context)!;
     if (!await _ensurePurchasable()) return;
     if (!mounted) return;
@@ -3258,33 +1925,10 @@ class _StoreScreenState extends State<StoreScreen>
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(item.icon, color: theme.accentColor),
-            const SizedBox(width: 8),
-            Text(item.name, style: TextStyle(color: theme.accentColor)),
-          ],
-        ),
-        content: Text(
-          l10n.storeBuyPowerUpBody(item.coinCost, item.name),
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.storeBuyCostCoins(item.coinCost)),
-          ),
-        ],
-      ),
+    final confirmed = await _confirmPurchase(
+      title: item.name,
+      body: l10n.storeBuyPowerUpBody(item.coinCost, item.name),
+      buyLabel: l10n.storeBuyCostCoins(item.coinCost),
     );
     if (confirmed != true || !mounted) return;
 
@@ -3323,154 +1967,90 @@ class _StoreScreenState extends State<StoreScreen>
     CoinsState coinsState,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final isOwned = premiumState.isBundleOwned(bundle.id);
     final canAfford = coinsState.balance.total >= bundle.bundlePrice;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            kRewardGold.withValues(alpha: 0.10),
-            kRewardGold.withValues(alpha: 0.06),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isOwned
-              ? theme.accentColor.withValues(alpha: 0.4)
-              : kRewardGold.withValues(alpha: 0.21),
-          width: isOwned ? 2 : 1,
-        ),
-      ),
-      child: HudCorners(
-        color: kRewardGold,
-        inset: 7,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(context.scaled(10)),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [_goldFill, _goldFill],
+    return LBBlock(
+      kind: isOwned ? LBBlockKind.outline : LBBlockKind.gold,
+      selected: isOwned,
+      padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: LBPixelIcon(LBIcon.gift, cell: 4, color: LB.gold),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bundle.localizedName(l10n).toUpperCase(),
+                      style: LBText.button(p, color: LB.gold, size: 12.5),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    bundle.icon,
-                    style: const TextStyle(fontSize: 22),
-                  ),
+                    const SizedBox(height: 3),
+                    Text(
+                      bundle.localizedDescription(l10n),
+                      style: LBText.body(p, size: 11),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bundle.localizedName(l10n),
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        bundle.localizedDescription(l10n),
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: bundle.powerUps
-                  .map(
-                    (p) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kRewardGold.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${p.icon} ${p.localizedName(l10n)}',
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (bundle.originalPrice > bundle.bundlePrice)
-                  Text(
-                    l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
-                    style: TextStyle(
-                      color: theme.accentColor.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                const SizedBox(width: 8),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final pu in bundle.powerUps)
+                LBChip(label: pu.localizedName(l10n), height: 20),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (bundle.originalPrice > bundle.bundlePrice) ...[
                 Text(
-                  l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
-                  style: const TextStyle(
-                    color: kRewardGold,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
+                  style: LBText.body(p, color: p.inkDim, size: 11).copyWith(
+                    decoration: TextDecoration.lineThrough,
+                    decorationColor: p.inkDim,
                   ),
                 ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: isOwned
-                      ? null
-                      : () => _purchaseCoinBundle(bundle, canAfford),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isOwned
-                        ? Colors.green
-                        : canAfford
-                        ? theme.primaryColor
-                        : Colors.grey.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    isOwned
-                        ? l10n.storePillOwned
-                        : canAfford
-                        ? l10n.storeBuyUpper
-                        : l10n.storeNeedCoins,
-                  ),
-                ),
+                const SizedBox(width: 8),
               ],
-            ),
-          ],
-        ),
+              Flexible(
+                child: Text(
+                  l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
+                  style: LBText.value(p, color: LB.gold, size: 15),
+                ),
+              ),
+              const Spacer(),
+              StoreActionBlock(
+                label: isOwned
+                    ? l10n.storePillOwned
+                    : canAfford
+                    ? l10n.storeBuyUpper
+                    : l10n.storeNeedCoins,
+                kind: isOwned
+                    ? LBBlockKind.muted
+                    : canAfford
+                    ? LBBlockKind.goldFill
+                    : LBBlockKind.muted,
+                feedback: false,
+                onTap: isOwned
+                    ? null
+                    : () => _purchaseCoinBundle(bundle, canAfford),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -3527,110 +2107,11 @@ class _StoreScreenState extends State<StoreScreen>
 // Helpers
 // =============================================================================
 
-class _ThemePreview extends StatelessWidget {
-  final GameTheme theme;
-  const _ThemePreview({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.backgroundColor,
-            theme.backgroundColor.withValues(alpha: 0.7),
-          ],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Faint grid hint
-          Positioned.fill(
-            child: CustomPaint(painter: _ThemePreviewPainter(theme: theme)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThemePreviewPainter extends CustomPainter {
-  final GameTheme theme;
-  _ThemePreviewPainter({required this.theme});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = theme.accentColor.withValues(alpha: 0.18)
-      ..strokeWidth = 0.6;
-    // 6×6 grid + a longer 6-segment coiled snake + 2 food items. Denser
-    // than the original 8×8/4-segment preview so the card visibly
-    // represents "snake game" rather than a near-empty backdrop.
-    const cells = 6;
-    final cellW = size.width / cells;
-    final cellH = size.height / cells;
-    for (int i = 1; i < cells; i++) {
-      canvas.drawLine(
-        Offset(cellW * i, 0),
-        Offset(cellW * i, size.height),
-        gridPaint,
-      );
-      canvas.drawLine(
-        Offset(0, cellH * i),
-        Offset(size.width, cellH * i),
-        gridPaint,
-      );
-    }
-
-    // Coiled snake path (head → tail). Index 0 is the head.
-    const snakeCells = <(int, int)>[
-      (4, 2),
-      (3, 2),
-      (2, 2),
-      (2, 3),
-      (2, 4),
-      (3, 4),
-    ];
-    final r = (cellW < cellH ? cellW : cellH) * 0.40;
-    for (int i = 0; i < snakeCells.length; i++) {
-      final fade = 1.0 - (i / snakeCells.length) * 0.55;
-      final paint = Paint()..color = theme.snakeColor.withValues(alpha: fade);
-      final (col, row) = snakeCells[i];
-      canvas.drawCircle(
-        Offset(cellW * col + cellW / 2, cellH * row + cellH / 2),
-        i == 0 ? r * 1.05 : r,
-        paint,
-      );
-    }
-    // Head highlight — small accent dot so the head is unmistakable.
-    canvas.drawCircle(
-      Offset(cellW * 4 + cellW / 2, cellH * 2 + cellH / 2),
-      r * 0.30,
-      Paint()..color = theme.accentColor,
-    );
-
-    // Two food pickups to fill the empty quadrants.
-    final foodPaint = Paint()..color = theme.foodColor;
-    for (final (col, row) in const <(int, int)>[(0, 0), (5, 4)]) {
-      canvas.drawCircle(
-        Offset(cellW * col + cellW / 2, cellH * row + cellH / 2),
-        r * 0.85,
-        foodPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ThemePreviewPainter old) => old.theme != theme;
-}
-
 class _PowerUpCatalogItem {
   final String type;
   final String name;
   final String description;
-  final IconData icon;
+  final LBIcon icon;
   final int coinCost;
   const _PowerUpCatalogItem({
     required this.type,
@@ -3639,672 +2120,4 @@ class _PowerUpCatalogItem {
     required this.icon,
     required this.coinCost,
   });
-}
-
-/// Paints a stylized snake-trail preview specific to each trail type.
-/// The shared element is a 5-segment serpentine head with a fading
-/// tail; the per-trail signature (sparkles, lightning, flame, stars,
-/// crystal facets, etc.) draws on top using the trail's own color
-/// palette. The painter never animates — these are still previews —
-/// but the geometric variation is rich enough to make twelve trails
-/// visually distinct at glance.
-class _TrailPreviewPainter extends CustomPainter {
-  final TrailEffectType trail;
-  final Color accentColor;
-
-  _TrailPreviewPainter({required this.trail, required this.accentColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final width = size.width;
-    final height = size.height;
-    final palette = trail.colors;
-
-    // 5-segment serpentine head, curving down-right across the card.
-    // Coordinates are normalized inside the preview band so the
-    // composition stays consistent across grid cell sizes.
-    final segmentCenters = <Offset>[
-      Offset(width * 0.18, height * 0.62), // tail
-      Offset(width * 0.34, height * 0.52),
-      Offset(width * 0.50, height * 0.45),
-      Offset(width * 0.66, height * 0.42),
-      Offset(width * 0.82, height * 0.45), // head
-    ];
-    final segmentRadius = (width < height ? width : height) * 0.08;
-
-    // Trail-specific overlays — drawn BEHIND the snake so the head
-    // reads cleanly on top.
-    switch (trail) {
-      case TrailEffectType.none:
-        // Empty band, just the base gradient backdrop.
-        break;
-      case TrailEffectType.particle:
-        _drawSparkles(canvas, size, palette, density: 14);
-        break;
-      case TrailEffectType.glow:
-        _drawHalos(canvas, segmentCenters, palette, segmentRadius);
-        break;
-      case TrailEffectType.rainbow:
-        _drawRainbowArc(canvas, segmentCenters, palette, segmentRadius);
-        break;
-      case TrailEffectType.fire:
-        _drawFlames(canvas, segmentCenters, palette);
-        break;
-      case TrailEffectType.electric:
-        _drawLightning(canvas, segmentCenters, palette);
-        break;
-      case TrailEffectType.star:
-        _drawStars(canvas, size, palette);
-        break;
-      case TrailEffectType.cosmic:
-        _drawNebula(canvas, size, palette);
-        break;
-      case TrailEffectType.neon:
-        _drawNeonGlow(canvas, segmentCenters, palette, segmentRadius);
-        break;
-      case TrailEffectType.shadow:
-        _drawShadowSmoke(canvas, segmentCenters, palette);
-        break;
-      case TrailEffectType.crystal:
-        _drawCrystalShards(canvas, segmentCenters, palette, segmentRadius);
-        break;
-      case TrailEffectType.dragon:
-        _drawDragonBreath(canvas, segmentCenters, palette);
-        break;
-    }
-
-    // Snake head + body. Color picked from the trail palette so the
-    // snake itself reads as part of the trail's identity. Tail fades
-    // by alpha so the serpentine reads directionally.
-    for (var i = 0; i < segmentCenters.length; i++) {
-      final t = i / (segmentCenters.length - 1);
-      final color = palette.isEmpty
-          ? accentColor
-          : Color.lerp(palette.first, palette.last, t) ?? palette.first;
-      final fade = 0.45 + 0.55 * t;
-      final paint = Paint()
-        ..color = color.withValues(alpha: fade)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(
-        segmentCenters[i],
-        segmentRadius * (0.7 + 0.3 * t),
-        paint,
-      );
-    }
-
-    // Snake-head highlight — small bright dot on the leading segment
-    // so the eye picks up direction immediately.
-    canvas.drawCircle(
-      segmentCenters.last,
-      segmentRadius * 0.25,
-      Paint()..color = Colors.white.withValues(alpha: 0.85),
-    );
-  }
-
-  // ------------- Per-trail signature helpers -------------
-
-  void _drawSparkles(
-    Canvas canvas,
-    Size size,
-    List<Color> palette, {
-    required int density,
-  }) {
-    final paint = Paint()
-      ..color = (palette.isEmpty ? Colors.white : palette.first).withValues(
-        alpha: 0.9,
-      );
-    final rng = math.Random(7);
-    for (var i = 0; i < density; i++) {
-      final cx = rng.nextDouble() * size.width;
-      final cy = rng.nextDouble() * size.height;
-      final r = 0.8 + rng.nextDouble() * 1.6;
-      canvas.drawCircle(Offset(cx, cy), r, paint);
-    }
-  }
-
-  void _drawHalos(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-    double r,
-  ) {
-    for (var i = 0; i < centers.length; i++) {
-      final paint = Paint()
-        ..color =
-            (palette.isEmpty
-                    ? Colors.cyan
-                    : Color.lerp(
-                        palette.first,
-                        palette.last,
-                        i / centers.length,
-                      )!)
-                .withValues(alpha: 0.30)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      canvas.drawCircle(centers[i], r * 2.0, paint);
-    }
-  }
-
-  void _drawRainbowArc(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-    double r,
-  ) {
-    if (palette.isEmpty) return;
-    final path = Path()..moveTo(centers.first.dx, centers.first.dy);
-    for (var i = 1; i < centers.length; i++) {
-      path.lineTo(centers[i].dx, centers[i].dy);
-    }
-    final paint = Paint()
-      ..shader = LinearGradient(colors: palette)
-          .createShader(Rect.fromPoints(centers.first, centers.last))
-      ..strokeWidth = r * 1.8
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawFlames(Canvas canvas, List<Offset> centers, List<Color> palette) {
-    if (palette.length < 2) return;
-    final tail = centers.first;
-    for (var i = 0; i < 6; i++) {
-      final t = i / 5;
-      final flameTip = Offset(tail.dx - 10 - i * 3, tail.dy + 8 - i * 2.5);
-      final flameBase = Offset(tail.dx + (i % 2 == 0 ? -2 : 2), tail.dy);
-      final path = Path()
-        ..moveTo(flameBase.dx - 4, flameBase.dy + 4)
-        ..quadraticBezierTo(
-          flameTip.dx - 2,
-          flameTip.dy + 4,
-          flameTip.dx,
-          flameTip.dy,
-        )
-        ..quadraticBezierTo(
-          flameTip.dx + 2,
-          flameTip.dy + 4,
-          flameBase.dx + 4,
-          flameBase.dy + 4,
-        )
-        ..close();
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = Color.lerp(
-            palette.last,
-            palette.first,
-            t,
-          )!.withValues(alpha: 0.55 - t * 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-      );
-    }
-  }
-
-  void _drawLightning(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-  ) {
-    if (palette.isEmpty) return;
-    final paint = Paint()
-      ..color = palette.first.withValues(alpha: 0.85)
-      ..strokeWidth = 1.4
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-    for (var i = 0; i < centers.length - 1; i++) {
-      final mid = Offset(
-        (centers[i].dx + centers[i + 1].dx) / 2,
-        (centers[i].dy + centers[i + 1].dy) / 2 + (i.isEven ? 6 : -6),
-      );
-      final path = Path()
-        ..moveTo(centers[i].dx, centers[i].dy)
-        ..lineTo(mid.dx, mid.dy)
-        ..lineTo(centers[i + 1].dx, centers[i + 1].dy);
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  void _drawStars(Canvas canvas, Size size, List<Color> palette) {
-    if (palette.isEmpty) return;
-    final rng = math.Random(42);
-    for (var i = 0; i < 8; i++) {
-      final cx = rng.nextDouble() * size.width;
-      final cy = rng.nextDouble() * size.height;
-      final r = 2 + rng.nextDouble() * 3;
-      _drawStarGlyph(
-        canvas,
-        Offset(cx, cy),
-        r,
-        Paint()..color = palette[i % palette.length].withValues(alpha: 0.85),
-      );
-    }
-  }
-
-  void _drawStarGlyph(Canvas canvas, Offset c, double r, Paint paint) {
-    final path = Path();
-    for (var i = 0; i < 4; i++) {
-      final angle = (math.pi / 2) * i;
-      final tip = Offset(
-        c.dx + math.cos(angle) * r,
-        c.dy + math.sin(angle) * r,
-      );
-      final inner = Offset(
-        c.dx + math.cos(angle + math.pi / 4) * r * 0.35,
-        c.dy + math.sin(angle + math.pi / 4) * r * 0.35,
-      );
-      if (i == 0) path.moveTo(tip.dx, tip.dy);
-      path.lineTo(inner.dx, inner.dy);
-      if (i < 3) {
-        final nextTip = Offset(
-          c.dx + math.cos(angle + math.pi / 2) * r,
-          c.dy + math.sin(angle + math.pi / 2) * r,
-        );
-        path.lineTo(nextTip.dx, nextTip.dy);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawNebula(Canvas canvas, Size size, List<Color> palette) {
-    if (palette.length < 2) return;
-    for (var i = 0; i < 5; i++) {
-      final rng = math.Random(i * 11);
-      final c = Offset(
-        rng.nextDouble() * size.width,
-        rng.nextDouble() * size.height,
-      );
-      final paint = Paint()
-        ..color = palette[i % palette.length].withValues(alpha: 0.35)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-      canvas.drawCircle(c, 8 + rng.nextDouble() * 12, paint);
-    }
-  }
-
-  void _drawNeonGlow(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-    double r,
-  ) {
-    if (palette.isEmpty) return;
-    for (var i = 0; i < centers.length; i++) {
-      final color = palette[i % palette.length];
-      canvas.drawCircle(
-        centers[i],
-        r * 2.5,
-        Paint()
-          ..color = color.withValues(alpha: 0.40)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
-      );
-    }
-  }
-
-  void _drawShadowSmoke(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-  ) {
-    if (palette.isEmpty) return;
-    final rng = math.Random(99);
-    for (var i = 0; i < 9; i++) {
-      final base = centers[i % centers.length];
-      final puff = Offset(
-        base.dx - rng.nextDouble() * 24,
-        base.dy + (rng.nextDouble() - 0.3) * 18,
-      );
-      canvas.drawCircle(
-        puff,
-        4 + rng.nextDouble() * 5,
-        Paint()
-          ..color = palette.first.withValues(alpha: 0.35)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-      );
-    }
-  }
-
-  void _drawCrystalShards(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-    double r,
-  ) {
-    if (palette.isEmpty) return;
-    final rng = math.Random(13);
-    for (var i = 0; i < 6; i++) {
-      final base = centers[i % centers.length];
-      final tip = Offset(
-        base.dx + (rng.nextDouble() - 0.5) * 26,
-        base.dy - 4 - rng.nextDouble() * 10,
-      );
-      final left = Offset(tip.dx - 3, tip.dy + 6);
-      final right = Offset(tip.dx + 3, tip.dy + 6);
-      final path = Path()
-        ..moveTo(tip.dx, tip.dy)
-        ..lineTo(left.dx, left.dy)
-        ..lineTo(right.dx, right.dy)
-        ..close();
-      canvas.drawPath(
-        path,
-        Paint()..color = palette[i % palette.length].withValues(alpha: 0.75),
-      );
-    }
-  }
-
-  void _drawDragonBreath(
-    Canvas canvas,
-    List<Offset> centers,
-    List<Color> palette,
-  ) {
-    if (palette.length < 2) return;
-    // Curving plume from the head, fanning out as it trails.
-    final head = centers.last;
-    for (var i = 0; i < 8; i++) {
-      final t = i / 7;
-      final cx = head.dx + 8 + i * 4.0;
-      final cy = head.dy - 6 + (i % 2 == 0 ? 0 : 4);
-      final r = 6.0 - t * 4.0;
-      canvas.drawCircle(
-        Offset(cx, cy),
-        r,
-        Paint()
-          ..color = Color.lerp(
-            palette.last,
-            palette.first,
-            t,
-          )!.withValues(alpha: 0.65 - t * 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TrailPreviewPainter old) =>
-      old.trail != trail || old.accentColor != accentColor;
-}
-
-/// Paints a stylized snake silhouette for the store's Skins tab, using
-/// the skin's own color palette plus a per-skin signature overlay
-/// (shimmer for golden, ember dots for fire, scale ridges for dragon,
-/// etc.) so each skin card visually previews what the in-game snake
-/// will look like with that skin equipped.
-class _SkinPreviewPainter extends CustomPainter {
-  final SnakeSkinType skin;
-  final Color accentColor;
-
-  _SkinPreviewPainter({required this.skin, required this.accentColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final width = size.width;
-    final height = size.height;
-    final palette = skin.colors.isNotEmpty
-        ? skin.colors
-        : <Color>[accentColor, accentColor.withValues(alpha: 0.5)];
-
-    // S-curve snake silhouette, 7 segments. Curving more dramatically
-    // than the trail card's 5-segment line so the skin's colors get a
-    // proper showcase across multiple body positions.
-    final centers = <Offset>[
-      Offset(width * 0.14, height * 0.70),
-      Offset(width * 0.26, height * 0.58),
-      Offset(width * 0.38, height * 0.50),
-      Offset(width * 0.50, height * 0.48),
-      Offset(width * 0.62, height * 0.50),
-      Offset(width * 0.74, height * 0.42),
-      Offset(width * 0.86, height * 0.36), // head
-    ];
-    final r = (width < height ? width : height) * 0.085;
-
-    // Base body — color lerp across segments using the skin's palette.
-    for (var i = 0; i < centers.length; i++) {
-      final t = i / (centers.length - 1);
-      Color color;
-      if (palette.length == 1) {
-        color = palette.first;
-      } else if (palette.length == 2) {
-        color = Color.lerp(palette.first, palette.last, t)!;
-      } else {
-        // Multi-color: pick across the palette by index position.
-        final scaled = t * (palette.length - 1);
-        final lower = scaled.floor();
-        final upper = math.min(lower + 1, palette.length - 1);
-        color = Color.lerp(palette[lower], palette[upper], scaled - lower)!;
-      }
-      final fade = 0.55 + 0.45 * t;
-      canvas.drawCircle(
-        centers[i],
-        r * (0.78 + 0.22 * t),
-        Paint()
-          ..color = color.withValues(alpha: fade)
-          ..isAntiAlias = true,
-      );
-    }
-
-    // Per-skin signature overlay — same direction as the in-game
-    // _drawSkinSignature so the store preview matches gameplay.
-    switch (skin) {
-      case SnakeSkinType.classic:
-        break;
-      case SnakeSkinType.golden:
-        _shimmerStripe(canvas, centers, r);
-        break;
-      case SnakeSkinType.rainbow:
-        _whiteSparkles(canvas, centers, r, count: 4);
-        break;
-      case SnakeSkinType.galaxy:
-        _starSpecks(canvas, size, 12);
-        break;
-      case SnakeSkinType.dragon:
-        _scaleRidges(canvas, centers, r);
-        break;
-      case SnakeSkinType.electric:
-        _sparkBolts(canvas, centers);
-        break;
-      case SnakeSkinType.fire:
-        _emberRising(canvas, centers);
-        break;
-      case SnakeSkinType.ice:
-        _frostSpecks(canvas, centers, r);
-        break;
-      case SnakeSkinType.shadow:
-        _smokyHalos(canvas, centers, r);
-        break;
-      case SnakeSkinType.neon:
-        _neonHalos(canvas, centers, r);
-        break;
-      case SnakeSkinType.crystal:
-        _facetHighlights(canvas, centers, r);
-        break;
-      case SnakeSkinType.cosmic:
-        _cosmicHaze(canvas, centers, r);
-        _starSpecks(canvas, size, 6);
-        break;
-    }
-
-    // Head highlight — small bright dot on the leading segment so the
-    // eye picks up direction immediately.
-    canvas.drawCircle(
-      centers.last,
-      r * 0.28,
-      Paint()..color = Colors.white.withValues(alpha: 0.9),
-    );
-  }
-
-  void _shimmerStripe(Canvas canvas, List<Offset> centers, double r) {
-    for (final c in centers) {
-      canvas.drawCircle(
-        Offset(c.dx - r * 0.25, c.dy - r * 0.25),
-        r * 0.32,
-        Paint()
-          ..color = const Color(0xFFFFF6C4).withValues(alpha: 0.55)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2),
-      );
-    }
-  }
-
-  void _whiteSparkles(
-    Canvas canvas,
-    List<Offset> centers,
-    double r, {
-    required int count,
-  }) {
-    final rng = math.Random(3);
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.85);
-    for (var i = 0; i < count; i++) {
-      final c = centers[i % centers.length];
-      canvas.drawCircle(
-        Offset(
-          c.dx + (rng.nextDouble() - 0.5) * r * 0.8,
-          c.dy + (rng.nextDouble() - 0.5) * r * 0.8,
-        ),
-        1.4,
-        paint,
-      );
-    }
-  }
-
-  void _starSpecks(Canvas canvas, Size size, int count) {
-    final rng = math.Random(42);
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.75);
-    for (var i = 0; i < count; i++) {
-      final cx = rng.nextDouble() * size.width;
-      final cy = rng.nextDouble() * size.height * 0.7; // upper portion
-      canvas.drawCircle(Offset(cx, cy), 0.9, paint);
-    }
-  }
-
-  void _scaleRidges(Canvas canvas, List<Offset> centers, double r) {
-    final paint = Paint()
-      ..color = const Color(0xFFFFD700).withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1
-      ..strokeCap = StrokeCap.round;
-    for (final c in centers) {
-      final rect = Rect.fromCenter(
-        center: Offset(c.dx, c.dy - r * 0.1),
-        width: r * 1.4,
-        height: r * 0.9,
-      );
-      canvas.drawArc(rect, math.pi, math.pi, false, paint);
-    }
-  }
-
-  void _sparkBolts(Canvas canvas, List<Offset> centers) {
-    final paint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2);
-    for (var i = 0; i < centers.length; i += 2) {
-      final c = centers[i];
-      final path = Path()
-        ..moveTo(c.dx - 4, c.dy - 5)
-        ..lineTo(c.dx, c.dy)
-        ..lineTo(c.dx + 1, c.dy + 1)
-        ..lineTo(c.dx + 4, c.dy + 5);
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  void _emberRising(Canvas canvas, List<Offset> centers) {
-    final rng = math.Random(7);
-    for (var i = 0; i < centers.length; i++) {
-      final c = centers[i];
-      for (var s = 0; s < 2; s++) {
-        final dy = -4 - rng.nextDouble() * 8 - s * 3.0;
-        final dx = (rng.nextDouble() - 0.5) * 8;
-        canvas.drawCircle(
-          Offset(c.dx + dx, c.dy + dy),
-          1.2 + rng.nextDouble(),
-          Paint()
-            ..color = Color.lerp(
-              const Color(0xFFFFD86A),
-              const Color(0xFFFF4500),
-              s / 2,
-            )!.withValues(alpha: 0.8)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
-        );
-      }
-    }
-  }
-
-  void _frostSpecks(Canvas canvas, List<Offset> centers, double r) {
-    final paint = Paint()
-      ..color = const Color(0xFFE0FBFF).withValues(alpha: 0.85)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..strokeCap = StrokeCap.round;
-    for (final c in centers) {
-      const s = 2.2;
-      final fx = c.dx + r * 0.3;
-      final fy = c.dy - r * 0.5;
-      canvas.drawLine(Offset(fx - s, fy - s), Offset(fx + s, fy + s), paint);
-      canvas.drawLine(Offset(fx - s, fy + s), Offset(fx + s, fy - s), paint);
-      canvas.drawLine(
-        Offset(fx, fy - s * 1.4),
-        Offset(fx, fy + s * 1.4),
-        paint,
-      );
-    }
-  }
-
-  void _smokyHalos(Canvas canvas, List<Offset> centers, double r) {
-    for (final c in centers) {
-      canvas.drawCircle(
-        c,
-        r * 1.8,
-        Paint()
-          ..color = Colors.black.withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-      );
-    }
-  }
-
-  void _neonHalos(Canvas canvas, List<Offset> centers, double r) {
-    for (var i = 0; i < centers.length; i++) {
-      final color = i.isEven
-          ? const Color(0xFF39FF14)
-          : const Color(0xFFFF1493);
-      canvas.drawCircle(
-        centers[i],
-        r * 1.6,
-        Paint()
-          ..color = color.withValues(alpha: 0.40)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
-      );
-    }
-  }
-
-  void _facetHighlights(Canvas canvas, List<Offset> centers, double r) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.6);
-    for (final c in centers) {
-      final path = Path()
-        ..moveTo(c.dx - r * 0.55, c.dy - r * 0.55)
-        ..lineTo(c.dx - r * 0.15, c.dy - r * 0.55)
-        ..lineTo(c.dx - r * 0.55, c.dy - r * 0.15)
-        ..close();
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  void _cosmicHaze(Canvas canvas, List<Offset> centers, double r) {
-    for (final c in centers) {
-      canvas.drawCircle(
-        c,
-        r * 1.6,
-        Paint()
-          ..color = const Color(0xFFB46AFF).withValues(alpha: 0.45)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SkinPreviewPainter old) =>
-      old.skin != skin || old.accentColor != accentColor;
 }
