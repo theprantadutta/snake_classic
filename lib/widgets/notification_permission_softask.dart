@@ -6,6 +6,7 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// First-run pre-permission "soft ask" for notifications.
 ///
@@ -76,60 +77,17 @@ class NotificationPermissionSoftAsk {
   /// Returns `true` if the user chose to enable, `false`/`null` otherwise.
   static Future<bool?> _showDialog(BuildContext context, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
-    return showDialog<bool>(
+    // showDialog (inside showLBDialog) uses the root navigator; popping that
+    // closes the dialog exactly as Navigator.of(dialogContext) did.
+    final dialogNavigator = Navigator.of(context, rootNavigator: true);
+    return showLBDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.4)),
-        ),
-        title: Row(
-          children: [
-            const Text('🔔', style: TextStyle(fontSize: 24)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.npSoftTitle,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          l10n.npSoftBody,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.85),
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(
-              l10n.npNotNow,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.accentColor,
-              foregroundColor: theme.backgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-              l10n.npEnable,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+      title: l10n.npSoftTitle,
+      body: l10n.npSoftBody,
+      primaryLabel: l10n.npEnable,
+      onPrimary: () => dialogNavigator.pop(true),
+      secondaryLabel: l10n.npNotNow,
+      onSecondary: () => dialogNavigator.pop(false),
     );
   }
 }

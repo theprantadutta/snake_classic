@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/auth/lb_auth_widgets.dart';
 
 /// Modal overlay shown during the first-sign-in flow. Subscribes to
 /// [SyncEngine.firstSignInStateStream] and renders a full-screen
@@ -61,7 +60,7 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
     }
   }
 
-  ({String title, String body, bool spinning, IconData? icon, Color? iconColor})
+  ({String title, String body, bool spinning, LBIcon? icon, Color? iconColor})
       _copyForState(AppLocalizations? l10n) {
     switch (_state) {
       case FirstSignInState.welcoming:
@@ -96,8 +95,8 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
           title: l10n?.sroDoneTitle ?? 'All set!',
           body: l10n?.sroDoneBody ?? 'Your progress has been restored.',
           spinning: false,
-          icon: Icons.check_circle_outline_rounded,
-          iconColor: Colors.greenAccent,
+          icon: LBIcon.check,
+          iconColor: null, // palette lime
         );
       case FirstSignInState.failed:
         return (
@@ -107,8 +106,8 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
                   "connection and try again. You can also continue without "
                   "restoring — we'll retry the next time you open the app.",
           spinning: false,
-          icon: Icons.cloud_off_rounded,
-          iconColor: Colors.orangeAccent,
+          icon: LBIcon.x,
+          iconColor: LB.bonk,
         );
       case FirstSignInState.idle:
       case FirstSignInState.done:
@@ -126,7 +125,10 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
     // it's reachable from inside the Navigator's Overlay.
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
-        final theme = themeState.currentTheme;
+        // The palette comes from the cubit too, and is re-provided below so
+        // the blocks inside paint the active theme even if this entry sits
+        // outside the app Theme.
+        final p = LBPalette.of(themeState.currentTheme);
         // Resolved inside build — this widget lives in an OverlayEntry, so
         // the lookup can miss if the entry sits above MaterialApp's
         // Localizations; the copy falls back to English in that case.
@@ -137,170 +139,86 @@ class _SyncRestoreOverlayState extends State<SyncRestoreOverlay> {
         // Backdrop catches taps so they don't pass through to widgets
         // behind the overlay, but doesn't dismiss — only the explicit
         // buttons (in the failed state) can move past this screen.
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {},
-          child: Material(
-            type: MaterialType.transparency,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.78),
-              alignment: Alignment.center,
+        return Theme(
+          data: Theme.of(context).copyWith(extensions: [p]),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {},
+            child: Material(
+              type: MaterialType.transparency,
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 32),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                decoration: BoxDecoration(
-                  color: theme.backgroundColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.5),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: HudCorners(
-                  color: theme.accentColor,
-                  inset: 10,
-                  child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (copy.spinning)
-                      SizedBox(
-                        width: 64,
-                        height: 64,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.accentColor),
+                color: Colors.black.withValues(alpha: 0.78),
+                alignment: Alignment.center,
+                padding: EdgeInsets.symmetric(horizontal: LB.margin * 1.5),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: LBBlock(
+                    kind: LBBlockKind.sheet,
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: copy.spinning
+                              ? LBBusyCells(semanticsLabel: copy.title)
+                              : copy.icon != null
+                                  ? LBPixelIcon(
+                                      copy.icon!,
+                                      cell: 8,
+                                      color: copy.iconColor ?? p.lime,
+                                    )
+                                  : const SizedBox.shrink(),
                         ),
-                      )
-                    else if (copy.icon != null)
-                      Icon(
-                        copy.icon,
-                        size: 64,
-                        color: copy.iconColor ?? theme.accentColor,
-                      ),
-                    const SizedBox(height: 24),
-                    Text(
-                      copy.title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: context.letterSpacing(0.5),
-                      ),
+                        const SizedBox(height: 22),
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            copy.title.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: LBText.button(
+                              p,
+                              color: isFailed ? LB.bonk : p.head,
+                              size: 15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          copy.body,
+                          textAlign: TextAlign.center,
+                          style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
+                        ),
+                        if (isFailed) ...[
+                          const SizedBox(height: 22),
+                          LBPrimaryBlock(
+                            label: l10n?.sroTryAgain ?? 'Try Again',
+                            onTap: () => SyncEngine().retryFirstSignInPull(),
+                            height: 50,
+                          ),
+                          LBBlock(
+                            kind: LBBlockKind.muted,
+                            height: 46,
+                            alignment: Alignment.center,
+                            onTap: () =>
+                                SyncEngine().dismissFirstSignInOverlay(),
+                            child: Text(
+                              (l10n?.sroContinueAnyway ?? 'Continue Anyway')
+                                  .toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: LBText.button(p, color: p.inkMuted, size: 12),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      copy.body,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.75),
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                    if (isFailed) ...[
-                      const SizedBox(height: 24),
-                      _PrimaryButton(
-                        theme: theme,
-                        label: l10n?.sroTryAgain ?? 'Try Again',
-                        icon: Icons.refresh_rounded,
-                        onPressed: () =>
-                            SyncEngine().retryFirstSignInPull(),
-                      ),
-                      const SizedBox(height: 10),
-                      _SecondaryButton(
-                        theme: theme,
-                        label: l10n?.sroContinueAnyway ?? 'Continue Anyway',
-                        onPressed: () =>
-                            SyncEngine().dismissFirstSignInOverlay(),
-                      ),
-                    ],
-                  ],
-                )),
+                  ),
+                ),
               ),
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  final GameTheme theme;
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _PrimaryButton({
-    required this.theme,
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.accentColor,
-          foregroundColor: theme.backgroundColor,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          textStyle: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: context.letterSpacing(0.5),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SecondaryButton extends StatelessWidget {
-  final GameTheme theme;
-  final String label;
-  final VoidCallback onPressed;
-
-  const _SecondaryButton({
-    required this.theme,
-    required this.label,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          foregroundColor: theme.accentColor.withValues(alpha: 0.7),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          textStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        child: Text(label),
-      ),
     );
   }
 }

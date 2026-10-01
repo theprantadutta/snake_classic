@@ -3,12 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/account_switch_confirmation.dart';
-import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/auth/lb_auth_widgets.dart';
 
 /// Email/password sign-in, account-creation, and anonymous-account link
 /// screen. Tab switcher between Sign In and Create Account.
@@ -57,91 +56,63 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
+    final g = context.lbGutter;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          widget.linkFromAnonymous ? l10n.eaTitleLink : l10n.eaTitleSignIn,
-          style: const TextStyle(color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: AppBackground(
-        theme: theme,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: 24 + context.sideInset(),
-                vertical: 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    return LBScaffold(
+      title: widget.linkFromAnonymous ? l10n.lbEmailLinkTitle : l10n.lbEmailTitle,
+      subtitle: widget.linkFromAnonymous ? l10n.eaExplainer : l10n.eaTitleSignIn,
+      banner: false,
+      // The form area takes whatever height is left under the tabs (no
+      // fixed form height): each tab pins its action to the bottom and
+      // scrolls when the keyboard or large text needs more room.
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LBTabBlocks(
+              controller: _tabs,
+              labels: [
+                widget.linkFromAnonymous ? l10n.eaLinkExisting : l10n.eaSignIn,
+                l10n.eaCreateAccount,
+              ],
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: TabBarView(
+                controller: _tabs,
                 children: [
-                  if (widget.linkFromAnonymous) ...[
-                    Text(
-                      l10n.eaExplainer,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 15,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: TabBar(
-                      controller: _tabs,
-                      indicator: BoxDecoration(
-                        color: theme.accentColor.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
-                      labelStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      dividerColor: Colors.transparent,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      tabs: [
-                        Tab(
-                          text: widget.linkFromAnonymous
-                              ? l10n.eaLinkExisting
-                              : l10n.eaSignIn,
-                        ),
-                        Tab(text: l10n.eaCreateAccount),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    // Scaled so the grown text + validation-error lines on
-                    // tablets don't overflow the fixed form height.
-                    height: context.scaled(360),
-                    child: TabBarView(
-                      controller: _tabs,
-                      children: [
-                        _buildSignInForm(theme.accentColor),
-                        _buildCreateForm(theme.accentColor),
-                      ],
-                    ),
-                  ),
+                  _buildSignInForm(),
+                  _buildCreateForm(),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One tab's form: fields at the top, the action at the bottom of the
+  /// available height; scrolls instead of overflowing when space runs out.
+  Widget _formPage(List<Widget> fields, Widget action) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: EdgeInsets.only(top: 4, bottom: context.lbCell * .6),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: (constraints.maxHeight - 4 - context.lbCell * .6).clamp(0, double.infinity),
+          ),
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...fields,
+                const Spacer(),
+                const SizedBox(height: 20),
+                action,
+              ],
             ),
           ),
         ),
@@ -149,12 +120,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     );
   }
 
-  Widget _buildSignInForm(Color accent) {
+  Widget _buildSignInForm() {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     return Form(
       key: _signInFormKey,
-      child: Column(
-        children: [
+      child: _formPage(
+        [
           _emailField(_signInEmail),
           const SizedBox(height: 16),
           _passwordField(
@@ -163,36 +135,42 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             onToggle: () =>
                 setState(() => _showSignInPassword = !_showSignInPassword),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
               onPressed: _busy ? null : _onForgotPassword,
+              style: TextButton.styleFrom(
+                foregroundColor: p.lime,
+                disabledForegroundColor: p.inkDim,
+                minimumSize: const Size(48, 48),
+              ),
               child: Text(
                 l10n.eaForgotPassword,
-                style: TextStyle(color: accent),
+                style: LBText.body(p, color: _busy ? p.inkDim : p.lime, size: 12).copyWith(
+                  decoration: TextDecoration.underline,
+                  decorationColor: p.lime.withValues(alpha: .5),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          _primaryButton(
-            label: widget.linkFromAnonymous
-                ? l10n.eaLinkToExisting
-                : l10n.eaSignIn,
-            color: accent,
-            onPressed: _busy ? null : _onSignInOrLink,
-          ),
         ],
+        _primaryButton(
+          label: widget.linkFromAnonymous
+              ? l10n.eaLinkToExisting
+              : l10n.eaSignIn,
+          onPressed: _busy ? null : _onSignInOrLink,
+        ),
       ),
     );
   }
 
-  Widget _buildCreateForm(Color accent) {
+  Widget _buildCreateForm() {
     final l10n = AppLocalizations.of(context)!;
     return Form(
       key: _createFormKey,
-      child: Column(
-        children: [
+      child: _formPage(
+        [
           _emailField(_createEmail),
           const SizedBox(height: 16),
           _passwordField(
@@ -203,15 +181,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
             minLength: 8,
             helper: l10n.eaMinChars,
           ),
-          const SizedBox(height: 24),
-          _primaryButton(
-            label: widget.linkFromAnonymous
-                ? l10n.eaCreateAndLink
-                : l10n.eaCreateAccount,
-            color: accent,
-            onPressed: _busy ? null : _onCreateOrLink,
-          ),
         ],
+        _primaryButton(
+          label: widget.linkFromAnonymous
+              ? l10n.eaCreateAndLink
+              : l10n.eaCreateAccount,
+          onPressed: _busy ? null : _onCreateOrLink,
+        ),
       ),
     );
   }
@@ -224,8 +200,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       autocorrect: false,
       enableSuggestions: false,
       textInputAction: TextInputAction.next,
-      style: const TextStyle(color: Colors.white),
-      decoration: _decoration(l10n.eaEmail, Icons.email_outlined),
+      style: lbInputStyle(context),
+      cursorColor: context.lb.lime,
+      decoration: lbInputDecoration(context, label: l10n.eaEmail),
       validator: (v) {
         final s = (v ?? '').trim();
         if (s.isEmpty) return l10n.eaEmailRequired;
@@ -247,17 +224,17 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     return TextFormField(
       controller: controller,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
-      decoration: _decoration(
-        l10n.eaPassword,
-        Icons.lock_outline,
+      style: lbInputStyle(context),
+      cursorColor: context.lb.lime,
+      decoration: lbInputDecoration(
+        context,
+        label: l10n.eaPassword,
         helperText: helper,
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-          onPressed: onToggle,
+        suffixIcon: LBPasswordEye(
+          obscured: obscure,
+          onToggle: onToggle,
+          showLabel: l10n.lbShowPassword,
+          hideLabel: l10n.lbHidePassword,
         ),
       ),
       validator: (v) {
@@ -269,75 +246,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
     );
   }
 
-  InputDecoration _decoration(
-    String label,
-    IconData icon, {
-    String? helperText,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-      helperText: helperText,
-      helperStyle: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
-      prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.8)),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.08),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-      ),
-    );
-  }
-
   Widget _primaryButton({
     required String label,
-    required Color color,
     required VoidCallback? onPressed,
   }) {
-    return SizedBox(
-      width: double.infinity,
+    return LBPrimaryBlock(
+      label: label,
+      busy: _busy,
+      onTap: onPressed,
       height: 52,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: color.withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: _busy
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-      ),
     );
   }
 

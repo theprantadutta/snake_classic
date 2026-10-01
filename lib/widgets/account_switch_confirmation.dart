@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Confirm before signing into an account that is not this device's identity.
 ///
@@ -35,37 +36,22 @@ Future<bool> confirmAccountSwitch(BuildContext context) async {
 
   final l10n = AppLocalizations.of(context)!;
 
-  final proceed = await showDialog<bool>(
+  // showDialog (inside showLBDialog) pushes onto the ROOT navigator, so the
+  // answers pop that one — the caller may be a sheet on a nested navigator.
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final proceed = await showLBDialog<bool>(
     context: context,
+    title: l10n.accountSwitchTitle,
+    body: l10n.accountSwitchBody,
+    // Cancel first and styled as the primary action — the destructive
+    // choice should not be the one the thumb lands on.
+    primaryLabel: l10n.commonCancel,
+    onPrimary: () => navigator.pop(false),
+    secondaryLabel: l10n.accountSwitchConfirm,
+    onSecondary: () => navigator.pop(true),
     // Must be an explicit choice: tapping outside is not consent to losing
     // progress.
     barrierDismissible: false,
-    builder: (dialogContext) => AlertDialog(
-      backgroundColor: const Color(0xFF1A1A1F),
-      title: Text(
-        l10n.accountSwitchTitle,
-        style: const TextStyle(color: Colors.white),
-      ),
-      content: Text(
-        l10n.accountSwitchBody,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-      ),
-      actions: [
-        // Cancel first and styled as the primary action — the destructive
-        // choice should not be the one the thumb lands on.
-        FilledButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: Text(l10n.commonCancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(
-            l10n.accountSwitchConfirm,
-            style: const TextStyle(color: Colors.orange),
-          ),
-        ),
-      ],
-    ),
   );
 
   // A null result means the dialog went away without an answer. Treat that as

@@ -6,6 +6,7 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Gentle, recurring re-ask for users whose notifications are OFF.
 ///
@@ -60,82 +61,39 @@ class NotificationPermissionPrimer {
 
   static Future<void> _showDialog(BuildContext context, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
-    return showDialog<void>(
+    // showDialog (inside showLBDialog) uses the root navigator; popping that
+    // closes the dialog exactly as Navigator.of(dialogContext) did.
+    final dialogNavigator = Navigator.of(context, rootNavigator: true);
+    return showLBDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.4)),
-        ),
-        title: Row(
-          children: [
-            const Text('🔔', style: TextStyle(fontSize: 24)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.npPrimerTitle,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          l10n.npPrimerBody,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.85),
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              l10n.npMaybeLater,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.6)),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.accentColor,
-              foregroundColor: theme.backgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () async {
-              // Capture before the async gap — the dialog closes first.
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.of(dialogContext).pop();
+      title: l10n.npPrimerTitle,
+      body: l10n.npPrimerBody,
+      primaryLabel: l10n.npTurnOn,
+      onPrimary: () async {
+        // Capture before the async gap — the dialog closes first.
+        final messenger = ScaffoldMessenger.of(context);
+        dialogNavigator.pop();
 
-              final service = NotificationService();
-              final granted = await service.requestNotificationsPermission();
-              if (granted) {
-                messenger.showSnackBar(
-                  arcadeSnackBarFor(
-                    theme,
-                    message: l10n.npAllSet,
-                    tone: ArcadeSnackTone.success,
-                    icon: Icons.notifications_active,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              } else {
-                // Hard-denied: the OS won't show its prompt again, so the
-                // settings page is the only path left.
-                await service.openSystemNotificationSettings();
-              }
-            },
-            child: Text(
-              l10n.npTurnOn,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+        final service = NotificationService();
+        final granted = await service.requestNotificationsPermission();
+        if (granted) {
+          messenger.showSnackBar(
+            arcadeSnackBarFor(
+              theme,
+              message: l10n.npAllSet,
+              tone: ArcadeSnackTone.success,
+              icon: Icons.notifications_active,
+              duration: const Duration(seconds: 2),
             ),
-          ),
-        ],
-      ),
+          );
+        } else {
+          // Hard-denied: the OS won't show its prompt again, so the
+          // settings page is the only path left.
+          await service.openSystemNotificationSettings();
+        }
+      },
+      secondaryLabel: l10n.npMaybeLater,
+      onSecondary: () => dialogNavigator.pop(),
     );
   }
 }

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/auth/lb_auth_widgets.dart';
 
 /// Re-consent gate shown to EXISTING (already-onboarded) users when the shared
 /// legal version has changed since they last accepted it — i.e. whenever the
@@ -57,240 +54,51 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
     if (mounted) context.go(AppRoutes.home);
   }
 
-  Widget _buildDocScroll(String content) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        content,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.9),
-          fontSize: 13,
-          height: 1.4,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeCubit>().state.currentTheme;
-    final isSmall = MediaQuery.of(context).size.height < 800;
     final l10n = AppLocalizations.of(context)!;
+    final g = context.lbGutter;
 
     return PopScope(
       // Block back-out — the user must accept the updated policy to proceed.
       canPop: false,
-      child: Scaffold(
-        body: AnimatedAppBackground(
-          theme: theme,
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 20 + context.sideInset(),
-                vertical: 16,
+      child: LBScaffold(
+        title: l10n.lbConsentTitle,
+        subtitle: l10n.pcVersionLine(LegalAcceptance.currentLegalVersion),
+        // No back block: acceptance can't be skipped.
+        showBack: false,
+        banner: false,
+        body: Padding(
+          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, 0),
+          // Privacy Policy + Terms of Use — swipeable tabs.
+          child: LBLegalTabs(
+            privacyLabel: l10n.pcTabPrivacy,
+            termsLabel: l10n.pcTabTerms,
+            privacy: _privacy,
+            terms: _terms,
+            loading: _privacy.isEmpty && _terms.isEmpty,
+          ),
+        ),
+        bottom: Padding(
+          padding: EdgeInsets.fromLTRB(g, 4, g, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Acceptance checkbox
+              LBCheckBlock(
+                value: _accepted,
+                label: l10n.pcAgree,
+                onChanged: (v) => setState(() => _accepted = v),
               ),
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(isSmall ? 16 : 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          theme.accentColor.withValues(alpha: 0.2),
-                          theme.accentColor.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: theme.accentColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.privacy_tip_outlined,
-                              color: theme.accentColor, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.pcTitle,
-                                style: TextStyle(
-                                  color: theme.accentColor,
-                                  fontSize: isSmall ? 20 : 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                l10n.pcVersionLine(
-                                    LegalAcceptance.currentLegalVersion),
-                                style: TextStyle(
-                                  color: theme.accentColor.withValues(alpha: 0.7),
-                                  fontSize: isSmall ? 12 : 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Privacy Policy + Terms of Use — swipeable tabs.
-                  Expanded(
-                    child: DefaultTabController(
-                      length: 2,
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              theme.backgroundColor.withValues(alpha: 0.4),
-                              theme.backgroundColor.withValues(alpha: 0.2),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: theme.accentColor.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: (_privacy.isEmpty && _terms.isEmpty)
-                            ? Center(
-                                child: CircularProgressIndicator(
-                                  color: theme.accentColor,
-                                ),
-                              )
-                            : Column(
-                                children: [
-                                  TabBar(
-                                    labelColor: theme.accentColor,
-                                    unselectedLabelColor:
-                                        Colors.white.withValues(alpha: 0.6),
-                                    indicatorColor: theme.accentColor,
-                                    labelStyle: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    tabs: [
-                                      Tab(text: l10n.pcTabPrivacy),
-                                      Tab(text: l10n.pcTabTerms),
-                                    ],
-                                  ),
-                                  Expanded(
-                                    child: TabBarView(
-                                      children: [
-                                        _buildDocScroll(_privacy),
-                                        _buildDocScroll(_terms),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Acceptance checkbox
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.accentColor.withValues(alpha: 0.15),
-                          theme.accentColor.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.accentColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: HudCorners(
-                      color: theme.accentColor,
-                      inset: 8,
-                      child: Row(
-                      children: [
-                        Transform.scale(
-                          scale: 1.2,
-                          child: Checkbox(
-                            value: _accepted,
-                            onChanged: (v) =>
-                                setState(() => _accepted = v ?? false),
-                            activeColor: theme.accentColor,
-                            checkColor: Colors.white,
-                            side: BorderSide(
-                              color: theme.accentColor.withValues(alpha: 0.6),
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            l10n.pcAgree,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: isSmall ? 14 : 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Continue button
-                  GestureDetector(
-                    onTap: _accepted ? _accept : null,
-                    child: Opacity(
-                      opacity: _accepted ? 1 : 0.4,
-                      child: Container(
-                        width: double.infinity,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [theme.primaryColor, theme.accentColor],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          l10n.pcContinue,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 6),
+              // Continue button
+              LBPrimaryBlock(
+                label: l10n.pcContinue,
+                icon: LBIcon.check,
+                onTap: _accepted ? _accept : null,
               ),
-            ),
+            ],
           ),
         ),
       ),

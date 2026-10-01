@@ -4,12 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/username_service.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/auth/lb_auth_widgets.dart';
 
 /// First-time username confirmation screen.
 ///
@@ -128,141 +126,91 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-        final l10n = AppLocalizations.of(context)!;
-        return Scaffold(
-          backgroundColor: theme.backgroundColor,
-          body: AppBackground(
-            theme: theme,
-            child: SafeArea(
-              // SingleChildScrollView so the keyboard opening (autofocused
-              // TextField) on a short screen doesn't overflow the Column.
-              // LayoutBuilder + ConstrainedBox keeps the Spacers working at
-              // tall heights — content centres vertically when it fits and
-              // scrolls when it doesn't.
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final g = context.lbGutter;
+    return LBScaffold(
+      title: l10n.lbUsernameTitle,
+      subtitle: l10n.unPickTitle,
+      // Continue is the only exit — no back block, no Skip.
+      showBack: false,
+      banner: false,
+      // Spare height is split around the field instead of pooling under
+      // it; scrolls so the keyboard opening (autofocused field) on a short
+      // screen doesn't overflow.
+      body: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - context.lbCell * 1.9).clamp(0, double.infinity),
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.unPickBody,
+                    style: LBText.body(p, color: p.ink, size: 12.5),
+                  ),
+                  const SizedBox(height: 18),
+                  const Spacer(),
+                  TextField(
+                    controller: _controller,
+                    enabled: !_isLoading,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.none,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9_]'),
                       ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24 + context.sideInset(),
-                            vertical: 24,
-                          ),
-                          child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Spacer(),
-                    Icon(
-                      Icons.person_pin,
-                      size: 64,
-                      color: theme.accentColor,
+                      LengthLimitingTextInputFormatter(20),
+                    ],
+                    decoration: lbInputDecoration(
+                      context,
+                      label: l10n.unLabel,
+                      errorText: _errorMessage,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.unPickTitle,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.unPickBody,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    TextField(
-                      controller: _controller,
-                      enabled: !_isLoading,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.none,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'[a-zA-Z0-9_]'),
-                        ),
-                        LengthLimitingTextInputFormatter(20),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: l10n.unLabel,
-                        labelStyle: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                        ),
-                        filled: true,
-                        fillColor: theme.backgroundColor.withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.accentColor.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.accentColor),
-                        ),
-                        errorText: _errorMessage,
-                        errorStyle: const TextStyle(color: Colors.red),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      maxLength: 20,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
+                    style: lbInputStyle(context),
+                    cursorColor: p.lime,
+                    maxLength: 20,
+                  ),
+                  const SizedBox(height: 8),
+                  LBBlock(
+                    kind: LBBlockKind.dashed,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Text(
                       l10n.unRules,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
+                      style: LBText.body(p, color: p.inkMuted, size: 11.5),
                     ),
-                    const Spacer(),
-                    GradientButton(
-                      onPressed: _isLoading ? null : _onContinue,
-                      text: _isLoading ? l10n.unSaving : l10n.unContinue,
-                      primaryColor: theme.accentColor,
-                      secondaryColor: theme.foodColor,
-                      icon: Icons.arrow_forward,
-                      width: double.infinity,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.unChangeAnytime,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                  const Spacer(flex: 2),
+                ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
+      bottom: Padding(
+        padding: EdgeInsets.fromLTRB(g, 4, g, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LBPrimaryBlock(
+              label: _isLoading ? l10n.unSaving : l10n.unContinue,
+              icon: _isLoading ? null : LBIcon.next,
+              onTap: _isLoading ? null : _onContinue,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.unChangeAnytime,
+              style: LBText.body(p, color: p.inkDim, size: 11),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

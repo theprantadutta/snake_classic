@@ -2,21 +2,16 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/auth/lb_auth_widgets.dart';
 
 class FirstTimeAuthScreen extends StatefulWidget {
   const FirstTimeAuthScreen({super.key});
@@ -119,327 +114,168 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     }
   }
 
+  /// Sign in with Apple is offered on Apple platforms only — there is no
+  /// Apple ID to sign in with on Android. The guest note below the buttons
+  /// reads the same condition so it never names a button that isn't there.
+  static bool get _showAppleSignIn =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
   @override
   Widget build(BuildContext context) {
-    final themeState = context.watch<ThemeCubit>().state;
     final authCubit = context.read<AuthCubit>();
-    final theme = themeState.currentTheme;
+
+    if (_showPrivacyPolicy) {
+      return _buildPrivacyPolicyView();
+    }
+
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final s = context.uiScale;
 
     return Scaffold(
-      body: AnimatedAppBackground(
-        theme: theme,
+      body: LBGridBackground(
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final screenHeight = constraints.maxHeight;
-              // Bumped from <600 to <800 so the tighter layout is the
-              // default — most phones (incl. 6.1" / Pixel-class) sit
-              // around 800-900 logical pixels, and with three auth
-              // buttons + the guest-can't-purchase subtitle the prior
-              // large-screen sizing pushed content past the fold.
-              final screenWidth = constraints.maxWidth;
-              final isSmallScreen = screenHeight < 800;
-              final isNarrowScreen = screenWidth < 400;
-              // Tablets are the TALLEST devices, so sizing chrome/fonts off the
-              // raw screenHeight makes the hero icon + title explode (and the
-              // root textScaler then grows the text again). Clamp the sizing
-              // basis to a reference phone height on tablets; phones keep their
-              // real height so their layout is unchanged. Pixel chrome (the
-              // icon) additionally grows with uiScale; fonts grow via textScaler.
-              final sizingHeight = context.isTablet ? 760.0 : screenHeight;
-
-              if (_showPrivacyPolicy) {
-                return _buildPrivacyPolicyView(
-                  theme,
-                  screenHeight,
-                  screenWidth,
-                  isSmallScreen,
-                  isNarrowScreen,
-                );
-              }
-
+              // Fills whatever height the phone has: the logo group takes
+              // the upper space and the sign-in blocks sit in the thumb
+              // zone. Spacers absorb the difference between a 640 dp and a
+              // 900 dp phone; on a short screen (or large text) it scrolls
+              // instead of overflowing. No back block: first screen.
+              final h = context.isTablet ? 760.0 : constraints.maxHeight;
+              final mark = (h * .15).clamp(76.0, 136.0) * s;
               return SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal:
-                      (isNarrowScreen ? 16.0 : 24.0) + context.sideInset(),
-                ),
+                padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: screenHeight),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: IntrinsicHeight(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Add some top padding for small screens
-                        SizedBox(height: isSmallScreen ? 20 : 40),
-                        // Welcome Header
-                        Container(
-                          padding: EdgeInsets.all(isSmallScreen ? 15 : 20),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                theme.accentColor.withValues(alpha: 0.3),
-                                theme.accentColor.withValues(alpha: 0.1),
-                                Colors.transparent,
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.accentColor.withValues(alpha: 0.4),
-                                blurRadius: isSmallScreen ? 30 : 40,
-                                spreadRadius: isSmallScreen ? 5 : 10,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.videogame_asset_rounded,
-                            size:
-                                (isSmallScreen
-                                    ? sizingHeight * 0.08
-                                    : sizingHeight * 0.12) *
-                                context.uiScale,
-                            color: theme.primaryColor,
-                          ),
-                        ).gamePop(),
-
-                        SizedBox(
-                          height: isSmallScreen
-                              ? sizingHeight * 0.02
-                              : sizingHeight * 0.04,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: context.lbCell),
+                      const Spacer(flex: 3),
+                      Center(child: LBCellSMark(size: mark)),
+                      SizedBox(height: mark * .24),
+                      Center(
+                        child: LBCellText(
+                          'SNAKE',
+                          cell: mark / 14,
+                          glow: true,
+                          semanticsLabel: 'Snake Classic',
                         ),
+                      ),
+                      SizedBox(height: 12 * s),
+                      Center(
+                        child: ExcludeSemantics(
+                          child: Text(
+                            'CLASSIC',
+                            style: LBText.label(p, color: p.lime.withValues(alpha: .75))
+                                .copyWith(fontSize: 12, letterSpacing: 12),
+                          ),
+                        ),
+                      ),
+                      const Spacer(flex: 2),
+                      SizedBox(height: context.lbCell),
+                      Text(
+                        l10n.faChooseHow,
+                        textAlign: TextAlign.center,
+                        style: LBText.body(p, color: p.ink, size: 13),
+                      ),
+                      SizedBox(height: 18 * s),
 
-                        // Welcome Text Container
-                        Container(
-                          padding: EdgeInsets.all(
-                            isSmallScreen
-                                ? sizingHeight * 0.02
-                                : sizingHeight * 0.035,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                theme.backgroundColor.withValues(alpha: 0.4),
-                                theme.backgroundColor.withValues(alpha: 0.2),
-                                theme.accentColor.withValues(alpha: 0.1),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: theme.accentColor.withValues(alpha: 0.3),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
+                      // Auth buttons
+                      if (_isLoading)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Title with gradient effect
-                              ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [
-                                    theme.primaryColor,
-                                    theme.accentColor,
-                                  ],
-                                ).createShader(bounds),
-                                child: Text(
-                                  l10n.faWelcome,
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen
-                                        ? sizingHeight * 0.03
-                                        : sizingHeight * 0.04,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    height: 1.2,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              SizedBox(
-                                height: isSmallScreen
-                                    ? sizingHeight * 0.015
-                                    : sizingHeight * 0.025,
-                              ),
-
-                              // Feature highlights
+                              LBBusyCells(semanticsLabel: l10n.faSigningIn),
+                              const SizedBox(height: 16),
                               Text(
-                                l10n.faChooseHow,
-                                style: TextStyle(
-                                  fontSize: isSmallScreen
-                                      ? sizingHeight * 0.018
-                                      : sizingHeight * 0.022,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  height: 1.4,
-                                ),
+                                l10n.faSigningIn,
                                 textAlign: TextAlign.center,
+                                style: LBText.body(p, color: p.ink, size: 13),
                               ),
-                              // Feature list removed — the three auth
-                              // buttons below already convey the same
-                              // choices, and freeing the vertical space
-                              // lets all three buttons + the guest
-                              // subtitle fit on standard phones without
-                              // scrolling.
                             ],
                           ),
-                        ).gameEntrance(delay: 200.ms),
+                        )
+                      else ...[
+                        // Sign in with Apple — listed first on Apple
+                        // platforms: Guideline 4.8 requires it next to
+                        // third-party logins, and the HIG asks for
+                        // equal-or-greater prominence than the others. It
+                        // keeps Apple's own colours (white mark and label on
+                        // a white outline) rather than the board's lime.
+                        if (_showAppleSignIn)
+                          LBAuthOptionBlock(
+                            label: l10n.pfSignInApple,
+                            leading: const FaIcon(
+                              FontAwesomeIcons.apple,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            accent: Colors.white,
+                            foreground: Colors.white,
+                            onTap: () => _handleAppleSignIn(authCubit),
+                          ),
 
-                        SizedBox(
-                          height: isSmallScreen
-                              ? sizingHeight * 0.03
-                              : sizingHeight * 0.05,
+                        // Google Sign-In Button
+                        LBAuthOptionBlock(
+                          label: l10n.pfSignInGoogle,
+                          leading: FaIcon(
+                            FontAwesomeIcons.google,
+                            color: p.head,
+                            size: 20,
+                          ),
+                          onTap: () => _handleGoogleSignIn(authCubit),
                         ),
 
-                        // Auth buttons
-                        if (_isLoading)
-                          // Full-width centered loading block — without an
-                          // explicit width and CrossAxisAlignment.center
-                          // the Column shrunk to its widest child and
-                          // floated to the left edge, leaving the right
-                          // half of the screen blank during the Google
-                          // sign-in handoff. SizedBox(width: infinity)
-                          // pins it to the available width; the Column's
-                          // cross-axis center keeps spinner + text aligned.
-                          SizedBox(
-                            width: double.infinity,
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  CircularProgressIndicator(
-                                    color: theme.accentColor,
-                                    strokeWidth: 3,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    l10n.faSigningIn,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Column(
-                            children: [
-                              // Sign in with Apple — listed first on Apple
-                              // platforms: Guideline 4.8 requires it next to
-                              // third-party logins, and the HIG asks for
-                              // equal-or-greater prominence than the others.
-                              if (defaultTargetPlatform == TargetPlatform.iOS ||
-                                  defaultTargetPlatform ==
-                                      TargetPlatform.macOS) ...[
-                                _buildAuthButton(
-                                  context,
-                                  l10n.pfSignInApple,
-                                  const FaIcon(
-                                    FontAwesomeIcons.apple,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                  [Colors.black, Colors.grey.shade900],
-                                  () => _handleAppleSignIn(authCubit),
-                                ).gameZoomIn(delay: 250.ms),
+                        // Email Sign-In Button
+                        LBAuthOptionBlock(
+                          label: l10n.faSignInEmail,
+                          leading: LBPixelIcon(LBIcon.lock, cell: 3.6, color: p.head),
+                          onTap: () => context.push(AppRoutes.emailAuth),
+                        ),
 
-                                const SizedBox(height: 16),
-                              ],
+                        SizedBox(height: context.lbCell * .5),
 
-                              // Google Sign-In Button
-                              _buildAuthButton(
-                                context,
-                                l10n.pfSignInGoogle,
-                                const FaIcon(
-                                  FontAwesomeIcons.google,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                [Colors.red.shade600, Colors.red.shade700],
-                                () => _handleGoogleSignIn(authCubit),
-                              ).gameZoomIn(delay: 300.ms),
+                        // Guest Button — goes straight through. The
+                        // confirm modal that used to sit here spelled
+                        // out three downsides ("deleted in 90 days",
+                        // "no cloud sync", "you can't buy anything")
+                        // and demanded a "Proceed Anyway" tap, on the
+                        // path the majority of players actually take.
+                        // Arguing against our own product at the moment
+                        // someone is deciding whether to bother is not
+                        // a warning, it is a churn funnel. The tradeoffs
+                        // are still stated in the subtitle below, and
+                        // Profile offers the upgrade whenever they want
+                        // it.
+                        LBPrimaryBlock(
+                          label: l10n.faContinueGuest,
+                          icon: LBIcon.play,
+                          onTap: () => _handleGuestLogin(authCubit),
+                        ),
 
-                              const SizedBox(height: 16),
-
-                              // Email Sign-In Button
-                              _buildAuthButton(
-                                context,
-                                l10n.faSignInEmail,
-                                const Icon(
-                                  Icons.email_outlined,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                [
-                                  theme.accentColor.withValues(alpha: 0.85),
-                                  theme.accentColor,
-                                ],
-                                () => context.push(AppRoutes.emailAuth),
-                              ).gameZoomIn(delay: 350.ms),
-
-                              const SizedBox(height: 16),
-
-                              // Guest Button — goes straight through. The
-                              // confirm modal that used to sit here spelled
-                              // out three downsides ("deleted in 90 days",
-                              // "no cloud sync", "you can't buy anything")
-                              // and demanded a "Proceed Anyway" tap, on the
-                              // path the majority of players actually take.
-                              // Arguing against our own product at the moment
-                              // someone is deciding whether to bother is not
-                              // a warning, it is a churn funnel. The tradeoffs
-                              // are still stated in the subtitle below, and
-                              // Profile offers the upgrade whenever they want
-                              // it.
-                              _buildAuthButton(
-                                context,
-                                l10n.faContinueGuest,
-                                const Icon(
-                                  Icons.person_outline_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                [
-                                  theme.primaryColor.withValues(alpha: 0.8),
-                                  theme.primaryColor,
-                                ],
-                                () => _handleGuestLogin(authCubit),
-                              ).gameZoomIn(delay: 400.ms),
-
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Text(
-                                  l10n.faGuestNote,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.65),
-                                    fontSize: 12,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ).gameZoomIn(delay: 450.ms),
-                            ],
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            _showAppleSignIn
+                                ? l10n.lbGuestNoteApple
+                                : l10n.lbGuestNoteNoApple,
+                            textAlign: TextAlign.center,
+                            style: LBText.body(p, color: p.inkMuted, size: 11.5),
                           ),
-
-                        // Bottom padding for small screens
-                        SizedBox(height: isSmallScreen ? 20 : 40),
+                        ),
                       ],
-                    ),
+
+                      const Spacer(),
+                      SizedBox(height: context.lbCell),
+                    ],
+                  ),
                   ),
                 ),
               );
@@ -450,326 +286,59 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
     );
   }
 
-  /// Scrollable body for one legal document tab.
-  Widget _buildLegalScroll(String content, bool isSmallScreen) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        content,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.9),
-          fontSize: isSmallScreen ? 12 : 14,
-          height: 1.5,
+  Widget _buildPrivacyPolicyView() {
+    final l10n = AppLocalizations.of(context)!;
+    final g = context.lbGutter;
+    return LBScaffold(
+      title: l10n.lbAuthLegalTitle,
+      subtitle: l10n.faReviewNote,
+      // First screen of the flow: nothing to go back to.
+      showBack: false,
+      banner: false,
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, 0),
+        // Privacy Policy + Terms of Use — swipeable tabs.
+        child: LBLegalTabs(
+          privacyLabel: l10n.settingsPrivacyPolicyTitle,
+          termsLabel: l10n.settingsTermsTitle,
+          privacy: _privacyPolicyContent,
+          terms: _termsContent,
         ),
       ),
-    );
-  }
-
-  Widget _buildPrivacyPolicyView(
-    GameTheme theme,
-    double screenHeight,
-    double screenWidth,
-    bool isSmallScreen,
-    bool isNarrowScreen,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: (isNarrowScreen ? 16.0 : 24.0) + context.sideInset(),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.2),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
+      bottom: Padding(
+        padding: EdgeInsets.fromLTRB(g, 4, g, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Acceptance Checkbox
+            LBCheckBlock(
+              value: _privacyAccepted,
+              label: l10n.faAgreeCheckbox,
+              onChanged: (value) async {
+                setState(() {
+                  _privacyAccepted = value;
+                });
+                // Save privacy acceptance (by version) when checked.
+                if (_privacyAccepted) {
+                  await LegalAcceptance.recordAccepted();
+                }
+              },
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.privacy_tip_outlined,
-                    color: theme.accentColor,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.faPrivacyTerms,
-                        style: TextStyle(
-                          color: theme.accentColor,
-                          fontSize: isSmallScreen ? 20 : 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        l10n.faReviewNote,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.7),
-                          fontSize: isSmallScreen ? 12 : 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ).gameEntrance(),
-
-          const SizedBox(height: 16),
-
-          // Privacy Policy + Terms of Use — swipeable tabs.
-          Expanded(
-            child: DefaultTabController(
-              length: 2,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.backgroundColor.withValues(alpha: 0.4),
-                      theme.backgroundColor.withValues(alpha: 0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    TabBar(
-                      labelColor: theme.accentColor,
-                      unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-                      indicatorColor: theme.accentColor,
-                      labelStyle: TextStyle(
-                        fontSize: isSmallScreen ? 13 : 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      tabs: [
-                        Tab(text: l10n.settingsPrivacyPolicyTitle),
-                        Tab(text: l10n.settingsTermsTitle),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildLegalScroll(
-                            _privacyPolicyContent,
-                            isSmallScreen,
-                          ),
-                          _buildLegalScroll(_termsContent, isSmallScreen),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ).gameZoomIn(delay: 200.ms),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Acceptance Checkbox
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.accentColor.withValues(alpha: 0.15),
-                  theme.accentColor.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: HudCorners(
-              color: theme.accentColor,
-              inset: 8,
-              child: Row(
-                children: [
-                  Transform.scale(
-                    scale: 1.2,
-                    child: Checkbox(
-                      value: _privacyAccepted,
-                      onChanged: (value) async {
-                        setState(() {
-                          _privacyAccepted = value ?? false;
-                        });
-                        // Save privacy acceptance (by version) when checked.
-                        if (_privacyAccepted) {
-                          await LegalAcceptance.recordAccepted();
-                        }
-                      },
-                      activeColor: theme.accentColor,
-                      checkColor: Colors.white,
-                      side: BorderSide(
-                        color: theme.accentColor.withValues(alpha: 0.6),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      l10n.faAgreeCheckbox,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: isSmallScreen ? 14 : 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ).gameZoomIn(delay: 300.ms),
-
-          const SizedBox(height: 20),
-
-          // Continue Button
-          Container(
-            width: double.infinity,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _privacyAccepted
-                    ? [theme.primaryColor, theme.accentColor]
-                    : [Colors.grey.shade600, Colors.grey.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: _privacyAccepted
-                  ? [
-                      BoxShadow(
-                        color: theme.accentColor.withValues(alpha: 0.4),
-                        blurRadius: 15,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
+            const SizedBox(height: 6),
+            // Continue Button
+            LBPrimaryBlock(
+              label: l10n.faContinueToSignIn,
+              icon: LBIcon.check,
+              onTap: _privacyAccepted
+                  ? () {
+                      setState(() {
+                        _showPrivacyPolicy = false;
+                      });
+                    }
                   : null,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: _privacyAccepted
-                    ? () {
-                        setState(() {
-                          _showPrivacyPolicy = false;
-                        });
-                      }
-                    : null,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: _privacyAccepted
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.faContinueToSignIn,
-                      style: TextStyle(
-                        color: _privacyAccepted
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ).gameZoomIn(delay: 400.ms),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAuthButton(
-    BuildContext context,
-    String text,
-    Widget icon,
-    List<Color> gradientColors,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withValues(alpha: 0.4),
-            blurRadius: 15,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onPressed,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              icon,
-              const SizedBox(width: 12),
-              Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
