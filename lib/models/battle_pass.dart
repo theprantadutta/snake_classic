@@ -530,7 +530,8 @@ class BattlePassSeason {
         const themes = ['space', 'cyberpunk', 'crystal', 'ocean'];
         return themes[(level ~/ 20) % themes.length];
       case BattlePassRewardType.powerUp:
-        const powerUps = ['speed_boost', 'score_shield', 'ghost_mode'];
+        // Only power-ups that do something in play (see PowerUpCubit).
+        const powerUps = ['speed_boost', 'invincibility', 'score_multiplier'];
         return powerUps[(level ~/ 10) % powerUps.length];
       default:
         return null; // XP, coins, titles, tournament entries, specials
