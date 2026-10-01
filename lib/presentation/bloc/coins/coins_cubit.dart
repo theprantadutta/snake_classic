@@ -629,10 +629,12 @@ class CoinsCubit extends Cubit<CoinsState> {
     double multiplier;
     bool premiumBonus = hasPremium || hasBattlePass;
 
+    // Pro is sold as "2× coins from every run", so it is exactly 2×; the
+    // Battle Pass bonus stacks on top as before.
     if (hasPremium && hasBattlePass) {
-      multiplier = 1.75; // Pro + Battle Pass
+      multiplier = 2.25; // Pro + Battle Pass
     } else if (hasPremium) {
-      multiplier = 1.5; // Pro only
+      multiplier = 2.0; // Pro only
     } else if (hasBattlePass) {
       multiplier = 1.25; // Battle Pass only
     } else {
