@@ -11505,6 +11505,2088 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the App Store'**
   String get updateOpenStoreFailed;
+
+  /// Home header greeting
+  ///
+  /// In en, this message translates to:
+  /// **'Hey, {name}. Apples missed you.'**
+  String lbHomeGreeting(String name);
+
+  /// Home footer hint: the idle snake can be steered into a menu block, or the block tapped
+  ///
+  /// In en, this message translates to:
+  /// **'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.'**
+  String get lbHomeHint;
+
+  /// Home strip when daily challenges remain
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY {done}/{total} · ONE MORE SNACK, PLEASE'**
+  String lbDailyNag(String done, String total);
+
+  /// All daily challenges done and claimed
+  ///
+  /// In en, this message translates to:
+  /// **'ALL FED. COME BACK TOMORROW.'**
+  String get lbDailyAllFed;
+
+  /// Home mode cycler, e.g. MODE 1/8 · CLASSIC
+  ///
+  /// In en, this message translates to:
+  /// **'MODE {index}/{count} · {mode}'**
+  String lbModeRow(String index, String count, String mode);
+
+  /// Label above the best score on Home
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR BEST'**
+  String get lbYourBest;
+
+  /// Primary play button
+  ///
+  /// In en, this message translates to:
+  /// **'PLAY'**
+  String get lbPlay;
+
+  /// Mode and board size under PLAY/AGAIN, e.g. CLASSIC · 20×20
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} · {board}'**
+  String lbModeBoard(String mode, String board);
+
+  /// Home block
+  ///
+  /// In en, this message translates to:
+  /// **'VERSUS'**
+  String get lbHomeVersus;
+
+  /// Home Versus block subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'1v1 · rating {rating}'**
+  String lbHomeVersusSub(String rating);
+
+  /// Home Daily block title
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY {done}/{total}'**
+  String lbHomeDaily(String done, String total);
+
+  /// Home Daily block subtitle; ¢ = coins
+  ///
+  /// In en, this message translates to:
+  /// **'resets in {time} · +{coins}¢'**
+  String lbHomeDailySub(String time, String coins);
+
+  /// Home block (battle pass)
+  ///
+  /// In en, this message translates to:
+  /// **'SEASON'**
+  String get lbHomeSeason;
+
+  /// Home Season block subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Tier {tier} · {days} days left'**
+  String lbHomeSeasonSub(String tier, int days);
+
+  /// Home block (leaderboard)
+  ///
+  /// In en, this message translates to:
+  /// **'RANKS'**
+  String get lbHomeRanks;
+
+  /// Home Ranks block subtitle with the player's global rank
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank} · climbing'**
+  String lbHomeRanksSub(String rank);
+
+  /// Home Ranks subtitle when the rank is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Best run: {score}'**
+  String lbHomeRanksSubNone(String score);
+
+  /// Home block
+  ///
+  /// In en, this message translates to:
+  /// **'STORE'**
+  String get lbHomeStore;
+
+  /// Home Store block subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Skins · themes · trails'**
+  String get lbHomeStoreSub;
+
+  /// Home block
+  ///
+  /// In en, this message translates to:
+  /// **'PROFILE'**
+  String get lbHomeProfile;
+
+  /// Home Profile block subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'LV {level} · {runs} runs'**
+  String lbHomeProfileSub(String level, String runs);
+
+  /// Accessibility label of the home menu button
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get lbHomeMenu;
+
+  /// Home rewarded button: watch an ad for a free power-up
+  ///
+  /// In en, this message translates to:
+  /// **'FREE POWER-UP · AD'**
+  String get lbFreePowerUp;
+
+  /// Splash tip prefix
+  ///
+  /// In en, this message translates to:
+  /// **'TIP'**
+  String get lbTipLabel;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'The wall doesn\'t move. You do.'**
+  String get lbTip1;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Combos decay after 6 seconds. Keep chewing.'**
+  String get lbTip2;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Zen mode has no walls. It still has you.'**
+  String get lbTip3;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Easy runs stay off the leaderboard. No shame.'**
+  String get lbTip4;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus food is worth 25. Special is 50. Greed is free.'**
+  String get lbTip5;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe early. The snake doesn\'t do sudden.'**
+  String get lbTip6;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect Game: never step on the same cell twice. Good luck.'**
+  String get lbTip7;
+
+  /// Splash tip
+  ///
+  /// In en, this message translates to:
+  /// **'Pro players revive free. Just saying.'**
+  String get lbTip8;
+
+  /// Splash loading status
+  ///
+  /// In en, this message translates to:
+  /// **'WARMING UP THE APPLES… {pct}%'**
+  String lbSplashStatus(String pct);
+
+  /// Splash footer with app version
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} · NO SNAKES WERE HARMED'**
+  String lbSplashFooter(String version);
+
+  /// Run setup screen title
+  ///
+  /// In en, this message translates to:
+  /// **'SETUP'**
+  String get lbSetupTitle;
+
+  /// Run setup subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your poison. Every mode is free. Forever.'**
+  String get lbSetupSubtitle;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'MODE'**
+  String get lbSetupMode;
+
+  /// Aside next to the mode section label
+  ///
+  /// In en, this message translates to:
+  /// **'{count} MODES · 0 PAYWALLS'**
+  String lbSetupModesAside(String count);
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'BOARD'**
+  String get lbSetupBoard;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'DIFFICULTY'**
+  String get lbSetupDifficulty;
+
+  /// Section label: power-ups armed for the next run
+  ///
+  /// In en, this message translates to:
+  /// **'LOADOUT'**
+  String get lbSetupLoadout;
+
+  /// Aside next to the loadout label
+  ///
+  /// In en, this message translates to:
+  /// **'{armed} OF {total} ARMED'**
+  String lbSetupLoadoutArmed(String armed, String total);
+
+  /// Loadout slot with none owned: opens the store
+  ///
+  /// In en, this message translates to:
+  /// **'GET'**
+  String get lbSetupGet;
+
+  /// Short label for the tall (portrait) board size
+  ///
+  /// In en, this message translates to:
+  /// **'TALL'**
+  String get lbBoardTall;
+
+  /// Classic mode one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'Walls bite.'**
+  String get lbModeLineClassic;
+
+  /// Zen mode one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'No walls. Just vibes.'**
+  String get lbModeLineZen;
+
+  /// Speed Challenge one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'Fast. Then faster.'**
+  String get lbModeLineSpeed;
+
+  /// Multi-Food one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'The buffet is open.'**
+  String get lbModeLineMultiFood;
+
+  /// Survival one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'3 lives. Spend wisely.'**
+  String get lbModeLineSurvival;
+
+  /// Time Attack one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'3 minutes. Eat it all.'**
+  String get lbModeLineTimeAttack;
+
+  /// Power-Up Madness one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'Power-ups. So many.'**
+  String get lbModeLinePowerUp;
+
+  /// Perfect Game one-liner
+  ///
+  /// In en, this message translates to:
+  /// **'Never step twice.'**
+  String get lbModeLinePerfect;
+
+  /// Easy difficulty line
+  ///
+  /// In en, this message translates to:
+  /// **'practice · unranked'**
+  String get lbDiffEasyLine;
+
+  /// Normal difficulty line
+  ///
+  /// In en, this message translates to:
+  /// **'the classic pace'**
+  String get lbDiffNormalLine;
+
+  /// Hard difficulty line
+  ///
+  /// In en, this message translates to:
+  /// **'for show-offs'**
+  String get lbDiffHardLine;
+
+  /// Combo chip, multiplier 2
+  ///
+  /// In en, this message translates to:
+  /// **'×{mult} WARM'**
+  String lbComboWarm(String mult);
+
+  /// Combo chip, multiplier 3-4
+  ///
+  /// In en, this message translates to:
+  /// **'×{mult} HOT · KEEP EATING'**
+  String lbComboHot(String mult);
+
+  /// Combo chip, multiplier 5+
+  ///
+  /// In en, this message translates to:
+  /// **'×{mult} ON FIRE'**
+  String lbComboFire(String mult);
+
+  /// Combo about to decay (last 1.5 s)
+  ///
+  /// In en, this message translates to:
+  /// **'EAT SOMETHING. NOW.'**
+  String get lbComboDecay;
+
+  /// Combo broken toast
+  ///
+  /// In en, this message translates to:
+  /// **'combo dropped. it happens.'**
+  String get lbComboBroken;
+
+  /// Level up toast
+  ///
+  /// In en, this message translates to:
+  /// **'LV {level} · FASTER NOW'**
+  String lbLevelUp(String level);
+
+  /// HUD level label
+  ///
+  /// In en, this message translates to:
+  /// **'LV {level}'**
+  String lbLevelShort(String level);
+
+  /// Power-up chip
+  ///
+  /// In en, this message translates to:
+  /// **'INVINCIBLE · {secs}s'**
+  String lbPowerInvincible(String secs);
+
+  /// Power-up chip joke
+  ///
+  /// In en, this message translates to:
+  /// **'walls are more of a suggestion'**
+  String get lbPowerInvincibleLine;
+
+  /// Power-up chip
+  ///
+  /// In en, this message translates to:
+  /// **'SPEED · {secs}s'**
+  String lbPowerSpeed(String secs);
+
+  /// Power-up chip joke
+  ///
+  /// In en, this message translates to:
+  /// **'hold on'**
+  String get lbPowerSpeedLine;
+
+  /// Power-up chip
+  ///
+  /// In en, this message translates to:
+  /// **'SLOW-MO · {secs}s'**
+  String lbPowerSlow(String secs);
+
+  /// Power-up chip joke
+  ///
+  /// In en, this message translates to:
+  /// **'savor it'**
+  String get lbPowerSlowLine;
+
+  /// Power-up chip
+  ///
+  /// In en, this message translates to:
+  /// **'2× SCORE · {secs}s'**
+  String lbPowerScore(String secs);
+
+  /// Power-up about to expire (last 5 s)
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ENDING · {secs}'**
+  String lbPowerEnding(String name, String secs);
+
+  /// Time Attack last 10 seconds
+  ///
+  /// In en, this message translates to:
+  /// **'10 SECONDS. PANIC RESPONSIBLY.'**
+  String get lbTimeAttackPanic;
+
+  /// Survival mode life lost
+  ///
+  /// In en, this message translates to:
+  /// **'1 LIFE DOWN · {left} TO GO'**
+  String lbLifeLost(String left);
+
+  /// HUD snake length
+  ///
+  /// In en, this message translates to:
+  /// **'LEN {len}'**
+  String lbHudLen(String len);
+
+  /// Score label
+  ///
+  /// In en, this message translates to:
+  /// **'SCORE'**
+  String get lbScoreLabel;
+
+  /// Turn control button
+  ///
+  /// In en, this message translates to:
+  /// **'TURN LEFT'**
+  String get lbTurnLeft;
+
+  /// Turn control button
+  ///
+  /// In en, this message translates to:
+  /// **'TURN RIGHT'**
+  String get lbTurnRight;
+
+  /// Control hint
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE TO STEER'**
+  String get lbSwipeToSteer;
+
+  /// Pause overlay title
+  ///
+  /// In en, this message translates to:
+  /// **'PAUSED'**
+  String get lbPauseTitle;
+
+  /// Pause overlay subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'The apple will wait. Probably.'**
+  String get lbPauseLine;
+
+  /// Pause: resume button
+  ///
+  /// In en, this message translates to:
+  /// **'RESUME'**
+  String get lbResume;
+
+  /// Resume button subline: a countdown runs first
+  ///
+  /// In en, this message translates to:
+  /// **'3 · 2 · 1, THEN GO'**
+  String get lbResumeSub;
+
+  /// Pause: restart button
+  ///
+  /// In en, this message translates to:
+  /// **'RESTART'**
+  String get lbRestart;
+
+  /// Restart subline
+  ///
+  /// In en, this message translates to:
+  /// **'same mode'**
+  String get lbRestartSub;
+
+  /// Pause: settings button
+  ///
+  /// In en, this message translates to:
+  /// **'SETTINGS'**
+  String get lbPauseSettings;
+
+  /// Settings subline
+  ///
+  /// In en, this message translates to:
+  /// **'controls · sound'**
+  String get lbPauseSettingsSub;
+
+  /// Pause: quit button
+  ///
+  /// In en, this message translates to:
+  /// **'QUIT TO MENU'**
+  String get lbQuit;
+
+  /// Quit subline
+  ///
+  /// In en, this message translates to:
+  /// **'run ends here'**
+  String get lbQuitSub;
+
+  /// Pause footer run summary
+  ///
+  /// In en, this message translates to:
+  /// **'SO FAR · {score} PTS · LEN {len} · {time}'**
+  String lbPauseSoFar(String score, String len, String time);
+
+  /// Crash title: hit a wall
+  ///
+  /// In en, this message translates to:
+  /// **'BONK!'**
+  String get lbCrashWallTitle;
+
+  /// Crash line: wall
+  ///
+  /// In en, this message translates to:
+  /// **'You kissed the wall at length {len}.'**
+  String lbCrashWall1(String len);
+
+  /// Crash line: wall
+  ///
+  /// In en, this message translates to:
+  /// **'The wall was there first.'**
+  String get lbCrashWall2;
+
+  /// Crash line: wall
+  ///
+  /// In en, this message translates to:
+  /// **'Walls: undefeated since forever.'**
+  String get lbCrashWall3;
+
+  /// Crash tagline: wall
+  ///
+  /// In en, this message translates to:
+  /// **'THE WALL: 1 · YOU: 0'**
+  String get lbCrashWallScore;
+
+  /// Crash title: bit itself
+  ///
+  /// In en, this message translates to:
+  /// **'OUCH.'**
+  String get lbCrashSelfTitle;
+
+  /// Crash line: self
+  ///
+  /// In en, this message translates to:
+  /// **'You bit yourself. Why?'**
+  String get lbCrashSelf1;
+
+  /// Crash line: self
+  ///
+  /// In en, this message translates to:
+  /// **'Tail: delicious, apparently.'**
+  String get lbCrashSelf2;
+
+  /// Crash line: self
+  ///
+  /// In en, this message translates to:
+  /// **'Self-snack detected.'**
+  String get lbCrashSelf3;
+
+  /// Crash title: Time Attack ran out
+  ///
+  /// In en, this message translates to:
+  /// **'TIME!'**
+  String get lbCrashTimeTitle;
+
+  /// Crash line: timeout
+  ///
+  /// In en, this message translates to:
+  /// **'Out of time. The apples got away.'**
+  String get lbCrashTime1;
+
+  /// Crash line: timeout
+  ///
+  /// In en, this message translates to:
+  /// **'Three minutes, {food} apples. Respect.'**
+  String lbCrashTime2(String food);
+
+  /// Crash title: Perfect Game revisit
+  ///
+  /// In en, this message translates to:
+  /// **'STEPPED.'**
+  String get lbCrashStepTitle;
+
+  /// Crash line: Perfect Game revisit
+  ///
+  /// In en, this message translates to:
+  /// **'You walked on your own path. Perfect Game is not forgiving.'**
+  String get lbCrashStep1;
+
+  /// Game over title: player quit
+  ///
+  /// In en, this message translates to:
+  /// **'BAILED.'**
+  String get lbCrashQuitTitle;
+
+  /// Game over line: quit
+  ///
+  /// In en, this message translates to:
+  /// **'Run ended by you. We saw nothing.'**
+  String get lbCrashQuit1;
+
+  /// Fallback crash line
+  ///
+  /// In en, this message translates to:
+  /// **'Game over.'**
+  String get lbCrashGeneric;
+
+  /// Game over header: × and the crash line in caps
+  ///
+  /// In en, this message translates to:
+  /// **'× {line}'**
+  String lbGameOverHeadline(String line);
+
+  /// Revive offer title
+  ///
+  /// In en, this message translates to:
+  /// **'SECOND CHANCE?'**
+  String get lbReviveTitle;
+
+  /// Seconds countdown
+  ///
+  /// In en, this message translates to:
+  /// **'{secs}s'**
+  String lbSeconds(String secs);
+
+  /// Revive offer line
+  ///
+  /// In en, this message translates to:
+  /// **'Keep length {len} and all {score} points.'**
+  String lbReviveLine(String len, String score);
+
+  /// Revive by watching a rewarded ad
+  ///
+  /// In en, this message translates to:
+  /// **'WATCH AD · FREE'**
+  String get lbReviveWatch;
+
+  /// Revive by paying coins; ¢ = coins
+  ///
+  /// In en, this message translates to:
+  /// **'PAY {cost}¢'**
+  String lbRevivePay(String cost);
+
+  /// Coin balance next to the pay button
+  ///
+  /// In en, this message translates to:
+  /// **'you have {coins}'**
+  String lbReviveYouHave(String coins);
+
+  /// Decline revive
+  ///
+  /// In en, this message translates to:
+  /// **'NAH, SHOW ME MY SCORE'**
+  String get lbReviveDecline;
+
+  /// Pro free revive button
+  ///
+  /// In en, this message translates to:
+  /// **'REVIVE · FREE WITH PRO'**
+  String get lbRevivePro;
+
+  /// Upsell line under the revive offer
+  ///
+  /// In en, this message translates to:
+  /// **'Pro players revive free. Just saying.'**
+  String get lbReviveProHint;
+
+  /// Game over: best score label
+  ///
+  /// In en, this message translates to:
+  /// **'BEST'**
+  String get lbGoBest;
+
+  /// Points behind the best score
+  ///
+  /// In en, this message translates to:
+  /// **'−{gap}'**
+  String lbGoBehind(String gap);
+
+  /// Under the gap to best
+  ///
+  /// In en, this message translates to:
+  /// **'so close. (not really.)'**
+  String get lbGoBehindLine;
+
+  /// New high score
+  ///
+  /// In en, this message translates to:
+  /// **'NEW BEST!'**
+  String get lbGoNewBest;
+
+  /// Under NEW BEST
+  ///
+  /// In en, this message translates to:
+  /// **'Frame this one.'**
+  String get lbGoNewBestLine;
+
+  /// Game over: run number (total games played)
+  ///
+  /// In en, this message translates to:
+  /// **'RUN {n}'**
+  String lbGoRun(int n);
+
+  /// Title of the per-food points chart
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR RUN, UNCOILED'**
+  String get lbGoChartTitle;
+
+  /// Chart aside
+  ///
+  /// In en, this message translates to:
+  /// **'{food} FOOD · PEAK ×{combo}'**
+  String lbGoChartStats(String food, String combo);
+
+  /// Chart caption
+  ///
+  /// In en, this message translates to:
+  /// **'1 COLUMN = 1 FOOD · TALLER = TASTIER'**
+  String get lbGoChartCaption;
+
+  /// Play again button
+  ///
+  /// In en, this message translates to:
+  /// **'AGAIN'**
+  String get lbAgain;
+
+  /// Revive from the game over screen
+  ///
+  /// In en, this message translates to:
+  /// **'CONTINUE'**
+  String get lbGoContinue;
+
+  /// Continue block subline
+  ///
+  /// In en, this message translates to:
+  /// **'{cost}¢ or ad · keep len {len}'**
+  String lbGoContinueSub(String cost, String len);
+
+  /// Continue block subline for Pro
+  ///
+  /// In en, this message translates to:
+  /// **'free with Pro · keep len {len}'**
+  String lbGoContinueProSub(String len);
+
+  /// Coins earned this run
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins}¢ EARNED'**
+  String lbGoEarned(String coins);
+
+  /// Claimable rewards summary
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} daily ready · +{coins}¢ · +{xp} XP'**
+  String lbGoRewardsLine(String ready, String coins, String xp);
+
+  /// Rewards block when nothing is claimable
+  ///
+  /// In en, this message translates to:
+  /// **'nothing to claim yet · keep playing'**
+  String get lbGoNothingToClaim;
+
+  /// Claim a reward
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM'**
+  String get lbClaim;
+
+  /// Double the run's coins with a rewarded ad
+  ///
+  /// In en, this message translates to:
+  /// **'2× COINS · AD'**
+  String get lbGoDoubleCoins;
+
+  /// Open this run's replay
+  ///
+  /// In en, this message translates to:
+  /// **'WATCH REPLAY'**
+  String get lbGoWatchReplay;
+
+  /// Back to the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'HOME'**
+  String get lbHome;
+
+  /// Daily challenges screen title
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY'**
+  String get lbDailyTitle;
+
+  /// Daily subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Three snacks a day. Doctor\'s orders.'**
+  String get lbDailySubtitle;
+
+  /// Daily progress
+  ///
+  /// In en, this message translates to:
+  /// **'{done} OF {total} DONE'**
+  String lbDailyProgress(String done, String total);
+
+  /// Daily streak and reset countdown
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{streak: 1 day} other{streak: {days} days}} · resets in {time}'**
+  String lbDailyStreak(int days, String time);
+
+  /// Reset countdown
+  ///
+  /// In en, this message translates to:
+  /// **'resets in {time}'**
+  String lbResetsIn(String time);
+
+  /// Claim every completed challenge
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM ALL'**
+  String get lbClaimAll;
+
+  /// Claim all, doubled by a rewarded ad
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIM ALL ×2'**
+  String get lbClaimAllDouble;
+
+  /// Claim all ×2 subline
+  ///
+  /// In en, this message translates to:
+  /// **'one short ad, double the loot'**
+  String get lbClaimAllDoubleLine;
+
+  /// Link to weekly quests
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY QUESTS · {done}/{total}'**
+  String lbWeeklyTeaser(String done, String total);
+
+  /// Weekly teaser subline
+  ///
+  /// In en, this message translates to:
+  /// **'the big loot drops Sunday'**
+  String get lbWeeklyTeaserLine;
+
+  /// Weekly quests screen title
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY'**
+  String get lbWeeklyTitle;
+
+  /// Weekly quests subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Bigger snacks. Seven days to finish them.'**
+  String get lbWeeklySubtitle;
+
+  /// Reward summary
+  ///
+  /// In en, this message translates to:
+  /// **'{coins}¢ · {xp} XP'**
+  String lbRewardCoinsXp(String coins, String xp);
+
+  /// Start a run in the named mode
+  ///
+  /// In en, this message translates to:
+  /// **'PLAY {mode}'**
+  String lbPlayMode(String mode);
+
+  /// Achievements screen title
+  ///
+  /// In en, this message translates to:
+  /// **'TROPHIES'**
+  String get lbTrophiesTitle;
+
+  /// Achievements subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'{unlocked} of {total}. The other {locked} are judging you.'**
+  String lbTrophiesSubtitle(String unlocked, String total, String locked);
+
+  /// Filter tab
+  ///
+  /// In en, this message translates to:
+  /// **'ALL'**
+  String get lbFilterAll;
+
+  /// Filter tab
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCKED {count}'**
+  String lbFilterUnlocked(String count);
+
+  /// Filter tab
+  ///
+  /// In en, this message translates to:
+  /// **'LOCKED {count}'**
+  String lbFilterLocked(String count);
+
+  /// Achievements progress line
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% COMPLETE · {claimed} CLAIMED · {waiting} WAITING'**
+  String lbTrophiesSummary(String pct, String claimed, String waiting);
+
+  /// Reward already claimed
+  ///
+  /// In en, this message translates to:
+  /// **'CLAIMED'**
+  String get lbClaimed;
+
+  /// Coin reward button
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins}¢'**
+  String lbCoinsReward(String coins);
+
+  /// Hidden achievement
+  ///
+  /// In en, this message translates to:
+  /// **'SECRET'**
+  String get lbSecret;
+
+  /// Battle pass screen title
+  ///
+  /// In en, this message translates to:
+  /// **'SEASON'**
+  String get lbSeasonTitle;
+
+  /// Battle pass subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'{season} · {days} days left. Make them count.'**
+  String lbSeasonSubtitle(String season, int days);
+
+  /// Battle pass subtitle after the season ends
+  ///
+  /// In en, this message translates to:
+  /// **'{season} · season over. A new one is coming.'**
+  String lbSeasonEnded(String season);
+
+  /// Tier label
+  ///
+  /// In en, this message translates to:
+  /// **'TIER'**
+  String get lbTier;
+
+  /// Out of max tier
+  ///
+  /// In en, this message translates to:
+  /// **'/ {max}'**
+  String lbTierOf(String max);
+
+  /// Premium battle pass track
+  ///
+  /// In en, this message translates to:
+  /// **'PRO TRACK'**
+  String get lbProTrack;
+
+  /// XP progress to next tier
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} / {need} XP TO TIER {tier}'**
+  String lbXpToTier(String xp, String need, String tier);
+
+  /// Next reward header; track is FREE or PRO
+  ///
+  /// In en, this message translates to:
+  /// **'NEXT UP · TIER {tier} · {track}'**
+  String lbNextUp(String tier, String track);
+
+  /// Distance to next reward
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 tier away. Eat faster.} other{{n} tiers away. Eat faster.}}'**
+  String lbTiersAwayLine(int n);
+
+  /// Short distance to a tier
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 TIER} other{{n} TIERS}}'**
+  String lbTiersAway(int n);
+
+  /// Rewarded ad for battle pass XP
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP · WATCH AD'**
+  String lbXpAd(String xp);
+
+  /// Current tier marker
+  ///
+  /// In en, this message translates to:
+  /// **'YOU ARE HERE'**
+  String get lbYouAreHere;
+
+  /// Free track label
+  ///
+  /// In en, this message translates to:
+  /// **'FREE'**
+  String get lbFree;
+
+  /// Pro track label
+  ///
+  /// In en, this message translates to:
+  /// **'PRO'**
+  String get lbPro;
+
+  /// Leaderboard screen title
+  ///
+  /// In en, this message translates to:
+  /// **'RANKS'**
+  String get lbRanksTitle;
+
+  /// Leaderboard subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Ranked by your best single run. No pressure.'**
+  String get lbRanksSubtitle;
+
+  /// Leaderboard tab
+  ///
+  /// In en, this message translates to:
+  /// **'GLOBAL'**
+  String get lbTabGlobal;
+
+  /// Leaderboard tab
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKLY'**
+  String get lbTabWeekly;
+
+  /// Leaderboard tab
+  ///
+  /// In en, this message translates to:
+  /// **'FRIENDS'**
+  String get lbTabFriends;
+
+  /// Pinned row with the player's rank
+  ///
+  /// In en, this message translates to:
+  /// **'#{rank} · YOU · {name}'**
+  String lbRanksYouRow(String rank, String name);
+
+  /// Pinned row when the player has no rank yet
+  ///
+  /// In en, this message translates to:
+  /// **'YOU · {name}'**
+  String lbRanksYouUnranked(String name);
+
+  /// Gap to #1
+  ///
+  /// In en, this message translates to:
+  /// **'{gap} behind {leader}. Snack harder.'**
+  String lbRanksGap(String gap, String leader);
+
+  /// Pinned row when the player is first
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re #1. Everyone\'s chasing you.'**
+  String get lbRanksLeader;
+
+  /// Player only has easy runs
+  ///
+  /// In en, this message translates to:
+  /// **'Easy runs don\'t rank. Normal is waiting.'**
+  String get lbRanksEasyOnly;
+
+  /// Leaderboard offline state
+  ///
+  /// In en, this message translates to:
+  /// **'Ranks need the internet. Your snake doesn\'t.'**
+  String get lbRanksOffline;
+
+  /// Empty leaderboard
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody here yet. Be the first.'**
+  String get lbRanksEmpty;
+
+  /// Number of games played
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 run} other{{n} runs}}'**
+  String lbRunsCount(int n);
+
+  /// Profile screen title
+  ///
+  /// In en, this message translates to:
+  /// **'PROFILE'**
+  String get lbProfileTitle;
+
+  /// Profile subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your snake, by the numbers.'**
+  String get lbProfileSubtitle;
+
+  /// Fun fact label
+  ///
+  /// In en, this message translates to:
+  /// **'FUN FACT'**
+  String get lbFunFact;
+
+  /// Fun fact
+  ///
+  /// In en, this message translates to:
+  /// **'{apples} apples eaten. That\'s about {pies} pies.'**
+  String lbFunApples(String apples, String pies);
+
+  /// Fun fact
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} minutes of slithering. Hydrate.'**
+  String lbFunMinutes(String minutes);
+
+  /// Fun fact
+  ///
+  /// In en, this message translates to:
+  /// **'{powerups} power-ups grabbed. Greedy, love it.'**
+  String lbFunPowerups(String powerups);
+
+  /// Sync status
+  ///
+  /// In en, this message translates to:
+  /// **'PROGRESS SYNCED'**
+  String get lbSynced;
+
+  /// Sync status line
+  ///
+  /// In en, this message translates to:
+  /// **'Offline? Play anyway. We\'ll catch up later.'**
+  String get lbSyncedLine;
+
+  /// Sync status with unsent changes
+  ///
+  /// In en, this message translates to:
+  /// **'SYNC PENDING'**
+  String get lbSyncPending;
+
+  /// Guest account status
+  ///
+  /// In en, this message translates to:
+  /// **'PLAYING AS GUEST'**
+  String get lbGuest;
+
+  /// Guest account line
+  ///
+  /// In en, this message translates to:
+  /// **'Link an account to keep this snake forever.'**
+  String get lbGuestLine;
+
+  /// Sign-in provider chip
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNED IN · {provider}'**
+  String lbSignedInWith(String provider);
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'BEST'**
+  String get lbStatBest;
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'GAMES'**
+  String get lbStatGames;
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'PLAY TIME'**
+  String get lbStatPlayTime;
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'AVERAGE'**
+  String get lbStatAverage;
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'FOOD EATEN'**
+  String get lbStatFood;
+
+  /// Stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'POWER-UPS'**
+  String get lbStatPowerups;
+
+  /// Link to statistics
+  ///
+  /// In en, this message translates to:
+  /// **'STATS'**
+  String get lbStats;
+
+  /// Link to replays
+  ///
+  /// In en, this message translates to:
+  /// **'REPLAYS'**
+  String get lbReplays;
+
+  /// Link to friends
+  ///
+  /// In en, this message translates to:
+  /// **'FRIENDS'**
+  String get lbFriends;
+
+  /// Link to achievements
+  ///
+  /// In en, this message translates to:
+  /// **'TROPHIES'**
+  String get lbTrophies;
+
+  /// Friends online count
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ON'**
+  String lbFriendsOn(String count);
+
+  /// Store screen title
+  ///
+  /// In en, this message translates to:
+  /// **'STORE'**
+  String get lbStoreTitle;
+
+  /// Store subtitle, Pro tab
+  ///
+  /// In en, this message translates to:
+  /// **'No ads. All the drip. Your call.'**
+  String get lbStoreSubPro;
+
+  /// Store subtitle, Coins tab
+  ///
+  /// In en, this message translates to:
+  /// **'Coins for the impatient.'**
+  String get lbStoreSubCoins;
+
+  /// Store subtitle, Themes tab
+  ///
+  /// In en, this message translates to:
+  /// **'New board, same bad habits.'**
+  String get lbStoreSubThemes;
+
+  /// Store subtitle, Skins tab
+  ///
+  /// In en, this message translates to:
+  /// **'Same snake. Way more drip.'**
+  String get lbStoreSubSkins;
+
+  /// Store subtitle, Trails tab
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a mark.'**
+  String get lbStoreSubTrails;
+
+  /// Store subtitle, Power-ups tab
+  ///
+  /// In en, this message translates to:
+  /// **'Tiny cheats. Fully legal.'**
+  String get lbStoreSubPowerups;
+
+  /// Coin balance label
+  ///
+  /// In en, this message translates to:
+  /// **'SNAKE COINS'**
+  String get lbSnakeCoins;
+
+  /// Free coins for a rewarded ad
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins}¢ FREE'**
+  String lbFreeCoins(String coins);
+
+  /// Free coins subline
+  ///
+  /// In en, this message translates to:
+  /// **'watch a short ad'**
+  String get lbFreeCoinsLine;
+
+  /// Subscription product name
+  ///
+  /// In en, this message translates to:
+  /// **'SNAKE CLASSIC PRO'**
+  String get lbProName;
+
+  /// Pro perk
+  ///
+  /// In en, this message translates to:
+  /// **'No ads. Not one. Ever.'**
+  String get lbProPerkNoAds;
+
+  /// Pro perk
+  ///
+  /// In en, this message translates to:
+  /// **'A free revive, every single run'**
+  String get lbProPerkRevive;
+
+  /// Pro perk
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} premium themes'**
+  String lbProPerkThemes(String count);
+
+  /// Pro perk
+  ///
+  /// In en, this message translates to:
+  /// **'All {skins} skins + all {trails} trails'**
+  String lbProPerkCosmetics(String skins, String trails);
+
+  /// Pro perk
+  ///
+  /// In en, this message translates to:
+  /// **'2× coins from every run'**
+  String get lbProPerkCoins;
+
+  /// Subscription period
+  ///
+  /// In en, this message translates to:
+  /// **'MONTHLY'**
+  String get lbMonthly;
+
+  /// Subscription period
+  ///
+  /// In en, this message translates to:
+  /// **'YEARLY'**
+  String get lbYearly;
+
+  /// Under the monthly price
+  ///
+  /// In en, this message translates to:
+  /// **'per month'**
+  String get lbPerMonth;
+
+  /// Under the yearly price
+  ///
+  /// In en, this message translates to:
+  /// **'per year'**
+  String get lbPerYear;
+
+  /// Under the yearly price
+  ///
+  /// In en, this message translates to:
+  /// **'best value'**
+  String get lbBestValue;
+
+  /// Subscribe button
+  ///
+  /// In en, this message translates to:
+  /// **'GO PRO'**
+  String get lbGoPro;
+
+  /// Shown instead of GO PRO for subscribers
+  ///
+  /// In en, this message translates to:
+  /// **'PRO IS ON'**
+  String get lbProActive;
+
+  /// Under PRO IS ON
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for backing the snake.'**
+  String get lbProActiveLine;
+
+  /// Store legal footer
+  ///
+  /// In en, this message translates to:
+  /// **'Prices come from your app store. Cancel anytime.'**
+  String get lbStoreFooter;
+
+  /// Restore purchases link
+  ///
+  /// In en, this message translates to:
+  /// **'RESTORE PURCHASES'**
+  String get lbRestorePurchases;
+
+  /// Buy button with the store price
+  ///
+  /// In en, this message translates to:
+  /// **'BUY · {price}'**
+  String lbBuyPrice(String price);
+
+  /// Buy with coins
+  ///
+  /// In en, this message translates to:
+  /// **'BUY · {coins}¢'**
+  String lbBuyCoins(String coins);
+
+  /// Under a buy button for Pro-included items
+  ///
+  /// In en, this message translates to:
+  /// **'or free with Pro'**
+  String get lbOrFreeWithPro;
+
+  /// Item in use
+  ///
+  /// In en, this message translates to:
+  /// **'EQUIPPED'**
+  String get lbEquipped;
+
+  /// Item owned
+  ///
+  /// In en, this message translates to:
+  /// **'OWNED'**
+  String get lbOwned;
+
+  /// Equip an owned item
+  ///
+  /// In en, this message translates to:
+  /// **'EQUIP'**
+  String get lbEquip;
+
+  /// Item unlocked by the subscription
+  ///
+  /// In en, this message translates to:
+  /// **'INCLUDED WITH PRO'**
+  String get lbIncludedWithPro;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Rich. Famous. A little smug.'**
+  String get lbSkinTagGolden;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Hot to the touch.'**
+  String get lbSkinTagFire;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Cool under pressure.'**
+  String get lbSkinTagIce;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Shockingly fast.'**
+  String get lbSkinTagElectric;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'All of them. At once.'**
+  String get lbSkinTagRainbow;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Visible from space.'**
+  String get lbSkinTagNeon;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Now you see it.'**
+  String get lbSkinTagShadow;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Contains multitudes.'**
+  String get lbSkinTagGalaxy;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Handle with care.'**
+  String get lbSkinTagCrystal;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Big universe energy.'**
+  String get lbSkinTagCosmic;
+
+  /// Skin tagline
+  ///
+  /// In en, this message translates to:
+  /// **'Legally not a dragon.'**
+  String get lbSkinTagDragon;
+
+  /// Settings screen title
+  ///
+  /// In en, this message translates to:
+  /// **'SETTINGS'**
+  String get lbSettingsTitle;
+
+  /// Settings subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Tweak it till it feels right.'**
+  String get lbSettingsSubtitle;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'CONTROLS'**
+  String get lbControls;
+
+  /// Control layout
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE'**
+  String get lbCtrlSwipe;
+
+  /// Control layout subline
+  ///
+  /// In en, this message translates to:
+  /// **'anywhere'**
+  String get lbCtrlSwipeSub;
+
+  /// Control layout
+  ///
+  /// In en, this message translates to:
+  /// **'D-PAD'**
+  String get lbCtrlDpad;
+
+  /// Control layout subline
+  ///
+  /// In en, this message translates to:
+  /// **'4 arrows'**
+  String get lbCtrlDpadSub;
+
+  /// Control layout
+  ///
+  /// In en, this message translates to:
+  /// **'TURN'**
+  String get lbCtrlTurn;
+
+  /// Control layout subline
+  ///
+  /// In en, this message translates to:
+  /// **'left · right'**
+  String get lbCtrlTurnSub;
+
+  /// Control layout
+  ///
+  /// In en, this message translates to:
+  /// **'STICK'**
+  String get lbCtrlStick;
+
+  /// Control layout subline
+  ///
+  /// In en, this message translates to:
+  /// **'floating'**
+  String get lbCtrlStickSub;
+
+  /// Swipe sensitivity setting
+  ///
+  /// In en, this message translates to:
+  /// **'SWIPE FEEL'**
+  String get lbSwipeFeel;
+
+  /// Swipe sensitivity subline
+  ///
+  /// In en, this message translates to:
+  /// **'lazy ←→ twitchy'**
+  String get lbSwipeFeelSub;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'GAMEPLAY'**
+  String get lbGameplay;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'MODE'**
+  String get lbMode;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'BOARD'**
+  String get lbBoard;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'DIFFICULTY'**
+  String get lbDifficulty;
+
+  /// Setting: crash replay length
+  ///
+  /// In en, this message translates to:
+  /// **'CRASH REPLAY'**
+  String get lbCrashReplay;
+
+  /// Crash replay subline
+  ///
+  /// In en, this message translates to:
+  /// **'how long we rub it in'**
+  String get lbCrashReplaySub;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'THEME'**
+  String get lbTheme;
+
+  /// Theme section aside
+  ///
+  /// In en, this message translates to:
+  /// **'{theme} · {free} FREE · {premium} PREMIUM'**
+  String lbThemeAside(String theme, String free, String premium);
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'SOUND & FEEL'**
+  String get lbSoundFeel;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'SOUND FX'**
+  String get lbSoundFx;
+
+  /// Sound subline
+  ///
+  /// In en, this message translates to:
+  /// **'crunchy, as intended'**
+  String get lbSoundFxSub;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'MUSIC'**
+  String get lbMusic;
+
+  /// Setting row
+  ///
+  /// In en, this message translates to:
+  /// **'HAPTICS'**
+  String get lbHaptics;
+
+  /// Haptics subline
+  ///
+  /// In en, this message translates to:
+  /// **'tiny buzz on every bite'**
+  String get lbHapticsSub;
+
+  /// High refresh rate setting
+  ///
+  /// In en, this message translates to:
+  /// **'120 HZ'**
+  String get lb120Hz;
+
+  /// High refresh rate subline
+  ///
+  /// In en, this message translates to:
+  /// **'smooth like butter (if your phone is)'**
+  String get lb120HzSub;
+
+  /// Footer link
+  ///
+  /// In en, this message translates to:
+  /// **'REPLAY TUTORIAL'**
+  String get lbReplayTutorial;
+
+  /// Footer link
+  ///
+  /// In en, this message translates to:
+  /// **'PRIVACY'**
+  String get lbPrivacy;
+
+  /// Settings shortcut to the run setup screen
+  ///
+  /// In en, this message translates to:
+  /// **'Run setup'**
+  String get lbOpenRunSetup;
+
+  /// Multiplayer lobby title
+  ///
+  /// In en, this message translates to:
+  /// **'VERSUS'**
+  String get lbVersusTitle;
+
+  /// Multiplayer subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Real people. Real snakes. Real beef.'**
+  String get lbVersusSubtitle;
+
+  /// Stat
+  ///
+  /// In en, this message translates to:
+  /// **'WINS'**
+  String get lbWins;
+
+  /// Stat
+  ///
+  /// In en, this message translates to:
+  /// **'LOSSES'**
+  String get lbLosses;
+
+  /// Stat
+  ///
+  /// In en, this message translates to:
+  /// **'DRAWS'**
+  String get lbDraws;
+
+  /// Stat
+  ///
+  /// In en, this message translates to:
+  /// **'RATING'**
+  String get lbRating;
+
+  /// Section label
+  ///
+  /// In en, this message translates to:
+  /// **'QUICK MATCH'**
+  String get lbQuickMatch;
+
+  /// Quick match line
+  ///
+  /// In en, this message translates to:
+  /// **'1v1 Classic. We find you a rival in seconds.'**
+  String get lbQuickMatchLine;
+
+  /// Start matchmaking
+  ///
+  /// In en, this message translates to:
+  /// **'FIND MATCH'**
+  String get lbFindMatch;
+
+  /// Matchmaking in progress
+  ///
+  /// In en, this message translates to:
+  /// **'SNIFFING OUT A RIVAL… {secs}s'**
+  String lbSearching(String secs);
+
+  /// Cancel
+  ///
+  /// In en, this message translates to:
+  /// **'CANCEL'**
+  String get lbCancel;
+
+  /// Join by room code
+  ///
+  /// In en, this message translates to:
+  /// **'GOT A CODE?'**
+  String get lbGotCode;
+
+  /// Room code hint
+  ///
+  /// In en, this message translates to:
+  /// **'Six letters. Case doesn\'t matter. Friendship might.'**
+  String get lbGotCodeLine;
+
+  /// Create a private room
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE ROOM'**
+  String get lbCreateRoom;
+
+  /// Create room line
+  ///
+  /// In en, this message translates to:
+  /// **'Invite a friend. Or a frenemy.'**
+  String get lbCreateRoomLine;
+
+  /// Bot opponent note
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody brave online? The house snake joins after 30s. It doesn\'t trash talk.'**
+  String get lbHouseSnake;
+
+  /// Tournaments link
+  ///
+  /// In en, this message translates to:
+  /// **'TOURNAMENTS · LIVE'**
+  String get lbTournamentsLive;
+
+  /// Tournaments link subline
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze free · Silver & Gold entries'**
+  String get lbTournamentsLine;
+
+  /// Multiplayer room title
+  ///
+  /// In en, this message translates to:
+  /// **'ROOM'**
+  String get lbRoomTitle;
+
+  /// Room subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Share the code. Wait nervously.'**
+  String get lbRoomSubtitle;
+
+  /// Players in the room
+  ///
+  /// In en, this message translates to:
+  /// **'PLAYERS {count}/{max}'**
+  String lbPlayersCount(String count, String max);
+
+  /// The player
+  ///
+  /// In en, this message translates to:
+  /// **'YOU'**
+  String get lbYou;
+
+  /// The opponent
+  ///
+  /// In en, this message translates to:
+  /// **'RIVAL'**
+  String get lbRival;
+
+  /// Player not ready yet
+  ///
+  /// In en, this message translates to:
+  /// **'WAITING · tap ready, hero'**
+  String get lbWaitingYou;
+
+  /// Opponent not ready yet
+  ///
+  /// In en, this message translates to:
+  /// **'WAITING'**
+  String get lbWaiting;
+
+  /// Opponent is ready
+  ///
+  /// In en, this message translates to:
+  /// **'READY · stretching menacingly'**
+  String get lbReadyThem;
+
+  /// Player is ready
+  ///
+  /// In en, this message translates to:
+  /// **'READY · nerves of steel'**
+  String get lbReadyYou;
+
+  /// Ready countdown label
+  ///
+  /// In en, this message translates to:
+  /// **'READY CHECK'**
+  String get lbReadyCheck;
+
+  /// Ready button
+  ///
+  /// In en, this message translates to:
+  /// **'READY'**
+  String get lbReady;
+
+  /// Leave the room
+  ///
+  /// In en, this message translates to:
+  /// **'LEAVE ROOM'**
+  String get lbLeaveRoom;
+
+  /// Versus divider
+  ///
+  /// In en, this message translates to:
+  /// **'VS'**
+  String get lbVs;
+
+  /// Match in progress
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE'**
+  String get lbLive;
+
+  /// Opponent leads
+  ///
+  /// In en, this message translates to:
+  /// **'{rival} is {gap} points ahead. Rude.'**
+  String lbMatchBehind(String rival, String gap);
+
+  /// Player leads
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re {gap} ahead. Don\'t get cocky.'**
+  String lbMatchAhead(String gap);
+
+  /// Scores tied
+  ///
+  /// In en, this message translates to:
+  /// **'Dead even. Eat something.'**
+  String get lbMatchTied;
+
+  /// Match result
+  ///
+  /// In en, this message translates to:
+  /// **'VICTORY'**
+  String get lbVictory;
+
+  /// Victory line
+  ///
+  /// In en, this message translates to:
+  /// **'You out-snaked {rival}.'**
+  String lbVictoryLine(String rival);
+
+  /// Match result
+  ///
+  /// In en, this message translates to:
+  /// **'DEFEAT'**
+  String get lbDefeat;
+
+  /// Defeat line
+  ///
+  /// In en, this message translates to:
+  /// **'{rival} took this one.'**
+  String lbDefeatLine(String rival);
+
+  /// Defeat when both crashed
+  ///
+  /// In en, this message translates to:
+  /// **'Both snakes crashed. Their score decided it.'**
+  String get lbDefeatBothCrashed;
+
+  /// Defeat joke line
+  ///
+  /// In en, this message translates to:
+  /// **'{rival} will be insufferable now.'**
+  String lbDefeatLine2(String rival);
+
+  /// Match result
+  ///
+  /// In en, this message translates to:
+  /// **'DRAW'**
+  String get lbDraw;
+
+  /// Draw line
+  ///
+  /// In en, this message translates to:
+  /// **'Perfectly balanced. Rematch?'**
+  String get lbDrawLine;
+
+  /// Result screen footer
+  ///
+  /// In en, this message translates to:
+  /// **'Every loss is just a rematch waiting to happen.'**
+  String get lbVersusFooter;
+
+  /// Stat
+  ///
+  /// In en, this message translates to:
+  /// **'LENGTH'**
+  String get lbLength;
+
+  /// Time survived
+  ///
+  /// In en, this message translates to:
+  /// **'SURVIVED'**
+  String get lbSurvived;
+
+  /// Play the same rival again
+  ///
+  /// In en, this message translates to:
+  /// **'REMATCH'**
+  String get lbRematch;
+
+  /// Return to the lobby
+  ///
+  /// In en, this message translates to:
+  /// **'BACK TO LOBBY'**
+  String get lbBackToLobby;
+
+  /// Rewarded interstitial intro title
+  ///
+  /// In en, this message translates to:
+  /// **'AD BREAK'**
+  String get lbAdBreak;
+
+  /// Intro: states the reward plainly
+  ///
+  /// In en, this message translates to:
+  /// **'A short ad. {coins} coins for you.'**
+  String lbAdBreakLine(String coins);
+
+  /// Intro: secondary line
+  ///
+  /// In en, this message translates to:
+  /// **'Fair trade? Your call either way.'**
+  String get lbAdBreakLine2;
+
+  /// Intro countdown with skip notice
+  ///
+  /// In en, this message translates to:
+  /// **'STARTS IN {secs} · OR SKIP, NO HARD FEELINGS'**
+  String lbAdStartsIn(String secs);
+
+  /// Reward chip
+  ///
+  /// In en, this message translates to:
+  /// **'+{coins}¢ WHEN IT ENDS'**
+  String lbAdRewardWhenEnds(String coins);
+
+  /// Start the ad now
+  ///
+  /// In en, this message translates to:
+  /// **'WATCH NOW'**
+  String get lbWatchNow;
+
+  /// Skip the ad
+  ///
+  /// In en, this message translates to:
+  /// **'NO THANKS'**
+  String get lbNoThanks;
+
+  /// Back gesture skips
+  ///
+  /// In en, this message translates to:
+  /// **'The back gesture counts as no thanks, too.'**
+  String get lbAdBackHint;
+
+  /// Pro upsell under GO PRO
+  ///
+  /// In en, this message translates to:
+  /// **'and never see this screen again.'**
+  String get lbAdGoProLine;
+
+  /// Tap-absorbing curtain before a full-screen ad
+  ///
+  /// In en, this message translates to:
+  /// **'AD STARTING…'**
+  String get lbAdStarting;
+
+  /// Rewarded ad not filled
+  ///
+  /// In en, this message translates to:
+  /// **'No ad right now. Try again in a sec.'**
+  String get lbNoAdNow;
+
+  /// Offline banner
+  ///
+  /// In en, this message translates to:
+  /// **'NO SIGNAL. Single-player still works.'**
+  String get lbOffline;
+
+  /// Server error
+  ///
+  /// In en, this message translates to:
+  /// **'Our servers bonked. Your progress is safe on this phone.'**
+  String get lbServerDown;
+
+  /// Purchase failed
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase didn\'t go through. You weren\'t charged.'**
+  String get lbPurchaseFailed;
+
+  /// Matchmaking timeout
+  ///
+  /// In en, this message translates to:
+  /// **'No rival found. The house snake is warming up.'**
+  String get lbMatchTimeout;
 }
 
 class _AppLocalizationsDelegate

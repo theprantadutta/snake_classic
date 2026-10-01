@@ -6462,4 +6462,1251 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Impossible d’ouvrir l’App Store';
+
+  @override
+  String lbHomeGreeting(String name) {
+    return 'Hey, $name. Apples missed you.';
+  }
+
+  @override
+  String get lbHomeHint => 'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.';
+
+  @override
+  String lbDailyNag(String done, String total) {
+    return 'DAILY $done/$total · ONE MORE SNACK, PLEASE';
+  }
+
+  @override
+  String get lbDailyAllFed => 'ALL FED. COME BACK TOMORROW.';
+
+  @override
+  String lbModeRow(String index, String count, String mode) {
+    return 'MODE $index/$count · $mode';
+  }
+
+  @override
+  String get lbYourBest => 'YOUR BEST';
+
+  @override
+  String get lbPlay => 'PLAY';
+
+  @override
+  String lbModeBoard(String mode, String board) {
+    return '$mode · $board';
+  }
+
+  @override
+  String get lbHomeVersus => 'VERSUS';
+
+  @override
+  String lbHomeVersusSub(String rating) {
+    return '1v1 · rating $rating';
+  }
+
+  @override
+  String lbHomeDaily(String done, String total) {
+    return 'DAILY $done/$total';
+  }
+
+  @override
+  String lbHomeDailySub(String time, String coins) {
+    return 'resets in $time · +$coins¢';
+  }
+
+  @override
+  String get lbHomeSeason => 'SEASON';
+
+  @override
+  String lbHomeSeasonSub(String tier, int days) {
+    return 'Tier $tier · $days days left';
+  }
+
+  @override
+  String get lbHomeRanks => 'RANKS';
+
+  @override
+  String lbHomeRanksSub(String rank) {
+    return '#$rank · climbing';
+  }
+
+  @override
+  String lbHomeRanksSubNone(String score) {
+    return 'Best run: $score';
+  }
+
+  @override
+  String get lbHomeStore => 'STORE';
+
+  @override
+  String get lbHomeStoreSub => 'Skins · themes · trails';
+
+  @override
+  String get lbHomeProfile => 'PROFILE';
+
+  @override
+  String lbHomeProfileSub(String level, String runs) {
+    return 'LV $level · $runs runs';
+  }
+
+  @override
+  String get lbHomeMenu => 'Menu';
+
+  @override
+  String get lbFreePowerUp => 'FREE POWER-UP · AD';
+
+  @override
+  String get lbTipLabel => 'TIP';
+
+  @override
+  String get lbTip1 => 'The wall doesn\'t move. You do.';
+
+  @override
+  String get lbTip2 => 'Combos decay after 6 seconds. Keep chewing.';
+
+  @override
+  String get lbTip3 => 'Zen mode has no walls. It still has you.';
+
+  @override
+  String get lbTip4 => 'Easy runs stay off the leaderboard. No shame.';
+
+  @override
+  String get lbTip5 => 'Bonus food is worth 25. Special is 50. Greed is free.';
+
+  @override
+  String get lbTip6 => 'Swipe early. The snake doesn\'t do sudden.';
+
+  @override
+  String get lbTip7 =>
+      'Perfect Game: never step on the same cell twice. Good luck.';
+
+  @override
+  String get lbTip8 => 'Pro players revive free. Just saying.';
+
+  @override
+  String lbSplashStatus(String pct) {
+    return 'WARMING UP THE APPLES… $pct%';
+  }
+
+  @override
+  String lbSplashFooter(String version) {
+    return 'v$version · NO SNAKES WERE HARMED';
+  }
+
+  @override
+  String get lbSetupTitle => 'SETUP';
+
+  @override
+  String get lbSetupSubtitle =>
+      'Pick your poison. Every mode is free. Forever.';
+
+  @override
+  String get lbSetupMode => 'MODE';
+
+  @override
+  String lbSetupModesAside(String count) {
+    return '$count MODES · 0 PAYWALLS';
+  }
+
+  @override
+  String get lbSetupBoard => 'BOARD';
+
+  @override
+  String get lbSetupDifficulty => 'DIFFICULTY';
+
+  @override
+  String get lbSetupLoadout => 'LOADOUT';
+
+  @override
+  String lbSetupLoadoutArmed(String armed, String total) {
+    return '$armed OF $total ARMED';
+  }
+
+  @override
+  String get lbSetupGet => 'GET';
+
+  @override
+  String get lbBoardTall => 'TALL';
+
+  @override
+  String get lbModeLineClassic => 'Walls bite.';
+
+  @override
+  String get lbModeLineZen => 'No walls. Just vibes.';
+
+  @override
+  String get lbModeLineSpeed => 'Fast. Then faster.';
+
+  @override
+  String get lbModeLineMultiFood => 'The buffet is open.';
+
+  @override
+  String get lbModeLineSurvival => '3 lives. Spend wisely.';
+
+  @override
+  String get lbModeLineTimeAttack => '3 minutes. Eat it all.';
+
+  @override
+  String get lbModeLinePowerUp => 'Power-ups. So many.';
+
+  @override
+  String get lbModeLinePerfect => 'Never step twice.';
+
+  @override
+  String get lbDiffEasyLine => 'practice · unranked';
+
+  @override
+  String get lbDiffNormalLine => 'the classic pace';
+
+  @override
+  String get lbDiffHardLine => 'for show-offs';
+
+  @override
+  String lbComboWarm(String mult) {
+    return '×$mult WARM';
+  }
+
+  @override
+  String lbComboHot(String mult) {
+    return '×$mult HOT · KEEP EATING';
+  }
+
+  @override
+  String lbComboFire(String mult) {
+    return '×$mult ON FIRE';
+  }
+
+  @override
+  String get lbComboDecay => 'EAT SOMETHING. NOW.';
+
+  @override
+  String get lbComboBroken => 'combo dropped. it happens.';
+
+  @override
+  String lbLevelUp(String level) {
+    return 'LV $level · FASTER NOW';
+  }
+
+  @override
+  String lbLevelShort(String level) {
+    return 'LV $level';
+  }
+
+  @override
+  String lbPowerInvincible(String secs) {
+    return 'INVINCIBLE · ${secs}s';
+  }
+
+  @override
+  String get lbPowerInvincibleLine => 'walls are more of a suggestion';
+
+  @override
+  String lbPowerSpeed(String secs) {
+    return 'SPEED · ${secs}s';
+  }
+
+  @override
+  String get lbPowerSpeedLine => 'hold on';
+
+  @override
+  String lbPowerSlow(String secs) {
+    return 'SLOW-MO · ${secs}s';
+  }
+
+  @override
+  String get lbPowerSlowLine => 'savor it';
+
+  @override
+  String lbPowerScore(String secs) {
+    return '2× SCORE · ${secs}s';
+  }
+
+  @override
+  String lbPowerEnding(String name, String secs) {
+    return '$name ENDING · $secs';
+  }
+
+  @override
+  String get lbTimeAttackPanic => '10 SECONDS. PANIC RESPONSIBLY.';
+
+  @override
+  String lbLifeLost(String left) {
+    return '1 LIFE DOWN · $left TO GO';
+  }
+
+  @override
+  String lbHudLen(String len) {
+    return 'LEN $len';
+  }
+
+  @override
+  String get lbScoreLabel => 'SCORE';
+
+  @override
+  String get lbTurnLeft => 'TURN LEFT';
+
+  @override
+  String get lbTurnRight => 'TURN RIGHT';
+
+  @override
+  String get lbSwipeToSteer => 'SWIPE TO STEER';
+
+  @override
+  String get lbPauseTitle => 'PAUSED';
+
+  @override
+  String get lbPauseLine => 'The apple will wait. Probably.';
+
+  @override
+  String get lbResume => 'RESUME';
+
+  @override
+  String get lbResumeSub => '3 · 2 · 1, THEN GO';
+
+  @override
+  String get lbRestart => 'RESTART';
+
+  @override
+  String get lbRestartSub => 'same mode';
+
+  @override
+  String get lbPauseSettings => 'SETTINGS';
+
+  @override
+  String get lbPauseSettingsSub => 'controls · sound';
+
+  @override
+  String get lbQuit => 'QUIT TO MENU';
+
+  @override
+  String get lbQuitSub => 'run ends here';
+
+  @override
+  String lbPauseSoFar(String score, String len, String time) {
+    return 'SO FAR · $score PTS · LEN $len · $time';
+  }
+
+  @override
+  String get lbCrashWallTitle => 'BONK!';
+
+  @override
+  String lbCrashWall1(String len) {
+    return 'You kissed the wall at length $len.';
+  }
+
+  @override
+  String get lbCrashWall2 => 'The wall was there first.';
+
+  @override
+  String get lbCrashWall3 => 'Walls: undefeated since forever.';
+
+  @override
+  String get lbCrashWallScore => 'THE WALL: 1 · YOU: 0';
+
+  @override
+  String get lbCrashSelfTitle => 'OUCH.';
+
+  @override
+  String get lbCrashSelf1 => 'You bit yourself. Why?';
+
+  @override
+  String get lbCrashSelf2 => 'Tail: delicious, apparently.';
+
+  @override
+  String get lbCrashSelf3 => 'Self-snack detected.';
+
+  @override
+  String get lbCrashTimeTitle => 'TIME!';
+
+  @override
+  String get lbCrashTime1 => 'Out of time. The apples got away.';
+
+  @override
+  String lbCrashTime2(String food) {
+    return 'Three minutes, $food apples. Respect.';
+  }
+
+  @override
+  String get lbCrashStepTitle => 'STEPPED.';
+
+  @override
+  String get lbCrashStep1 =>
+      'You walked on your own path. Perfect Game is not forgiving.';
+
+  @override
+  String get lbCrashQuitTitle => 'BAILED.';
+
+  @override
+  String get lbCrashQuit1 => 'Run ended by you. We saw nothing.';
+
+  @override
+  String get lbCrashGeneric => 'Game over.';
+
+  @override
+  String lbGameOverHeadline(String line) {
+    return '× $line';
+  }
+
+  @override
+  String get lbReviveTitle => 'SECOND CHANCE?';
+
+  @override
+  String lbSeconds(String secs) {
+    return '${secs}s';
+  }
+
+  @override
+  String lbReviveLine(String len, String score) {
+    return 'Keep length $len and all $score points.';
+  }
+
+  @override
+  String get lbReviveWatch => 'WATCH AD · FREE';
+
+  @override
+  String lbRevivePay(String cost) {
+    return 'PAY $cost¢';
+  }
+
+  @override
+  String lbReviveYouHave(String coins) {
+    return 'you have $coins';
+  }
+
+  @override
+  String get lbReviveDecline => 'NAH, SHOW ME MY SCORE';
+
+  @override
+  String get lbRevivePro => 'REVIVE · FREE WITH PRO';
+
+  @override
+  String get lbReviveProHint => 'Pro players revive free. Just saying.';
+
+  @override
+  String get lbGoBest => 'BEST';
+
+  @override
+  String lbGoBehind(String gap) {
+    return '−$gap';
+  }
+
+  @override
+  String get lbGoBehindLine => 'so close. (not really.)';
+
+  @override
+  String get lbGoNewBest => 'NEW BEST!';
+
+  @override
+  String get lbGoNewBestLine => 'Frame this one.';
+
+  @override
+  String lbGoRun(int n) {
+    return 'RUN $n';
+  }
+
+  @override
+  String get lbGoChartTitle => 'YOUR RUN, UNCOILED';
+
+  @override
+  String lbGoChartStats(String food, String combo) {
+    return '$food FOOD · PEAK ×$combo';
+  }
+
+  @override
+  String get lbGoChartCaption => '1 COLUMN = 1 FOOD · TALLER = TASTIER';
+
+  @override
+  String get lbAgain => 'AGAIN';
+
+  @override
+  String get lbGoContinue => 'CONTINUE';
+
+  @override
+  String lbGoContinueSub(String cost, String len) {
+    return '$cost¢ or ad · keep len $len';
+  }
+
+  @override
+  String lbGoContinueProSub(String len) {
+    return 'free with Pro · keep len $len';
+  }
+
+  @override
+  String lbGoEarned(String coins) {
+    return '+$coins¢ EARNED';
+  }
+
+  @override
+  String lbGoRewardsLine(String ready, String coins, String xp) {
+    return '$ready daily ready · +$coins¢ · +$xp XP';
+  }
+
+  @override
+  String get lbGoNothingToClaim => 'nothing to claim yet · keep playing';
+
+  @override
+  String get lbClaim => 'CLAIM';
+
+  @override
+  String get lbGoDoubleCoins => '2× COINS · AD';
+
+  @override
+  String get lbGoWatchReplay => 'WATCH REPLAY';
+
+  @override
+  String get lbHome => 'HOME';
+
+  @override
+  String get lbDailyTitle => 'DAILY';
+
+  @override
+  String get lbDailySubtitle => 'Three snacks a day. Doctor\'s orders.';
+
+  @override
+  String lbDailyProgress(String done, String total) {
+    return '$done OF $total DONE';
+  }
+
+  @override
+  String lbDailyStreak(int days, String time) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'streak: $days days',
+      one: 'streak: 1 day',
+    );
+    return '$_temp0 · resets in $time';
+  }
+
+  @override
+  String lbResetsIn(String time) {
+    return 'resets in $time';
+  }
+
+  @override
+  String get lbClaimAll => 'CLAIM ALL';
+
+  @override
+  String get lbClaimAllDouble => 'CLAIM ALL ×2';
+
+  @override
+  String get lbClaimAllDoubleLine => 'one short ad, double the loot';
+
+  @override
+  String lbWeeklyTeaser(String done, String total) {
+    return 'WEEKLY QUESTS · $done/$total';
+  }
+
+  @override
+  String get lbWeeklyTeaserLine => 'the big loot drops Sunday';
+
+  @override
+  String get lbWeeklyTitle => 'WEEKLY';
+
+  @override
+  String get lbWeeklySubtitle => 'Bigger snacks. Seven days to finish them.';
+
+  @override
+  String lbRewardCoinsXp(String coins, String xp) {
+    return '$coins¢ · $xp XP';
+  }
+
+  @override
+  String lbPlayMode(String mode) {
+    return 'PLAY $mode';
+  }
+
+  @override
+  String get lbTrophiesTitle => 'TROPHIES';
+
+  @override
+  String lbTrophiesSubtitle(String unlocked, String total, String locked) {
+    return '$unlocked of $total. The other $locked are judging you.';
+  }
+
+  @override
+  String get lbFilterAll => 'ALL';
+
+  @override
+  String lbFilterUnlocked(String count) {
+    return 'UNLOCKED $count';
+  }
+
+  @override
+  String lbFilterLocked(String count) {
+    return 'LOCKED $count';
+  }
+
+  @override
+  String lbTrophiesSummary(String pct, String claimed, String waiting) {
+    return '$pct% COMPLETE · $claimed CLAIMED · $waiting WAITING';
+  }
+
+  @override
+  String get lbClaimed => 'CLAIMED';
+
+  @override
+  String lbCoinsReward(String coins) {
+    return '+$coins¢';
+  }
+
+  @override
+  String get lbSecret => 'SECRET';
+
+  @override
+  String get lbSeasonTitle => 'SEASON';
+
+  @override
+  String lbSeasonSubtitle(String season, int days) {
+    return '$season · $days days left. Make them count.';
+  }
+
+  @override
+  String lbSeasonEnded(String season) {
+    return '$season · season over. A new one is coming.';
+  }
+
+  @override
+  String get lbTier => 'TIER';
+
+  @override
+  String lbTierOf(String max) {
+    return '/ $max';
+  }
+
+  @override
+  String get lbProTrack => 'PRO TRACK';
+
+  @override
+  String lbXpToTier(String xp, String need, String tier) {
+    return '$xp / $need XP TO TIER $tier';
+  }
+
+  @override
+  String lbNextUp(String tier, String track) {
+    return 'NEXT UP · TIER $tier · $track';
+  }
+
+  @override
+  String lbTiersAwayLine(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n tiers away. Eat faster.',
+      one: '1 tier away. Eat faster.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lbTiersAway(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n TIERS',
+      one: '1 TIER',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lbXpAd(String xp) {
+    return '+$xp XP · WATCH AD';
+  }
+
+  @override
+  String get lbYouAreHere => 'YOU ARE HERE';
+
+  @override
+  String get lbFree => 'FREE';
+
+  @override
+  String get lbPro => 'PRO';
+
+  @override
+  String get lbRanksTitle => 'RANKS';
+
+  @override
+  String get lbRanksSubtitle => 'Ranked by your best single run. No pressure.';
+
+  @override
+  String get lbTabGlobal => 'GLOBAL';
+
+  @override
+  String get lbTabWeekly => 'WEEKLY';
+
+  @override
+  String get lbTabFriends => 'FRIENDS';
+
+  @override
+  String lbRanksYouRow(String rank, String name) {
+    return '#$rank · YOU · $name';
+  }
+
+  @override
+  String lbRanksYouUnranked(String name) {
+    return 'YOU · $name';
+  }
+
+  @override
+  String lbRanksGap(String gap, String leader) {
+    return '$gap behind $leader. Snack harder.';
+  }
+
+  @override
+  String get lbRanksLeader => 'You\'re #1. Everyone\'s chasing you.';
+
+  @override
+  String get lbRanksEasyOnly => 'Easy runs don\'t rank. Normal is waiting.';
+
+  @override
+  String get lbRanksOffline => 'Ranks need the internet. Your snake doesn\'t.';
+
+  @override
+  String get lbRanksEmpty => 'Nobody here yet. Be the first.';
+
+  @override
+  String lbRunsCount(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n runs',
+      one: '1 run',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lbProfileTitle => 'PROFILE';
+
+  @override
+  String get lbProfileSubtitle => 'Your snake, by the numbers.';
+
+  @override
+  String get lbFunFact => 'FUN FACT';
+
+  @override
+  String lbFunApples(String apples, String pies) {
+    return '$apples apples eaten. That\'s about $pies pies.';
+  }
+
+  @override
+  String lbFunMinutes(String minutes) {
+    return '$minutes minutes of slithering. Hydrate.';
+  }
+
+  @override
+  String lbFunPowerups(String powerups) {
+    return '$powerups power-ups grabbed. Greedy, love it.';
+  }
+
+  @override
+  String get lbSynced => 'PROGRESS SYNCED';
+
+  @override
+  String get lbSyncedLine => 'Offline? Play anyway. We\'ll catch up later.';
+
+  @override
+  String get lbSyncPending => 'SYNC PENDING';
+
+  @override
+  String get lbGuest => 'PLAYING AS GUEST';
+
+  @override
+  String get lbGuestLine => 'Link an account to keep this snake forever.';
+
+  @override
+  String lbSignedInWith(String provider) {
+    return 'SIGNED IN · $provider';
+  }
+
+  @override
+  String get lbStatBest => 'BEST';
+
+  @override
+  String get lbStatGames => 'GAMES';
+
+  @override
+  String get lbStatPlayTime => 'PLAY TIME';
+
+  @override
+  String get lbStatAverage => 'AVERAGE';
+
+  @override
+  String get lbStatFood => 'FOOD EATEN';
+
+  @override
+  String get lbStatPowerups => 'POWER-UPS';
+
+  @override
+  String get lbStats => 'STATS';
+
+  @override
+  String get lbReplays => 'REPLAYS';
+
+  @override
+  String get lbFriends => 'FRIENDS';
+
+  @override
+  String get lbTrophies => 'TROPHIES';
+
+  @override
+  String lbFriendsOn(String count) {
+    return '$count ON';
+  }
+
+  @override
+  String get lbStoreTitle => 'STORE';
+
+  @override
+  String get lbStoreSubPro => 'No ads. All the drip. Your call.';
+
+  @override
+  String get lbStoreSubCoins => 'Coins for the impatient.';
+
+  @override
+  String get lbStoreSubThemes => 'New board, same bad habits.';
+
+  @override
+  String get lbStoreSubSkins => 'Same snake. Way more drip.';
+
+  @override
+  String get lbStoreSubTrails => 'Leave a mark.';
+
+  @override
+  String get lbStoreSubPowerups => 'Tiny cheats. Fully legal.';
+
+  @override
+  String get lbSnakeCoins => 'SNAKE COINS';
+
+  @override
+  String lbFreeCoins(String coins) {
+    return '+$coins¢ FREE';
+  }
+
+  @override
+  String get lbFreeCoinsLine => 'watch a short ad';
+
+  @override
+  String get lbProName => 'SNAKE CLASSIC PRO';
+
+  @override
+  String get lbProPerkNoAds => 'No ads. Not one. Ever.';
+
+  @override
+  String get lbProPerkRevive => 'A free revive, every single run';
+
+  @override
+  String lbProPerkThemes(String count) {
+    return 'All $count premium themes';
+  }
+
+  @override
+  String lbProPerkCosmetics(String skins, String trails) {
+    return 'All $skins skins + all $trails trails';
+  }
+
+  @override
+  String get lbProPerkCoins => '2× coins from every run';
+
+  @override
+  String get lbMonthly => 'MONTHLY';
+
+  @override
+  String get lbYearly => 'YEARLY';
+
+  @override
+  String get lbPerMonth => 'per month';
+
+  @override
+  String get lbPerYear => 'per year';
+
+  @override
+  String get lbBestValue => 'best value';
+
+  @override
+  String get lbGoPro => 'GO PRO';
+
+  @override
+  String get lbProActive => 'PRO IS ON';
+
+  @override
+  String get lbProActiveLine => 'Thanks for backing the snake.';
+
+  @override
+  String get lbStoreFooter =>
+      'Prices come from your app store. Cancel anytime.';
+
+  @override
+  String get lbRestorePurchases => 'RESTORE PURCHASES';
+
+  @override
+  String lbBuyPrice(String price) {
+    return 'BUY · $price';
+  }
+
+  @override
+  String lbBuyCoins(String coins) {
+    return 'BUY · $coins¢';
+  }
+
+  @override
+  String get lbOrFreeWithPro => 'or free with Pro';
+
+  @override
+  String get lbEquipped => 'EQUIPPED';
+
+  @override
+  String get lbOwned => 'OWNED';
+
+  @override
+  String get lbEquip => 'EQUIP';
+
+  @override
+  String get lbIncludedWithPro => 'INCLUDED WITH PRO';
+
+  @override
+  String get lbSkinTagGolden => 'Rich. Famous. A little smug.';
+
+  @override
+  String get lbSkinTagFire => 'Hot to the touch.';
+
+  @override
+  String get lbSkinTagIce => 'Cool under pressure.';
+
+  @override
+  String get lbSkinTagElectric => 'Shockingly fast.';
+
+  @override
+  String get lbSkinTagRainbow => 'All of them. At once.';
+
+  @override
+  String get lbSkinTagNeon => 'Visible from space.';
+
+  @override
+  String get lbSkinTagShadow => 'Now you see it.';
+
+  @override
+  String get lbSkinTagGalaxy => 'Contains multitudes.';
+
+  @override
+  String get lbSkinTagCrystal => 'Handle with care.';
+
+  @override
+  String get lbSkinTagCosmic => 'Big universe energy.';
+
+  @override
+  String get lbSkinTagDragon => 'Legally not a dragon.';
+
+  @override
+  String get lbSettingsTitle => 'SETTINGS';
+
+  @override
+  String get lbSettingsSubtitle => 'Tweak it till it feels right.';
+
+  @override
+  String get lbControls => 'CONTROLS';
+
+  @override
+  String get lbCtrlSwipe => 'SWIPE';
+
+  @override
+  String get lbCtrlSwipeSub => 'anywhere';
+
+  @override
+  String get lbCtrlDpad => 'D-PAD';
+
+  @override
+  String get lbCtrlDpadSub => '4 arrows';
+
+  @override
+  String get lbCtrlTurn => 'TURN';
+
+  @override
+  String get lbCtrlTurnSub => 'left · right';
+
+  @override
+  String get lbCtrlStick => 'STICK';
+
+  @override
+  String get lbCtrlStickSub => 'floating';
+
+  @override
+  String get lbSwipeFeel => 'SWIPE FEEL';
+
+  @override
+  String get lbSwipeFeelSub => 'lazy ←→ twitchy';
+
+  @override
+  String get lbGameplay => 'GAMEPLAY';
+
+  @override
+  String get lbMode => 'MODE';
+
+  @override
+  String get lbBoard => 'BOARD';
+
+  @override
+  String get lbDifficulty => 'DIFFICULTY';
+
+  @override
+  String get lbCrashReplay => 'CRASH REPLAY';
+
+  @override
+  String get lbCrashReplaySub => 'how long we rub it in';
+
+  @override
+  String get lbTheme => 'THEME';
+
+  @override
+  String lbThemeAside(String theme, String free, String premium) {
+    return '$theme · $free FREE · $premium PREMIUM';
+  }
+
+  @override
+  String get lbSoundFeel => 'SOUND & FEEL';
+
+  @override
+  String get lbSoundFx => 'SOUND FX';
+
+  @override
+  String get lbSoundFxSub => 'crunchy, as intended';
+
+  @override
+  String get lbMusic => 'MUSIC';
+
+  @override
+  String get lbHaptics => 'HAPTICS';
+
+  @override
+  String get lbHapticsSub => 'tiny buzz on every bite';
+
+  @override
+  String get lb120Hz => '120 HZ';
+
+  @override
+  String get lb120HzSub => 'smooth like butter (if your phone is)';
+
+  @override
+  String get lbReplayTutorial => 'REPLAY TUTORIAL';
+
+  @override
+  String get lbPrivacy => 'PRIVACY';
+
+  @override
+  String get lbOpenRunSetup => 'Run setup';
+
+  @override
+  String get lbVersusTitle => 'VERSUS';
+
+  @override
+  String get lbVersusSubtitle => 'Real people. Real snakes. Real beef.';
+
+  @override
+  String get lbWins => 'WINS';
+
+  @override
+  String get lbLosses => 'LOSSES';
+
+  @override
+  String get lbDraws => 'DRAWS';
+
+  @override
+  String get lbRating => 'RATING';
+
+  @override
+  String get lbQuickMatch => 'QUICK MATCH';
+
+  @override
+  String get lbQuickMatchLine => '1v1 Classic. We find you a rival in seconds.';
+
+  @override
+  String get lbFindMatch => 'FIND MATCH';
+
+  @override
+  String lbSearching(String secs) {
+    return 'SNIFFING OUT A RIVAL… ${secs}s';
+  }
+
+  @override
+  String get lbCancel => 'CANCEL';
+
+  @override
+  String get lbGotCode => 'GOT A CODE?';
+
+  @override
+  String get lbGotCodeLine =>
+      'Six letters. Case doesn\'t matter. Friendship might.';
+
+  @override
+  String get lbCreateRoom => 'CREATE ROOM';
+
+  @override
+  String get lbCreateRoomLine => 'Invite a friend. Or a frenemy.';
+
+  @override
+  String get lbHouseSnake =>
+      'Nobody brave online? The house snake joins after 30s. It doesn\'t trash talk.';
+
+  @override
+  String get lbTournamentsLive => 'TOURNAMENTS · LIVE';
+
+  @override
+  String get lbTournamentsLine => 'Bronze free · Silver & Gold entries';
+
+  @override
+  String get lbRoomTitle => 'ROOM';
+
+  @override
+  String get lbRoomSubtitle => 'Share the code. Wait nervously.';
+
+  @override
+  String lbPlayersCount(String count, String max) {
+    return 'PLAYERS $count/$max';
+  }
+
+  @override
+  String get lbYou => 'YOU';
+
+  @override
+  String get lbRival => 'RIVAL';
+
+  @override
+  String get lbWaitingYou => 'WAITING · tap ready, hero';
+
+  @override
+  String get lbWaiting => 'WAITING';
+
+  @override
+  String get lbReadyThem => 'READY · stretching menacingly';
+
+  @override
+  String get lbReadyYou => 'READY · nerves of steel';
+
+  @override
+  String get lbReadyCheck => 'READY CHECK';
+
+  @override
+  String get lbReady => 'READY';
+
+  @override
+  String get lbLeaveRoom => 'LEAVE ROOM';
+
+  @override
+  String get lbVs => 'VS';
+
+  @override
+  String get lbLive => 'LIVE';
+
+  @override
+  String lbMatchBehind(String rival, String gap) {
+    return '$rival is $gap points ahead. Rude.';
+  }
+
+  @override
+  String lbMatchAhead(String gap) {
+    return 'You\'re $gap ahead. Don\'t get cocky.';
+  }
+
+  @override
+  String get lbMatchTied => 'Dead even. Eat something.';
+
+  @override
+  String get lbVictory => 'VICTORY';
+
+  @override
+  String lbVictoryLine(String rival) {
+    return 'You out-snaked $rival.';
+  }
+
+  @override
+  String get lbDefeat => 'DEFEAT';
+
+  @override
+  String lbDefeatLine(String rival) {
+    return '$rival took this one.';
+  }
+
+  @override
+  String get lbDefeatBothCrashed =>
+      'Both snakes crashed. Their score decided it.';
+
+  @override
+  String lbDefeatLine2(String rival) {
+    return '$rival will be insufferable now.';
+  }
+
+  @override
+  String get lbDraw => 'DRAW';
+
+  @override
+  String get lbDrawLine => 'Perfectly balanced. Rematch?';
+
+  @override
+  String get lbVersusFooter =>
+      'Every loss is just a rematch waiting to happen.';
+
+  @override
+  String get lbLength => 'LENGTH';
+
+  @override
+  String get lbSurvived => 'SURVIVED';
+
+  @override
+  String get lbRematch => 'REMATCH';
+
+  @override
+  String get lbBackToLobby => 'BACK TO LOBBY';
+
+  @override
+  String get lbAdBreak => 'AD BREAK';
+
+  @override
+  String lbAdBreakLine(String coins) {
+    return 'A short ad. $coins coins for you.';
+  }
+
+  @override
+  String get lbAdBreakLine2 => 'Fair trade? Your call either way.';
+
+  @override
+  String lbAdStartsIn(String secs) {
+    return 'STARTS IN $secs · OR SKIP, NO HARD FEELINGS';
+  }
+
+  @override
+  String lbAdRewardWhenEnds(String coins) {
+    return '+$coins¢ WHEN IT ENDS';
+  }
+
+  @override
+  String get lbWatchNow => 'WATCH NOW';
+
+  @override
+  String get lbNoThanks => 'NO THANKS';
+
+  @override
+  String get lbAdBackHint => 'The back gesture counts as no thanks, too.';
+
+  @override
+  String get lbAdGoProLine => 'and never see this screen again.';
+
+  @override
+  String get lbAdStarting => 'AD STARTING…';
+
+  @override
+  String get lbNoAdNow => 'No ad right now. Try again in a sec.';
+
+  @override
+  String get lbOffline => 'NO SIGNAL. Single-player still works.';
+
+  @override
+  String get lbServerDown =>
+      'Our servers bonked. Your progress is safe on this phone.';
+
+  @override
+  String get lbPurchaseFailed =>
+      'Purchase didn\'t go through. You weren\'t charged.';
+
+  @override
+  String get lbMatchTimeout => 'No rival found. The house snake is warming up.';
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -131,7 +132,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // the outcome is a dialog rather than a Play-owned download. Runs on
       // Android too and returns immediately there.
       unawaited(_checkIosAppRelease());
+      _maybeOpenDebugRoute();
     });
+  }
+
+  /// Debug builds only: `--dart-define=LB_DEBUG_ROUTE=/settings` opens that
+  /// route once Home is up, so a screen can be checked on a device without
+  /// walking to it. Fires once per process.
+  static bool _debugRouteOpened = false;
+  void _maybeOpenDebugRoute() {
+    const route = String.fromEnvironment('LB_DEBUG_ROUTE');
+    if (!kDebugMode || route.isEmpty || _debugRouteOpened) return;
+    _debugRouteOpened = true;
+    context.push(route);
   }
 
   /// Ask the backend whether this iOS build is behind the store, and show

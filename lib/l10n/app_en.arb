@@ -2426,5 +2426,1934 @@
         "example": "6.4.3"
       }
     }
+  },
+  "lbHomeGreeting": "Hey, {name}. Apples missed you.",
+  "@lbHomeGreeting": {
+    "description": "Home header greeting",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeHint": "STEER INTO A BLOCK. OR TAP. WE DON'T JUDGE.",
+  "@lbHomeHint": {
+    "description": "Home footer hint: the idle snake can be steered into a menu block, or the block tapped"
+  },
+  "lbDailyNag": "DAILY {done}/{total} · ONE MORE SNACK, PLEASE",
+  "@lbDailyNag": {
+    "description": "Home strip when daily challenges remain",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDailyAllFed": "ALL FED. COME BACK TOMORROW.",
+  "@lbDailyAllFed": {
+    "description": "All daily challenges done and claimed"
+  },
+  "lbModeRow": "MODE {index}/{count} · {mode}",
+  "@lbModeRow": {
+    "description": "Home mode cycler, e.g. MODE 1/8 · CLASSIC",
+    "placeholders": {
+      "index": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "lbYourBest": "YOUR BEST",
+  "@lbYourBest": {
+    "description": "Label above the best score on Home"
+  },
+  "lbPlay": "PLAY",
+  "@lbPlay": {
+    "description": "Primary play button"
+  },
+  "lbModeBoard": "{mode} · {board}",
+  "@lbModeBoard": {
+    "description": "Mode and board size under PLAY/AGAIN, e.g. CLASSIC · 20×20",
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      },
+      "board": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeVersus": "VERSUS",
+  "@lbHomeVersus": {
+    "description": "Home block"
+  },
+  "lbHomeVersusSub": "1v1 · rating {rating}",
+  "@lbHomeVersusSub": {
+    "description": "Home Versus block subtitle",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeDaily": "DAILY {done}/{total}",
+  "@lbHomeDaily": {
+    "description": "Home Daily block title",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeDailySub": "resets in {time} · +{coins}¢",
+  "@lbHomeDailySub": {
+    "description": "Home Daily block subtitle; ¢ = coins",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeSeason": "SEASON",
+  "@lbHomeSeason": {
+    "description": "Home block (battle pass)"
+  },
+  "lbHomeSeasonSub": "Tier {tier} · {days} days left",
+  "@lbHomeSeasonSub": {
+    "description": "Home Season block subtitle",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lbHomeRanks": "RANKS",
+  "@lbHomeRanks": {
+    "description": "Home block (leaderboard)"
+  },
+  "lbHomeRanksSub": "#{rank} · climbing",
+  "@lbHomeRanksSub": {
+    "description": "Home Ranks block subtitle with the player's global rank",
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeRanksSubNone": "Best run: {score}",
+  "@lbHomeRanksSubNone": {
+    "description": "Home Ranks subtitle when the rank is unknown",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeStore": "STORE",
+  "@lbHomeStore": {
+    "description": "Home block"
+  },
+  "lbHomeStoreSub": "Skins · themes · trails",
+  "@lbHomeStoreSub": {
+    "description": "Home Store block subtitle"
+  },
+  "lbHomeProfile": "PROFILE",
+  "@lbHomeProfile": {
+    "description": "Home block"
+  },
+  "lbHomeProfileSub": "LV {level} · {runs} runs",
+  "@lbHomeProfileSub": {
+    "description": "Home Profile block subtitle",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "runs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHomeMenu": "Menu",
+  "@lbHomeMenu": {
+    "description": "Accessibility label of the home menu button"
+  },
+  "lbFreePowerUp": "FREE POWER-UP · AD",
+  "@lbFreePowerUp": {
+    "description": "Home rewarded button: watch an ad for a free power-up"
+  },
+  "lbTipLabel": "TIP",
+  "@lbTipLabel": {
+    "description": "Splash tip prefix"
+  },
+  "lbTip1": "The wall doesn't move. You do.",
+  "@lbTip1": {
+    "description": "Splash tip"
+  },
+  "lbTip2": "Combos decay after 6 seconds. Keep chewing.",
+  "@lbTip2": {
+    "description": "Splash tip"
+  },
+  "lbTip3": "Zen mode has no walls. It still has you.",
+  "@lbTip3": {
+    "description": "Splash tip"
+  },
+  "lbTip4": "Easy runs stay off the leaderboard. No shame.",
+  "@lbTip4": {
+    "description": "Splash tip"
+  },
+  "lbTip5": "Bonus food is worth 25. Special is 50. Greed is free.",
+  "@lbTip5": {
+    "description": "Splash tip"
+  },
+  "lbTip6": "Swipe early. The snake doesn't do sudden.",
+  "@lbTip6": {
+    "description": "Splash tip"
+  },
+  "lbTip7": "Perfect Game: never step on the same cell twice. Good luck.",
+  "@lbTip7": {
+    "description": "Splash tip"
+  },
+  "lbTip8": "Pro players revive free. Just saying.",
+  "@lbTip8": {
+    "description": "Splash tip"
+  },
+  "lbSplashStatus": "WARMING UP THE APPLES… {pct}%",
+  "@lbSplashStatus": {
+    "description": "Splash loading status",
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSplashFooter": "v{version} · NO SNAKES WERE HARMED",
+  "@lbSplashFooter": {
+    "description": "Splash footer with app version",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSetupTitle": "SETUP",
+  "@lbSetupTitle": {
+    "description": "Run setup screen title"
+  },
+  "lbSetupSubtitle": "Pick your poison. Every mode is free. Forever.",
+  "@lbSetupSubtitle": {
+    "description": "Run setup subtitle"
+  },
+  "lbSetupMode": "MODE",
+  "@lbSetupMode": {
+    "description": "Section label"
+  },
+  "lbSetupModesAside": "{count} MODES · 0 PAYWALLS",
+  "@lbSetupModesAside": {
+    "description": "Aside next to the mode section label",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSetupBoard": "BOARD",
+  "@lbSetupBoard": {
+    "description": "Section label"
+  },
+  "lbSetupDifficulty": "DIFFICULTY",
+  "@lbSetupDifficulty": {
+    "description": "Section label"
+  },
+  "lbSetupLoadout": "LOADOUT",
+  "@lbSetupLoadout": {
+    "description": "Section label: power-ups armed for the next run"
+  },
+  "lbSetupLoadoutArmed": "{armed} OF {total} ARMED",
+  "@lbSetupLoadoutArmed": {
+    "description": "Aside next to the loadout label",
+    "placeholders": {
+      "armed": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSetupGet": "GET",
+  "@lbSetupGet": {
+    "description": "Loadout slot with none owned: opens the store"
+  },
+  "lbBoardTall": "TALL",
+  "@lbBoardTall": {
+    "description": "Short label for the tall (portrait) board size"
+  },
+  "lbModeLineClassic": "Walls bite.",
+  "@lbModeLineClassic": {
+    "description": "Classic mode one-liner"
+  },
+  "lbModeLineZen": "No walls. Just vibes.",
+  "@lbModeLineZen": {
+    "description": "Zen mode one-liner"
+  },
+  "lbModeLineSpeed": "Fast. Then faster.",
+  "@lbModeLineSpeed": {
+    "description": "Speed Challenge one-liner"
+  },
+  "lbModeLineMultiFood": "The buffet is open.",
+  "@lbModeLineMultiFood": {
+    "description": "Multi-Food one-liner"
+  },
+  "lbModeLineSurvival": "3 lives. Spend wisely.",
+  "@lbModeLineSurvival": {
+    "description": "Survival one-liner"
+  },
+  "lbModeLineTimeAttack": "3 minutes. Eat it all.",
+  "@lbModeLineTimeAttack": {
+    "description": "Time Attack one-liner"
+  },
+  "lbModeLinePowerUp": "Power-ups. So many.",
+  "@lbModeLinePowerUp": {
+    "description": "Power-Up Madness one-liner"
+  },
+  "lbModeLinePerfect": "Never step twice.",
+  "@lbModeLinePerfect": {
+    "description": "Perfect Game one-liner"
+  },
+  "lbDiffEasyLine": "practice · unranked",
+  "@lbDiffEasyLine": {
+    "description": "Easy difficulty line"
+  },
+  "lbDiffNormalLine": "the classic pace",
+  "@lbDiffNormalLine": {
+    "description": "Normal difficulty line"
+  },
+  "lbDiffHardLine": "for show-offs",
+  "@lbDiffHardLine": {
+    "description": "Hard difficulty line"
+  },
+  "lbComboWarm": "×{mult} WARM",
+  "@lbComboWarm": {
+    "description": "Combo chip, multiplier 2",
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
+  "lbComboHot": "×{mult} HOT · KEEP EATING",
+  "@lbComboHot": {
+    "description": "Combo chip, multiplier 3-4",
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
+  "lbComboFire": "×{mult} ON FIRE",
+  "@lbComboFire": {
+    "description": "Combo chip, multiplier 5+",
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
+  "lbComboDecay": "EAT SOMETHING. NOW.",
+  "@lbComboDecay": {
+    "description": "Combo about to decay (last 1.5 s)"
+  },
+  "lbComboBroken": "combo dropped. it happens.",
+  "@lbComboBroken": {
+    "description": "Combo broken toast"
+  },
+  "lbLevelUp": "LV {level} · FASTER NOW",
+  "@lbLevelUp": {
+    "description": "Level up toast",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "lbLevelShort": "LV {level}",
+  "@lbLevelShort": {
+    "description": "HUD level label",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPowerInvincible": "INVINCIBLE · {secs}s",
+  "@lbPowerInvincible": {
+    "description": "Power-up chip",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPowerInvincibleLine": "walls are more of a suggestion",
+  "@lbPowerInvincibleLine": {
+    "description": "Power-up chip joke"
+  },
+  "lbPowerSpeed": "SPEED · {secs}s",
+  "@lbPowerSpeed": {
+    "description": "Power-up chip",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPowerSpeedLine": "hold on",
+  "@lbPowerSpeedLine": {
+    "description": "Power-up chip joke"
+  },
+  "lbPowerSlow": "SLOW-MO · {secs}s",
+  "@lbPowerSlow": {
+    "description": "Power-up chip",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPowerSlowLine": "savor it",
+  "@lbPowerSlowLine": {
+    "description": "Power-up chip joke"
+  },
+  "lbPowerScore": "2× SCORE · {secs}s",
+  "@lbPowerScore": {
+    "description": "Power-up chip",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPowerEnding": "{name} ENDING · {secs}",
+  "@lbPowerEnding": {
+    "description": "Power-up about to expire (last 5 s)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbTimeAttackPanic": "10 SECONDS. PANIC RESPONSIBLY.",
+  "@lbTimeAttackPanic": {
+    "description": "Time Attack last 10 seconds"
+  },
+  "lbLifeLost": "1 LIFE DOWN · {left} TO GO",
+  "@lbLifeLost": {
+    "description": "Survival mode life lost",
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHudLen": "LEN {len}",
+  "@lbHudLen": {
+    "description": "HUD snake length",
+    "placeholders": {
+      "len": {
+        "type": "String"
+      }
+    }
+  },
+  "lbScoreLabel": "SCORE",
+  "@lbScoreLabel": {
+    "description": "Score label"
+  },
+  "lbTurnLeft": "TURN LEFT",
+  "@lbTurnLeft": {
+    "description": "Turn control button"
+  },
+  "lbTurnRight": "TURN RIGHT",
+  "@lbTurnRight": {
+    "description": "Turn control button"
+  },
+  "lbSwipeToSteer": "SWIPE TO STEER",
+  "@lbSwipeToSteer": {
+    "description": "Control hint"
+  },
+  "lbPauseTitle": "PAUSED",
+  "@lbPauseTitle": {
+    "description": "Pause overlay title"
+  },
+  "lbPauseLine": "The apple will wait. Probably.",
+  "@lbPauseLine": {
+    "description": "Pause overlay subtitle"
+  },
+  "lbResume": "RESUME",
+  "@lbResume": {
+    "description": "Pause: resume button"
+  },
+  "lbResumeSub": "3 · 2 · 1, THEN GO",
+  "@lbResumeSub": {
+    "description": "Resume button subline: a countdown runs first"
+  },
+  "lbRestart": "RESTART",
+  "@lbRestart": {
+    "description": "Pause: restart button"
+  },
+  "lbRestartSub": "same mode",
+  "@lbRestartSub": {
+    "description": "Restart subline"
+  },
+  "lbPauseSettings": "SETTINGS",
+  "@lbPauseSettings": {
+    "description": "Pause: settings button"
+  },
+  "lbPauseSettingsSub": "controls · sound",
+  "@lbPauseSettingsSub": {
+    "description": "Settings subline"
+  },
+  "lbQuit": "QUIT TO MENU",
+  "@lbQuit": {
+    "description": "Pause: quit button"
+  },
+  "lbQuitSub": "run ends here",
+  "@lbQuitSub": {
+    "description": "Quit subline"
+  },
+  "lbPauseSoFar": "SO FAR · {score} PTS · LEN {len} · {time}",
+  "@lbPauseSoFar": {
+    "description": "Pause footer run summary",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "len": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lbCrashWallTitle": "BONK!",
+  "@lbCrashWallTitle": {
+    "description": "Crash title: hit a wall"
+  },
+  "lbCrashWall1": "You kissed the wall at length {len}.",
+  "@lbCrashWall1": {
+    "description": "Crash line: wall",
+    "placeholders": {
+      "len": {
+        "type": "String"
+      }
+    }
+  },
+  "lbCrashWall2": "The wall was there first.",
+  "@lbCrashWall2": {
+    "description": "Crash line: wall"
+  },
+  "lbCrashWall3": "Walls: undefeated since forever.",
+  "@lbCrashWall3": {
+    "description": "Crash line: wall"
+  },
+  "lbCrashWallScore": "THE WALL: 1 · YOU: 0",
+  "@lbCrashWallScore": {
+    "description": "Crash tagline: wall"
+  },
+  "lbCrashSelfTitle": "OUCH.",
+  "@lbCrashSelfTitle": {
+    "description": "Crash title: bit itself"
+  },
+  "lbCrashSelf1": "You bit yourself. Why?",
+  "@lbCrashSelf1": {
+    "description": "Crash line: self"
+  },
+  "lbCrashSelf2": "Tail: delicious, apparently.",
+  "@lbCrashSelf2": {
+    "description": "Crash line: self"
+  },
+  "lbCrashSelf3": "Self-snack detected.",
+  "@lbCrashSelf3": {
+    "description": "Crash line: self"
+  },
+  "lbCrashTimeTitle": "TIME!",
+  "@lbCrashTimeTitle": {
+    "description": "Crash title: Time Attack ran out"
+  },
+  "lbCrashTime1": "Out of time. The apples got away.",
+  "@lbCrashTime1": {
+    "description": "Crash line: timeout"
+  },
+  "lbCrashTime2": "Three minutes, {food} apples. Respect.",
+  "@lbCrashTime2": {
+    "description": "Crash line: timeout",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      }
+    }
+  },
+  "lbCrashStepTitle": "STEPPED.",
+  "@lbCrashStepTitle": {
+    "description": "Crash title: Perfect Game revisit"
+  },
+  "lbCrashStep1": "You walked on your own path. Perfect Game is not forgiving.",
+  "@lbCrashStep1": {
+    "description": "Crash line: Perfect Game revisit"
+  },
+  "lbCrashQuitTitle": "BAILED.",
+  "@lbCrashQuitTitle": {
+    "description": "Game over title: player quit"
+  },
+  "lbCrashQuit1": "Run ended by you. We saw nothing.",
+  "@lbCrashQuit1": {
+    "description": "Game over line: quit"
+  },
+  "lbCrashGeneric": "Game over.",
+  "@lbCrashGeneric": {
+    "description": "Fallback crash line"
+  },
+  "lbGameOverHeadline": "× {line}",
+  "@lbGameOverHeadline": {
+    "description": "Game over header: × and the crash line in caps",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      }
+    }
+  },
+  "lbReviveTitle": "SECOND CHANCE?",
+  "@lbReviveTitle": {
+    "description": "Revive offer title"
+  },
+  "lbSeconds": "{secs}s",
+  "@lbSeconds": {
+    "description": "Seconds countdown",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbReviveLine": "Keep length {len} and all {score} points.",
+  "@lbReviveLine": {
+    "description": "Revive offer line",
+    "placeholders": {
+      "len": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "lbReviveWatch": "WATCH AD · FREE",
+  "@lbReviveWatch": {
+    "description": "Revive by watching a rewarded ad"
+  },
+  "lbRevivePay": "PAY {cost}¢",
+  "@lbRevivePay": {
+    "description": "Revive by paying coins; ¢ = coins",
+    "placeholders": {
+      "cost": {
+        "type": "String"
+      }
+    }
+  },
+  "lbReviveYouHave": "you have {coins}",
+  "@lbReviveYouHave": {
+    "description": "Coin balance next to the pay button",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbReviveDecline": "NAH, SHOW ME MY SCORE",
+  "@lbReviveDecline": {
+    "description": "Decline revive"
+  },
+  "lbRevivePro": "REVIVE · FREE WITH PRO",
+  "@lbRevivePro": {
+    "description": "Pro free revive button"
+  },
+  "lbReviveProHint": "Pro players revive free. Just saying.",
+  "@lbReviveProHint": {
+    "description": "Upsell line under the revive offer"
+  },
+  "lbGoBest": "BEST",
+  "@lbGoBest": {
+    "description": "Game over: best score label"
+  },
+  "lbGoBehind": "−{gap}",
+  "@lbGoBehind": {
+    "description": "Points behind the best score",
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoBehindLine": "so close. (not really.)",
+  "@lbGoBehindLine": {
+    "description": "Under the gap to best"
+  },
+  "lbGoNewBest": "NEW BEST!",
+  "@lbGoNewBest": {
+    "description": "New high score"
+  },
+  "lbGoNewBestLine": "Frame this one.",
+  "@lbGoNewBestLine": {
+    "description": "Under NEW BEST"
+  },
+  "lbGoRun": "RUN {n}",
+  "@lbGoRun": {
+    "description": "Game over: run number (total games played)",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lbGoChartTitle": "YOUR RUN, UNCOILED",
+  "@lbGoChartTitle": {
+    "description": "Title of the per-food points chart"
+  },
+  "lbGoChartStats": "{food} FOOD · PEAK ×{combo}",
+  "@lbGoChartStats": {
+    "description": "Chart aside",
+    "placeholders": {
+      "food": {
+        "type": "String"
+      },
+      "combo": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoChartCaption": "1 COLUMN = 1 FOOD · TALLER = TASTIER",
+  "@lbGoChartCaption": {
+    "description": "Chart caption"
+  },
+  "lbAgain": "AGAIN",
+  "@lbAgain": {
+    "description": "Play again button"
+  },
+  "lbGoContinue": "CONTINUE",
+  "@lbGoContinue": {
+    "description": "Revive from the game over screen"
+  },
+  "lbGoContinueSub": "{cost}¢ or ad · keep len {len}",
+  "@lbGoContinueSub": {
+    "description": "Continue block subline",
+    "placeholders": {
+      "cost": {
+        "type": "String"
+      },
+      "len": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoContinueProSub": "free with Pro · keep len {len}",
+  "@lbGoContinueProSub": {
+    "description": "Continue block subline for Pro",
+    "placeholders": {
+      "len": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoEarned": "+{coins}¢ EARNED",
+  "@lbGoEarned": {
+    "description": "Coins earned this run",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoRewardsLine": "{ready} daily ready · +{coins}¢ · +{xp} XP",
+  "@lbGoRewardsLine": {
+    "description": "Claimable rewards summary",
+    "placeholders": {
+      "ready": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "String"
+      },
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "lbGoNothingToClaim": "nothing to claim yet · keep playing",
+  "@lbGoNothingToClaim": {
+    "description": "Rewards block when nothing is claimable"
+  },
+  "lbClaim": "CLAIM",
+  "@lbClaim": {
+    "description": "Claim a reward"
+  },
+  "lbGoDoubleCoins": "2× COINS · AD",
+  "@lbGoDoubleCoins": {
+    "description": "Double the run's coins with a rewarded ad"
+  },
+  "lbGoWatchReplay": "WATCH REPLAY",
+  "@lbGoWatchReplay": {
+    "description": "Open this run's replay"
+  },
+  "lbHome": "HOME",
+  "@lbHome": {
+    "description": "Back to the home screen"
+  },
+  "lbDailyTitle": "DAILY",
+  "@lbDailyTitle": {
+    "description": "Daily challenges screen title"
+  },
+  "lbDailySubtitle": "Three snacks a day. Doctor's orders.",
+  "@lbDailySubtitle": {
+    "description": "Daily subtitle"
+  },
+  "lbDailyProgress": "{done} OF {total} DONE",
+  "@lbDailyProgress": {
+    "description": "Daily progress",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDailyStreak": "{days, plural, =1{streak: 1 day} other{streak: {days} days}} · resets in {time}",
+  "@lbDailyStreak": {
+    "description": "Daily streak and reset countdown",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lbResetsIn": "resets in {time}",
+  "@lbResetsIn": {
+    "description": "Reset countdown",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lbClaimAll": "CLAIM ALL",
+  "@lbClaimAll": {
+    "description": "Claim every completed challenge"
+  },
+  "lbClaimAllDouble": "CLAIM ALL ×2",
+  "@lbClaimAllDouble": {
+    "description": "Claim all, doubled by a rewarded ad"
+  },
+  "lbClaimAllDoubleLine": "one short ad, double the loot",
+  "@lbClaimAllDoubleLine": {
+    "description": "Claim all ×2 subline"
+  },
+  "lbWeeklyTeaser": "WEEKLY QUESTS · {done}/{total}",
+  "@lbWeeklyTeaser": {
+    "description": "Link to weekly quests",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "lbWeeklyTeaserLine": "the big loot drops Sunday",
+  "@lbWeeklyTeaserLine": {
+    "description": "Weekly teaser subline"
+  },
+  "lbWeeklyTitle": "WEEKLY",
+  "@lbWeeklyTitle": {
+    "description": "Weekly quests screen title"
+  },
+  "lbWeeklySubtitle": "Bigger snacks. Seven days to finish them.",
+  "@lbWeeklySubtitle": {
+    "description": "Weekly quests subtitle"
+  },
+  "lbRewardCoinsXp": "{coins}¢ · {xp} XP",
+  "@lbRewardCoinsXp": {
+    "description": "Reward summary",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      },
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPlayMode": "PLAY {mode}",
+  "@lbPlayMode": {
+    "description": "Start a run in the named mode",
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "lbTrophiesTitle": "TROPHIES",
+  "@lbTrophiesTitle": {
+    "description": "Achievements screen title"
+  },
+  "lbTrophiesSubtitle": "{unlocked} of {total}. The other {locked} are judging you.",
+  "@lbTrophiesSubtitle": {
+    "description": "Achievements subtitle",
+    "placeholders": {
+      "unlocked": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "locked": {
+        "type": "String"
+      }
+    }
+  },
+  "lbFilterAll": "ALL",
+  "@lbFilterAll": {
+    "description": "Filter tab"
+  },
+  "lbFilterUnlocked": "UNLOCKED {count}",
+  "@lbFilterUnlocked": {
+    "description": "Filter tab",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbFilterLocked": "LOCKED {count}",
+  "@lbFilterLocked": {
+    "description": "Filter tab",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbTrophiesSummary": "{pct}% COMPLETE · {claimed} CLAIMED · {waiting} WAITING",
+  "@lbTrophiesSummary": {
+    "description": "Achievements progress line",
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "claimed": {
+        "type": "String"
+      },
+      "waiting": {
+        "type": "String"
+      }
+    }
+  },
+  "lbClaimed": "CLAIMED",
+  "@lbClaimed": {
+    "description": "Reward already claimed"
+  },
+  "lbCoinsReward": "+{coins}¢",
+  "@lbCoinsReward": {
+    "description": "Coin reward button",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSecret": "SECRET",
+  "@lbSecret": {
+    "description": "Hidden achievement"
+  },
+  "lbSeasonTitle": "SEASON",
+  "@lbSeasonTitle": {
+    "description": "Battle pass screen title"
+  },
+  "lbSeasonSubtitle": "{season} · {days} days left. Make them count.",
+  "@lbSeasonSubtitle": {
+    "description": "Battle pass subtitle",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lbSeasonEnded": "{season} · season over. A new one is coming.",
+  "@lbSeasonEnded": {
+    "description": "Battle pass subtitle after the season ends",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      }
+    }
+  },
+  "lbTier": "TIER",
+  "@lbTier": {
+    "description": "Tier label"
+  },
+  "lbTierOf": "/ {max}",
+  "@lbTierOf": {
+    "description": "Out of max tier",
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "lbProTrack": "PRO TRACK",
+  "@lbProTrack": {
+    "description": "Premium battle pass track"
+  },
+  "lbXpToTier": "{xp} / {need} XP TO TIER {tier}",
+  "@lbXpToTier": {
+    "description": "XP progress to next tier",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "lbNextUp": "NEXT UP · TIER {tier} · {track}",
+  "@lbNextUp": {
+    "description": "Next reward header; track is FREE or PRO",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "track": {
+        "type": "String"
+      }
+    }
+  },
+  "lbTiersAwayLine": "{n, plural, =1{1 tier away. Eat faster.} other{{n} tiers away. Eat faster.}}",
+  "@lbTiersAwayLine": {
+    "description": "Distance to next reward",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lbTiersAway": "{n, plural, =1{1 TIER} other{{n} TIERS}}",
+  "@lbTiersAway": {
+    "description": "Short distance to a tier",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lbXpAd": "+{xp} XP · WATCH AD",
+  "@lbXpAd": {
+    "description": "Rewarded ad for battle pass XP",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "lbYouAreHere": "YOU ARE HERE",
+  "@lbYouAreHere": {
+    "description": "Current tier marker"
+  },
+  "lbFree": "FREE",
+  "@lbFree": {
+    "description": "Free track label"
+  },
+  "lbPro": "PRO",
+  "@lbPro": {
+    "description": "Pro track label"
+  },
+  "lbRanksTitle": "RANKS",
+  "@lbRanksTitle": {
+    "description": "Leaderboard screen title"
+  },
+  "lbRanksSubtitle": "Ranked by your best single run. No pressure.",
+  "@lbRanksSubtitle": {
+    "description": "Leaderboard subtitle"
+  },
+  "lbTabGlobal": "GLOBAL",
+  "@lbTabGlobal": {
+    "description": "Leaderboard tab"
+  },
+  "lbTabWeekly": "WEEKLY",
+  "@lbTabWeekly": {
+    "description": "Leaderboard tab"
+  },
+  "lbTabFriends": "FRIENDS",
+  "@lbTabFriends": {
+    "description": "Leaderboard tab"
+  },
+  "lbRanksYouRow": "#{rank} · YOU · {name}",
+  "@lbRanksYouRow": {
+    "description": "Pinned row with the player's rank",
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lbRanksYouUnranked": "YOU · {name}",
+  "@lbRanksYouUnranked": {
+    "description": "Pinned row when the player has no rank yet",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lbRanksGap": "{gap} behind {leader}. Snack harder.",
+  "@lbRanksGap": {
+    "description": "Gap to #1",
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      },
+      "leader": {
+        "type": "String"
+      }
+    }
+  },
+  "lbRanksLeader": "You're #1. Everyone's chasing you.",
+  "@lbRanksLeader": {
+    "description": "Pinned row when the player is first"
+  },
+  "lbRanksEasyOnly": "Easy runs don't rank. Normal is waiting.",
+  "@lbRanksEasyOnly": {
+    "description": "Player only has easy runs"
+  },
+  "lbRanksOffline": "Ranks need the internet. Your snake doesn't.",
+  "@lbRanksOffline": {
+    "description": "Leaderboard offline state"
+  },
+  "lbRanksEmpty": "Nobody here yet. Be the first.",
+  "@lbRanksEmpty": {
+    "description": "Empty leaderboard"
+  },
+  "lbRunsCount": "{n, plural, =1{1 run} other{{n} runs}}",
+  "@lbRunsCount": {
+    "description": "Number of games played",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lbProfileTitle": "PROFILE",
+  "@lbProfileTitle": {
+    "description": "Profile screen title"
+  },
+  "lbProfileSubtitle": "Your snake, by the numbers.",
+  "@lbProfileSubtitle": {
+    "description": "Profile subtitle"
+  },
+  "lbFunFact": "FUN FACT",
+  "@lbFunFact": {
+    "description": "Fun fact label"
+  },
+  "lbFunApples": "{apples} apples eaten. That's about {pies} pies.",
+  "@lbFunApples": {
+    "description": "Fun fact",
+    "placeholders": {
+      "apples": {
+        "type": "String"
+      },
+      "pies": {
+        "type": "String"
+      }
+    }
+  },
+  "lbFunMinutes": "{minutes} minutes of slithering. Hydrate.",
+  "@lbFunMinutes": {
+    "description": "Fun fact",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "lbFunPowerups": "{powerups} power-ups grabbed. Greedy, love it.",
+  "@lbFunPowerups": {
+    "description": "Fun fact",
+    "placeholders": {
+      "powerups": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSynced": "PROGRESS SYNCED",
+  "@lbSynced": {
+    "description": "Sync status"
+  },
+  "lbSyncedLine": "Offline? Play anyway. We'll catch up later.",
+  "@lbSyncedLine": {
+    "description": "Sync status line"
+  },
+  "lbSyncPending": "SYNC PENDING",
+  "@lbSyncPending": {
+    "description": "Sync status with unsent changes"
+  },
+  "lbGuest": "PLAYING AS GUEST",
+  "@lbGuest": {
+    "description": "Guest account status"
+  },
+  "lbGuestLine": "Link an account to keep this snake forever.",
+  "@lbGuestLine": {
+    "description": "Guest account line"
+  },
+  "lbSignedInWith": "SIGNED IN · {provider}",
+  "@lbSignedInWith": {
+    "description": "Sign-in provider chip",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "lbStatBest": "BEST",
+  "@lbStatBest": {
+    "description": "Stat tile"
+  },
+  "lbStatGames": "GAMES",
+  "@lbStatGames": {
+    "description": "Stat tile"
+  },
+  "lbStatPlayTime": "PLAY TIME",
+  "@lbStatPlayTime": {
+    "description": "Stat tile"
+  },
+  "lbStatAverage": "AVERAGE",
+  "@lbStatAverage": {
+    "description": "Stat tile"
+  },
+  "lbStatFood": "FOOD EATEN",
+  "@lbStatFood": {
+    "description": "Stat tile"
+  },
+  "lbStatPowerups": "POWER-UPS",
+  "@lbStatPowerups": {
+    "description": "Stat tile"
+  },
+  "lbStats": "STATS",
+  "@lbStats": {
+    "description": "Link to statistics"
+  },
+  "lbReplays": "REPLAYS",
+  "@lbReplays": {
+    "description": "Link to replays"
+  },
+  "lbFriends": "FRIENDS",
+  "@lbFriends": {
+    "description": "Link to friends"
+  },
+  "lbTrophies": "TROPHIES",
+  "@lbTrophies": {
+    "description": "Link to achievements"
+  },
+  "lbFriendsOn": "{count} ON",
+  "@lbFriendsOn": {
+    "description": "Friends online count",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbStoreTitle": "STORE",
+  "@lbStoreTitle": {
+    "description": "Store screen title"
+  },
+  "lbStoreSubPro": "No ads. All the drip. Your call.",
+  "@lbStoreSubPro": {
+    "description": "Store subtitle, Pro tab"
+  },
+  "lbStoreSubCoins": "Coins for the impatient.",
+  "@lbStoreSubCoins": {
+    "description": "Store subtitle, Coins tab"
+  },
+  "lbStoreSubThemes": "New board, same bad habits.",
+  "@lbStoreSubThemes": {
+    "description": "Store subtitle, Themes tab"
+  },
+  "lbStoreSubSkins": "Same snake. Way more drip.",
+  "@lbStoreSubSkins": {
+    "description": "Store subtitle, Skins tab"
+  },
+  "lbStoreSubTrails": "Leave a mark.",
+  "@lbStoreSubTrails": {
+    "description": "Store subtitle, Trails tab"
+  },
+  "lbStoreSubPowerups": "Tiny cheats. Fully legal.",
+  "@lbStoreSubPowerups": {
+    "description": "Store subtitle, Power-ups tab"
+  },
+  "lbSnakeCoins": "SNAKE COINS",
+  "@lbSnakeCoins": {
+    "description": "Coin balance label"
+  },
+  "lbFreeCoins": "+{coins}¢ FREE",
+  "@lbFreeCoins": {
+    "description": "Free coins for a rewarded ad",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbFreeCoinsLine": "watch a short ad",
+  "@lbFreeCoinsLine": {
+    "description": "Free coins subline"
+  },
+  "lbProName": "SNAKE CLASSIC PRO",
+  "@lbProName": {
+    "description": "Subscription product name"
+  },
+  "lbProPerkNoAds": "No ads. Not one. Ever.",
+  "@lbProPerkNoAds": {
+    "description": "Pro perk"
+  },
+  "lbProPerkRevive": "A free revive, every single run",
+  "@lbProPerkRevive": {
+    "description": "Pro perk"
+  },
+  "lbProPerkThemes": "All {count} premium themes",
+  "@lbProPerkThemes": {
+    "description": "Pro perk",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbProPerkCosmetics": "All {skins} skins + all {trails} trails",
+  "@lbProPerkCosmetics": {
+    "description": "Pro perk",
+    "placeholders": {
+      "skins": {
+        "type": "String"
+      },
+      "trails": {
+        "type": "String"
+      }
+    }
+  },
+  "lbProPerkCoins": "2× coins from every run",
+  "@lbProPerkCoins": {
+    "description": "Pro perk"
+  },
+  "lbMonthly": "MONTHLY",
+  "@lbMonthly": {
+    "description": "Subscription period"
+  },
+  "lbYearly": "YEARLY",
+  "@lbYearly": {
+    "description": "Subscription period"
+  },
+  "lbPerMonth": "per month",
+  "@lbPerMonth": {
+    "description": "Under the monthly price"
+  },
+  "lbPerYear": "per year",
+  "@lbPerYear": {
+    "description": "Under the yearly price"
+  },
+  "lbBestValue": "best value",
+  "@lbBestValue": {
+    "description": "Under the yearly price"
+  },
+  "lbGoPro": "GO PRO",
+  "@lbGoPro": {
+    "description": "Subscribe button"
+  },
+  "lbProActive": "PRO IS ON",
+  "@lbProActive": {
+    "description": "Shown instead of GO PRO for subscribers"
+  },
+  "lbProActiveLine": "Thanks for backing the snake.",
+  "@lbProActiveLine": {
+    "description": "Under PRO IS ON"
+  },
+  "lbStoreFooter": "Prices come from your app store. Cancel anytime.",
+  "@lbStoreFooter": {
+    "description": "Store legal footer"
+  },
+  "lbRestorePurchases": "RESTORE PURCHASES",
+  "@lbRestorePurchases": {
+    "description": "Restore purchases link"
+  },
+  "lbBuyPrice": "BUY · {price}",
+  "@lbBuyPrice": {
+    "description": "Buy button with the store price",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "lbBuyCoins": "BUY · {coins}¢",
+  "@lbBuyCoins": {
+    "description": "Buy with coins",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbOrFreeWithPro": "or free with Pro",
+  "@lbOrFreeWithPro": {
+    "description": "Under a buy button for Pro-included items"
+  },
+  "lbEquipped": "EQUIPPED",
+  "@lbEquipped": {
+    "description": "Item in use"
+  },
+  "lbOwned": "OWNED",
+  "@lbOwned": {
+    "description": "Item owned"
+  },
+  "lbEquip": "EQUIP",
+  "@lbEquip": {
+    "description": "Equip an owned item"
+  },
+  "lbIncludedWithPro": "INCLUDED WITH PRO",
+  "@lbIncludedWithPro": {
+    "description": "Item unlocked by the subscription"
+  },
+  "lbSkinTagGolden": "Rich. Famous. A little smug.",
+  "@lbSkinTagGolden": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagFire": "Hot to the touch.",
+  "@lbSkinTagFire": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagIce": "Cool under pressure.",
+  "@lbSkinTagIce": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagElectric": "Shockingly fast.",
+  "@lbSkinTagElectric": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagRainbow": "All of them. At once.",
+  "@lbSkinTagRainbow": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagNeon": "Visible from space.",
+  "@lbSkinTagNeon": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagShadow": "Now you see it.",
+  "@lbSkinTagShadow": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagGalaxy": "Contains multitudes.",
+  "@lbSkinTagGalaxy": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagCrystal": "Handle with care.",
+  "@lbSkinTagCrystal": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagCosmic": "Big universe energy.",
+  "@lbSkinTagCosmic": {
+    "description": "Skin tagline"
+  },
+  "lbSkinTagDragon": "Legally not a dragon.",
+  "@lbSkinTagDragon": {
+    "description": "Skin tagline"
+  },
+  "lbSettingsTitle": "SETTINGS",
+  "@lbSettingsTitle": {
+    "description": "Settings screen title"
+  },
+  "lbSettingsSubtitle": "Tweak it till it feels right.",
+  "@lbSettingsSubtitle": {
+    "description": "Settings subtitle"
+  },
+  "lbControls": "CONTROLS",
+  "@lbControls": {
+    "description": "Section label"
+  },
+  "lbCtrlSwipe": "SWIPE",
+  "@lbCtrlSwipe": {
+    "description": "Control layout"
+  },
+  "lbCtrlSwipeSub": "anywhere",
+  "@lbCtrlSwipeSub": {
+    "description": "Control layout subline"
+  },
+  "lbCtrlDpad": "D-PAD",
+  "@lbCtrlDpad": {
+    "description": "Control layout"
+  },
+  "lbCtrlDpadSub": "4 arrows",
+  "@lbCtrlDpadSub": {
+    "description": "Control layout subline"
+  },
+  "lbCtrlTurn": "TURN",
+  "@lbCtrlTurn": {
+    "description": "Control layout"
+  },
+  "lbCtrlTurnSub": "left · right",
+  "@lbCtrlTurnSub": {
+    "description": "Control layout subline"
+  },
+  "lbCtrlStick": "STICK",
+  "@lbCtrlStick": {
+    "description": "Control layout"
+  },
+  "lbCtrlStickSub": "floating",
+  "@lbCtrlStickSub": {
+    "description": "Control layout subline"
+  },
+  "lbSwipeFeel": "SWIPE FEEL",
+  "@lbSwipeFeel": {
+    "description": "Swipe sensitivity setting"
+  },
+  "lbSwipeFeelSub": "lazy ←→ twitchy",
+  "@lbSwipeFeelSub": {
+    "description": "Swipe sensitivity subline"
+  },
+  "lbGameplay": "GAMEPLAY",
+  "@lbGameplay": {
+    "description": "Section label"
+  },
+  "lbMode": "MODE",
+  "@lbMode": {
+    "description": "Setting row"
+  },
+  "lbBoard": "BOARD",
+  "@lbBoard": {
+    "description": "Setting row"
+  },
+  "lbDifficulty": "DIFFICULTY",
+  "@lbDifficulty": {
+    "description": "Setting row"
+  },
+  "lbCrashReplay": "CRASH REPLAY",
+  "@lbCrashReplay": {
+    "description": "Setting: crash replay length"
+  },
+  "lbCrashReplaySub": "how long we rub it in",
+  "@lbCrashReplaySub": {
+    "description": "Crash replay subline"
+  },
+  "lbTheme": "THEME",
+  "@lbTheme": {
+    "description": "Section label"
+  },
+  "lbThemeAside": "{theme} · {free} FREE · {premium} PREMIUM",
+  "@lbThemeAside": {
+    "description": "Theme section aside",
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "premium": {
+        "type": "String"
+      }
+    }
+  },
+  "lbSoundFeel": "SOUND & FEEL",
+  "@lbSoundFeel": {
+    "description": "Section label"
+  },
+  "lbSoundFx": "SOUND FX",
+  "@lbSoundFx": {
+    "description": "Setting row"
+  },
+  "lbSoundFxSub": "crunchy, as intended",
+  "@lbSoundFxSub": {
+    "description": "Sound subline"
+  },
+  "lbMusic": "MUSIC",
+  "@lbMusic": {
+    "description": "Setting row"
+  },
+  "lbHaptics": "HAPTICS",
+  "@lbHaptics": {
+    "description": "Setting row"
+  },
+  "lbHapticsSub": "tiny buzz on every bite",
+  "@lbHapticsSub": {
+    "description": "Haptics subline"
+  },
+  "lb120Hz": "120 HZ",
+  "@lb120Hz": {
+    "description": "High refresh rate setting"
+  },
+  "lb120HzSub": "smooth like butter (if your phone is)",
+  "@lb120HzSub": {
+    "description": "High refresh rate subline"
+  },
+  "lbReplayTutorial": "REPLAY TUTORIAL",
+  "@lbReplayTutorial": {
+    "description": "Footer link"
+  },
+  "lbPrivacy": "PRIVACY",
+  "@lbPrivacy": {
+    "description": "Footer link"
+  },
+  "lbOpenRunSetup": "Run setup",
+  "@lbOpenRunSetup": {
+    "description": "Settings shortcut to the run setup screen"
+  },
+  "lbVersusTitle": "VERSUS",
+  "@lbVersusTitle": {
+    "description": "Multiplayer lobby title"
+  },
+  "lbVersusSubtitle": "Real people. Real snakes. Real beef.",
+  "@lbVersusSubtitle": {
+    "description": "Multiplayer subtitle"
+  },
+  "lbWins": "WINS",
+  "@lbWins": {
+    "description": "Stat"
+  },
+  "lbLosses": "LOSSES",
+  "@lbLosses": {
+    "description": "Stat"
+  },
+  "lbDraws": "DRAWS",
+  "@lbDraws": {
+    "description": "Stat"
+  },
+  "lbRating": "RATING",
+  "@lbRating": {
+    "description": "Stat"
+  },
+  "lbQuickMatch": "QUICK MATCH",
+  "@lbQuickMatch": {
+    "description": "Section label"
+  },
+  "lbQuickMatchLine": "1v1 Classic. We find you a rival in seconds.",
+  "@lbQuickMatchLine": {
+    "description": "Quick match line"
+  },
+  "lbFindMatch": "FIND MATCH",
+  "@lbFindMatch": {
+    "description": "Start matchmaking"
+  },
+  "lbSearching": "SNIFFING OUT A RIVAL… {secs}s",
+  "@lbSearching": {
+    "description": "Matchmaking in progress",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbCancel": "CANCEL",
+  "@lbCancel": {
+    "description": "Cancel"
+  },
+  "lbGotCode": "GOT A CODE?",
+  "@lbGotCode": {
+    "description": "Join by room code"
+  },
+  "lbGotCodeLine": "Six letters. Case doesn't matter. Friendship might.",
+  "@lbGotCodeLine": {
+    "description": "Room code hint"
+  },
+  "lbCreateRoom": "CREATE ROOM",
+  "@lbCreateRoom": {
+    "description": "Create a private room"
+  },
+  "lbCreateRoomLine": "Invite a friend. Or a frenemy.",
+  "@lbCreateRoomLine": {
+    "description": "Create room line"
+  },
+  "lbHouseSnake": "Nobody brave online? The house snake joins after 30s. It doesn't trash talk.",
+  "@lbHouseSnake": {
+    "description": "Bot opponent note"
+  },
+  "lbTournamentsLive": "TOURNAMENTS · LIVE",
+  "@lbTournamentsLive": {
+    "description": "Tournaments link"
+  },
+  "lbTournamentsLine": "Bronze free · Silver & Gold entries",
+  "@lbTournamentsLine": {
+    "description": "Tournaments link subline"
+  },
+  "lbRoomTitle": "ROOM",
+  "@lbRoomTitle": {
+    "description": "Multiplayer room title"
+  },
+  "lbRoomSubtitle": "Share the code. Wait nervously.",
+  "@lbRoomSubtitle": {
+    "description": "Room subtitle"
+  },
+  "lbPlayersCount": "PLAYERS {count}/{max}",
+  "@lbPlayersCount": {
+    "description": "Players in the room",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "lbYou": "YOU",
+  "@lbYou": {
+    "description": "The player"
+  },
+  "lbRival": "RIVAL",
+  "@lbRival": {
+    "description": "The opponent"
+  },
+  "lbWaitingYou": "WAITING · tap ready, hero",
+  "@lbWaitingYou": {
+    "description": "Player not ready yet"
+  },
+  "lbWaiting": "WAITING",
+  "@lbWaiting": {
+    "description": "Opponent not ready yet"
+  },
+  "lbReadyThem": "READY · stretching menacingly",
+  "@lbReadyThem": {
+    "description": "Opponent is ready"
+  },
+  "lbReadyYou": "READY · nerves of steel",
+  "@lbReadyYou": {
+    "description": "Player is ready"
+  },
+  "lbReadyCheck": "READY CHECK",
+  "@lbReadyCheck": {
+    "description": "Ready countdown label"
+  },
+  "lbReady": "READY",
+  "@lbReady": {
+    "description": "Ready button"
+  },
+  "lbLeaveRoom": "LEAVE ROOM",
+  "@lbLeaveRoom": {
+    "description": "Leave the room"
+  },
+  "lbVs": "VS",
+  "@lbVs": {
+    "description": "Versus divider"
+  },
+  "lbLive": "LIVE",
+  "@lbLive": {
+    "description": "Match in progress"
+  },
+  "lbMatchBehind": "{rival} is {gap} points ahead. Rude.",
+  "@lbMatchBehind": {
+    "description": "Opponent leads",
+    "placeholders": {
+      "rival": {
+        "type": "String"
+      },
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "lbMatchAhead": "You're {gap} ahead. Don't get cocky.",
+  "@lbMatchAhead": {
+    "description": "Player leads",
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "lbMatchTied": "Dead even. Eat something.",
+  "@lbMatchTied": {
+    "description": "Scores tied"
+  },
+  "lbVictory": "VICTORY",
+  "@lbVictory": {
+    "description": "Match result"
+  },
+  "lbVictoryLine": "You out-snaked {rival}.",
+  "@lbVictoryLine": {
+    "description": "Victory line",
+    "placeholders": {
+      "rival": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDefeat": "DEFEAT",
+  "@lbDefeat": {
+    "description": "Match result"
+  },
+  "lbDefeatLine": "{rival} took this one.",
+  "@lbDefeatLine": {
+    "description": "Defeat line",
+    "placeholders": {
+      "rival": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDefeatBothCrashed": "Both snakes crashed. Their score decided it.",
+  "@lbDefeatBothCrashed": {
+    "description": "Defeat when both crashed"
+  },
+  "lbDefeatLine2": "{rival} will be insufferable now.",
+  "@lbDefeatLine2": {
+    "description": "Defeat joke line",
+    "placeholders": {
+      "rival": {
+        "type": "String"
+      }
+    }
+  },
+  "lbDraw": "DRAW",
+  "@lbDraw": {
+    "description": "Match result"
+  },
+  "lbDrawLine": "Perfectly balanced. Rematch?",
+  "@lbDrawLine": {
+    "description": "Draw line"
+  },
+  "lbVersusFooter": "Every loss is just a rematch waiting to happen.",
+  "@lbVersusFooter": {
+    "description": "Result screen footer"
+  },
+  "lbLength": "LENGTH",
+  "@lbLength": {
+    "description": "Stat"
+  },
+  "lbSurvived": "SURVIVED",
+  "@lbSurvived": {
+    "description": "Time survived"
+  },
+  "lbRematch": "REMATCH",
+  "@lbRematch": {
+    "description": "Play the same rival again"
+  },
+  "lbBackToLobby": "BACK TO LOBBY",
+  "@lbBackToLobby": {
+    "description": "Return to the lobby"
+  },
+  "lbAdBreak": "AD BREAK",
+  "@lbAdBreak": {
+    "description": "Rewarded interstitial intro title"
+  },
+  "lbAdBreakLine": "A short ad. {coins} coins for you.",
+  "@lbAdBreakLine": {
+    "description": "Intro: states the reward plainly",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbAdBreakLine2": "Fair trade? Your call either way.",
+  "@lbAdBreakLine2": {
+    "description": "Intro: secondary line"
+  },
+  "lbAdStartsIn": "STARTS IN {secs} · OR SKIP, NO HARD FEELINGS",
+  "@lbAdStartsIn": {
+    "description": "Intro countdown with skip notice",
+    "placeholders": {
+      "secs": {
+        "type": "String"
+      }
+    }
+  },
+  "lbAdRewardWhenEnds": "+{coins}¢ WHEN IT ENDS",
+  "@lbAdRewardWhenEnds": {
+    "description": "Reward chip",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "lbWatchNow": "WATCH NOW",
+  "@lbWatchNow": {
+    "description": "Start the ad now"
+  },
+  "lbNoThanks": "NO THANKS",
+  "@lbNoThanks": {
+    "description": "Skip the ad"
+  },
+  "lbAdBackHint": "The back gesture counts as no thanks, too.",
+  "@lbAdBackHint": {
+    "description": "Back gesture skips"
+  },
+  "lbAdGoProLine": "and never see this screen again.",
+  "@lbAdGoProLine": {
+    "description": "Pro upsell under GO PRO"
+  },
+  "lbAdStarting": "AD STARTING…",
+  "@lbAdStarting": {
+    "description": "Tap-absorbing curtain before a full-screen ad"
+  },
+  "lbNoAdNow": "No ad right now. Try again in a sec.",
+  "@lbNoAdNow": {
+    "description": "Rewarded ad not filled"
+  },
+  "lbOffline": "NO SIGNAL. Single-player still works.",
+  "@lbOffline": {
+    "description": "Offline banner"
+  },
+  "lbServerDown": "Our servers bonked. Your progress is safe on this phone.",
+  "@lbServerDown": {
+    "description": "Server error"
+  },
+  "lbPurchaseFailed": "Purchase didn't go through. You weren't charged.",
+  "@lbPurchaseFailed": {
+    "description": "Purchase failed"
+  },
+  "lbMatchTimeout": "No rival found. The house snake is warming up.",
+  "@lbMatchTimeout": {
+    "description": "Matchmaking timeout"
   }
 }
