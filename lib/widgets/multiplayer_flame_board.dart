@@ -9,8 +9,9 @@ import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/board_frame.dart';
 
 /// The multiplayer gameplay board, rendered with the Flame engine. Wears the
-/// shared [BoardFrame] and hosts a [MultiplayerFlameGame] (fill + grid +
-/// both snakes + food + particles) inside it. Everything on the board comes
+/// shared [BoardFrame] (the Living Board wall hairline) and hosts a
+/// [MultiplayerFlameGame] (board + grid + both snakes as Living Board cells
+/// + food + particles) inside it. Everything on the board comes
 /// from the server's [MatchSnapshot] stream — the widget just relays the
 /// latest snapshot into the running game for interpolation.
 class MultiplayerFlameBoard extends StatefulWidget {
@@ -55,7 +56,7 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
         }
         // Thread the localized "You" label into the (context-less) Flame
         // painter layer. Cheap plain-field write, safe to do every build.
-        _game.youLabel = AppLocalizations.of(context)!.mpYou;
+        _game.youLabel = AppLocalizations.of(context)!.lbYou;
         _game.syncState(snapshot: widget.snapshot, theme: theme);
 
         // Same frame as the single-player board. The screen hands us a

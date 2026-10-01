@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -77,9 +78,10 @@ class MultiplayerFlameGame extends FlameGame {
 
   /// Flame paints this behind the world before anything renders. The
   /// default is black, which is exactly the flat black board this used to
-  /// show while the viewport was still settling.
+  /// show while the viewport was still settling. The Living Board colour,
+  /// so the first frames match the board painted over it.
   @override
-  Color backgroundColor() => theme.backgroundColor;
+  Color backgroundColor() => LBPalette.of(theme).board;
 
   /// Pulse in [0.9, 1.1] over a 2s period (matches the legacy pulse tween).
   double get pulse {
@@ -175,7 +177,7 @@ class MultiplayerFlameGame extends FlameGame {
   }
 }
 
-/// Renders the multiplayer grid + both snakes + food by driving the reused
+/// Renders the Living Board grid + both snakes + food by driving the
 /// multiplayer painters in the Flame render pass (world pixel-space).
 class _MultiplayerBoardComponent extends Component
     with HasGameReference<MultiplayerFlameGame> {

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
 import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -14,25 +13,24 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/dpad_row_layout.dart';
-import 'package:snake_classic/widgets/game_circle_button.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/versus/versus_match_widgets.dart';
+import 'package:snake_classic/widgets/lb_screens/versus/versus_widgets.dart';
 import 'package:snake_classic/widgets/steerable_dpad.dart';
 import 'package:snake_classic/widgets/turn_buttons.dart';
 import 'package:snake_classic/widgets/joystick_controls.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
-import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 
-/// The live 1v1 match screen. Server-authoritative: everything on screen
-/// (both snakes, food, scores, deaths, the final result) renders from the
-/// engine snapshots in [MultiplayerState.snapshot] — the only thing this
-/// screen sends is direction inputs via [MultiplayerCubit.changeDirection].
+/// The live 1v1 match screen (Living Board renders 19 and 20).
+/// Server-authoritative: everything on screen (both snakes, food, scores,
+/// deaths, the final result) renders from the engine snapshots in
+/// [MultiplayerState.snapshot] — the only thing this screen sends is
+/// direction inputs via [MultiplayerCubit.changeDirection].
 class MultiplayerGameScreen extends StatefulWidget {
   const MultiplayerGameScreen({super.key});
 
@@ -56,6 +54,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   bool _exiting = false;
   int _lastJuiceScore = 0;
   bool _juiceAliveLastTick = true;
+
+  /// Match clock at the snapshot where my snake was first seen dead — the
+  /// SURVIVED row on the result. Null while alive (survived = the match).
+  int? _mySurvivedMs;
 
   @override
   void initState() {
@@ -176,6 +178,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       _juiceController.foodEaten();
     }
     if (_juiceAliveLastTick && !me.alive) {
+      _mySurvivedMs ??= snapshot.elapsedGameMs;
       if (me.deathReason == 'wall') {
         _juiceController.wallHit();
       } else {
@@ -190,7 +193,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     if (_resultDialogShown) return;
     _resultDialogShown = true;
 
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
     final userId = _currentUserId ?? '';
     final won = result.isWinner(userId);
@@ -199,166 +201,84 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     final opponent = result.players
         .where((p) => p.userId != userId)
         .firstOrNull;
+    final rival = opponent?.username ?? l10n.mpOpponent;
+    final aborted = result.reason == 'aborted';
 
-    final titleColor = won
-        ? Colors.amber
-        : (draw ? theme.accentColor : Colors.red.shade400);
+    // Plain first, funny second (COPY.md): the first line says how it
+    // ended, the second is the joke — never on a cancelled match.
+    final summary = _resultSummary(l10n, result, me, won: won, draw: draw);
+    final VersusOutcome outcome;
+    final String line;
+    String? line2;
+    if (won) {
+      outcome = VersusOutcome.victory;
+      line = summary;
+      line2 = aborted ? null : l10n.lbVictoryLine(rival);
+    } else if (draw) {
+      outcome = VersusOutcome.draw;
+      line = summary;
+      line2 = aborted ? null : l10n.lbDrawLine;
+    } else {
+      outcome = VersusOutcome.defeat;
+      line = result.reason == 'mutual_crash'
+          ? l10n.lbDefeatBothCrashed
+          : (_isUnexplainedLoss(result, me) ? l10n.lbDefeatLine(rival) : summary);
+      line2 = aborted ? null : l10n.lbDefeatLine2(rival);
+    }
 
-    showDialog(
+    // Lengths and survival come from the last authoritative snapshot; the
+    // GameEnded payload carries scores, not bodies.
+    final snapshot = context.read<MultiplayerCubit>().state.snapshot;
+    final myLen = snapshot?.playerByUserId(userId)?.body.length;
+    final rivalLen = opponent == null
+        ? null
+        : snapshot?.playerByUserId(opponent.userId)?.body.length;
+    final lengths = myLen == null
+        ? null
+        : (rivalLen == null ? '$myLen' : '$myLen · $rivalLen');
+    final survivedMs = _mySurvivedMs ?? snapshot?.elapsedGameMs;
+
+    // Quick-match sessions get a one-tap re-queue; friend rooms
+    // don't (the room is finished — they re-invite from the lobby).
+    final canRematch = context.read<MultiplayerCubit>().lastMatchWasQuickMatch;
+
+    showVersusResultDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: titleColor.withValues(alpha: 0.5)),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              won
-                  ? Icons.emoji_events
-                  : (draw ? Icons.handshake : Icons.sports_score),
-              color: titleColor,
-              size: 32,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              won ? l10n.mpVictory : (draw ? l10n.mpDraw : l10n.mpDefeat),
-              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _resultSummary(l10n, result, me, won: won, draw: draw),
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.accentColor, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    titleColor.withValues(alpha: 0.1),
-                    titleColor.withValues(alpha: 0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: titleColor.withValues(alpha: 0.3)),
-              ),
-              child: HudCorners(
-                color: titleColor,
-                inset: 9,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _resultScoreColumn(theme, l10n.mpYou, me?.score ?? 0),
-                    Text(
-                      l10n.mpVs,
-                      style: TextStyle(
-                        color: theme.accentColor.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    _resultScoreColumn(
-                      theme,
-                      opponent?.username ?? l10n.mpOpponent,
-                      opponent?.score ?? 0,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // The reward is whatever the SERVER settled, not a number read
-            // off the broadcast. Until the settlement lands this says so,
-            // rather than announcing coins that have not been credited — the
-            // old version showed the figure immediately and could be wrong in
-            // both directions if the socket died before the grant.
-            const SizedBox(height: 16),
-            _RewardChip(theme: theme),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              dialogContext.pop();
-              _navigateToLobby();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                l10n.mpBackToLobby,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          // Quick-match sessions get a one-tap re-queue; friend rooms
-          // don't (the room is finished — they re-invite from the lobby).
-          if (context.read<MultiplayerCubit>().lastMatchWasQuickMatch)
-            TextButton(
-              onPressed: () {
+      card: (dialogContext) => VersusResultCard(
+        outcome: outcome,
+        line: line,
+        line2: line2,
+        myScore: me?.score ?? 0,
+        rivalScore: opponent?.score ?? 0,
+        lengths: lengths,
+        survived: survivedMs == null ? null : versusClock(survivedMs),
+        onBackToLobby: () {
+          dialogContext.pop();
+          _navigateToLobby();
+        },
+        onRematch: !canRematch
+            ? null
+            : () {
                 dialogContext.pop();
                 _exiting = true;
                 final cubit = context.read<MultiplayerCubit>();
                 context.pushReplacement(AppRoutes.multiplayerLobby);
                 cubit.queueAgain();
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: titleColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  l10n.mpPlayAgain,
-                  style: TextStyle(
-                    color: titleColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
 
-  Widget _resultScoreColumn(GameTheme theme, String label, int score) {
-    return Column(
-      children: [
-        Text(
-          label.length > 10 ? '${label.substring(0, 10)}…' : label,
-          style: TextStyle(
-            color: theme.accentColor.withValues(alpha: 0.8),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          context.formatInt(score),
-          style: TextStyle(
-            color: theme.accentColor,
-            fontSize: 34,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
+  /// A loss with no specific cause on record — the summary would only say
+  /// "better luck next time", so the rival's name says it better.
+  bool _isUnexplainedLoss(MatchEndResult result, MatchEndPlayer? me) {
+    if (result.reason == 'timeout' ||
+        result.reason == 'mutual_crash' ||
+        result.reason == 'aborted') {
+      return false;
+    }
+    const known = {'wall', 'self', 'opponent', 'head_on', 'forfeit'};
+    return !known.contains(me?.deathReason);
   }
 
   /// One human line explaining how the match ended, from the winner's or
@@ -412,45 +332,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   void _showExitDialog() {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    showDialog(
+    showLBDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          l10n.mpLeaveGameTitle,
-          style: TextStyle(
-            color: theme.accentColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          l10n.mpLeaveGameBody,
-          style: TextStyle(color: theme.accentColor),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => dialogContext.pop(),
-            child: Text(
-              l10n.commonCancel,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              dialogContext.pop();
-              _navigateToLobby();
-            },
-            child: Text(
-              l10n.mpLeave,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+      title: l10n.mpLeaveGameTitle,
+      body: l10n.mpLeaveGameBody,
+      primaryLabel: l10n.mpLeave,
+      primaryKind: LBBlockKind.danger,
+      titleColor: LB.bonk,
+      onPrimary: () {
+        // showDialog mounts on the root navigator; pop exactly that route.
+        Navigator.of(context, rootNavigator: true).pop();
+        _navigateToLobby();
+      },
+      secondaryLabel: l10n.commonCancel,
     ).whenComplete(_restoreGameplayFocus);
   }
 
@@ -523,12 +419,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             }
           },
           // Everything from here down to the Stack depends on the THEME, not
-          // on the snapshot: the gradient, the background painter, the
-          // keyboard listener, the exit guard. All of it used to sit INSIDE
-          // the snapshot builder, so a BoxDecoration, a RadialGradient and a
-          // full-screen CustomPaint were rebuilt five times a second for a
-          // board that moves independently of them. Only the parts that
-          // actually read the snapshot rebuild per tick now.
+          // on the snapshot: the board background, the keyboard listener,
+          // the exit guard. Only the parts that actually read the snapshot
+          // rebuild per tick.
           child: PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
@@ -549,153 +442,85 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 // place rather than animated into a widget that drops it.
                 applyShake: shakeEnabled,
                 child: Scaffold(
-                  body: Container(
-                    decoration: BoxDecoration(
-                      // Use theme colors, matching single-player
-                      gradient: RadialGradient(
-                        center: Alignment.topRight,
-                        radius: 1.5,
-                        colors: [
-                          theme.accentColor.withValues(alpha: 0.15),
-                          theme.backgroundColor,
-                          theme.backgroundColor.withValues(alpha: 0.9),
-                          Colors.black.withValues(alpha: 0.1),
-                        ],
-                        stops: const [0.0, 0.4, 0.8, 1.0],
-                      ),
-                    ),
-                    // No SafeArea at this level: the grid painter and the
-                    // reconnecting scrim must reach the status-bar and
-                    // nav-bar strips, or they show through as flat bands.
-                    // The gameplay column pads its own insets below; the
-                    // match intro is centred and needs none.
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _GameBackgroundPainter(theme),
-                          ),
-                        ),
+                  backgroundColor: context.lb.board,
+                  // No SafeArea at this level: the grid and the reconnecting
+                  // scrim must reach the status-bar and nav-bar strips, or
+                  // they show through as flat bands. The gameplay column
+                  // pads its own insets below; the match intro is centred
+                  // and needs none.
+                  body: LBGridBackground(
+                    child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
+                      builder: (context, multiplayerState) {
+                        return BlocBuilder<AuthCubit, AuthState>(
+                          builder: (context, authState) {
+                            final snapshot = multiplayerState.snapshot;
+                            final currentUserId = authState.userId ?? '';
 
-                          BlocBuilder<MultiplayerCubit, MultiplayerState>(
-                            builder: (context, multiplayerState) {
-                              return BlocBuilder<AuthCubit, AuthState>(
-                                builder: (context, authState) {
-                                  final snapshot = multiplayerState.snapshot;
-                                  final currentUserId = authState.userId ?? '';
+                            // Waiting for the first authoritative
+                            // snapshot — GameStarted lands right after
+                            // the countdown. The exit guard is above
+                            // this, so backing out of "GET READY"
+                            // still cannot silently leave the room
+                            // joined server-side.
+                            if (snapshot == null) {
+                              return _buildMatchIntro();
+                            }
 
-                                  // Waiting for the first authoritative
-                                  // snapshot — GameStarted lands right after
-                                  // the countdown. The exit guard is above
-                                  // this, so backing out of "GET READY"
-                                  // still cannot silently leave the room
-                                  // joined server-side.
-                                  if (snapshot == null) {
-                                    return _buildMatchIntro(theme);
-                                  }
+                            final me = snapshot.playerByUserId(currentUserId);
+                            final opponent = snapshot.players
+                                .where((p) => p.userId != currentUserId)
+                                .firstOrNull;
 
-                                  return Stack(
+                            return Stack(
+                              children: [
+                                // Main game content, padded for the insets
+                                // the Stack ignores.
+                                SafeArea(
+                                  child: Column(
                                     children: [
-                                      // Main game content, padded for
-                                      // the insets the Stack ignores.
-                                      SafeArea(
-                                      child: Column(
-                                        children: [
-                                          // Face-to-face versus header:
-                                          // duel panel, live scores, momentum
-                                          // bar and match clock.
-                                          _buildVersusHeader(
-                                            theme,
-                                            snapshot,
-                                            currentUserId,
-                                          ),
-
-                                          // Game Board — renders the
-                                          // authoritative snapshots
-                                          Expanded(
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(12),
-                                              // Swipe recognition is scoped
-                                              // to the board rectangle. It
-                                              // used to wrap the whole
-                                              // column, so a drag starting
-                                              // on the versus header or the
-                                              // control strip could steer.
-                                              // The board is square; size
-                                              // it HERE and centre it, so
-                                              // the frame wraps the
-                                              // playfield exactly. Letting
-                                              // the frame fill the tall
-                                              // slot and squaring the
-                                              // board inside it left dead
-                                              // bands above and below.
-                                              child: LayoutBuilder(
-                                                builder: (context, c) {
-                                                  final cap = context
-                                                      .responsive<double>(
-                                                        phone: double.infinity,
-                                                        tablet: 640,
-                                                        largeTablet: 820,
-                                                      );
-                                                  final side = math.min(
-                                                    math.min(
-                                                      c.maxWidth,
-                                                      c.maxHeight,
-                                                    ),
-                                                    cap,
-                                                  );
-                                                  return Center(
-                                                    child: SizedBox(
-                                                      width: side,
-                                                      height: side,
-                                                      child: SwipeDetector(
-                                                        onSwipe: _handleSwipe,
-                                                        child:
-                                                            MultiplayerFlameBoard(
-                                                          snapshot: snapshot,
-                                                          boardSize:
-                                                              multiplayerState
-                                                                  .boardSize,
-                                                          currentUserId:
-                                                              currentUserId,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ),
-
-                                          // Bottom control strip
-                                          _buildControlStrip(
-                                            theme,
-                                            snapshot,
-                                            currentUserId,
-                                          ),
-                                        ],
-                                      ),
+                                      // YOU · clock · RIVAL (render 19).
+                                      VersusMatchHeader(
+                                        me: me,
+                                        opponent: opponent,
+                                        elapsedGameMs: snapshot.elapsedGameMs,
+                                        onLeave: _showExitDialog,
                                       ),
 
-                                      // Connection-loss overlay: the board
-                                      // freezes on the last snapshot while
-                                      // the cubit retries; say so instead of
-                                      // looking hung.
-                                      if (multiplayerState.status ==
-                                          MultiplayerStatus.reconnecting)
-                                        Positioned.fill(
-                                          child: _buildReconnectingOverlay(
-                                            theme,
-                                          ),
+                                      Expanded(
+                                        child: _buildBoardArea(
+                                          multiplayerState,
+                                          snapshot,
+                                          currentUserId,
+                                          me,
+                                          opponent,
                                         ),
+                                      ),
+
+                                      // Bottom control strip
+                                      _buildControlStrip(
+                                        theme,
+                                        snapshot,
+                                        currentUserId,
+                                      ),
                                     ],
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                                  ),
+                                ),
+
+                                // Connection-loss overlay: the board
+                                // freezes on the last snapshot while
+                                // the cubit retries; say so instead of
+                                // looking hung.
+                                if (multiplayerState.status ==
+                                    MultiplayerStatus.reconnecting)
+                                  Positioned.fill(
+                                    child: _buildReconnectingOverlay(),
+                                  ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -706,589 +531,183 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  /// Dim the frozen board and say what's happening while the cubit
-  /// retries the connection. The match keeps running server-side.
-  Widget _buildReconnectingOverlay(GameTheme theme) {
+  /// The split cell row, the board and the gap line (render 19).
+  Widget _buildBoardArea(
+    MultiplayerState multiplayerState,
+    MatchSnapshot snapshot,
+    String currentUserId,
+    MatchPlayerState? me,
+    MatchPlayerState? opponent,
+  ) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      color: Colors.black.withValues(alpha: 0.6),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 42,
-              height: 42,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation(theme.accentColor),
+    final p = context.lb;
+    final gapLineH = context.lbCell * 1.6;
+    return LayoutBuilder(
+      builder: (context, c) {
+        // The board uses every column on phones (DESIGN_SPEC §2), capped on
+        // tablets so it doesn't dwarf the uiScale-sized HUD and controls.
+        final cap = context.responsive<double>(
+          phone: double.infinity,
+          tablet: 640,
+          largeTablet: 820,
+        );
+        // The split row is one cell per column (18), plus its 3 dp gap and
+        // 1 dp wall, plus 4 dp before the board.
+        const splitCells = 18;
+        var side = math.min(c.maxWidth, cap);
+        final maxH = c.maxHeight - gapLineH - 8;
+        if (side + side / splitCells > maxH) {
+          side = math.max(0.0, maxH / (1 + 1 / splitCells));
+        }
+
+        final myScore = me?.score ?? 0;
+        final rivalScore = opponent?.score ?? 0;
+        final gap = (rivalScore - myScore).abs();
+        final String? gapLine = opponent == null
+            ? null
+            : rivalScore > myScore
+            ? l10n.lbMatchBehind(opponent.username, context.formatInt(gap))
+            : myScore > rivalScore
+            ? l10n.lbMatchAhead(context.formatInt(gap))
+            : l10n.lbMatchTied;
+
+        // The board is square (the server's grid), so on a tall phone
+        // there is height to spare: centre the board group in it rather
+        // than leaving one empty band under the board.
+        return Align(
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: side,
+                child: VersusSplitBar(
+                  myScore: myScore,
+                  rivalScore: rivalScore,
+                  count: splitCells,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.mpReconnecting,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(2),
+              const SizedBox(height: 4),
+              // Swipe recognition is scoped to the board rectangle. It used
+              // to wrap the whole column, so a drag starting on the versus
+              // header or the control strip could steer. The board is
+              // square; size it HERE, so the frame wraps the playfield
+              // exactly.
+              SizedBox(
+                width: side,
+                height: side,
+                child: SwipeDetector(
+                  onSwipe: _handleSwipe,
+                  child: MultiplayerFlameBoard(
+                    snapshot: snapshot,
+                    boardSize: multiplayerState.boardSize,
+                    currentUserId: currentUserId,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.mpReconnectingBody,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.7),
-                fontSize: 13,
+              SizedBox(
+                height: gapLineH,
+                width: side,
+                child: gapLine == null
+                    ? null
+                    : Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
+                          child: Text(
+                            gapLine,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: LBText.body(p, size: 11.5),
+                          ),
+                        ),
+                      ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  String _formatGameClock(int elapsedGameMs) {
-    final totalSeconds = elapsedGameMs ~/ 1000;
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  /// Dim the frozen board and say what's happening while the cubit
+  /// retries the connection. The match keeps running server-side.
+  Widget _buildReconnectingOverlay() {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    return ColoredBox(
+      color: p.board.withValues(alpha: .82),
+      child: Center(
+        child: Semantics(
+          liveRegion: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const VersusBusyCells(cell: 10),
+              const SizedBox(height: 22),
+              Text(
+                l10n.mpReconnecting.toUpperCase(),
+                style: LBText.button(p, color: p.lime, size: 16).copyWith(letterSpacing: 3),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
+                child: Text(
+                  l10n.mpReconnectingBody,
+                  textAlign: TextAlign.center,
+                  style: LBText.body(p, size: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Pre-match splash shown while we wait for the first authoritative
   /// snapshot (right after matchmaking, before the countdown lands).
-  Widget _buildMatchIntro(GameTheme theme) {
-    return Scaffold(
-      backgroundColor: theme.backgroundColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.2,
-            colors: [
-              theme.accentColor.withValues(alpha: 0.18),
-              theme.backgroundColor,
-            ],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: context.scaled(96),
-                height: context.scaled(96),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.accentColor,
-                      theme.accentColor.withValues(alpha: 0.5),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.accentColor.withValues(alpha: 0.5),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    AppLocalizations.of(context)!.mpVs,
-                    style: TextStyle(
-                      color: theme.backgroundColor,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: context.letterSpacing(2),
-                    ),
-                  ),
-                ),
-              ).gameBreathe(intensity: 1.08),
-              const SizedBox(height: 28),
-              Text(
-                AppLocalizations.of(context)!.mpGetReady,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: context.letterSpacing(4),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context)!.mpDroppingIntoArena,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.6),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: context.scaled(150),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    minHeight: 4,
-                    backgroundColor: theme.accentColor.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.accentColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// The centerpiece of the match screen: a face-to-face duel panel with
-  /// both players' avatars, live scores, a leading-momentum bar, and the
-  /// shared match clock.
-  Widget _buildVersusHeader(
-    GameTheme theme,
-    MatchSnapshot snapshot,
-    String currentUserId,
-  ) {
-    final me = snapshot.playerByUserId(currentUserId);
-    final opponent = snapshot.players
-        .where((p) => p.userId != currentUserId)
-        .firstOrNull;
-
-    final myColor = me != null
-        ? multiplayerColors[me.playerIndex % multiplayerColors.length]
-        : theme.accentColor;
-    final oppColor = opponent != null
-        ? multiplayerColors[opponent.playerIndex % multiplayerColors.length]
-        : Colors.redAccent;
-
-    final myScore = me?.score ?? 0;
-    final oppScore = opponent?.score ?? 0;
-
-    return Container(
-      margin: EdgeInsets.fromLTRB(12, context.scaled(8), 12, 4),
-      padding: EdgeInsets.all(context.scaled(12)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            myColor.withValues(alpha: 0.16),
-            theme.backgroundColor.withValues(alpha: 0.55),
-            oppColor.withValues(alpha: 0.16),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+  Widget _buildMatchIntro() {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    return Center(
       child: Column(
-        children: [
-          // Top control row: back button + live match clock.
-          Row(
-            children: [
-              GameCircleButton(
-                icon: Icons.arrow_back_ios_new,
-                onTap: _showExitDialog,
-                theme: theme,
-                semanticLabel: AppLocalizations.of(context)!.gameLeaveMatch,
-              ),
-              const Spacer(),
-              _liveTimerChip(theme, snapshot),
-            ],
-          ),
-          SizedBox(height: context.scaled(12)),
-          // Duel row: you vs opponent, flanking the VS medallion.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: _duelPlayerCell(
-                  theme,
-                  me,
-                  myColor,
-                  isMe: true,
-                  alignEnd: false,
-                  leading: myScore > oppScore,
-                ),
-              ),
-              _vsMedallion(theme),
-              Expanded(
-                child: _duelPlayerCell(
-                  theme,
-                  opponent,
-                  oppColor,
-                  isMe: false,
-                  alignEnd: true,
-                  leading: oppScore > myScore,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: context.scaled(12)),
-          _momentumBar(myColor, oppColor, myScore, oppScore),
-        ],
-      ),
-    );
-  }
-
-  Widget _liveTimerChip(GameTheme theme, MatchSnapshot snapshot) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.scaled(12),
-        vertical: context.scaled(7),
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.foodColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Live indicator dot.
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: theme.foodColor,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.foodColor.withValues(alpha: 0.7),
-                  blurRadius: 6,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.timer_outlined,
-            color: theme.foodColor.withValues(alpha: 0.8),
-            size: 15,
-          ),
-          const SizedBox(width: 6),
+          LBCellText(l10n.lbVs, cell: 14 * context.uiScale, glow: true).gameBreathe(intensity: 1.08),
+          const SizedBox(height: 30),
           Text(
-            _formatGameClock(snapshot.elapsedGameMs),
-            style: TextStyle(
-              color: theme.foodColor.withValues(alpha: 0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            l10n.mpGetReady.toUpperCase(),
+            style: LBText.button(p, color: p.lime, size: 18).copyWith(letterSpacing: 4),
           ),
+          const SizedBox(height: 8),
+          Text(l10n.mpDroppingIntoArena, style: LBText.body(p, size: 12)),
+          const SizedBox(height: 26),
+          const VersusBusyCells(count: 5, cell: 8),
         ],
-      ),
-    );
-  }
-
-  Widget _vsMedallion(GameTheme theme) {
-    final size = context.scaled(46);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.accentColor.withValues(alpha: 0.95),
-            theme.accentColor.withValues(alpha: 0.5),
-          ],
-        ),
-        border: Border.all(
-          color: theme.backgroundColor.withValues(alpha: 0.6),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.accentColor.withValues(alpha: 0.4),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          AppLocalizations.of(context)!.mpVs,
-          style: TextStyle(
-            color: theme.backgroundColor,
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            letterSpacing: context.letterSpacing(1),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _duelPlayerCell(
-    GameTheme theme,
-    MatchPlayerState? player,
-    Color color, {
-    required bool isMe,
-    required bool alignEnd,
-    required bool leading,
-  }) {
-    final l10n = AppLocalizations.of(context)!;
-    final rawName = player == null
-        ? l10n.mpWaitingPlayer
-        : (isMe ? l10n.mpYou : player.username);
-    final name = rawName.length > 9 ? '${rawName.substring(0, 9)}…' : rawName;
-    final score = player?.score ?? 0;
-    final alive = player?.alive ?? true;
-    final connected = player?.connected ?? true;
-    final initial = (player != null && player.username.isNotEmpty)
-        ? player.username[0].toUpperCase()
-        : '?';
-
-    final avatar = _playerAvatar(
-      theme,
-      color,
-      initial,
-      alive: alive,
-      connected: connected,
-    );
-
-    final info = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (leading && !alignEnd) ...[
-              const Icon(Icons.emoji_events, color: Colors.amber, size: 13),
-              const SizedBox(width: 4),
-            ],
-            Flexible(
-              child: Text(
-                name,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: alive
-                      ? theme.accentColor.withValues(alpha: 0.9)
-                      : Colors.grey,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  decoration: alive ? null : TextDecoration.lineThrough,
-                ),
-              ),
-            ),
-            if (leading && alignEnd) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.emoji_events, color: Colors.amber, size: 13),
-            ],
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          context.formatInt(score),
-          style: TextStyle(
-            color: alive ? theme.accentColor : Colors.grey,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            height: 1.0,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-        if (!alive)
-          Text(
-            l10n.mpOut,
-            style: TextStyle(
-              color: Colors.red.shade400,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: context.letterSpacing(1),
-            ),
-          )
-        else if (!connected)
-          Text(
-            l10n.mpReconnectingInline,
-            style: TextStyle(
-              color: Colors.orange,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-      ],
-    );
-
-    final children = alignEnd
-        ? [Expanded(child: info), SizedBox(width: context.scaled(10)), avatar]
-        : [avatar, SizedBox(width: context.scaled(10)), Expanded(child: info)];
-
-    return Row(mainAxisSize: MainAxisSize.max, children: children);
-  }
-
-  Widget _playerAvatar(
-    GameTheme theme,
-    Color color,
-    String initial, {
-    required bool alive,
-    required bool connected,
-  }) {
-    final size = context.scaled(46);
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: alive ? 0.9 : 0.25),
-                color.withValues(alpha: alive ? 0.45 : 0.12),
-              ],
-            ),
-            border: Border.all(
-              color: color.withValues(alpha: alive ? 0.85 : 0.3),
-              width: 2,
-            ),
-            boxShadow: alive
-                ? [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.45),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: alive
-                ? Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  )
-                : const Icon(
-                    Icons.close_rounded,
-                    color: Colors.white70,
-                    size: 24,
-                  ),
-          ),
-        ),
-        if (!connected)
-          Positioned(
-            right: -2,
-            top: -2,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: theme.backgroundColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.orange, width: 1),
-              ),
-              child: const Icon(Icons.wifi_off, color: Colors.orange, size: 11),
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// A tug-of-war bar: the split point tracks each player's share of the
-  /// combined score, so you can read who's ahead at a glance.
-  Widget _momentumBar(
-    Color myColor,
-    Color oppColor,
-    int myScore,
-    int oppScore,
-  ) {
-    final total = myScore + oppScore;
-    final myFrac = total == 0 ? 0.5 : (myScore / total).clamp(0.06, 0.94);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        height: context.scaled(8),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final splitX = width * myFrac;
-            return Stack(
-              children: [
-                // Opponent side fills the full track underneath.
-                Container(width: width, color: oppColor.withValues(alpha: 0.6)),
-                // Your lead grows from the left.
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOut,
-                  width: splitX,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [myColor, myColor.withValues(alpha: 0.75)],
-                    ),
-                  ),
-                ),
-                // Bead marking the split point.
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOut,
-                  left: splitX - context.scaled(4),
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: context.scaled(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
       ),
     );
   }
 
   double _getDirectionRotation(Direction? direction) {
+    // The pixel arrow (LBIcon.next) points right.
     if (direction == null) return 0.0;
     switch (direction) {
-      case Direction.up:
-        return 0.0;
       case Direction.right:
-        return 0.25;
+        return 0.0;
       case Direction.down:
-        return 0.5;
+        return 0.25;
       case Direction.left:
+        return 0.5;
+      case Direction.up:
         return 0.75;
     }
   }
 
-  /// Slim bottom strip: your snake length on the left, a live swipe-echo
-  /// indicator on the right. For rare >2-player matches a compact scoreboard
-  /// fills the middle (the header only frames you vs your primary rival).
+  /// Bottom strip: your length on the left, the steering echo on the right
+  /// (render 19). For rare >2-player matches a compact scoreboard fills the
+  /// middle (the header only frames you vs your primary rival). On-screen
+  /// control layouts keep their own widgets, flanked by the same two blocks.
   Widget _buildControlStrip(
     GameTheme theme,
     MatchSnapshot snapshot,
@@ -1296,6 +715,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   ) {
     final mySnake = snapshot.playerByUserId(currentUserId);
     final manyPlayers = snapshot.players.length > 2;
+    final length = mySnake?.body.length ?? 0;
+    final cell = context.lbCell;
 
     // Same dpad_enabled setting as single-player — D-pad users get their
     // D-pad in VS matches too. watch: the pause-less match screen still
@@ -1313,16 +734,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     // action it will silently discard.
     final canSteer = context.watch<MultiplayerCubit>().canSteer;
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: context.scaled(10),
-      ),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.85),
-        border: Border(
-          top: BorderSide(color: theme.accentColor.withValues(alpha: 0.15)),
-        ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.lbGutter,
+        cell * .2,
+        context.lbGutter,
+        cell * .5,
       ),
       child: dPadEnabled
           ? (turnButtons
@@ -1331,22 +748,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     theme: theme,
                     height: dpadSize,
                     canSteer: canSteer,
-                    centre: _statPill(
-                      theme,
-                      Icons.straighten,
-                      AppLocalizations.of(context)!.mpLength,
-                      '${mySnake?.body.length ?? 0}',
-                    ),
+                    centre: _lenBlock(length, width: cell * 4),
                   )
                 : joystick
                 ? Row(
                     children: [
-                      _statPill(
-                        theme,
-                        Icons.straighten,
-                        AppLocalizations.of(context)!.mpLength,
-                        '${mySnake?.body.length ?? 0}',
-                      ),
+                      _lenBlock(length, width: cell * 4),
                       const SizedBox(width: 10),
                       Expanded(
                         child: SteerableJoystick(
@@ -1357,7 +764,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      _swipeIndicator(theme),
+                      _swipeIndicator(maxWidth: cell * 5),
                     ],
                   )
                 : _buildDPadRow(
@@ -1365,25 +772,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     dpadSize: dpadSize,
                     dPadPosition: dPadPosition,
                     canSteer: canSteer,
-                    snakeLength: mySnake?.body.length ?? 0,
+                    snakeLength: length,
                   ))
           : Row(
               children: [
-                _statPill(
-                  theme,
-                  Icons.straighten,
-                  AppLocalizations.of(context)!.mpLength,
-                  '${mySnake?.body.length ?? 0}',
-                ),
+                Expanded(flex: 5, child: _lenBlock(length)),
                 if (manyPlayers) ...[
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: _miniLeaderboard(theme, snapshot, currentUserId),
+                    flex: 6,
+                    child: _miniLeaderboard(snapshot, currentUserId),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                 ] else
-                  const Spacer(),
-                _swipeIndicator(theme),
+                  const Spacer(flex: 3),
+                Expanded(flex: 5, child: _swipeIndicator()),
               ],
             ),
     );
@@ -1401,6 +804,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     required bool canSteer,
     required int snakeLength,
   }) {
+    final cell = context.lbCell;
     final dPad = SteerableDPad(
       onDirection: _handleSwipe,
       theme: theme,
@@ -1408,64 +812,43 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       canSteer: canSteer,
     );
 
-    Widget lengthPill(Alignment alignment) => Align(
+    Widget lengthBlock(Alignment alignment) => Align(
       alignment: alignment,
-      child: _statPill(
-        theme,
-        Icons.straighten,
-        AppLocalizations.of(context)!.mpLength,
-        '$snakeLength',
-      ),
+      child: _lenBlock(snakeLength, width: cell * 4),
     );
-    Widget indicator(Alignment alignment) =>
-        Align(alignment: alignment, child: _swipeIndicator(theme));
+    Widget indicator(Alignment alignment) => Align(
+      alignment: alignment,
+      child: _swipeIndicator(maxWidth: cell * 5),
+    );
 
     return DPadRowLayout.build(
       position: dPadPosition,
       dPad: dPad,
-      leading: lengthPill,
+      leading: lengthBlock,
       trailing: indicator,
     );
   }
 
-  Widget _statPill(GameTheme theme, IconData icon, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.accentColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: theme.accentColor.withValues(alpha: 0.7), size: 16),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.55),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: context.letterSpacing(0.8),
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                ),
-              ),
-            ],
+  /// `LEN 4` (render 19).
+  Widget _lenBlock(int length, {double? width}) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    return LBBlock(
+      width: width,
+      height: context.lbCell * 2.4,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      semanticLabel: '${l10n.mpLength} $length',
+      child: ExcludeSemantics(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            l10n.lbHudLen('$length'),
+            maxLines: 1,
+            style: LBText.button(p, color: p.ink.withValues(alpha: .8), size: 13)
+                .copyWith(letterSpacing: 2.4),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1473,16 +856,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   /// The steering indicator: idle, accepted, or refused.
   ///
   /// Three states, deliberately, because two were not enough. An accepted
-  /// turn lights the chip in the theme's accent and points it the way you
-  /// went; a refused one — a reversal into your own neck, or a repeat of the
-  /// direction already sent — turns it red and shows a block, so it can never
+  /// turn lights the block in lime and points it the way you went; a
+  /// refused one — a reversal into your own neck, or a repeat of the
+  /// direction already sent — turns it red and shows a cross, so it can never
   /// be mistaken for the accepted cue. An input from a player who cannot
-  /// steer leaves the chip exactly as it was.
+  /// steer leaves the block exactly as it was.
   ///
   /// Both cues are local and immediate. Neither waits for the server: the
   /// refusal never left the device, and the acceptance is the client's own
   /// echo until the next snapshot overrides it.
-  Widget _swipeIndicator(GameTheme theme) {
+  Widget _swipeIndicator({double? maxWidth}) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     return BlocBuilder<MultiplayerCubit, MultiplayerState>(
       buildWhen: (prev, curr) =>
           prev.lastRejectedInputAt != curr.lastRejectedInputAt ||
@@ -1501,142 +886,118 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 _lastSwipeDirection != null &&
                 _gestureIndicatorController.isAnimating;
 
-            final cueColor = isRejected ? _rejectedCueColor : theme.accentColor;
-            final emphasis = isRejected || isActive;
+            final kind = isRejected
+                ? LBBlockKind.danger
+                : (isActive ? LBBlockKind.outline : LBBlockKind.muted);
+            final color = isRejected
+                ? LB.bonk
+                : (isActive ? p.lime : p.inkMuted);
 
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: theme.backgroundColor.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: cueColor.withValues(alpha: emphasis ? 0.7 : 0.25),
-                  width: 1.5,
-                ),
-              ),
+            final block = LBBlock(
+              kind: kind,
+              selected: isActive,
+              height: context.lbCell * 2.4,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isRejected)
-                    Icon(Icons.block_rounded, color: cueColor, size: 18)
-                  else
+                    const LBPixelIcon(LBIcon.x, cell: 2.6, color: LB.bonk)
+                  else if (_lastSwipeDirection != null)
                     AnimatedRotation(
                       turns: _getDirectionRotation(_lastSwipeDirection),
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOutCubic,
-                      child: Icon(
-                        Icons.arrow_upward_rounded,
-                        color: cueColor.withValues(alpha: isActive ? 1.0 : 0.6),
-                        size: 18,
+                      child: LBPixelIcon(
+                        LBIcon.next,
+                        cell: 2.6,
+                        color: isActive ? p.lime : p.lime.withValues(alpha: .6),
                       ),
                     ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isRejected
-                        ? AppLocalizations.of(context)!.mpTurnBlocked
-                        : AppLocalizations.of(context)!.mpSwipe,
-                    style: TextStyle(
-                      color: cueColor.withValues(alpha: emphasis ? 0.9 : 0.6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  if (isRejected || _lastSwipeDirection != null)
+                    const SizedBox(width: 8),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        isRejected
+                            ? l10n.mpTurnBlocked.toUpperCase()
+                            : l10n.lbSwipeToSteer,
+                        maxLines: 1,
+                        style: LBText.button(p, color: color, size: 11.5)
+                            .copyWith(letterSpacing: 2),
+                      ),
                     ),
                   ),
                 ],
               ),
             );
+            return maxWidth == null
+                ? block
+                : ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: block,
+                  );
           },
         );
       },
     );
   }
 
-  /// Red regardless of theme. A refusal has to be unmistakable, and several
-  /// themes use an accent that would read as an ordinary highlight.
-  static const Color _rejectedCueColor = Color(0xFFFF5252);
-
   Widget _miniLeaderboard(
-    GameTheme theme,
     MatchSnapshot snapshot,
     String currentUserId,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final sortedPlayers = List<MatchPlayerState>.from(snapshot.players)
       ..sort((a, b) => b.score.compareTo(a.score));
 
     return SizedBox(
-      height: 44,
-      child: ListView.separated(
+      height: context.lbCell * 2.4 + LB.inset * 2,
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: sortedPlayers.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final player = sortedPlayers[index];
           final isMe = player.userId == currentUserId;
-          final playerColor =
-              multiplayerColors[player.playerIndex % multiplayerColors.length];
+          final color = !player.alive
+              ? p.inkDim
+              : (isMe ? p.lime : LB.rival);
 
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: isMe
-                  ? playerColor.withValues(alpha: 0.2)
-                  : theme.backgroundColor.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: player.alive
-                    ? playerColor.withValues(alpha: 0.5)
-                    : Colors.grey.withValues(alpha: 0.3),
-                width: isMe ? 2 : 1,
-              ),
-            ),
+          return LBBlock(
+            kind: isMe ? LBBlockKind.outline : LBBlockKind.muted,
+            selected: isMe,
+            height: context.lbCell * 2.4,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: index == 0 ? Colors.amber : Colors.grey.shade500,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                Text(
+                  '${index + 1}',
+                  style: LBText.button(p, color: index == 0 ? LB.gold : p.inkDim, size: 12),
                 ),
                 const SizedBox(width: 8),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isMe
-                          ? 'You'
-                          : (player.username.length > 8
-                                ? '${player.username.substring(0, 8)}…'
-                                : player.username),
-                      style: TextStyle(
-                        color: player.alive ? theme.accentColor : Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        decoration: player.alive
-                            ? null
-                            : TextDecoration.lineThrough,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 76),
+                      child: Text(
+                        isMe ? l10n.lbYou : player.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LBText.label(p, color: color).copyWith(
+                          letterSpacing: 1,
+                          decoration: player.alive ? null : TextDecoration.lineThrough,
+                        ),
                       ),
                     ),
                     Text(
-                      '${player.score} pts',
-                      style: TextStyle(
-                        color: player.alive
-                            ? theme.accentColor.withValues(alpha: 0.7)
-                            : Colors.grey,
-                        fontSize: 10,
-                      ),
+                      '${context.formatInt(player.score)} ${l10n.lbPts}',
+                      style: LBText.body(p, color: color, size: 10),
                     ),
                   ],
                 ),
@@ -1645,134 +1006,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           );
         },
       ),
-    );
-  }
-}
-
-/// Background pattern painter (matching single-player)
-class _GameBackgroundPainter extends CustomPainter {
-  final GameTheme theme;
-
-  _GameBackgroundPainter(this.theme);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = theme.accentColor.withValues(alpha: 0.05);
-
-    // Draw subtle grid pattern
-    const gridSize = 30.0;
-
-    for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Draw decorative shapes
-    final shapePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = theme.foodColor.withValues(alpha: 0.02);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.15, size.height * 0.25),
-      50,
-      shapePaint,
-    );
-
-    canvas.drawCircle(
-      Offset(size.width * 0.85, size.height * 0.75),
-      70,
-      shapePaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! _GameBackgroundPainter || oldDelegate.theme != theme;
-  }
-}
-
-/// Reward line on the result dialog.
-///
-/// Rewards are server-decided and fetched, so there is a real gap between the
-/// result arriving and the coins existing. This shows "processing" across that
-/// gap and the settled amount afterwards. It never shows a locally-invented
-/// figure, and it never queues a local grant — if the fetch is failing the
-/// service is retrying, and the honest answer is "not yet".
-class _RewardChip extends StatelessWidget {
-  const _RewardChip({required this.theme});
-
-  final GameTheme theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
-      buildWhen: (prev, curr) =>
-          prev.settlementStatus != curr.settlementStatus ||
-          prev.settlement != curr.settlement,
-      builder: (context, state) {
-        if (state.settlementStatus == SettlementStatus.none) {
-          return const SizedBox.shrink();
-        }
-
-        final settled = state.settlement;
-        final processing =
-            state.settlementStatus != SettlementStatus.applied ||
-            settled == null;
-
-        // Nothing was awarded (a loss, or a match the server never settled).
-        if (!processing && settled.coinsAwarded <= 0) {
-          return const SizedBox.shrink();
-        }
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.amber.withValues(alpha: processing ? 0.08 : 0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.amber.withValues(alpha: processing ? 0.2 : 0.4),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (processing)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.monetization_on,
-                  color: Colors.amber,
-                  size: 18,
-                ),
-              const SizedBox(width: 8),
-              Text(
-                processing
-                    ? l10n.mpRewardProcessing
-                    : l10n.mpCoinReward(settled.coinsAwarded),
-                style: TextStyle(
-                  color: Colors.amber.withValues(alpha: processing ? 0.75 : 1),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

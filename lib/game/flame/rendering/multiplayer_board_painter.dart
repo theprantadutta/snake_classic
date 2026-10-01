@@ -1,11 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 
-/// Player colors for multi-player games (matches backend)
+/// Player colors for multi-player games (matches backend).
+///
+/// No longer drawn: the Living Board paints you in the palette lime and every
+/// rival in [LB.rival] (render 19). Kept for anything that still keys a
+/// colour off `playerIndex`.
 const List<Color> multiplayerColors = [
   Color(0xFF4CAF50), // Green
   Color(0xFFF44336), // Red
@@ -17,17 +22,17 @@ const List<Color> multiplayerColors = [
   Color(0xFFE91E63), // Pink
 ];
 
-/// Grid background painter. Public so the Flame multiplayer renderer can reuse
-/// the exact drawing (see lib/game/flame/multiplayer_flame_game.dart).
+/// The Living Board playfield (DESIGN_SPEC §5): the palette's board colour
+/// and a hairline on every play cell, exactly as the single-player board
+/// draws it (see LegacyBoardComponent). Public so the Flame multiplayer
+/// renderer can reuse it (see lib/game/flame/multiplayer_flame_game.dart).
 class MultiplayerGridBackgroundPainter extends CustomPainter {
   final GameTheme theme;
   final int boardSize;
 
-  /// Grid stroke width in WORLD units — see [lineWidth] on
-  /// GameBoardBackgroundPainter for why this can't be a constant. Same
-  /// fixed-resolution camera, same problem: the world is `boardSize *
-  /// cellSize` units and the camera fits it to the viewport, so a hard-coded
-  /// width renders thicker the larger the screen.
+  /// Grid stroke width in WORLD units. The world is `boardSize * cellSize`
+  /// units and the fixed-resolution camera fits it to the viewport, so a
+  /// hard-coded width renders thicker the larger the screen.
   final double lineWidth;
 
   MultiplayerGridBackgroundPainter(
@@ -38,41 +43,15 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Base fill + ambient wash, mirroring LegacyBoardComponent so the two
-    // playfields are the same surface. Without the fill the Flame canvas
-    // showed through as flat black — the board looked like a hole cut in
-    // the screen rather than part of it.
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = theme.backgroundColor,
-    );
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = RadialGradient(
-          center: Alignment.topRight,
-          radius: 1.5,
-          colors: [
-            theme.accentColor.withValues(alpha: 0.10),
-            theme.accentColor.withValues(alpha: 0.03),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.4, 0.8],
-        ).createShader(Offset.zero & size),
-    );
+    final palette = LBPalette.of(theme);
+    canvas.drawRect(Offset.zero & size, Paint()..color = palette.board);
 
     final cellWidth = size.width / boardSize;
     final cellHeight = size.height / boardSize;
-
-    // Grid weight matches GameBoardBackgroundPainter: a touch louder on the
-    // grid-forward themes, a texture rather than a feature everywhere else.
-    final gridForward =
-        theme == GameTheme.neon || theme == GameTheme.cyberpunk;
     final paint = Paint()
-      ..color = theme.accentColor.withValues(alpha: gridForward ? 0.12 : 0.07)
+      ..color = palette.lime.withValues(alpha: .09)
       ..strokeWidth = lineWidth;
 
-    // Draw vertical lines
     for (int x = 0; x <= boardSize; x++) {
       canvas.drawLine(
         Offset(x * cellWidth, 0),
@@ -80,8 +59,6 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
         paint,
       );
     }
-
-    // Draw horizontal lines
     for (int y = 0; y <= boardSize; y++) {
       canvas.drawLine(
         Offset(0, y * cellHeight),
@@ -98,13 +75,20 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
       oldDelegate.lineWidth != lineWidth;
 }
 
-/// Main painter for all game content - snakes, food, effects.
+/// Main painter for all game content - snakes, food, name tags.
 ///
 /// Renders the server-authoritative [MatchSnapshot] directly — both
-/// snakes come from the same tick, no local player special-casing.
-/// Smooth movement comes from lerping every segment between
+/// snakes come from the same tick, no local player special-casing beyond
+/// colour. Smooth movement comes from lerping every segment between
 /// [previousSnapshot] and [snapshot] by [moveProgress] (0..1 across the
 /// server's tick_ms window, driven by the Flame game clock).
+///
+/// Living Board look (render 19): every snake is a run of `cell − 2`
+/// rounded squares with opacity ramping 100% → 45% toward the tail and a
+/// glowing head with two eyes looking where it is going. You are the
+/// palette lime; rivals are [LB.rival] with an [LB.rivalHead] head. A
+/// crashed snake fades and its head turns red with a cross, as in
+/// single-player. Food sits in the gold reward glow.
 class MultiplayerBoardPainter extends CustomPainter {
   final MatchSnapshot snapshot;
   final MatchSnapshot? previousSnapshot;
@@ -129,39 +113,68 @@ class MultiplayerBoardPainter extends CustomPainter {
     this.youLabel = 'You',
   }) : super(repaint: pulseAnimation);
 
+  static const Color _rivalInk = Color(0xFF2A0705);
+
   @override
   void paint(Canvas canvas, Size size) {
+    final palette = LBPalette.of(theme);
     final cellWidth = size.width / boardSize;
     final cellHeight = size.height / boardSize;
 
     // Draw food first (below snakes)
     _drawFood(canvas, cellWidth, cellHeight);
 
-    // Draw all snakes from the snapshot, interpolated against the
-    // previous tick for smooth movement.
-    for (final player in snapshot.players) {
+    // Rivals first, you last: where the snakes overlap at a collision your
+    // own head is the one that stays readable.
+    final ordered = [
+      ...snapshot.players.where((p) => p.userId != currentUserId),
+      ...snapshot.players.where((p) => p.userId == currentUserId),
+    ];
+
+    final drawn = <(MatchPlayerState, List<Offset>)>[];
+    for (final player in ordered) {
       if (player.body.isEmpty) continue;
-
-      final isCurrentPlayer = player.userId == currentUserId;
-      final color =
-          multiplayerColors[player.playerIndex % multiplayerColors.length];
-      final centers = _interpolatedCenters(
+      drawn.add((
         player,
-        previousSnapshot?.playerByIndex(player.playerIndex),
-        cellWidth,
-        cellHeight,
-      );
+        _interpolatedCenters(
+          player,
+          previousSnapshot?.playerByIndex(player.playerIndex),
+          cellWidth,
+          cellHeight,
+        ),
+      ));
+    }
 
+    for (final (player, centers) in drawn) {
       _drawSnake(
         canvas,
         centers,
         player.direction,
         player.alive,
-        color,
+        palette,
         cellWidth,
         cellHeight,
-        isCurrentPlayer: isCurrentPlayer,
-        playerName: isCurrentPlayer ? youLabel : player.username,
+        isCurrentPlayer: player.userId == currentUserId,
+      );
+    }
+
+    // Name tags last, placed where no snake is: a tag painted over a body
+    // hides the very cells the player is reading.
+    final occupied = <Rect>[
+      for (final (_, centers) in drawn)
+        for (final c in centers)
+          Rect.fromCenter(center: c, width: cellWidth, height: cellHeight),
+    ];
+    for (final (player, centers) in drawn) {
+      final isCurrentPlayer = player.userId == currentUserId;
+      _drawNameTag(
+        canvas,
+        centers.first,
+        isCurrentPlayer ? youLabel : player.username,
+        isCurrentPlayer ? palette.lime : LB.rival,
+        cellWidth,
+        cellHeight,
+        occupied,
       );
     }
   }
@@ -201,33 +214,34 @@ class MultiplayerBoardPainter extends CustomPainter {
 
   void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
     final foodPos = snapshot.food;
-    final centerX = foodPos.x * cellWidth + cellWidth / 2;
-    final centerY = foodPos.y * cellHeight + cellHeight / 2;
-    final baseRadius = math.min(cellWidth, cellHeight) * 0.35;
-    final radius = baseRadius * pulseAnimation.value;
+    final c = Offset(
+      foodPos.x * cellWidth + cellWidth / 2,
+      foodPos.y * cellHeight + cellHeight / 2,
+    );
+    final cell = math.min(cellWidth, cellHeight);
+    // A gentle breath, a third of the legacy pulse's swing.
+    final breath = 1 + (pulseAnimation.value - 1) * .35;
 
-    // Glow effect
-    final glowPaint = Paint()
-      ..color = theme.foodColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawCircle(Offset(centerX, centerY), radius * 1.5, glowPaint);
-
-    // Main food circle with gradient
-    final foodPaint = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [theme.foodColor, theme.foodColor.withValues(alpha: 0.8)],
-          ).createShader(
-            Rect.fromCircle(center: Offset(centerX, centerY), radius: radius),
-          );
-    canvas.drawCircle(Offset(centerX, centerY), radius, foodPaint);
-
-    // Highlight
-    final highlightPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
+    // Living Board: food sits in a soft gold glow, so a reward always reads
+    // as gold on every theme.
     canvas.drawCircle(
-      Offset(centerX - radius * 0.3, centerY - radius * 0.3),
-      radius * 0.2,
-      highlightPaint,
+      c,
+      cell * .5,
+      Paint()
+        ..color = LB.foodGlow.withValues(alpha: .35)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, cell * .3),
+    );
+
+    final radius = cell * .32 * breath;
+    canvas.drawCircle(
+      c,
+      radius,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-.35, -.35),
+          colors: [LB.appleHighlight, LB.apple, Color.lerp(LB.apple, Colors.black, .25)!],
+          stops: const [0.0, .45, 1.0],
+        ).createShader(Rect.fromCircle(center: c, radius: radius)),
     );
   }
 
@@ -236,216 +250,136 @@ class MultiplayerBoardPainter extends CustomPainter {
     List<Offset> centers,
     Direction direction,
     bool isAlive,
-    Color color,
+    LBPalette palette,
     double cellWidth,
     double cellHeight, {
     required bool isCurrentPlayer,
-    required String playerName,
   }) {
     if (centers.isEmpty) return;
+    final cell = math.min(cellWidth, cellHeight);
+    final n = centers.length;
 
-    final isDead = !isAlive;
-    final baseColor = isDead ? Colors.grey : color;
+    // cell − 2 at the 20-unit reference cell, same as the single-player
+    // Living Board snake.
+    final side = cell * .9;
+    Rect rectAt(Offset c) => Rect.fromCenter(center: c, width: side, height: side);
 
-    // Draw body segments (from tail to head)
-    for (int i = centers.length - 1; i >= 0; i--) {
-      final segmentCenter = centers[i];
-      final isHead = i == 0;
-
-      // Calculate segment size (head is larger, tail tapers)
-      double segmentSize;
-      if (isHead) {
-        segmentSize = math.min(cellWidth, cellHeight) * 0.45;
-      } else {
-        // Taper towards tail
-        final taperFactor = 1.0 - (i / centers.length) * 0.3;
-        segmentSize = math.min(cellWidth, cellHeight) * 0.38 * taperFactor;
-      }
-
-      // Gradient for 3D effect
-      final segmentPaint = Paint()
-        ..shader =
-            RadialGradient(
-              center: const Alignment(-0.3, -0.3),
-              colors: [
-                _lighten(baseColor, 0.3),
-                baseColor,
-                _darken(baseColor, 0.2),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ).createShader(
-              Rect.fromCircle(center: segmentCenter, radius: segmentSize),
-            );
-
-      // Draw glow for current player's head
-      if (isHead && isCurrentPlayer && !isDead) {
-        final glowPaint = Paint()
-          ..color = baseColor.withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-        canvas.drawCircle(segmentCenter, segmentSize * 1.4, glowPaint);
-      }
-
-      // Draw segment with rounded corners
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: segmentCenter,
-          width: segmentSize * 2,
-          height: segmentSize * 2,
-        ),
-        Radius.circular(segmentSize * 0.4),
-      );
-      canvas.drawRRect(rect, segmentPaint);
-
-      // Draw eyes on head
-      if (isHead) {
-        _drawEyes(
-          canvas,
-          segmentCenter,
-          direction,
-          segmentSize,
-          baseColor,
-          isDead,
-        );
-      }
-
-      // Draw border for visibility
-      final borderPaint = Paint()
-        ..color = _darken(baseColor, 0.4).withValues(alpha: 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawRRect(rect, borderPaint);
+    var bodyColor = isCurrentPlayer ? palette.lime : LB.rival;
+    var headColor = isCurrentPlayer ? palette.head : LB.rivalHead;
+    if (!isAlive) {
+      // A crashed snake fades into the board; its head says why it stopped.
+      bodyColor = Color.lerp(bodyColor, palette.board, .55)!;
+      headColor = LB.bonk;
     }
 
-    // Draw player name label above head
-    final head = centers.first;
+    final bodyPaint = Paint();
+    final bodyRadius = Radius.circular(cell * .15);
+    for (var i = n - 1; i >= 1; i--) {
+      final t = n <= 1 ? 0.0 : i / (n - 1);
+      bodyPaint.color = bodyColor.withValues(alpha: 1 - .55 * t);
+      canvas.drawRRect(RRect.fromRectAndRadius(rectAt(centers[i]), bodyRadius), bodyPaint);
+    }
 
+    final head = rectAt(centers.first);
+    if (isAlive) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(head.inflate(cell * .12), Radius.circular(cell * .3)),
+        Paint()
+          ..color = headColor.withValues(alpha: .45)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, cell * .3),
+      );
+    }
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(head, Radius.circular(cell * .25)),
+      Paint()..color = headColor,
+    );
+
+    if (!isAlive) {
+      final c = head.center;
+      final r = head.width * .2;
+      final x = Paint()
+        ..color = _rivalInk
+        ..strokeWidth = head.width * .12
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(c + Offset(-r, -r), c + Offset(r, r), x);
+      canvas.drawLine(c + Offset(r, -r), c + Offset(-r, r), x);
+    } else {
+      final ink = Paint()..color = isCurrentPlayer ? palette.onLime : _rivalInk;
+      final eyeR = head.width * .085;
+      final f = head.width * .2;
+      final sp = head.width * .19;
+      final c = head.center;
+      final (Offset a, Offset b) = switch (direction) {
+        Direction.right => (c + Offset(f, -sp), c + Offset(f, sp)),
+        Direction.left => (c + Offset(-f, -sp), c + Offset(-f, sp)),
+        Direction.up => (c + Offset(-sp, -f), c + Offset(sp, -f)),
+        Direction.down => (c + Offset(-sp, f), c + Offset(sp, f)),
+      };
+      canvas.drawCircle(a, eyeR, ink);
+      canvas.drawCircle(b, eyeR, ink);
+    }
+
+  }
+
+  /// The snake's name: small uppercase mono in the snake's colour, no
+  /// shadow (render 19). Tried above the head, then below, then beside it,
+  /// and placed at the first spot no snake covers.
+  void _drawNameTag(
+    Canvas canvas,
+    Offset head,
+    String name,
+    Color color,
+    double cellWidth,
+    double cellHeight,
+    List<Rect> occupied,
+  ) {
     final textPainter = TextPainter(
       text: TextSpan(
-        text: playerName,
+        text: name.toUpperCase(),
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.8),
-              offset: const Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ],
+          fontFamily: LB.font,
+          fontFamilyFallback: LB.fontFallback,
+          color: color.withValues(alpha: .7),
+          fontSize: cellWidth * .5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: cellWidth * .08,
         ),
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
       ellipsis: '…',
     );
-    // Cap the label at ~5 cells so long usernames ellipsize instead of
+    // Cap the label at ~7 cells so long usernames ellipsize instead of
     // spilling across the board.
-    textPainter.layout(maxWidth: cellWidth * 5);
+    textPainter.layout(maxWidth: cellWidth * 7);
 
-    // Clamp inside the board so edge/corner snakes keep readable labels
-    // (a head on row 0 would otherwise paint above the board).
-    final boardWidth = cellWidth * boardSize;
-    final labelX = (head.dx - textPainter.width / 2)
-        .clamp(2.0, boardWidth - textPainter.width - 2.0);
-    var labelY = head.dy - cellHeight / 2 - 8 - textPainter.height;
-    if (labelY < 2.0) {
-      // No room above — drop the label below the head instead.
-      labelY = head.dy + cellHeight / 2 + 8;
-    }
-    textPainter.paint(canvas, Offset(labelX, labelY));
-  }
+    final board = cellWidth * boardSize;
+    final w = textPainter.width;
+    final h = textPainter.height;
+    final gap = cellHeight * .3;
 
-  void _drawEyes(
-    Canvas canvas,
-    Offset center,
-    Direction direction,
-    double headSize,
-    Color snakeColor,
-    bool isDead,
-  ) {
-    final eyeRadius = headSize * 0.2;
-    final eyeOffset = headSize * 0.35;
-
-    Offset leftEyePos;
-    Offset rightEyePos;
-
-    switch (direction) {
-      case Direction.up:
-        leftEyePos = Offset(center.dx - eyeOffset, center.dy - eyeOffset * 0.5);
-        rightEyePos = Offset(
-          center.dx + eyeOffset,
-          center.dy - eyeOffset * 0.5,
+    // Clamped inside the board so edge/corner snakes keep readable labels.
+    Offset clampIn(Offset o) => Offset(
+          o.dx.clamp(2.0, math.max(2.0, board - w - 2.0)).toDouble(),
+          o.dy.clamp(2.0, math.max(2.0, board - h - 2.0)).toDouble(),
         );
+
+    final candidates = [
+      Offset(head.dx - w / 2, head.dy - cellHeight / 2 - gap - h),
+      Offset(head.dx - w / 2, head.dy + cellHeight / 2 + gap),
+      Offset(head.dx + cellWidth / 2 + gap, head.dy - h / 2),
+      Offset(head.dx - cellWidth / 2 - gap - w, head.dy - h / 2),
+    ].map(clampIn).toList();
+
+    var at = candidates.first;
+    for (final c in candidates) {
+      final r = (c & Size(w, h)).deflate(1);
+      if (!occupied.any(r.overlaps)) {
+        at = c;
         break;
-      case Direction.down:
-        leftEyePos = Offset(center.dx - eyeOffset, center.dy + eyeOffset * 0.5);
-        rightEyePos = Offset(
-          center.dx + eyeOffset,
-          center.dy + eyeOffset * 0.5,
-        );
-        break;
-      case Direction.left:
-        leftEyePos = Offset(center.dx - eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos = Offset(
-          center.dx - eyeOffset * 0.5,
-          center.dy + eyeOffset,
-        );
-        break;
-      case Direction.right:
-        leftEyePos = Offset(center.dx + eyeOffset * 0.5, center.dy - eyeOffset);
-        rightEyePos = Offset(
-          center.dx + eyeOffset * 0.5,
-          center.dy + eyeOffset,
-        );
-        break;
-    }
-
-    // Eye whites
-    final eyeWhitePaint = Paint()..color = Colors.white;
-    canvas.drawCircle(leftEyePos, eyeRadius, eyeWhitePaint);
-    canvas.drawCircle(rightEyePos, eyeRadius, eyeWhitePaint);
-
-    // Pupils (X for dead snake)
-    if (isDead) {
-      final xPaint = Paint()
-        ..color = Colors.black
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
-
-      // Draw X on each eye
-      for (final eyePos in [leftEyePos, rightEyePos]) {
-        canvas.drawLine(
-          Offset(eyePos.dx - eyeRadius * 0.5, eyePos.dy - eyeRadius * 0.5),
-          Offset(eyePos.dx + eyeRadius * 0.5, eyePos.dy + eyeRadius * 0.5),
-          xPaint,
-        );
-        canvas.drawLine(
-          Offset(eyePos.dx + eyeRadius * 0.5, eyePos.dy - eyeRadius * 0.5),
-          Offset(eyePos.dx - eyeRadius * 0.5, eyePos.dy + eyeRadius * 0.5),
-          xPaint,
-        );
       }
-    } else {
-      final pupilPaint = Paint()..color = Colors.black;
-      final pupilRadius = eyeRadius * 0.5;
-      canvas.drawCircle(leftEyePos, pupilRadius, pupilPaint);
-      canvas.drawCircle(rightEyePos, pupilRadius, pupilPaint);
     }
-  }
-
-  Color _lighten(Color color, double amount) {
-    final hsl = HSLColor.fromColor(color);
-    return hsl
-        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
-        .toColor();
-  }
-
-  Color _darken(Color color, double amount) {
-    final hsl = HSLColor.fromColor(color);
-    return hsl
-        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
-        .toColor();
+    textPainter.paint(canvas, at);
   }
 
   @override

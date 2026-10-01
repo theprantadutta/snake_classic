@@ -1,6 +1,6 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,21 +10,20 @@ import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/models/user_profile.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/social_service.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/versus/versus_widgets.dart';
 import 'package:snake_classic/services/multiplayer/matchmaking_watch.dart';
 
+/// Versus lobby (Living Board renders 17 and 18): the record strip, quick
+/// match, join-by-code, create room and the room itself with its ready
+/// check. Presentation only — every action goes through [MultiplayerCubit].
 class MultiplayerLobbyScreen extends StatefulWidget {
   final String? gameId;
 
@@ -46,6 +45,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   /// from the first frame either way — this only decides whether the numbers
   /// or their placeholders are showing.
   bool _recordLoading = true;
+
+  /// Longest ready-check deadline seen in this room — the full width of the
+  /// READY CHECK cell bar. The cubit counts down from its own constant; the
+  /// bar measures against the first value it reports rather than a copy of
+  /// that constant.
+  int _readyCheckTotal = 0;
 
   @override
   void initState() {
@@ -104,7 +109,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   /// Friends come from the Drift cache (instant, works offline-read);
   /// the ping itself is a live call with a server-side 10-min cooldown
   /// per friend — refusals (cooldown) surface verbatim.
-  Future<void> _showInviteFriendSheet(GameTheme theme, String roomCode) async {
+  Future<void> _showInviteFriendSheet(String roomCode) async {
     final friends = await SocialService().getFriends();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
@@ -114,68 +119,26 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       ).showSnackBar(arcadeSnackBar(context, message: l10n.mpLobbyNoFriends));
       return;
     }
-    showModalBottomSheet<void>(
+    showLBSheet<void>(
       context: context,
-      backgroundColor: theme.backgroundColor,
-      constraints: const BoxConstraints(maxWidth: 640),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.mpLobbyInviteFriendTo(roomCode),
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: friends.length,
-                itemBuilder: (_, i) => _inviteFriendTile(
-                  sheetContext,
-                  theme,
-                  friends[i],
-                  roomCode,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+      subtitle: l10n.mpLobbyInviteFriendTo(roomCode),
+      builder: (sheetContext) => ListView.builder(
+        shrinkWrap: true,
+        itemCount: friends.length,
+        itemBuilder: (_, i) => _inviteFriendTile(sheetContext, friends[i], roomCode),
       ),
     );
   }
 
   Widget _inviteFriendTile(
     BuildContext sheetContext,
-    GameTheme theme,
     UserProfile friend,
     String roomCode,
   ) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: theme.accentColor.withValues(alpha: 0.15),
-        child: Text(
-          friend.displayName.isNotEmpty
-              ? friend.displayName[0].toUpperCase()
-              : '?',
-          style: TextStyle(color: theme.accentColor),
-        ),
-      ),
-      title: Text(
-        friend.displayName,
-        style: TextStyle(color: theme.accentColor),
-      ),
-      trailing: Icon(Icons.send, size: 18, color: theme.foodColor),
+    final p = context.lb;
+    return LBBlock(
+      semanticLabel: friend.displayName,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       onTap: () async {
         Navigator.of(sheetContext).pop();
         final (sent, message) = await SocialService().pingFriendForMatch(
@@ -194,6 +157,22 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           ),
         );
       },
+      child: Row(
+        children: [
+          LBPixelIcon(LBIcon.user, cell: 3, color: p.lime),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              friend.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LBText.button(p, color: p.ink, size: 13.5).copyWith(letterSpacing: .4),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const LBPixelIcon(LBIcon.invite, cell: 3, color: LB.gold),
+        ],
+      ),
     );
   }
 
@@ -215,149 +194,147 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
-
-        return BlocListener<MultiplayerCubit, MultiplayerState>(
-          listenWhen: (prev, curr) =>
-              prev.errorCode != curr.errorCode && curr.errorCode != null,
-          listener: (context, state) {
-            // Show error snackbar
-            ScaffoldMessenger.of(context).showSnackBar(
-              arcadeSnackBar(
-                context,
-                message: state.errorCode!.localizedMessage(
-                  AppLocalizations.of(context)!,
-                ),
-                tone: ArcadeSnackTone.error,
-                // No dismiss button any more. It existed only to close the
-                // snack bar, which swiping and the timeout already do, and it
-                // was the source of a crash: the callback reached through the
-                // lobby's context, and an app-level snack bar outlives the
-                // screen that showed it — this one replaces itself with the
-                // game screen the moment a match starts. 40 crashes, 27 users.
-                //
-                // arcadeSnackBar's own action resolves the messenger from a
-                // context inside the snack bar, so an action here would be
-                // safe. There just is not one worth showing.
-              ),
-            );
-            context.read<MultiplayerCubit>().clearError();
-          },
-          child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
-            builder: (context, multiplayerState) {
-              return BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, authState) {
-                  // Navigate to game screen when game starts
-                  if (multiplayerState.isGameActive) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      context.pushReplacement(AppRoutes.multiplayerGame);
-                    });
-                  }
-
-                  return Scaffold(
-                    bottomNavigationBar: const SnakeBannerAd(),
-                    body: AppBackground(
-                      theme: theme,
-                      child: Stack(
-                        children: [
-                          SafeArea(
-                        child: multiplayerState.matchmakingUnreachable
-                            ? _buildMatchmakingUnreachableUI(
-                                context,
-                                multiplayerState,
-                                theme,
-                              )
-                            : multiplayerState.status ==
-                                  MultiplayerStatus.inMatchmaking
-                            ? _buildMatchmakingUI(
-                                context,
-                                multiplayerState,
-                                theme,
-                              )
-                            : multiplayerState.isInGame
-                            ? _buildGameLobby(
-                                context,
-                                multiplayerState,
-                                theme,
-                                authState,
-                              )
-                            : _buildMainLobby(
-                                context,
-                                multiplayerState,
-                                theme,
-                                authState,
-                              ),
-                          ),
-
-                          // The start countdown scrim sits OUTSIDE the
-                          // SafeArea so it covers the status-bar and
-                          // nav-bar strips too. Inside, those strips
-                          // showed the lobby through an un-dimmed band.
-                          if (multiplayerState.currentGame?.status ==
-                              MultiplayerGameStatus.starting)
-                            Positioned.fill(
-                              child: _buildCountdownOverlay(
-                                theme,
-                                multiplayerState.countdownSeconds,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+    return BlocListener<MultiplayerCubit, MultiplayerState>(
+      listenWhen: (prev, curr) =>
+          prev.errorCode != curr.errorCode && curr.errorCode != null,
+      listener: (context, state) {
+        // Show error snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          arcadeSnackBar(
+            context,
+            message: state.errorCode!.localizedMessage(
+              AppLocalizations.of(context)!,
+            ),
+            tone: ArcadeSnackTone.error,
+            // No dismiss button any more. It existed only to close the
+            // snack bar, which swiping and the timeout already do, and it
+            // was the source of a crash: the callback reached through the
+            // lobby's context, and an app-level snack bar outlives the
+            // screen that showed it — this one replaces itself with the
+            // game screen the moment a match starts. 40 crashes, 27 users.
+            //
+            // arcadeSnackBar's own action resolves the messenger from a
+            // context inside the snack bar, so an action here would be
+            // safe. There just is not one worth showing.
           ),
         );
+        context.read<MultiplayerCubit>().clearError();
       },
+      child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
+        builder: (context, multiplayerState) {
+          return BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, authState) {
+              // Navigate to game screen when game starts
+              if (multiplayerState.isGameActive) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.pushReplacement(AppRoutes.multiplayerGame);
+                });
+              }
+
+              final Widget content = multiplayerState.matchmakingUnreachable
+                  ? _buildMatchmakingUnreachableUI(context, multiplayerState)
+                  : multiplayerState.status == MultiplayerStatus.inMatchmaking
+                  ? _buildMatchmakingUI(context, multiplayerState)
+                  : multiplayerState.isInGame
+                  ? _buildGameLobby(context, multiplayerState, authState)
+                  : _buildMainLobby(context, multiplayerState);
+
+              return Scaffold(
+                backgroundColor: context.lb.board,
+                bottomNavigationBar: const LBBannerSlot(),
+                body: LBGridBackground(
+                  child: Stack(
+                    children: [
+                      SafeArea(bottom: false, child: content),
+
+                      // The start countdown scrim sits OUTSIDE the
+                      // SafeArea so it covers the status-bar and
+                      // nav-bar strips too. Inside, those strips
+                      // showed the lobby through an un-dimmed band.
+                      if (multiplayerState.currentGame?.status ==
+                          MultiplayerGameStatus.starting)
+                        Positioned.fill(
+                          child: VersusCountdownOverlay(
+                            seconds: multiplayerState.countdownSeconds,
+                            goLabel: AppLocalizations.of(context)!.mpLobbyGo,
+                            getReadyLabel: AppLocalizations.of(context)!.mpLobbyGetReady,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
+
+  /// The lobby header (render 17): back block, VERSUS in cells, subtitle.
+  Widget _buildHeader() {
+    final l10n = AppLocalizations.of(context)!;
+    return LBHeader(
+      title: l10n.lbVersusTitle,
+      subtitle: l10n.lbVersusSubtitle,
+      onBack: () => context.pop(),
+    );
+  }
+
+  /// A column of blocks under the header, on the content gutter. It fills
+  /// the screen and scrolls only when it must: [Spacer]s between groups take
+  /// up whatever height a taller phone has, so the blocks spread out instead
+  /// of leaving an empty band under the last one; on a short phone they
+  /// collapse to nothing and the column scrolls.
+  Widget _blockList(List<Widget> children) {
+    final g = context.lbGutter;
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell),
+          sliver: SliverFillRemaining(
+            hasScrollBody: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// A gap between block groups: [min] always, plus a share of any spare
+  /// height.
+  List<Widget> _flexGap({double min = 0}) => [
+    if (min > 0) SizedBox(height: min),
+    const Spacer(),
+  ];
 
   Widget _buildMainLobby(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
-    AuthState authState,
   ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header
-        _buildHeader(theme),
-
-        // Main content
+        _buildHeader(),
         Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: 20 + context.sideInset(),
-              vertical: 20,
-            ),
-            child: Column(
-              children: [
-                // Lifetime VS record. Always in the tree — it used to be
-                // gated on the fetch having returned, so the whole screen
-                // jumped down a strip's height when the network answered, and
-                // offline it never appeared at all.
-                _buildRecordStrip(theme),
-                const SizedBox(height: 20),
-
-                // Quick Match Section
-                _buildQuickMatchSection(context, multiplayerState, theme),
-
-                const SizedBox(height: 24),
-
-                // Join Game Section
-                _buildJoinGameSection(context, multiplayerState, theme),
-
-                const SizedBox(height: 24),
-
-                // Create Game Section
-                _buildCreateGameSection(context, multiplayerState, theme),
-              ],
-            ),
-          ),
+          child: _blockList([
+            // Lifetime VS record. Always in the tree — it used to be
+            // gated on the fetch having returned, so the whole screen
+            // jumped down a strip's height when the network answered, and
+            // offline it never appeared at all.
+            _buildRecordStrip(),
+            ..._flexGap(min: context.lbCell * .9),
+            _buildQuickMatchSection(context, multiplayerState),
+            ..._flexGap(min: 2),
+            _buildJoinGameSection(context, multiplayerState),
+            _buildCreateGameSection(context, multiplayerState),
+            ..._flexGap(min: 2),
+            _buildHouseSnakeNote().gameEntrance(delay: 250.ms),
+            _buildTournamentsLink().gameEntrance(delay: 300.ms),
+          ]),
         ),
       ],
     );
@@ -366,350 +343,172 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildGameLobby(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
     AuthState authState,
   ) {
     final game = multiplayerState.currentGame!;
+    final g = context.lbGutter;
+    final cell = context.lbCell;
 
     // The start countdown scrim is mounted by build(), above the
     // SafeArea, so it can cover the inset strips.
     return Column(
-          children: [
-            // Header with room info
-            _buildGameHeader(theme, game),
-
-            // Game info and players
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20 + context.sideInset(),
-                  vertical: 20,
-                ),
-                child: Column(
-                  children: [
-                    // Game mode info
-                    _buildGameModeCard(theme, game),
-
-                    const SizedBox(height: 24),
-
-                    // Players list
-                    _buildPlayersSection(theme, game, authState),
-
-                    const Spacer(),
-
-                    // Ready/Leave buttons
-                    _buildLobbyActions(
-                      context,
-                      multiplayerState,
-                      theme,
-                      game,
-                      authState,
-                    ),
-
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
-          ],
-    );
-  }
-
-  Widget _buildCountdownOverlay(GameTheme theme, int countdownSeconds) {
-    // Seconds come from the GameStarting payload so a server-side tuning
-    // change can't drift from this animation.
-    final l10n = AppLocalizations.of(context)!;
-    return TweenAnimationBuilder<int>(
-      tween: IntTween(begin: countdownSeconds, end: 0),
-      duration: Duration(seconds: countdownSeconds),
-      builder: (context, value, child) {
-        return Container(
-          color: Colors.black.withValues(alpha: 0.85),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  transitionBuilder:
-                      (Widget child, Animation<double> animation) {
-                        return ScaleTransition(
-                          scale: animation,
-                          child: FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          ),
-                        );
-                      },
-                  child: Text(
-                    value > 0 ? '$value' : l10n.mpLobbyGo,
-                    key: ValueKey<int>(value),
-                    style: TextStyle(
-                      fontSize: 120,
-                      fontWeight: FontWeight.bold,
-                      color: value > 0 ? Colors.white : theme.foodColor,
-                      shadows: [
-                        Shadow(
-                          color: value > 0
-                              ? theme.accentColor
-                              : theme.foodColor,
-                          blurRadius: 30,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  value > 0 ? l10n.mpLobbyGetReady : '',
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Matches the SettingsScreen / ProfileScreen header: back button in a
-  /// bordered box, tracked accent title. This screen built its own bare
-  /// IconButton next to a two-line block, so the back affordance sat at a
-  /// different size and position from every other screen in the app.
-  Widget _buildHeader(GameTheme theme) {
-    final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16 + context.sideInset(),
-        12,
-        16 + context.sideInset(),
-        8,
-      ),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-              ),
-            ),
-            child: IconButton(
-              onPressed: () => context.pop(),
-              icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.mpLobbyTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
-                    letterSpacing: context.letterSpacing(2),
-                  ),
-                ),
-                Text(
-                  l10n.mpLobbySubtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Eyebrow + hairline card, identical to SettingsScreen and ProfileScreen.
-  Widget _mpSection({
-    required GameTheme theme,
-    required String title,
-    required Widget child,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              color: theme.accentColor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: context.letterSpacing(1.5),
-            ),
+        // Header with room info
+        _buildGameHeader(game),
+
+        // Game info and players, actions pinned to the bottom when there
+        // is room and scrolled to when there is not.
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(g, cell * .9, g, cell * .6),
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (game.roomCode != null) ...[
+                        VersusCodeCells(code: game.roomCode!),
+                        SizedBox(height: cell * .9),
+                        const Spacer(),
+                      ],
+
+                      // Game mode info
+                      _buildGameModeCard(game),
+
+                      SizedBox(height: cell * .9),
+
+                      // Players list
+                      _buildPlayersSection(game, authState),
+
+                      SizedBox(height: cell),
+                      const Spacer(flex: 2),
+
+                      // Ready/Leave buttons
+                      _buildLobbyActions(
+                        context,
+                        multiplayerState,
+                        game,
+                        authState,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: arcadeSurface(
-            theme,
-            borderRadius: BorderRadius.circular(16),
-            borderColor: theme.accentColor.withValues(alpha: 0.32),
-          ),
-          child: HudCorners(color: theme.accentColor, inset: 10, child: child),
         ),
       ],
     );
   }
 
-  /// The primary action of a section. Full width, theme accent, 48dp — sized
-  /// like an action rather than the 56dp slab-with-glow this screen used, in
-  /// three different off-theme colours.
-  Widget _mpPrimaryButton({
-    required GameTheme theme,
-    required String label,
-    required IconData icon,
-    required VoidCallback? onPressed,
-  }) {
-    return GradientButton(
-      onPressed: onPressed,
-      text: label,
-      primaryColor: theme.accentColor,
-      secondaryColor: theme.foodColor,
-      icon: icon,
-      width: double.infinity,
-      height: 48,
-    );
-  }
-
-  Widget _mpSectionBlurb(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.7),
-        fontSize: 13.5,
-        height: 1.35,
-      ),
-    );
-  }
-
-  /// Room header. Same shape as [_buildHeader] — bordered back box, tracked
-  /// accent title — so leaving a room feels like leaving any other screen.
-  /// The title is the room, not the mode: the mode card right below it already
-  /// names the mode, and printing it twice told the player nothing new.
-  Widget _buildGameHeader(GameTheme theme, MultiplayerGame game) {
+  /// Room header (render 18): back block (leaves the room), ROOM in cells,
+  /// copy-code and invite-a-friend actions. The title is the room, not the
+  /// mode: the mode card right below it already names the mode.
+  Widget _buildGameHeader(MultiplayerGame game) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16 + context.sideInset(),
-        12,
-        16 + context.sideInset(),
-        8,
-      ),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.3),
-              ),
-            ),
-            child: IconButton(
-              onPressed: () {
-                context.read<MultiplayerCubit>().leaveGame();
-                context.pop();
-              },
-              icon: Icon(Icons.arrow_back_rounded, color: theme.primaryColor),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LBHeader(
+      title: l10n.lbRoomTitle,
+      subtitle: l10n.lbRoomSubtitle,
+      onBack: () {
+        context.read<MultiplayerCubit>().leaveGame();
+        context.pop();
+      },
+      trailing: game.roomCode == null
+          ? null
+          : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  l10n.mpLobbyTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: theme.accentColor,
-                    letterSpacing: context.letterSpacing(2),
-                  ),
+                LBIconBlock(
+                  icon: LBIcon.copy,
+                  semanticLabel: l10n.mpLobbyRoomCodeCopied,
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: game.roomCode!));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      arcadeSnackBar(
+                        context,
+                        message: l10n.mpLobbyRoomCodeCopied,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
                 ),
-                if (game.roomCode != null)
-                  Text(
-                    l10n.mpLobbyRoomCode(game.roomCode!),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.6),
-                      letterSpacing: context.letterSpacing(1),
-                    ),
-                  ),
+                // Ping a friend with this room code — their push deep-links
+                // straight into the room.
+                LBIconBlock(
+                  icon: LBIcon.invite,
+                  semanticLabel: l10n.mpLobbyInviteFriendTo(game.roomCode!),
+                  onTap: () => _showInviteFriendSheet(game.roomCode!),
+                ),
               ],
             ),
+    );
+  }
+
+  /// The loud block of a section: lime, one per screen (DESIGN_SPEC §1.3).
+  Widget _fillAction({
+    required String label,
+    required LBIcon icon,
+    required VoidCallback? onTap,
+    double? height,
+  }) {
+    final p = context.lb;
+    final block = LBBlock(
+      kind: LBBlockKind.fill,
+      height: height ?? context.lbCell * 2.6,
+      alignment: Alignment.center,
+      semanticLabel: label,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LBPixelIcon(icon, cell: 3.4, color: p.onLime),
+          const SizedBox(width: 12),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label.toUpperCase(),
+                maxLines: 1,
+                style: LBText.button(p, color: p.onLime, size: 15).copyWith(letterSpacing: 3),
+              ),
+            ),
           ),
-          if (game.roomCode != null) ...[
-            _headerAction(
-              theme: theme,
-              icon: Icons.copy_rounded,
-              tooltip: l10n.mpLobbyRoomCodeCopied,
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: game.roomCode!));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  arcadeSnackBar(
-                    context,
-                    message: l10n.mpLobbyRoomCodeCopied,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-            // Ping a friend with this room code — their push deep-links
-            // straight into the room.
-            _headerAction(
-              theme: theme,
-              icon: Icons.person_add_alt_1_rounded,
-              tooltip: l10n.mpLobbyInviteFriendTo(game.roomCode!),
-              onTap: () => _showInviteFriendSheet(theme, game.roomCode!),
-            ),
-          ],
         ],
       ),
     );
+    // Disabled while a request is in flight: same shape, visibly quiet.
+    return onTap == null ? Opacity(opacity: .55, child: block) : block;
   }
 
-  /// Trailing header icon in the same bordered box as the back button, so the
-  /// row reads as one control strip rather than a title with loose icons
-  /// hanging off a pill.
-  Widget _headerAction({
-    required GameTheme theme,
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
+  /// A quiet outline action with an icon (cancel, go back).
+  Widget _outlineAction({
+    required String label,
+    required LBIcon icon,
+    required VoidCallback? onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        tooltip: tooltip,
-        iconSize: 20,
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-        icon: Icon(icon, color: theme.accentColor),
+    final p = context.lb;
+    return LBBlock(
+      height: context.lbCell * 2.4,
+      alignment: Alignment.center,
+      semanticLabel: label,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LBPixelIcon(icon, cell: 2.8, color: p.head),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LBText.button(p, size: 12.5).copyWith(letterSpacing: 2),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -717,26 +516,26 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildQuickMatchSection(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    return _mpSection(
-      theme: theme,
-      title: l10n.mpLobbyQuickMatch,
+    final p = context.lb;
+    return LBBlock(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(l10n.lbQuickMatch, style: LBText.label(p)),
+          const SizedBox(height: 8),
           // 1v1 classic only in this release — the server match engine
           // enforces exactly two players, so no mode/count selectors.
-          _mpSectionBlurb(l10n.mpLobbyQuickMatchSubtitle),
-          const SizedBox(height: 16),
-          _mpPrimaryButton(
-            theme: theme,
-            icon: Icons.search_rounded,
+          Text(l10n.lbQuickMatchLine, style: LBText.body(p, color: p.ink, size: 12)),
+          const SizedBox(height: 14),
+          _fillAction(
+            icon: LBIcon.swords,
             label: multiplayerState.isLoading
                 ? l10n.mpLobbyFinding
-                : l10n.mpLobbyFindMatch,
-            onPressed: multiplayerState.isLoading
+                : l10n.lbFindMatch,
+            onTap: multiplayerState.isLoading
                 ? null
                 : () {
                     context.read<MultiplayerCubit>().quickMatch(
@@ -753,186 +552,101 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildMatchmakingUI(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final elapsed = multiplayerState.matchmakingElapsedSeconds;
-    // The number COUNTS UP, and the ring fills toward the deadline the server
+    // The number COUNTS UP, and the cells fill toward the deadline the server
     // promised rather than a number the client invented.
     //
     // It used to count down, which meant that whenever anything ran past the
-    // deadline the screen sat on a motionless "0 SEC" inside an empty ring —
-    // indistinguishable from a hung app, and reported as one. A rising count
-    // cannot freeze, and it never promises an ending the client is not the
-    // one to decide.
+    // deadline the screen sat on a motionless "0 SEC" — indistinguishable
+    // from a hung app, and reported as one. A rising count cannot freeze,
+    // and it never promises an ending the client is not the one to decide.
     final deadline = multiplayerState.matchmakingDeadlineSeconds;
     final progress = deadline <= 0 ? 1.0 : (elapsed / deadline).clamp(0.0, 1.0);
-    // Countdown runs down to zero in the theme accent throughout. It used to
-    // switch green → orange under ten seconds, which reads as "something is
-    // wrong" when in fact the search is simply nearly over.
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(theme),
-
+        _buildHeader(),
         Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20 + context.sideInset(),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: theme.backgroundColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.3),
+          child: _blockList([
+            _buildRecordStrip(),
+            ..._flexGap(min: context.lbCell * .9),
+            LBBlock(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.lbQuickMatch, style: LBText.label(p)),
+                  const SizedBox(height: 10),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      l10n.lbSearching('$elapsed'),
+                      style: LBText.button(p, color: p.lime, size: 14).copyWith(
+                        letterSpacing: 1.6,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
-                  child: HudCorners(
-                    color: theme.accentColor,
-                    inset: 8,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.mpLobbyModePlayers(
+                      multiplayerState.matchmakingPlayerCount ?? 2,
+                      multiplayerState.matchmakingMode?.localizedName(l10n) ??
+                          l10n.mpModeClassicBattle,
+                    ),
+                    style: LBText.body(p, size: 11.5),
+                  ),
+                  if (multiplayerState.matchmakingQueuePosition > 0)
+                    Text(
+                      l10n.mpLobbyQueuePosition(
+                        multiplayerState.matchmakingQueuePosition,
+                      ),
+                      style: LBText.body(p, color: p.inkDim, size: 11),
+                    ),
+                  const SizedBox(height: 14),
+                  LBCellsBar(
+                    count: 16,
+                    value: progress,
+                    semanticsLabel: l10n.mpLobbySearching,
+                  ),
+
+                  // Mid-search with no link. The search is still alive
+                  // inside the grace window; say why the numbers stopped
+                  // instead of looking hung.
+                  if (multiplayerState.matchmakingOffline) ...[
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: 108,
-                              height: 108,
-                              child: CircularProgressIndicator(
-                                value: progress,
-                                strokeWidth: 3,
-                                backgroundColor: theme.accentColor.withValues(
-                                  alpha: 0.15,
-                                ),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  theme.accentColor,
-                                ),
-                              ),
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '$elapsed',
-                                  style: const TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  l10n.mpLobbySeconds.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                    letterSpacing: context.letterSpacing(1.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        Text(
-                          l10n.mpLobbySearching,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: theme.accentColor,
-                            letterSpacing: context.letterSpacing(1.5),
+                        const LBPixelIcon(LBIcon.hourglass, cell: 2.6, color: LB.gold),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.mpLobbyWaitingForConnection,
+                            style: LBText.body(p, color: LB.gold, size: 11.5),
                           ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                          l10n.mpLobbyModePlayers(
-                            multiplayerState.matchmakingPlayerCount ?? 2,
-                            multiplayerState.matchmakingMode?.localizedName(
-                                  l10n,
-                                ) ??
-                                l10n.mpModeClassicBattle,
-                          ),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-
-                        if (multiplayerState.matchmakingQueuePosition > 0) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            l10n.mpLobbyQueuePosition(
-                              multiplayerState.matchmakingQueuePosition,
-                            ),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ],
-
-                        // Mid-search with no link. The search is still
-                        // alive inside the grace window; say why the
-                        // numbers stopped instead of looking hung.
-                        if (multiplayerState.matchmakingOffline) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.wifi_off_rounded,
-                                size: 16,
-                                color: theme.foodColor,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  l10n.mpLobbyWaitingForConnection,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: theme.foodColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        GradientButton(
-                          onPressed: () {
-                            context
-                                .read<MultiplayerCubit>()
-                                .cancelMatchmaking();
-                          },
-                          text: l10n.mpLobbyCancelUpper,
-                          primaryColor: theme.accentColor,
-                          secondaryColor: theme.foodColor,
-                          icon: Icons.close_rounded,
-                          width: double.infinity,
-                          height: 48,
-                          outlined: true,
                         ),
                       ],
                     ),
+                  ],
+                  const SizedBox(height: 14),
+                  _outlineAction(
+                    label: l10n.lbCancel,
+                    icon: LBIcon.x,
+                    onTap: () {
+                      context.read<MultiplayerCubit>().cancelMatchmaking();
+                    },
                   ),
-                ),
+                ],
               ),
             ),
-          ),
+            ..._flexGap(min: 2),
+            // The house snake is exactly what the wait is for.
+            _buildHouseSnakeNote(),
+            ..._flexGap(),
+          ]),
         ),
       ],
     );
@@ -941,132 +655,85 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildMatchmakingUnreachableUI(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     // One card, three reasons. The kind picks the icon and the words; the
     // actions are the same because the answer is the same: try again.
-    final (IconData icon, String title, String body) = switch (
+    final (LBIcon icon, String title, String body) = switch (
       multiplayerState.matchmakingFailure) {
       MatchmakingFailure.connectionLost => (
-        Icons.wifi_off_rounded,
+        LBIcon.x,
         l10n.mpLobbyConnectionLostTitle,
         l10n.mpLobbyConnectionLostBody,
       ),
       MatchmakingFailure.timedOut => (
-        Icons.hourglass_bottom_rounded,
+        LBIcon.hourglass,
         l10n.mpLobbyTimedOutTitle,
         l10n.mpLobbyTimedOutBody,
       ),
       MatchmakingFailure.unreachable || null => (
-        Icons.hourglass_empty_rounded,
+        LBIcon.hourglass,
         l10n.mpLobbyUnreachableTitle,
         l10n.mpLobbyUnreachableBody,
       ),
     };
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildHeader(theme),
-
+        _buildHeader(),
         Expanded(
           child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20 + context.sideInset(),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: theme.backgroundColor.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: theme.accentColor.withValues(alpha: 0.3),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: context.lbGutter, vertical: context.lbCell),
+              child: LBBlock(
+                padding: const EdgeInsets.fromLTRB(18, 22, 18, 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Empty queue is an outcome, not a failure — so no red
+                    // alarm, just the quiet outline the rest of the screen
+                    // uses.
+                    Center(child: LBPixelIcon(icon, cell: 5, color: p.lime.withValues(alpha: .8))),
+                    const SizedBox(height: 18),
+                    Text(
+                      title.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: LBText.button(p, color: p.lime, size: 14).copyWith(letterSpacing: 2),
                     ),
-                  ),
-                  child: HudCorners(
-                    color: theme.accentColor,
-                    inset: 8,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Empty queue is an outcome, not a failure — so no
-                        // orange alarm disc, just the same quiet hairline
-                        // treatment the rest of the screen uses.
-                        Icon(
-                          icon,
-                          size: 36,
-                          color: theme.accentColor.withValues(alpha: 0.8),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: theme.accentColor,
-                            letterSpacing: context.letterSpacing(1.5),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                          body,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: Colors.white.withValues(alpha: 0.7),
-                            height: 1.35,
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        GradientButton(
-                          onPressed: () {
-                            context
-                                .read<MultiplayerCubit>()
-                                .clearMatchmakingTimeout();
-                            context.read<MultiplayerCubit>().quickMatch(
-                              multiplayerState.matchmakingMode ??
-                                  MultiplayerGameMode.classic,
-                              playerCount:
-                                  multiplayerState.matchmakingPlayerCount ?? 2,
-                            );
-                          },
-                          text: l10n.mpLobbyTryAgain,
-                          primaryColor: theme.accentColor,
-                          secondaryColor: theme.foodColor,
-                          icon: Icons.refresh_rounded,
-                          width: double.infinity,
-                          height: 48,
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        GradientButton(
-                          onPressed: () {
-                            context
-                                .read<MultiplayerCubit>()
-                                .clearMatchmakingTimeout();
-                          },
-                          text: l10n.mpLobbyGoBack,
-                          primaryColor: theme.accentColor,
-                          secondaryColor: theme.foodColor,
-                          icon: Icons.arrow_back_rounded,
-                          width: double.infinity,
-                          height: 48,
-                          outlined: true,
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    Text(
+                      body,
+                      textAlign: TextAlign.center,
+                      style: LBText.body(p, color: p.ink.withValues(alpha: .75), size: 12),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    _fillAction(
+                      label: l10n.mpLobbyTryAgain,
+                      icon: LBIcon.play,
+                      onTap: () {
+                        context
+                            .read<MultiplayerCubit>()
+                            .clearMatchmakingTimeout();
+                        context.read<MultiplayerCubit>().quickMatch(
+                          multiplayerState.matchmakingMode ??
+                              MultiplayerGameMode.classic,
+                          playerCount:
+                              multiplayerState.matchmakingPlayerCount ?? 2,
+                        );
+                      },
+                    ),
+                    _outlineAction(
+                      label: l10n.mpLobbyGoBack,
+                      icon: LBIcon.back,
+                      onTap: () {
+                        context
+                            .read<MultiplayerCubit>()
+                            .clearMatchmakingTimeout();
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1085,190 +752,71 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   /// under it. Offline it never arrived at all, which left the screen looking
   /// like it had forgotten the mode exists.
   ///
-  /// So the shape is fixed and only the contents change: four cells, always,
+  /// So the shape is fixed and only the contents change: four tiles, always,
   /// with placeholders where the numbers will be. Nothing below it can move,
   /// because nothing about it moves.
-  Widget _buildRecordStrip(GameTheme theme) {
+  Widget _buildRecordStrip() {
     final l10n = AppLocalizations.of(context)!;
 
     String? valueOf(String key, {int? fallback}) {
       if (_recordLoading) return null;
       final raw = (_record?[key] as num?)?.toInt();
-      if (raw != null) return '$raw';
+      if (raw != null) return context.formatInt(raw);
       // Fetched and unavailable — offline, or the call failed. A dash says
       // "not known" honestly; a zero would be a claim about your record.
-      return fallback == null ? '—' : '$fallback';
+      return fallback == null ? '—' : context.formatInt(fallback);
     }
 
-    // Label above value, same cell as the profile statistics grid. An earlier
-    // strip gave each figure its own tinted pill in its own colour — green
-    // wins, red losses, orange draws — so a record of 0–0 lit up like a
-    // warning panel. A record is a set of numbers, not a set of alerts.
-    Widget cell(String label, String? value) {
-      return Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label.toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: context.letterSpacing(0.8),
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Same height whether it holds a number or a placeholder, so the
-            // swap when the fetch lands is a cross-fade and not a reflow.
-            SizedBox(
-              height: 26,
-              child: value == null
-                  ? Align(
-                      alignment: Alignment.centerLeft,
-                      child:
-                          Container(
-                                width: 34,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.10),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              )
-                              .animate(
-                                onPlay: (controller) =>
-                                    controller.repeat(reverse: true),
-                              )
-                              .fade(begin: 0.45, end: 1.0, duration: 700.ms),
-                    )
-                  : Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
-                      ).animate().fadeIn(duration: 220.ms),
-                    ),
-            ),
-          ],
+    // Wins, losses and draws are plain ink: a record is a set of numbers,
+    // not a set of alerts. Rating is gold — it is the reward number.
+    return Row(
+      children: [
+        Expanded(child: VersusRecordTile(label: l10n.lbWins, value: valueOf('wins'))),
+        Expanded(child: VersusRecordTile(label: l10n.lbLosses, value: valueOf('losses'))),
+        // Draws used to appear only when there were any, which moved the
+        // other three columns sideways the moment a draw was recorded.
+        // Four columns, always.
+        Expanded(child: VersusRecordTile(label: l10n.lbDraws, value: valueOf('draws'))),
+        Expanded(
+          child: VersusRecordTile(
+            label: l10n.lbRating,
+            value: valueOf('rating', fallback: 1000),
+            color: LB.gold,
+          ),
         ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 7,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            cell(l10n.mpLobbyWinsLabel, valueOf('wins')),
-            cell(l10n.mpLobbyLossesLabel, valueOf('losses')),
-            // Draws used to appear only when there were any, which moved the
-            // other three columns sideways the moment a draw was recorded.
-            // Four columns, always.
-            cell(l10n.mpLobbyDrawsLabel, valueOf('draws')),
-            cell(l10n.mpLobbyRatingLabel, valueOf('rating', fallback: 1000)),
-          ],
-        ),
-      ),
+      ],
     ).gameEntrance(delay: 50.ms);
   }
 
   Widget _buildJoinGameSection(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    return _mpSection(
-      theme: theme,
-      title: l10n.mpLobbyJoinRoom,
+    final p = context.lb;
+    return LBBlock(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // No blurb here: the field's own placeholder already says to enter
-          // a room code, and printing it twice above the box that asks for it
-          // is the kind of padding that made this screen scroll.
-          TextField(
-            controller: _roomCodeController,
-            decoration: InputDecoration(
-              hintText: l10n.mpLobbyEnterRoomCode,
-              hintStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.35),
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                letterSpacing: context.letterSpacing(1),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.accentColor.withValues(alpha: 0.3),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.accentColor.withValues(alpha: 0.3),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: theme.accentColor, width: 2),
-              ),
-              filled: true,
-              fillColor: theme.backgroundColor.withValues(alpha: 0.5),
-            ),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              // Codes are read and typed character by character, so give them
-              // room to breathe rather than setting them as prose.
-              letterSpacing: context.letterSpacing(4),
-            ),
-            textAlign: TextAlign.center,
-            textCapitalization: TextCapitalization.characters,
-          ),
+          Text(l10n.lbGotCode, style: LBText.label(p)),
           const SizedBox(height: 12),
           // Secondary to quick match, like Create Room — you only reach for it
           // once you already have a code in hand.
-          GradientButton(
-            onPressed:
-                multiplayerState.isLoading || _roomCodeController.text.isEmpty
+          VersusCodeInput(
+            controller: _roomCodeController,
+            hint: l10n.mpLobbyEnterRoomCode,
+            goLabel: l10n.mpLobbyJoinRoom,
+            onGo: multiplayerState.isLoading || _roomCodeController.text.isEmpty
                 ? null
                 : () {
                     context.read<MultiplayerCubit>().joinGame(
                       _roomCodeController.text.trim(),
                     );
                   },
-            text: l10n.mpLobbyJoinRoom,
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.login_rounded,
-            width: double.infinity,
-            height: 48,
-            outlined: true,
           ),
+          const SizedBox(height: 12),
+          Text(l10n.lbGotCodeLine, style: LBText.body(p, color: p.inkDim, size: 11)),
         ],
       ),
     ).gameEntrance(delay: 150.ms);
@@ -1277,263 +825,159 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Widget _buildCreateGameSection(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    return _mpSection(
-      theme: theme,
-      title: l10n.mpLobbyCreateRoom,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Classic 1v1 room — share the code (or ping a friend from the
-          // room header) to fill the second slot. No mode picker: the
-          // server engine only runs classic 1v1 in this release.
-          _mpSectionBlurb(l10n.mpLobbyCreateSubtitle),
-          const SizedBox(height: 16),
-          // Outlined, not filled: quick match is what most players want, and
-          // three equally-weighted buttons gave no clue which to press.
-          GradientButton(
-            onPressed: multiplayerState.isLoading
-                ? null
-                : () {
-                    context.read<MultiplayerCubit>().createGame(
-                      mode: MultiplayerGameMode.classic,
-                      maxPlayers: 2,
-                    );
-                  },
-            text: l10n.mpLobbyCreateRoom,
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.add_circle_outline_rounded,
-            width: double.infinity,
-            height: 48,
-            outlined: true,
-          ),
-        ],
-      ),
+    final p = context.lb;
+    // Classic 1v1 room — share the code (or ping a friend from the room
+    // header) to fill the second slot. No mode picker: the server engine
+    // only runs classic 1v1 in this release. Outline, not fill: quick match
+    // is what most players want.
+    return LBRow(
+      title: l10n.lbCreateRoom,
+      subtitle: l10n.lbCreateRoomLine,
+      titleColor: p.lime,
+      semanticLabel: l10n.lbCreateRoom,
+      trailing: LBPixelIcon(LBIcon.plus, cell: 3.4, color: p.lime),
+      onTap: multiplayerState.isLoading
+          ? null
+          : () {
+              context.read<MultiplayerCubit>().createGame(
+                mode: MultiplayerGameMode.classic,
+                maxPlayers: 2,
+              );
+            },
     ).gameEntrance(delay: 200.ms);
   }
 
-  Widget _buildGameModeCard(GameTheme theme, MultiplayerGame game) {
+  /// Quick match always resolves: after the server's fallback deadline a
+  /// house account takes the seat (MatchmakingService / BotPolicy).
+  Widget _buildHouseSnakeNote() {
+    final p = context.lb;
+    return LBBlock(
+      kind: LBBlockKind.dashed,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          LBPixelIcon(LBIcon.user, cell: 3, color: p.inkMuted),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              AppLocalizations.of(context)!.lbHouseSnake,
+              style: LBText.body(p, color: p.ink.withValues(alpha: .7), size: 11.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTournamentsLink() {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.accentColor.withValues(alpha: 0.3)),
-      ),
-      child: HudCorners(
-        color: theme.accentColor,
-        inset: 7,
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  game.modeEmoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ),
-            ),
+    return LBRow(
+      kind: LBBlockKind.gold,
+      title: l10n.lbTournamentsLive,
+      subtitle: l10n.lbTournamentsLine,
+      semanticLabel: l10n.lbTournamentsLive,
+      leading: const LBPixelIcon(LBIcon.trophy, cell: 3.4, color: LB.gold),
+      trailing: const LBPixelIcon(LBIcon.next, cell: 2.6, color: LB.gold),
+      onTap: () => context.push(AppRoutes.tournaments),
+    );
+  }
 
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    game.mode.localizedName(l10n),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _getGameModeDescription(game.mode),
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildGameModeCard(MultiplayerGame game) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    return LBRow(
+      title: game.mode.localizedName(l10n),
+      subtitle: _getGameModeDescription(game.mode),
+      titleColor: p.lime,
+      leading: LBPixelIcon(LBIcon.swords, cell: 3.4, color: p.lime, accent: LB.bonk),
     );
   }
 
   Widget _buildPlayersSection(
-    GameTheme theme,
     MultiplayerGame game,
     AuthState authState,
   ) {
-    final players = game.players.toList();
-    return _mpSection(
-      theme: theme,
-      title: AppLocalizations.of(context)!
-          .mpLobbyPlayersHeader(players.length, game.maxPlayers),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < players.length; i++) ...[
-            if (i > 0) _mpHairline(theme),
-            _buildPlayerItem(theme, players[i], authState),
-          ],
-          if (!game.isFull) ...[
-            if (players.isNotEmpty) _mpHairline(theme),
-            _buildWaitingSlot(theme),
-          ],
-        ],
-      ),
-    );
-  }
+    final l10n = AppLocalizations.of(context)!;
+    final currentUserId = authState.userId;
+    // You first, then your rival — the room reads top-down as "you vs them".
+    final players = game.players.toList()
+      ..sort((a, b) {
+        final ay = a.userId == currentUserId ? 0 : 1;
+        final by = b.userId == currentUserId ? 0 : 1;
+        return ay.compareTo(by);
+      });
+    final rowH = context.lbCell * 4;
 
-  /// Divider between rows inside a section card — the same 1px rule the
-  /// settings and profile screens use, instead of stacked mini-cards.
-  Widget _mpHairline(GameTheme theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Container(
-        height: 1,
-        color: theme.accentColor.withValues(alpha: 0.15),
-      ),
+    final rows = <Widget>[
+      for (final player in players) _buildPlayerItem(player, authState, rowH),
+      if (!game.isFull)
+        VersusEmptySlot(
+          label: l10n.mpLobbyWaitingForPlayer,
+          height: rowH - LB.inset * 2,
+        ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LBSectionLabel(
+          l10n.lbPlayersCount('${players.length}', '${game.maxPlayers}'),
+        ),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: rows,
+            ),
+            if (rows.length >= 2)
+              Positioned(
+                top: rowH - 14,
+                left: 0,
+                right: 0,
+                child: Center(child: VersusVsChip(label: l10n.lbVs)),
+              ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _buildPlayerItem(
-    GameTheme theme,
     MultiplayerPlayer player,
     AuthState authState,
+    double rowH,
   ) {
-    final currentUserId = authState.userId;
-    final isCurrentUser = currentUserId == player.userId;
-
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundImage: player.photoUrl != null
-              ? NetworkImage(player.photoUrl!)
-              : null,
-          onBackgroundImageError: player.photoUrl != null ? (e, s) {} : null,
-          backgroundColor: theme.accentColor.withValues(alpha: 0.15),
-          child: player.photoUrl == null
-              ? Icon(Icons.person, color: theme.accentColor, size: 20)
-              : null,
-        ),
-
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      player.publicLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  if (isCurrentUser) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)!.mpLobbyYouBadge,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: theme.accentColor,
-                        letterSpacing: context.letterSpacing(1),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 3),
-              Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(theme, player.status),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _getStatusText(player.status),
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWaitingSlot(GameTheme theme) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: Colors.white.withValues(alpha: 0.06),
-          child: Icon(
-            Icons.person_add_alt_rounded,
-            color: Colors.white.withValues(alpha: 0.35),
-            size: 18,
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Text(
-            AppLocalizations.of(context)!.mpLobbyWaitingForPlayer,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.45),
-            ),
-          ),
-        ),
-      ],
+    final l10n = AppLocalizations.of(context)!;
+    final isCurrentUser = authState.userId == player.userId;
+    final status = switch (player.status) {
+      PlayerStatus.waiting => isCurrentUser ? l10n.lbWaitingYou : l10n.lbWaiting,
+      PlayerStatus.ready => isCurrentUser ? l10n.lbReadyYou : l10n.lbReadyThem,
+      _ => _getStatusText(player.status),
+    };
+    return VersusPlayerRow(
+      name: player.publicLabel,
+      status: status,
+      isYou: isCurrentUser,
+      youLabel: l10n.lbYou,
+      ready: player.status == PlayerStatus.ready,
+      dim: player.status == PlayerStatus.crashed ||
+          player.status == PlayerStatus.disconnected,
+      height: rowH - LB.inset * 2,
     );
   }
 
   Widget _buildLobbyActions(
     BuildContext context,
     MultiplayerState multiplayerState,
-    GameTheme theme,
     MultiplayerGame game,
     AuthState authState,
   ) {
     final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
     final currentUserId = authState.userId;
     final currentPlayer = game.getPlayer(currentUserId ?? '');
     final isReady = currentPlayer?.status == PlayerStatus.ready;
@@ -1547,10 +991,23 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     final readyDeadline = multiplayerState.isMatchmadeLobby
         ? multiplayerState.readyDeadlineSeconds
         : null;
+    if (readyDeadline != null) {
+      _readyCheckTotal = math.max(_readyCheckTotal, readyDeadline);
+    }
     // The state worth calling out: you have confirmed, they have not. Without
     // it a matchmade lobby just sits there and reads as broken.
     final waitingOnOpponent =
         isReady && !allPlayersReady && game.players.length >= 2;
+
+    // Toggle: tapping while ready un-readies (SetReady carries the bool; the
+    // button used to lock once pressed).
+    final VoidCallback? toggleReady = multiplayerState.isLoading
+        ? null
+        : () {
+            context.read<MultiplayerCubit>().markPlayerReady(
+              isReady: !isReady,
+            );
+          };
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1560,153 +1017,96 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         // outstanding: once everyone is ready the room is committed and a
         // ticking clock would read as a threat to a match that is about to
         // start anyway.
-        if (readyDeadline != null && !allPlayersReady) ...[
-          // Turns amber for the last ten seconds. Colour is not the only
-          // signal — the number itself is right there.
-          _statusNote(
-            theme: theme,
-            color: readyDeadline <= 10 ? Colors.amber : theme.accentColor,
-            text: l10n.mpLobbyReadyDeadline(readyDeadline),
-            icon: Icons.timer_outlined,
+        if (readyDeadline != null && !allPlayersReady)
+          VersusReadyCheck(
+            label: l10n.lbReadyCheck,
+            seconds: readyDeadline,
+            total: _readyCheckTotal,
+            secondsLabel: l10n.lbSeconds('$readyDeadline'),
+            semanticLabel: l10n.mpLobbyReadyDeadline(readyDeadline),
           ),
-          const SizedBox(height: 10),
-        ],
 
         // You are ready, they are not.
-        if (waitingOnOpponent) ...[
-          _statusNote(
-            theme: theme,
-            color: theme.accentColor,
-            text: l10n.mpLobbyWaitingOpponentReady,
-            busy: true,
-          ),
-          const SizedBox(height: 10),
-        ],
+        if (waitingOnOpponent)
+          VersusStatusNote(text: l10n.mpLobbyWaitingOpponentReady),
 
         // Show waiting message for non-host when all ready
-        if (!isHost && allPlayersReady && game.players.length >= 2) ...[
-          _statusNote(
-            theme: theme,
-            color: theme.accentColor,
-            text: l10n.mpLobbyWaitingForHost,
-            busy: true,
-          ),
-          const SizedBox(height: 10),
-        ],
+        if (!isHost && allPlayersReady && game.players.length >= 2)
+          VersusStatusNote(text: l10n.mpLobbyWaitingForHost),
+
+        SizedBox(height: cell * .6),
 
         // Show Start Game button for host when all players are ready
-        if (canStartGame) ...[
-          GradientButton(
-            onPressed: multiplayerState.isLoading
+        if (canStartGame)
+          _fillAction(
+            label: l10n.mpLobbyStartGame,
+            icon: LBIcon.play,
+            height: cell * 3,
+            onTap: multiplayerState.isLoading
                 ? null
                 : () {
                     context.read<MultiplayerCubit>().startGame();
                   },
-            text: l10n.mpLobbyStartGame,
-            primaryColor: theme.accentColor,
-            secondaryColor: theme.foodColor,
-            icon: Icons.play_arrow_rounded,
-            width: double.infinity,
-            height: 48,
           ),
-          const SizedBox(height: 10),
-        ],
 
-        // Ready is the action to take; leaving is the way out. Giving both the
-        // same weight in a split row (and painting Leave red, as if quitting a
-        // lobby were dangerous) made the choice harder than it is.
-        GradientButton(
-          // Toggle: tapping while ready un-readies (SetReady carries the
-          // bool; the button used to lock once pressed).
-          onPressed: multiplayerState.isLoading
-              ? null
-              : () {
-                  context.read<MultiplayerCubit>().markPlayerReady(
-                    isReady: !isReady,
-                  );
-                },
-          text: isReady ? l10n.mpLobbyReadyDone : l10n.mpLobbyReady,
-          primaryColor: theme.accentColor,
-          secondaryColor: theme.foodColor,
-          icon: isReady
-              ? Icons.check_circle_rounded
-              : Icons.check_circle_outline_rounded,
-          width: double.infinity,
-          height: 48,
-          // Confirmed state goes quiet: the filled button is the thing still
-          // asking to be pressed.
-          outlined: isReady,
-        ),
+        // Ready is the action to take; leaving is the way out. Confirmed
+        // state goes quiet: the lime block is the thing still asking to be
+        // pressed.
+        if (!isReady)
+          Opacity(
+            opacity: toggleReady == null ? .55 : 1,
+            child: LBBlock(
+              kind: LBBlockKind.fill,
+              height: cell * 5,
+              alignment: Alignment.center,
+              semanticLabel: l10n.lbReady,
+              onTap: toggleReady,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LBPixelIcon(LBIcon.check, cell: 4.6 * context.uiScale, color: p.onLime),
+                  SizedBox(width: cell * .8),
+                  Flexible(
+                    child: LBCellText(
+                      l10n.lbReady,
+                      cell: 7 * context.uiScale,
+                      color: p.onLime,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          LBBlock(
+            selected: true,
+            height: cell * 3,
+            alignment: Alignment.center,
+            semanticLabel: l10n.mpLobbyReadyDone,
+            onTap: toggleReady,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LBPixelIcon(LBIcon.check, cell: 3.4, color: p.lime),
+                const SizedBox(width: 12),
+                Text(
+                  l10n.mpLobbyReadyDone.toUpperCase(),
+                  style: LBText.button(p, color: p.lime, size: 15).copyWith(letterSpacing: 3),
+                ),
+              ],
+            ),
+          ),
 
-        const SizedBox(height: 10),
+        SizedBox(height: cell * .3),
 
-        TextButton.icon(
-          onPressed: () {
+        VersusTextLink(
+          label: l10n.lbLeaveRoom,
+          onTap: () {
             context.read<MultiplayerCubit>().leaveGame();
             context.pop();
           },
-          icon: Icon(
-            Icons.exit_to_app_rounded,
-            size: 18,
-            color: Colors.white.withValues(alpha: 0.6),
-          ),
-          label: Text(
-            l10n.mpLobbyLeave,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w600,
-              letterSpacing: context.letterSpacing(1),
-            ),
-          ),
-          style: TextButton.styleFrom(minimumSize: const Size.fromHeight(44)),
         ),
       ],
-    );
-  }
-
-  /// One-line status note under the room. Full-width hairline strip rather
-  /// than a centred tinted pill, so consecutive notes stack into a column
-  /// instead of a ragged pile of differently-sized lozenges.
-  Widget _statusNote({
-    required GameTheme theme,
-    required Color color,
-    required String text,
-    IconData? icon,
-    bool busy = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          if (busy)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            )
-          else if (icon != null)
-            Icon(icon, size: 16, color: color),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1721,24 +1121,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         return l10n.mpModeSurvivalDesc;
       case MultiplayerGameMode.powerUpMadness:
         return l10n.mpModePowerUpDesc;
-    }
-  }
-
-  /// Status dot colour. Waiting is the normal state of a fresh room, so it
-  /// stays neutral instead of the amber it used to get — only a crash or a
-  /// dropped connection is worth flagging.
-  Color _getStatusColor(GameTheme theme, PlayerStatus status) {
-    switch (status) {
-      case PlayerStatus.waiting:
-        return Colors.white.withValues(alpha: 0.45);
-      case PlayerStatus.ready:
-        return theme.foodColor;
-      case PlayerStatus.playing:
-        return theme.accentColor;
-      case PlayerStatus.crashed:
-        return Colors.redAccent;
-      case PlayerStatus.disconnected:
-        return Colors.white.withValues(alpha: 0.25);
     }
   }
 
