@@ -6856,8 +6856,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbGoNewBestLine => 'Frame this one.';
 
   @override
-  String lbGoRun(int n) {
-    return 'RUN $n';
+  String lbGoRun(String run) {
+    return 'RUN $run';
   }
 
   @override

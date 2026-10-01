@@ -3114,12 +3114,12 @@
   "@lbGoNewBestLine": {
     "description": "Under NEW BEST"
   },
-  "lbGoRun": "RUN {n}",
+  "lbGoRun": "RUN {run}",
   "@lbGoRun": {
     "description": "Game over: run number (total games played)",
     "placeholders": {
-      "n": {
-        "type": "int"
+      "run": {
+        "type": "String"
       }
     }
   },

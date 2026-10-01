@@ -12223,8 +12223,8 @@ abstract class AppLocalizations {
   /// Game over: run number (total games played)
   ///
   /// In en, this message translates to:
-  /// **'RUN {n}'**
-  String lbGoRun(int n);
+  /// **'RUN {run}'**
+  String lbGoRun(String run);
 
   /// Title of the per-food points chart
   ///

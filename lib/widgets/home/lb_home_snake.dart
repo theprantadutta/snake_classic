@@ -269,7 +269,7 @@ class _HomeSnakePainter extends CustomPainter {
 
     final head = at(body.first).deflate(1);
     final flashing = state._now < state._eatFlashUntil;
-    final headColor = flashing ? Colors.white : palette.head;
+    final headColor = flashing ? Color.lerp(palette.head, Colors.white, .55)! : palette.head;
     canvas.drawRRect(
       RRect.fromRectAndRadius(head.inflate(2), const Radius.circular(LB.headRadius)),
       Paint()

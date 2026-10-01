@@ -298,6 +298,46 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Revives spent in this run. Bumped by [revive], reset by [startGame].
   int _revivesThisGame = 0;
 
+  /// Per-food points of the current run, in bite order, for the game-over
+  /// "uncoiled" chart. Local only — never synced (like replays).
+  final List<RunBite> _bitesThisGame = [];
+  List<RunBite> get bitesThisGame => List.unmodifiable(_bitesThisGame);
+
+  // ── Game-over continue (one per run) ────────────────────────────────────
+  //
+  // Game over shows at once, but the run's finalization (analytics, rewards
+  // and stats via the end pipeline, tournament submission, replay save) is
+  // held back while the continue offer is open, so continuing never pays
+  // out or counts a run twice. [finalizeGameOver] runs it exactly once: when
+  // the window closes, when the player leaves the screen, when a new run
+  // starts, or when the cubit closes.
+  static const int maxGameOverContinuesPerGame = 1;
+  static const Duration gameOverContinueWindow = Duration(seconds: 8);
+  int _gameOverContinuesThisGame = 0;
+  Timer? _continueWindowTimer;
+  DateTime? _continueDeadline;
+  Future<void> Function()? _pendingFinalization;
+  int _preEndConsecutiveNoWall = 0;
+  int _preEndPowerUpTime = 0;
+  int _preEndHighScore = 0;
+
+  /// Id of the last finished run's replay (set when the run finalizes).
+  String? _lastReplayId;
+  String? get lastReplayId => _lastReplayId;
+
+  /// Lifetime run number of the current run (1 = first game ever).
+  int _runNumber = 0;
+  int get runNumber => _runNumber;
+
+  /// When the game-over continue offer closes; null when none is open.
+  DateTime? get gameOverContinueDeadline => _continueDeadline;
+
+  /// Whether the game-over screen may offer CONTINUE right now.
+  bool get canContinueFromGameOver =>
+      _pendingFinalization != null &&
+      _continueDeadline != null &&
+      DateTime.now().isBefore(_continueDeadline!);
+
   /// Time-Attack rewarded "+30s" extension: how many seconds each ad grants,
   /// and how many extensions a single run may earn (kept low so it can't beat
   /// a fresh game). Reset per run on [startGame].
@@ -311,6 +351,8 @@ class GameCubit extends Cubit<GameCubitState> {
 
   void startGame() {
     debugPrint('🎮 [GameCubit] startGame() called');
+    // A previous run still waiting out its continue window is over now.
+    unawaited(finalizeGameOver());
 
     // Warm the ads this run might need, using the run itself as load time.
     // The interstitial is offered at game over and the rewarded on a crash —
@@ -398,6 +440,9 @@ class GameCubit extends Cubit<GameCubitState> {
     _pendingLevelUpCoinLevels.clear();
     _lastRunSummary = null;
     _revivesThisGame = 0;
+    _gameOverContinuesThisGame = 0;
+    _bitesThisGame.clear();
+    _runNumber = _statisticsService.statistics.totalGamesPlayed + 1;
     _timeBonusesUsed = 0;
     // Snapshot Pro status once at game start — sticky for the session.
     // (PremiumCubit is injected, so registration is guaranteed.)
@@ -427,6 +472,7 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
       clearPreviousGameState: true,
       tournamentScoreSubmission: TournamentScoreSubmission.none,
+      coinsEarnedThisGame: 0,
     );
 
     debugPrint(
@@ -939,6 +985,10 @@ class GameCubit extends Cubit<GameCubitState> {
           _currentGameFoodTypes[event.food.type.name] =
               (_currentGameFoodTypes[event.food.type.name] ?? 0) + 1;
           _currentGameFoodPoints += event.awardedPoints;
+          _bitesThisGame.add(RunBite(
+            points: event.awardedPoints,
+            bonus: event.food.type != FoodType.normal || event.newMultiplier > 1,
+          ));
 
           // Battle pass score milestones - deferred to avoid event loop
           // contention during the tick (addXP can trigger HTTP on first call).
@@ -1375,6 +1425,15 @@ class GameCubit extends Cubit<GameCubitState> {
     // The run continues — pick the music back up from where the crash
     // paused it (see _handleCrash).
     unawaited(_audioService.resumeGameplayMusic());
+    _resumeFromCrash();
+  }
+
+  /// Shared by [revive] and [continueAfterGameOver]: restore the last valid
+  /// snake, steer it somewhere safe, grant a short invincibility grace and
+  /// restart the loop.
+  void _resumeFromCrash() {
+    final current = state.gameState;
+    if (current == null) return;
 
     // Restore the last valid (in-bounds) snake from the pinned pre-crash state,
     // not the fatal crash-frame snake; only steer it somewhere safe to continue.
@@ -1514,6 +1573,11 @@ class GameCubit extends Cubit<GameCubitState> {
     // Server-only unlocks earn their XP after the post-game sync completes
     // (handled inside the pipeline's runPostGame).
     _endPipeline.evaluateLocalUnlocks(_lastRunSummary!);
+  }
+
+  /// Finish and save the run's replay (local only). Part of the deferred
+  /// game-over finalization so a continued run is recorded as one replay.
+  Future<void> _finishReplay(model.GameState gameState, int gameDurationSeconds) async {
 
     // Finish game recording (local only)
     final crashReasonStr = _hitWallThisGame
@@ -1549,7 +1613,8 @@ class GameCubit extends Cubit<GameCubitState> {
     // Fire-and-forget — a failed write must not block the game-over
     // UI; talker logs catch any errors.
     if (replay != null) {
-      unawaited(_persistReplay(replay, gameState));
+      _lastReplayId = replay.id;
+      await _persistReplay(replay, gameState);
     }
   }
 
@@ -1593,6 +1658,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Reset the game to initial state while preserving high score
   void resetGame() {
+    unawaited(finalizeGameOver());
     _gameTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
@@ -1625,6 +1691,7 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Return to menu state
   void backToMenu() {
+    unawaited(finalizeGameOver());
     _gameTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
@@ -1676,6 +1743,12 @@ class GameCubit extends Cubit<GameCubitState> {
       highScore = gameState.score;
     }
 
+    // Snapshot what local end-of-run tracking mutates, so a continue can
+    // put the run back exactly as it was.
+    _preEndConsecutiveNoWall = _consecutiveGamesWithoutWallHits;
+    _preEndPowerUpTime = _currentGamePowerUpTime;
+    _preEndHighScore = gameState.highScore;
+
     // Local-only achievement checks (no API calls) so game over screen has data
     _trackGameEndLocal();
 
@@ -1693,29 +1766,6 @@ class GameCubit extends Cubit<GameCubitState> {
       );
     }
 
-    // Track game over analytics
-    final gameDuration = _gameStartTime != null
-        ? DateTime.now().difference(_gameStartTime!).inSeconds
-        : 0;
-    final totalFoodEaten = _currentGameFoodTypes.values.fold(0, (a, b) => a + b);
-    final cause = _hitWallThisGame
-        ? 'wall'
-        : _hitSelfThisGame
-            ? 'self'
-            : 'unknown';
-    _analytics.trackGameOver(
-      score: gameState.score,
-      level: gameState.level,
-      durationSeconds: gameDuration,
-      cause: cause,
-      foodEaten: totalFoodEaten,
-      powerUpsCollected: _powerUpsCollectedThisGame,
-      inputsAccepted: _inputsAcceptedThisGame,
-      inputsRejected: _inputsRejectedThisGame,
-      maxCombo: gameState.maxCombo,
-      isNewHighScore: isNewHighScore,
-    );
-
     // EMIT STATE immediately — UI transitions to game over screen INSTANTLY
     emit(
       state.copyWith(
@@ -1727,27 +1777,141 @@ class GameCubit extends Cubit<GameCubitState> {
       ),
     );
 
-    // All remaining work is fire-and-forget — user already sees game over screen
-    unawaited(_postGameSync(
-      gameState: gameState,
-      isNewHighScore: isNewHighScore,
-      highScore: highScore,
-    ));
-
-    // Tournament runs: submit the final score. Fire-and-forget — the
-    // game-over ribbon renders live from state.tournamentScoreSubmission,
-    // so it never claims "submitted" unless the server actually accepted.
-    if (state.tournamentId != null) {
-      unawaited(_submitTournamentScore(
-        tournamentId: state.tournamentId!,
+    final tournamentId = state.tournamentId;
+    final runId = _runId;
+    // Measured now, at the moment of game over — finalization may run up
+    // to gameOverContinueWindow later.
+    final gameDuration = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+    _pendingFinalization = () async {
+      // Everything below that reads per-run fields does so synchronously,
+      // before the first await: startGame() calls finalizeGameOver() and
+      // then resets those fields for the next run.
+      final totalFoodEaten = _currentGameFoodTypes.values.fold(0, (a, b) => a + b);
+      final cause = _hitWallThisGame
+          ? 'wall'
+          : _hitSelfThisGame
+              ? 'self'
+              : 'unknown';
+      final summary = _lastRunSummary ?? _buildRunSummary(gameState, gameDuration);
+      final levelUps = List<int>.of(_pendingLevelUpCoinLevels);
+      _pendingLevelUpCoinLevels.clear();
+      final milestones = Set<String>.of(_bpMilestonesThisGame);
+      _analytics.trackGameOver(
         score: gameState.score,
+        level: gameState.level,
         durationSeconds: gameDuration,
-        foodsEaten: totalFoodEaten,
-      ));
-    }
+        cause: cause,
+        foodEaten: totalFoodEaten,
+        powerUpsCollected: _powerUpsCollectedThisGame,
+        inputsAccepted: _inputsAcceptedThisGame,
+        inputsRejected: _inputsRejectedThisGame,
+        maxCombo: gameState.maxCombo,
+        isNewHighScore: isNewHighScore,
+      );
 
-    // Stop recording
-    _gameRecorder.stopRecording();
+
+      // All remaining work is fire-and-forget — user already sees game over screen
+      unawaited(_postGameSync(
+        isNewHighScore: isNewHighScore,
+        highScore: highScore,
+        summary: summary,
+        levelUps: levelUps,
+        milestones: milestones,
+        runId: runId,
+      ));
+
+      // Tournament runs: submit the final score. Fire-and-forget — the
+      // game-over ribbon renders live from state.tournamentScoreSubmission,
+      // so it never claims "submitted" unless the server actually accepted.
+      if (tournamentId != null) {
+        unawaited(_submitTournamentScore(
+          tournamentId: tournamentId,
+          score: gameState.score,
+          durationSeconds: gameDuration,
+          foodsEaten: totalFoodEaten,
+        ));
+      }
+
+      await _finishReplay(gameState, gameDuration);
+      debugPrint('🎮 [GameCubit] run $runId finalized');
+    };
+
+    // Offer a continue on the game-over screen when this run can take one;
+    // otherwise finalize straight away, exactly as before.
+    if (_canOfferGameOverContinue(gameState)) {
+      _continueDeadline = DateTime.now().add(gameOverContinueWindow);
+      _continueWindowTimer?.cancel();
+      _continueWindowTimer = Timer(gameOverContinueWindow, () {
+        unawaited(finalizeGameOver());
+      });
+    } else {
+      await finalizeGameOver();
+    }
+  }
+
+  /// Game-over continue eligibility: once per run, after a crash, never in
+  /// Time Attack (a fresh loop would hand back the clock).
+  bool _canOfferGameOverContinue(model.GameState gs) {
+    if (_gameOverContinuesThisGame >= maxGameOverContinuesPerGame) return false;
+    if (gs.gameMode == GameMode.timeAttack) return false;
+    if (gs.crashReason == null) return false;
+    return true;
+  }
+
+  /// Pause the continue window's countdown while the player is choosing how
+  /// to pay for it (ad or coins). The offer stays open until they continue
+  /// or [finalizeGameOver] runs.
+  void holdGameOverContinue() {
+    if (_pendingFinalization == null) return;
+    _continueWindowTimer?.cancel();
+    _continueWindowTimer = null;
+    _continueDeadline = DateTime.now().add(const Duration(days: 1));
+  }
+
+  /// Run the held-back game-over work (see [gameOverContinueWindow]). Safe
+  /// to call any number of times; only the first call does anything.
+  Future<void> finalizeGameOver() async {
+    final pending = _pendingFinalization;
+    if (pending == null) return;
+    _pendingFinalization = null;
+    _continueWindowTimer?.cancel();
+    _continueWindowTimer = null;
+    _continueDeadline = null;
+    await pending();
+  }
+
+  /// Continue the run from the game-over screen (after a rewarded ad, coins,
+  /// or free for Pro — the caller owns that side). Undoes the local
+  /// end-of-run bookkeeping and resumes exactly like the in-crash revive.
+  /// Returns false if the offer has already closed.
+  bool continueAfterGameOver() {
+    if (!canContinueFromGameOver) return false;
+    final current = state.gameState;
+    if (current == null) return false;
+
+    _pendingFinalization = null;
+    _continueWindowTimer?.cancel();
+    _continueWindowTimer = null;
+    _continueDeadline = null;
+    _gameOverContinuesThisGame++;
+    _consecutiveGamesWithoutWallHits = _preEndConsecutiveNoWall;
+    _currentGamePowerUpTime = _preEndPowerUpTime;
+    _lastRunSummary = null;
+
+    unawaited(_audioService.startGameplayMusic());
+    emit(
+      state.copyWith(
+        status: GamePlayStatus.crashed,
+        gameState: current.copyWith(
+          status: model.GameStatus.crashed,
+          highScore: _preEndHighScore,
+        ),
+      ),
+    );
+    _resumeFromCrash();
+    return true;
   }
 
   /// Submit a tournament score and reflect the outcome in state.
@@ -1782,9 +1946,12 @@ class GameCubit extends Cubit<GameCubitState> {
   /// single-player chrome, not economy); everything else is the shared
   /// [GameEndPipeline].
   Future<void> _postGameSync({
-    required model.GameState gameState,
     required bool isNewHighScore,
     required int highScore,
+    required GameRunSummary summary,
+    required List<int> levelUps,
+    required Set<String> milestones,
+    required int runId,
   }) async {
     try {
       if (isNewHighScore) {
@@ -1803,21 +1970,14 @@ class GameCubit extends Cubit<GameCubitState> {
         );
       }
 
-      // _trackGameEndLocal already packaged the run; fall back to a fresh
-      // build only if the call order ever changes.
-      final summary = _lastRunSummary ??
-          _buildRunSummary(
-            gameState,
-            _gameStartTime != null
-                ? DateTime.now().difference(_gameStartTime!).inSeconds
-                : 0,
-          );
-
       await _endPipeline.runPostGame(
         summary,
-        pendingLevelUpCoinLevels: _pendingLevelUpCoinLevels,
-        awardedMilestones: _bpMilestonesThisGame,
+        pendingLevelUpCoinLevels: levelUps,
+        awardedMilestones: milestones,
         onCoinsAwarded: (granted) {
+          // A newer run may have started while this one finalized; its
+          // game-over total must not include this run's coins.
+          if (runId != _runId) return;
           _currentGameCoinsEarned += granted;
           // Surface the running per-game total so the game-over screen can
           // render it. Emitted even when 0 (e.g., daily cap maxed out) so
@@ -1897,8 +2057,20 @@ class GameCubit extends Cubit<GameCubitState> {
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
     _reviveOfferTimer?.cancel();
+    // Never drop a finished run's rewards because the cubit went away.
+    unawaited(finalizeGameOver());
     _rejectedInputClearTimer?.cancel();
     _acceptedInputClearTimer?.cancel();
     return super.close();
   }
+}
+
+/// One bite of a run, for the game-over "uncoiled" chart: the points it
+/// scored and whether it was a gold moment (bonus/special food or a combo
+/// multiplier).
+class RunBite {
+  const RunBite({required this.points, required this.bonus});
+
+  final int points;
+  final bool bonus;
 }

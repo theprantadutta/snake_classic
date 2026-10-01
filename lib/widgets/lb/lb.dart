@@ -15,5 +15,6 @@ export 'lb_feedback.dart';
 export 'lb_grid_background.dart';
 export 'lb_header.dart';
 export 'lb_pixel_icon.dart';
+export 'lb_run_chart.dart';
 export 'lb_scaffold.dart';
 export 'lb_sheet.dart';
