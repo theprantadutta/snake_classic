@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
-import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/presentation/bloc/power_up/power_up_cubit.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -820,22 +819,9 @@ class PremiumCubit extends Cubit<PremiumState> {
       emit(state.copyWith(tier: PremiumTier.free));
       _storageService.setPremiumActive(false);
 
-      // Coin multiplier: drop from 1.5x / 1.75x back to 1.0x. Without this
+      // Coin multiplier: drop from 2x / 2.25x back to 1.0x. Without this
       // the player keeps earning at Pro rate until the next app start.
       _coinsCubit?.updatePremiumMultiplier(false, state.hasBattlePass);
-
-      // Board size: if a premium board (35/40/50) was selected, fall back
-      // to the classic 20x20 free default so the next game doesn't start
-      // on a premium-only surface.
-      try {
-        final settingsCubit = getIt<GameSettingsCubit>();
-        if (settingsCubit.state.boardSize.isPremium) {
-          unawaited(settingsCubit.setBoardSize(BoardSize.classic));
-        }
-      } catch (_) {
-        // GameSettingsCubit not registered (shouldn't happen at runtime)
-        // — silent fallback rather than crashing the sync.
-      }
 
       // Tournament entries: the server-side recomputer cleared them all.
       // Force-set local counts to match (the regular sync block above is

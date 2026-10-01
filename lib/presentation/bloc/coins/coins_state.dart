@@ -96,8 +96,11 @@ class CoinsState extends Equatable {
     );
   }
 
-  /// Daily earning cap (150 for free users, 250 for premium)
-  int get dailyEarningCap => hasPremiumBonus ? 250 : 150;
+  /// Daily earning cap: 150 free, 250 with the Battle Pass bonus, 300 for
+  /// Pro. Pro's is exactly twice the free cap so "2× coins" holds all the
+  /// way to the cap.
+  int get dailyEarningCap =>
+      earningMultiplier >= 2.0 ? 300 : (hasPremiumBonus ? 250 : 150);
 
   /// Remaining earnings allowed today
   int get remainingDailyEarnings => (dailyEarningCap - dailyEarnings).clamp(0, dailyEarningCap);
