@@ -2,9 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/widgets/lb/lb_cell_text.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/snake.dart';
-import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart';
 
@@ -26,8 +27,15 @@ class LegacyBoardComponent extends Component
   LegacyBoardComponent() : super(priority: 0);
 
   final Paint _bgPaint = Paint();
-  final Paint _ambientPaint = Paint();
-  GameTheme? _ambientTheme;
+  final Paint _gridPaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _ghostPaint = Paint();
+
+  // Ghost score reveal (DESIGN_SPEC §5): the digits re-light cell by cell
+  // over 220 ms whenever the score changes.
+  int _ghostScore = -1;
+  int _ghostChangedMs = 0;
+  TextPainter? _ghostLabel;
+  String? _ghostLabelKey;
 
   @override
   void render(Canvas canvas) {
@@ -36,28 +44,12 @@ class LegacyBoardComponent extends Component
 
     final size = Size(game.worldWidth, game.worldHeight);
 
-    // Base fill (stand-in for the legacy Container's background colour) under
-    // the theme background flourishes.
-    _bgPaint.color = game.theme.backgroundColor;
+    // Living Board board: the palette's board colour and a hairline grid
+    // on the real play cells. The old ambient wash and per-theme
+    // decorations are gone — themes re-skin through LBPalette instead.
+    final palette = LBPalette.of(game.theme);
+    _bgPaint.color = palette.board;
     canvas.drawRect(Offset.zero & size, _bgPaint);
-
-    // Ambient light wash: the same top-right accent radial the screen
-    // background uses, so the playfield reads as a continuation of the
-    // scene instead of a separate flat-lit surface. Shader cached per theme.
-    if (_ambientTheme != game.theme) {
-      _ambientTheme = game.theme;
-      _ambientPaint.shader = RadialGradient(
-        center: Alignment.topRight,
-        radius: 1.5,
-        colors: [
-          game.theme.accentColor.withValues(alpha: 0.10),
-          game.theme.accentColor.withValues(alpha: 0.03),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.4, 0.8],
-      ).createShader(Offset.zero & size);
-    }
-    canvas.drawRect(Offset.zero & size, _ambientPaint);
 
     // World-to-screen scale for the fixed-resolution camera: the world is
     // `board * cellSize` units and gets fitted into the viewport, so anything
@@ -68,16 +60,11 @@ class LegacyBoardComponent extends Component
     final scale = game.size.x <= 0 || game.size.y <= 0
         ? 1.0
         : math.min(game.size.x / size.width, game.size.y / size.height);
-    // Clamped to a proportional band (2.5%-7.5% of a 20-unit cell). Purely
-    // screen-constant would swing the other way: on a 50x50 board the cells
-    // are ~7dp, so a full 1dp line is ~14% of a cell and the grid reads as
-    // blobby rather than as texture. The clamp keeps the line a hairline on
-    // dense boards while still cutting the tablet/small-board case, which is
-    // where a fixed world-space width got visibly heavy.
+    // Clamped to a proportional band so dense boards keep a hairline and
+    // small boards on tablets don't get a heavy line.
     final hairline = scale <= 0 ? 1.0 : (1.0 / scale).clamp(0.5, 1.5);
-
-    GameBoardBackgroundPainter(game.theme, lineWidth: hairline)
-        .paint(canvas, size);
+    _drawGrid(canvas, size, palette, hairline);
+    _drawGhostScore(canvas, size, palette, gs.score, scale);
 
     // Head intent shimmer — fade over a ~140ms window from the accept stamp
     // (identical to the legacy widget's computation).
@@ -154,6 +141,74 @@ class LegacyBoardComponent extends Component
 
   /// Triangle wave in [0.9, 1.1] over a 2s period, matching the legacy pulse
   /// controller (1s tween, repeat-reverse).
+  void _drawGrid(Canvas canvas, Size size, LBPalette palette, double width) {
+    _gridPaint
+      ..color = palette.lime.withValues(alpha: .09)
+      ..strokeWidth = width;
+    final cw = size.width / game.boardWidth;
+    final ch = size.height / game.boardHeight;
+    for (var x = 0; x <= game.boardWidth; x++) {
+      canvas.drawLine(Offset(x * cw, 0), Offset(x * cw, size.height), _gridPaint);
+    }
+    for (var y = 0; y <= game.boardHeight; y++) {
+      canvas.drawLine(Offset(0, y * ch), Offset(size.width, y * ch), _gridPaint);
+    }
+  }
+
+  /// The score in the cell font, faint, behind the snake (DESIGN_SPEC §5).
+  /// One glyph cell is one board cell, enlarged on dense boards so the
+  /// digits stay readable, and shrunk if the number would not fit.
+  void _drawGhostScore(Canvas canvas, Size size, LBPalette palette, int score, double scale) {
+    final layout = LBCellLayout.of('$score');
+    if (layout == null) return;
+    final ms = DateTime.now().millisecondsSinceEpoch;
+    if (score != _ghostScore) {
+      // The first frame of a run shows the score at once.
+      _ghostChangedMs = _ghostScore < 0 ? ms - LB.reveal.inMilliseconds : ms;
+      _ghostScore = score;
+    }
+    final cw = size.width / game.boardWidth;
+    final screenCell = cw * (scale <= 0 ? 1 : scale);
+    var g = cw * math.max(1, (16 / screenCell).ceil());
+    final maxW = size.width - cw * 4;
+    if (layout.columns * g > maxW) g = maxW / layout.columns;
+    final ox = cw * 3;
+    final oy = cw * 4;
+
+    final progress = ((ms - _ghostChangedMs) / LB.reveal.inMilliseconds).clamp(0.0, 1.0);
+    final litCols = layout.columns * progress;
+    final lit = Path();
+    final dim = Path();
+    for (final (c, r) in layout.lit) {
+      (c < litCols ? lit : dim).addRRect(lbCellRect(ox + c * g, oy + r * g, g));
+    }
+    _ghostPaint.color = palette.lime.withValues(alpha: .12);
+    canvas.drawPath(lit, _ghostPaint);
+    _ghostPaint.color = palette.lime.withValues(alpha: .05);
+    canvas.drawPath(dim, _ghostPaint);
+
+    final label = game.ghostScoreLabel;
+    final key = '$label|${g.toStringAsFixed(1)}|${palette.lime.toARGB32()}';
+    if (_ghostLabelKey != key) {
+      _ghostLabelKey = key;
+      _ghostLabel = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            fontFamily: LB.font,
+            fontFamilyFallback: LB.fontFallback,
+            fontSize: g * .55,
+            fontWeight: FontWeight.w800,
+            letterSpacing: g * .22,
+            color: palette.lime.withValues(alpha: .28),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
+    _ghostLabel!.paint(canvas, Offset(ox, oy - _ghostLabel!.height - g * .15));
+  }
+
   double _pulse(int ms) {
     final p = (ms % 2000) / 2000.0;
     return 0.9 + 0.2 * (1 - (2 * p - 1).abs());

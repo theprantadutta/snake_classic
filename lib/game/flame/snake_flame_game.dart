@@ -64,6 +64,10 @@ class SnakeFlameGame extends FlameGame {
   /// device preference of the same name for why a player wants this.
   late bool snapMovement;
 
+  /// Localized label above the ghost score digits; set by the host widget,
+  /// which has the BuildContext this game lacks.
+  String ghostScoreLabel = 'SCORE';
+
   model.GameState? get gameState => cubitState.gameState;
   model.GameState? get previousGameState => cubitState.previousGameState;
 

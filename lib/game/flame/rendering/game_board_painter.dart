@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/position.dart';
@@ -211,11 +212,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
   void _drawEdgeGlow(Canvas canvas, Size size, String edge, double intensity) {
     // Warning color blends orange to red based on intensity
-    final warningColor = Color.lerp(
-      Colors.orange.withValues(alpha: intensity * 0.4),
-      Colors.red.withValues(alpha: intensity * 0.6),
-      intensity,
-    )!;
+    final warningColor = LB.bonk.withValues(alpha: (intensity * .55).clamp(0.0, 1.0));
 
     // Glow width based on intensity
     final glowWidth = 20.0 + (intensity * 15.0);
@@ -345,6 +342,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
       }
     }
 
+    // Living Board look for the classic skin (DESIGN_SPEC §5): separate
+    // rounded cells with the board's 2-unit gap, opacity ramping head to
+    // tail. Premium skins keep their own renderer below, untouched.
+    if (_usesLivingBoardSnake) {
+      _drawLivingBoardSnake(canvas, segmentRects, cellWidth, snake.currentDirection);
+      return;
+    }
+
     // Phase 2: Draw corner joints BEFORE body segments so that the
     // rounded-rect segments overlay the circle edges cleanly.
     _drawCornerJoints(canvas, segmentCenters, cellWidth, cellHeight, snakeLength);
@@ -365,6 +370,96 @@ class OptimizedGameBoardPainter extends CustomPainter {
       } else {
         _drawSnakeBody(canvas, segmentRects[i], i, snakeLength, isTail);
       }
+    }
+  }
+
+  /// True when no owned premium skin is selected — the classic skin, which
+  /// the Living Board redraws.
+  bool get _usesLivingBoardSnake =>
+      premiumState.selectedSkinId == 'classic' ||
+      !premiumState.isSkinOwned(premiumState.selectedSkinId);
+
+  /// The Living Board snake: cell − 2 rounded squares (radius 3/20 of a
+  /// cell, head 5/20), body alpha 100% → 45% toward the tail, a glowing head
+  /// with two eyes looking where it is going. Invincibility turns it gold;
+  /// a crash turns the head red with a cross.
+  void _drawLivingBoardSnake(
+    Canvas canvas,
+    List<Rect> rects,
+    double cell,
+    Direction direction,
+  ) {
+    final palette = LBPalette.of(theme);
+    final n = rects.length;
+    if (n == 0) return;
+    final invincible = gameState.hasInvincibility;
+    final crashed = gameState.status == GameStatus.crashed;
+    final bodyColor = invincible ? LB.gold : palette.lime;
+
+    _snakeBodyPaint
+      ..shader = null
+      ..maskFilter = null;
+    final bodyRadius = Radius.circular(cell * .15);
+    for (var i = n - 1; i >= 1; i--) {
+      final t = n <= 1 ? 0.0 : i / (n - 1);
+      _snakeBodyPaint.color = bodyColor.withValues(alpha: 1 - .55 * t);
+      canvas.drawRRect(RRect.fromRectAndRadius(rects[i], bodyRadius), _snakeBodyPaint);
+    }
+
+    final head = rects.first;
+    var headColor = crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
+    // Eat flash: the head blinks bright for the first ~80 ms of the tick
+    // after a bite (DESIGN_SPEC §6).
+    final prev = previousGameState;
+    if (!crashed && prev != null && gameState.score > prev.score && moveProgress < .4) {
+      headColor = Color.lerp(headColor, Colors.white, (1 - moveProgress / .4) * .8)!;
+    }
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(head.inflate(cell * .12), Radius.circular(cell * .3)),
+      Paint()
+        ..color = headColor.withValues(alpha: .45)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, cell * .3),
+    );
+    _snakeHeadPaint
+      ..shader = null
+      ..maskFilter = null
+      ..color = headColor;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(head, Radius.circular(cell * .25)),
+      _snakeHeadPaint,
+    );
+
+    final ink = Paint()..color = palette.onLime;
+    if (crashed) {
+      final c = head.center;
+      final r = head.width * .2;
+      final x = Paint()
+        ..color = const Color(0xFF2A0705)
+        ..strokeWidth = head.width * .12
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(c + Offset(-r, -r), c + Offset(r, r), x);
+      canvas.drawLine(c + Offset(r, -r), c + Offset(-r, r), x);
+      return;
+    }
+
+    final mouthOpen = _mouthOpenAmount();
+    if (mouthOpen > 0.02) _drawMouth(canvas, head, direction, mouthOpen);
+
+    final eyeR = head.width * .085;
+    final f = head.width * .2;
+    final sp = head.width * .19;
+    final c = head.center;
+    final (Offset a, Offset b) = switch (direction) {
+      Direction.right => (c + Offset(f, -sp), c + Offset(f, sp)),
+      Direction.left => (c + Offset(-f, -sp), c + Offset(-f, sp)),
+      Direction.up => (c + Offset(-sp, -f), c + Offset(sp, -f)),
+      Direction.down => (c + Offset(-sp, f), c + Offset(sp, f)),
+    };
+    canvas.drawCircle(a, eyeR, ink);
+    canvas.drawCircle(b, eyeR, ink);
+
+    if (recentInputDirection != null && recentInputShimmerAge < 1.0) {
+      _drawHeadIntentShimmer(canvas, head);
     }
   }
 
@@ -1686,6 +1781,16 @@ class OptimizedGameBoardPainter extends CustomPainter {
       center: Offset(centerX, centerY),
       width: foodSize,
       height: foodSize,
+    );
+
+    // Living Board: every food sits in a soft gold glow, so a reward always
+    // reads as gold on every theme.
+    canvas.drawCircle(
+      Offset(centerX, centerY),
+      cellSize * (food.type == FoodType.normal ? .5 : .62),
+      Paint()
+        ..color = LB.foodGlow.withValues(alpha: food.type == FoodType.normal ? .35 : .55)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, cellSize * .3),
     );
 
     // Sprite path: generated art with a soft contact shadow. The sprites

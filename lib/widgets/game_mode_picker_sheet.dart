@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
-import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/core/di/injection.dart';
-import 'package:snake_classic/utils/typography.dart';
+import 'package:snake_classic/screens/run_setup_screen.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// One-shot "which mode do you want to play?" sheet.
 ///
@@ -53,6 +53,7 @@ Future<void> maybeShowGameModePicker(BuildContext context) async {
     enableDrag: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: .6),
     // Cap width so the sheet centers on tablets instead of spanning the full
     // width (no-op on phones narrower than 640).
     constraints: const BoxConstraints(maxWidth: 640),
@@ -80,140 +81,50 @@ class GameModePickerSheetState extends State<GameModePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     final l10n = AppLocalizations.of(context)!;
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.backgroundColor.withValues(alpha: 0.98),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(
-            color: theme.accentColor.withValues(alpha: 0.4),
-            width: 2,
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text(
-              l10n.homePickGameMode,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: theme.accentColor,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(1.5),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.homePickGameModeSubtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...GameMode.values.map((mode) {
-              final isSelected = _selected == mode;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => setState(() => _selected = mode),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? theme.accentColor.withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.04),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.accentColor
-                            : Colors.white.withValues(alpha: 0.1),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
+    final p = context.lb;
+    final modes = GameMode.values;
+    return LBSheetBody(
+      title: l10n.lbSetupMode,
+      subtitle: l10n.lbSetupSubtitle,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (var i = 0; i < modes.length; i += 2)
+                    Row(
                       children: [
-                        Text(mode.icon, style: const TextStyle(fontSize: 24)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                mode.localizedName(l10n),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                mode.localizedDescription(l10n),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isSelected)
-                          Icon(
-                            Icons.check_circle,
-                            color: theme.accentColor,
-                            size: 22,
+                        for (final mode in modes.skip(i).take(2))
+                          Expanded(
+                            child: LBChoiceBlock(
+                              title: mode.localizedName(l10n),
+                              line: RunSetupScreen.modeLine(l10n, mode),
+                              selected: _selected == mode,
+                              onTap: () => setState(() => _selected = mode),
+                            ),
                           ),
                       ],
                     ),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.accentColor,
-                  foregroundColor: theme.backgroundColor,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => Navigator.of(context).pop(_selected),
-                child: Text(
-                  l10n.homeStartPlaying,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: context.letterSpacing(1.5),
-                  ),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          LBBlock(
+            kind: LBBlockKind.fill,
+            height: context.lbCell * 3,
+            alignment: Alignment.center,
+            onTap: () => Navigator.of(context).pop(_selected),
+            child: Text(
+              l10n.homeStartPlaying.toUpperCase(),
+              style: LBText.button(p, color: p.onLime, size: 15).copyWith(letterSpacing: 3),
+            ),
+          ),
+        ],
       ),
     );
   }

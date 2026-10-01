@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb/lb_crash_copy.dart';
 
 /// Post-crash chrome. The death itself plays IN-WORLD on the Flame board
-/// (lunge → white body flash → tail-to-head disintegration with dust
-/// poofs — see SnakeFlameGame's death sequence); this widget is only the
-/// slim bottom banner that names the crash cause and owns the continue
-/// countdown / tap-to-continue affordance.
+/// (lunge → shake → white flash → tail-to-head disintegration); this widget
+/// is only the slim bottom block that names the crash (BONK! / OUCH.) and
+/// owns the continue countdown / tap-to-continue affordance.
 ///
-/// It deliberately has NO dark barrier: the previous incarnation was a
-/// full-screen "OOPS!" modal over an 80%-black scrim that hid the board
-/// at the exact moment the death animation plays. The player should watch
-/// their death, not a dialog. A transparent full-area tap target keeps
-/// "tap anywhere to continue" working.
-class CrashFeedbackOverlay extends StatelessWidget {
+/// No scrim: the player should watch their death, not a dialog. A
+/// transparent full-area tap target keeps "tap anywhere to continue" working.
+class CrashFeedbackOverlay extends StatefulWidget {
   final CrashReason crashReason;
   final GameTheme theme;
   final VoidCallback onSkip;
   final Duration duration;
+
+  /// The crashed run, for the length in the wall line.
+  final GameState? gameState;
 
   const CrashFeedbackOverlay({
     super.key,
@@ -28,158 +27,122 @@ class CrashFeedbackOverlay extends StatelessWidget {
     required this.theme,
     required this.onSkip,
     required this.duration,
+    this.gameState,
   });
 
-  bool get _untilTap =>
-      duration.inSeconds == GameConstants.crashFeedbackUntilTap;
+  @override
+  State<CrashFeedbackOverlay> createState() => _CrashFeedbackOverlayState();
+}
+
+class _CrashFeedbackOverlayState extends State<CrashFeedbackOverlay> {
+  final int _seed = DateTime.now().millisecondsSinceEpoch;
+
+  bool get _untilTap => widget.duration.inSeconds == GameConstants.crashFeedbackUntilTap;
 
   @override
   Widget build(BuildContext context) {
-    final s = context.uiScale;
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final gs = widget.gameState;
+    final reason = gs != null
+        ? LBCrashCopy.reasonOf(gs)
+        : (widget.crashReason == CrashReason.wallCollision ? LBEndReason.wall : LBEndReason.self);
+    final copy = LBCrashCopy.of(l10n, reason, length: gs?.snake.length ?? 0, food: 0, seed: _seed);
+
     return Stack(
       children: [
-        // Invisible full-area tap target — no scrim, the board stays
-        // fully visible behind the banner.
         Positioned.fill(
           child: GestureDetector(
-            onTap: onSkip,
+            onTap: widget.onSkip,
             behavior: HitTestBehavior.opaque,
             child: const SizedBox.expand(),
           ),
         ),
         Align(
           alignment: Alignment.bottomCenter,
-          child: Container(
-            margin: EdgeInsets.fromLTRB(16 * s, 0, 16 * s, 20 * s),
-            padding: EdgeInsets.symmetric(
-              horizontal: 16 * s,
-              vertical: 12 * s,
-            ),
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.foodColor.withValues(alpha: 0.55),
-                width: 1.5,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(context.lbGutter, 0, context.lbGutter, context.lbCell),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              builder: (context, t, child) => Opacity(
+                opacity: t,
+                child: Transform.translate(offset: Offset(0, (1 - t) * 30), child: child),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  crashReason.icon,
-                  // Decorative glyph — scales with the card, not textScaler.
-                  style: TextStyle(fontSize: 26 * s),
-                ),
-                SizedBox(width: 12 * s),
-                Flexible(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        crashReason.message,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: theme.primaryColor,
-                        ),
+              child: LBBlock(
+                kind: LBBlockKind.sheet,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Row(
+                  children: [
+                    LBCellText(copy.title, cell: 4.2, color: LB.bonk, glow: true),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            copy.line,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: LBText.body(p, color: p.ink, size: 12).copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _untilTap ? l10n.cfTapContinue : l10n.cfTapSkip,
+                            style: LBText.body(p, size: 10.5),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _untilTap
-                            ? AppLocalizations.of(context)!.cfTapContinue
-                            : AppLocalizations.of(context)!.cfTapSkip,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.accentColor.withValues(alpha: 0.75),
-                        ),
-                      ),
+                    ),
+                    if (!_untilTap) ...[
+                      const SizedBox(width: 10),
+                      _Countdown(duration: widget.duration),
                     ],
-                  ),
+                  ],
                 ),
-                SizedBox(width: 14 * s),
-                if (_untilTap)
-                  Icon(
-                    Icons.touch_app_rounded,
-                    size: 26 * s,
-                    color: theme.accentColor.withValues(alpha: 0.8),
-                  )
-                      .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .scale(
-                        duration: 700.ms,
-                        begin: const Offset(1, 1),
-                        end: const Offset(1.15, 1.15),
-                      )
-                else
-                  _CountdownRing(theme: theme, duration: duration, scale: s),
-              ],
+              ),
             ),
-          )
-              .animate()
-              .fadeIn(duration: 250.ms)
-              .slideY(begin: 0.5, curve: Curves.easeOutCubic),
+          ),
         ),
       ],
     );
   }
 }
 
-/// Shrinking ring + seconds counter for the auto-continue countdown. The
-/// cubit owns the actual game-over timer — this is display only.
-class _CountdownRing extends StatelessWidget {
-  final GameTheme theme;
-  final Duration duration;
-  final double scale;
+/// Draining cells + seconds for the auto-continue countdown. The cubit owns
+/// the real game-over timer — this is display only.
+class _Countdown extends StatelessWidget {
+  const _Countdown({required this.duration});
 
-  const _CountdownRing({
-    required this.theme,
-    required this.duration,
-    required this.scale,
-  });
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
-    final totalSeconds = duration.inSeconds.toDouble();
+    final total = duration.inMilliseconds.toDouble();
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: totalSeconds, end: 0.0),
+      tween: Tween(begin: 1, end: 0),
       duration: duration,
-      builder: (context, value, child) {
-        return SizedBox(
-          width: 36 * scale,
-          height: 36 * scale,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: CircularProgressIndicator(
-                  value: totalSeconds <= 0 ? 0 : value / totalSeconds,
-                  strokeWidth: 3,
-                  backgroundColor:
-                      theme.accentColor.withValues(alpha: 0.15),
-                  valueColor:
-                      AlwaysStoppedAnimation(theme.foodColor),
-                ),
-              ),
-              Text(
-                '${value.ceil()}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: theme.foodColor,
-                ),
-              ),
-            ],
+      builder: (context, v, _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${(v * total / 1000).ceil()}',
+            style: LBText.button(context.lb, color: LB.bonk, size: 14),
           ),
-        );
-      },
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 30,
+            child: LBCellsBar(
+              count: 3,
+              value: v,
+              color: LB.bonk,
+              offColor: LB.bonk.withValues(alpha: .15),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -2,11 +2,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb/lb_game_hud.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/models/game_state.dart';
-import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -18,21 +19,15 @@ import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/direction.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/flame_game_board.dart';
-import 'package:snake_classic/widgets/game_hud.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/crash_feedback_overlay.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
 import 'package:snake_classic/widgets/dialogs/exit_game_dialog.dart';
-import 'package:snake_classic/widgets/game_background_painter.dart';
 import 'package:snake_classic/widgets/game_bottom_bar.dart';
 import 'package:snake_classic/widgets/rejected_input_flash.dart';
 import 'package:snake_classic/widgets/score_popup_layer.dart';
-import 'package:snake_classic/widgets/snake_compass_indicator.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
@@ -61,8 +56,6 @@ class _GameScreenState extends State<GameScreen>
   // the most recent accepted direction and glows for ~800ms after each
   // input, so the player sees confirmation in dedicated chrome (the
   // edge-bloom on the board itself handles in-arena feedback).
-  Direction? _lastSwipeDirection;
-  late AnimationController _gestureIndicatorController;
   late GameJuiceController _juiceController;
   GameState? _previousGameState;
   late FocusNode _keyboardFocusNode;
@@ -103,12 +96,6 @@ class _GameScreenState extends State<GameScreen>
 
     // Initialize keyboard focus node
     _keyboardFocusNode = FocusNode();
-
-    // Initialize gesture indicator animation controller
-    _gestureIndicatorController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
 
     // Initialize game juice controller
     _juiceController = GameJuiceController();
@@ -236,7 +223,6 @@ class _GameScreenState extends State<GameScreen>
     WidgetsBinding.instance.removeObserver(this);
     getIt<AdService>().setGameActive(false);
     _keyboardFocusNode.dispose();
-    _gestureIndicatorController.dispose();
     _juiceController.dispose();
     _tutorialController?.dispose();
     super.dispose();
@@ -300,21 +286,31 @@ class _GameScreenState extends State<GameScreen>
       return;
     }
 
-    final result = context.read<GameCubit>().changeDirection(direction);
+    context.read<GameCubit>().changeDirection(direction);
+  }
 
-    // Drive the centered gesture-indicator chip above the board: rotates
-    // its arrow to match the swipe direction and glows for ~800ms. The
-    // board's edge-bloom (accepted) and centered red ring (rejected)
-    // still handle in-arena feedback — this chip is the chrome-side cue.
-    //
-    // It is a success cue, so it fires only for an accepted turn. It used to
-    // run before the result was known, which made a refused reversal look
-    // half-registered.
-    if (!result.isAccepted) return;
-    _lastSwipeDirection = direction;
-    _gestureIndicatorController.forward().then((_) {
-      _gestureIndicatorController.reverse();
-    });
+  /// The strip under the board (power-ups, clock, lives, length, speed).
+  /// Scoped rebuild: only the fields it shows.
+  Widget _boardInfoRow(GameState fallback, double width) {
+    return SizedBox(
+      width: width,
+      child: BlocBuilder<GameCubit, GameCubitState>(
+        buildWhen: (previous, current) {
+          final prev = previous.gameState;
+          final curr = current.gameState;
+          if (prev == null || curr == null) return true;
+          return prev.snake.length != curr.snake.length ||
+              prev.gameSpeed != curr.gameSpeed ||
+              prev.activePowerUps.length != curr.activePowerUps.length ||
+              prev.livesRemaining != curr.livesRemaining ||
+              prev.status != curr.status;
+        },
+        builder: (context, state) => LBGameInfoRow(
+          gameState: state.gameState ?? fallback,
+          showJoke: !context.read<GameSettingsCubit>().state.dPadEnabled,
+        ),
+      ),
+    );
   }
 
   void _showExitConfirmation(BuildContext context) {
@@ -569,32 +565,14 @@ class _GameScreenState extends State<GameScreen>
                   focusNode: _keyboardFocusNode,
                   onKeyEvent: _handleKeyPress,
                   child: Scaffold(
-                    backgroundColor: theme.backgroundColor,
+                    backgroundColor: context.lb.board,
                     // Backdrop sits OUTSIDE the SafeArea so the gradient
                     // and grid paint under the status-bar inset — same as
                     // AppBackground on every other screen. With it inside,
                     // the inset showed the flat scaffold colour as a band.
-                    body: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.topRight,
-                          radius: 1.5,
-                          colors: [
-                            theme.accentColor.withValues(alpha: 0.15),
-                            theme.backgroundColor,
-                            theme.backgroundColor.withValues(alpha: 0.9),
-                            Colors.black.withValues(alpha: 0.1),
-                          ],
-                          stops: const [0.0, 0.4, 0.8, 1.0],
-                        ),
-                      ),
+                    body: LBGridBackground(
                       child: Stack(
                         children: [
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: GameBackgroundPainter(theme),
-                            ),
-                          ),
                           // Top/bottom insets are handled INSIDE, per row:
                           // the play area pads itself, and the banner
                           // widget pads its own bottom. That leaves the
@@ -682,25 +660,19 @@ class _GameScreenState extends State<GameScreen>
                                                                       current.tournamentId;
                                                             },
                                                             builder: (context, hudState) {
-                                                              return GameHUD(
+                                                              return LBGameTopBar(
                                                                 gameState:
                                                                     hudState.gameState ??
                                                                     gameState,
-                                                                theme: theme,
                                                                 onPause: () => context
                                                                     .read<GameCubit>()
                                                                     .togglePause(),
-                                                                onHome: () =>
-                                                                    _showExitConfirmation(
-                                                                      context,
-                                                                    ),
-                                                                isSmallScreen:
-                                                                    isSmallScreen,
-                                                                uiScale: context.uiScale,
-                                                                tournamentId:
-                                                                    hudState.tournamentId,
                                                                 tournamentMode:
-                                                                    hudState.tournamentMode,
+                                                                    hudState.tournamentId !=
+                                                                            null
+                                                                        ? hudState
+                                                                            .tournamentMode
+                                                                        : null,
                                                                 pauseButtonKey:
                                                                     GameTutorialKeys
                                                                         .pauseButtonKey,
@@ -708,28 +680,14 @@ class _GameScreenState extends State<GameScreen>
                                                             },
                                                           ),
 
-                                                          // Note: Instructions moved to pause menu for cleaner gameplay view.
-                                                          // The "Avoid walls" hint that used to share this strip
-                                                          // with the gesture indicator was removed (tutorial-only
-                                                          // noise after game 2). The gesture indicator stays —
-                                                          // centered now that it's alone — because it's the
-                                                          // chrome-side per-swipe confirmation that pairs with
-                                                          // the board's edge-bloom.
-                                                          _buildGestureIndicatorRow(
-                                                            theme,
-                                                            isSmallScreen,
-                                                          ),
-
                                                           // Game Board - always clean, no overlays
                                                           Expanded(
                                                             child: Container(
-                                                              padding: EdgeInsets.symmetric(
-                                                                horizontal: context.scaled(
-                                                                  12,
-                                                                ),
-                                                                vertical: context.scaled(
-                                                                  isSmallScreen ? 4 : 8,
-                                                                ),
+                                                              // Full width on phones: the
+                                                              // board uses every column
+                                                              // (DESIGN_SPEC §2).
+                                                              padding: EdgeInsets.only(
+                                                                top: context.scaled(4),
                                                               ),
                                                               child: LayoutBuilder(
                                                                 builder: (context, boardConstraints) {
@@ -767,9 +725,26 @@ class _GameScreenState extends State<GameScreen>
                                                                         .maxWidth,
                                                                     boardCap,
                                                                   );
+                                                                  // Leave room for the
+                                                                  // level-cell wall above.
+                                                                  final wallH =
+                                                                      math.min(
+                                                                            boardConstraints
+                                                                                .maxWidth,
+                                                                            boardCap,
+                                                                          ) /
+                                                                          math.min(
+                                                                            gameState
+                                                                                .boardWidth,
+                                                                            20,
+                                                                          ) +
+                                                                      3 +
+                                                                      4 +
+                                                                      context.lbCell * 2;
                                                                   final maxH = math.min(
                                                                     boardConstraints
-                                                                        .maxHeight,
+                                                                            .maxHeight -
+                                                                        wallH,
                                                                     boardCap,
                                                                   );
                                                                   // Start from the full width, fall
@@ -799,8 +774,32 @@ class _GameScreenState extends State<GameScreen>
                                                                   // drag because of gesture
                                                                   // arena ordering rather
                                                                   // than any real boundary.
-                                                                  return Center(
-                                                                    child: SizedBox(
+                                                                  return Align(
+                                                                    alignment: Alignment
+                                                                        .topCenter,
+                                                                    child: Column(
+                                                                      mainAxisSize:
+                                                                          MainAxisSize.min,
+                                                                      children: [
+                                                                        BlocBuilder<
+                                                                          GameCubit,
+                                                                          GameCubitState
+                                                                        >(
+                                                                          buildWhen: (a, b) =>
+                                                                              a.gameState?.level !=
+                                                                                  b.gameState?.level ||
+                                                                              a.gameState?.score !=
+                                                                                  b.gameState?.score,
+                                                                          builder: (context, wallState) =>
+                                                                              LBLevelWall(
+                                                                                gameState:
+                                                                                    wallState.gameState ??
+                                                                                    gameState,
+                                                                                width: boardW,
+                                                                              ),
+                                                                        ),
+                                                                        const SizedBox(height: 4),
+                                                                    SizedBox(
                                                                       width: boardW,
                                                                       height: boardH,
                                                                       child: SwipeDetector(
@@ -814,6 +813,12 @@ class _GameScreenState extends State<GameScreen>
                                                                                   .isTournamentMode,
                                                                         ),
                                                                       ),
+                                                                    ),
+                                                                        _boardInfoRow(
+                                                                          gameState,
+                                                                          boardW,
+                                                                        ),
+                                                                      ],
                                                                     ),
                                                                   );
                                                                 },
@@ -883,11 +888,25 @@ class _GameScreenState extends State<GameScreen>
                                                                               curr.level ||
                                                                           prev.gameSpeed !=
                                                                               curr.gameSpeed ||
+                                                                          prev.activePowerUps
+                                                                                  .length !=
+                                                                              curr.activePowerUps
+                                                                                  .length ||
+                                                                          prev.livesRemaining !=
+                                                                              curr.livesRemaining ||
                                                                           prev.status !=
                                                                               curr.status;
                                                                     },
                                                                 builder: (context, barState) {
-                                                                  return GameBottomBar(
+                                                                  if (!controlSettings
+                                                                      .dPadEnabled) {
+                                                                    return const SizedBox.shrink();
+                                                                  }
+                                                                  return Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize.min,
+                                                                    children: [
+                                                                      GameBottomBar(
                                                                     gameState:
                                                                         barState
                                                                             .gameState ??
@@ -923,6 +942,8 @@ class _GameScreenState extends State<GameScreen>
                                                                         : null,
                                                                     onDirection:
                                                                         _handleSwipe,
+                                                                  ),
+                                                                    ],
                                                                   );
                                                                 },
                                                               );
@@ -948,6 +969,7 @@ class _GameScreenState extends State<GameScreen>
                                                   gameState.showCrashModal)
                                                 CrashFeedbackOverlay(
                                                   crashReason: gameState.crashReason!,
+                                                  gameState: gameState,
                                                   theme: theme,
                                                   onSkip: () => context
                                                       .read<GameCubit>()
@@ -996,6 +1018,7 @@ class _GameScreenState extends State<GameScreen>
                                           !gameCubitState.offeringTimeBonus)
                                         PauseOverlay(
                                           theme: theme,
+                                          gameState: gameState,
                                           onResume: () => context
                                               .read<GameCubit>()
                                               .resumeGame(),
@@ -1021,6 +1044,12 @@ class _GameScreenState extends State<GameScreen>
                                         // than the base constant.
                                         ReviveOverlay(
                                           theme: theme,
+                                          gameState: gameState,
+                                          coinBalance: context
+                                              .read<CoinsCubit>()
+                                              .state
+                                              .balance
+                                              .total,
                                           seconds: 10,
                                           coinCost: context
                                               .read<GameCubit>()
@@ -1121,7 +1150,7 @@ class _GameScreenState extends State<GameScreen>
                                       previous.dPadEnabled != current.dPadEnabled,
                                   builder: (context, controls) => controls.dPadEnabled
                                       ? const SizedBox.shrink()
-                                      : const SnakeBannerAd(topGap: 12),
+                                      : const LBBannerSlot(topGap: 12),
                                 ),
                               ],
                             ),
@@ -1139,50 +1168,4 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  // NOTE: Instructions moved to pause_overlay.dart - _buildGameGuideSection()
-
-  /// Thin strip between HUD and board holding the centered gesture
-  /// indicator chip. Mirrors the original static-row vertical margin so
-  /// the board sits at the same Y position it did before — no shift on
-  /// hot-reload from earlier builds.
-  Widget _buildGestureIndicatorRow(GameTheme theme, bool isSmallScreen) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: isSmallScreen ? 6 : 8,
-      ),
-      alignment: Alignment.center,
-      child: _buildStaticGestureIndicator(theme, isSmallScreen),
-    );
-  }
-
-  Widget _buildStaticGestureIndicator(GameTheme theme, bool isSmallScreen) {
-    // "Living compass": a tiny snake swimming inside a puck. It turns to
-    // face the last accepted swipe and dashes with a comet trail in that
-    // direction's color, so the chrome cue is the snake itself rather than
-    // an abstract arrow + label.
-    // directionGetter reads the field live: the game screen no longer
-    // rebuilds on swipes, so a by-value Direction would freeze at the last
-    // structural rebuild — the swipe animation itself triggers the repaint.
-    return SnakeCompassIndicator(
-      theme: theme,
-      directionGetter: () => _lastSwipeDirection,
-      swipeAnimation: _gestureIndicatorController,
-      activeColorFor: (d) => _getActiveSwipeColor(d, theme),
-      size: context.scaled(isSmallScreen ? 34.0 : 38.0),
-    );
-  }
-
-  Color _getActiveSwipeColor(Direction direction, GameTheme theme) {
-    switch (direction) {
-      case Direction.up:
-        return const Color(0xFF00BCD4); // Cyan
-      case Direction.down:
-        return const Color(0xFF4CAF50); // Green
-      case Direction.left:
-        return const Color(0xFFFF9800); // Orange
-      case Direction.right:
-        return const Color(0xFF9C27B0); // Purple
-    }
-  }
 }

@@ -1,34 +1,35 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
-import 'package:snake_classic/l10n/catalog_l10n.dart';
-import 'package:snake_classic/l10n/enum_l10n.dart';
-import 'package:snake_classic/models/food.dart';
-import 'package:snake_classic/models/power_up.dart';
+import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
-import 'package:snake_classic/utils/constants.dart';
-import 'package:snake_classic/widgets/screen_shell.dart';
-import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/utils/responsive.dart';
-import 'package:snake_classic/utils/typography.dart';
-import 'package:snake_classic/widgets/gradient_button.dart';
-import 'package:snake_classic/widgets/pickup_icon.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
+import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
+/// Pause (Living Board screen 06): PAUSED in snake cells over the dimmed
+/// board, RESUME (a 3·2·1 countdown, then go), RESTART, SETTINGS (an
+/// in-run sheet: controls, snap movement, sound, music, how to play) and
+/// QUIT TO MENU, with the run so far underneath.
 class PauseOverlay extends StatefulWidget {
   final GameTheme theme;
   final VoidCallback onResume;
   final VoidCallback onRestart;
   final VoidCallback onHome;
-  /// Called from the new "How to Play" button — re-launches the gameplay
-  /// tutorial route. Optional so callers that don't wire it up still build.
+
+  /// Re-launches the gameplay tutorial. Optional so callers that don't wire
+  /// it up still build.
   final VoidCallback? onShowTutorial;
+
+  /// The paused run, for the "so far" footer.
+  final GameState? gameState;
 
   const PauseOverlay({
     super.key,
@@ -37,6 +38,7 @@ class PauseOverlay extends StatefulWidget {
     required this.onRestart,
     required this.onHome,
     this.onShowTutorial,
+    this.gameState,
   });
 
   @override
@@ -44,708 +46,385 @@ class PauseOverlay extends StatefulWidget {
 }
 
 class _PauseOverlayState extends State<PauseOverlay> {
-  GameTheme get theme => widget.theme;
-  VoidCallback get onResume => widget.onResume;
-  VoidCallback get onRestart => widget.onRestart;
-  VoidCallback get onHome => widget.onHome;
-  VoidCallback? get onShowTutorial => widget.onShowTutorial;
+  /// 3, 2, 1 while the resume countdown runs; null otherwise.
+  int? _count;
+  Timer? _timer;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startResume() {
+    if (_count != null) return;
+    setState(() => _count = 3);
+    _tick();
+    _timer = Timer.periodic(const Duration(milliseconds: 650), (t) {
+      if (!mounted) return;
+      final next = (_count ?? 1) - 1;
+      if (next <= 0) {
+        t.cancel();
+        AudioService().playSound('countdown_go', volume: .7);
+        HapticService().lightImpact();
+        widget.onResume();
+        return;
+      }
+      setState(() => _count = next);
+      _tick();
+    });
+  }
+
+  void _tick() {
+    AudioService().playSound('countdown_tick', volume: .6);
+    HapticService().lightImpact();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // Blur the board behind the overlay so the pause visibly disengages the
-    // world. Drop the opaque tint to 0.55 — at 0.8 the board was fully hidden
-    // and the blur had nothing to do.
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-      child: Container(
-      color: Colors.black.withValues(alpha: 0.55),
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(32),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          decoration: BoxDecoration(
-            color: theme.backgroundColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.accentColor.withValues(alpha: 0.5),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.accentColor.withValues(alpha: 0.3),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          // Stack so the top-right close button sits inside the dialog's
-          // padded area, above the scrollable content.
-          child: HudCorners(
-            color: theme.accentColor,
-            inset: 7,
-            child: Stack(
-            children: [
-              // Scrollable so expanding the Game Guide on a short screen doesn't
-              // overflow the dialog. shrinkWrap behaviour from SingleChildScrollView
-              // means the dialog still sizes to its content when it fits.
-              SingleChildScrollView(
-                child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 4),
-              // Pause Icon — sized down from 64 so the menu reads more
-              // compact overall.
-              Icon(
-                Icons.pause_circle_filled,
-                size: 44,
-                color: theme.accentColor,
-              ).gamePop(delay: 50.ms),
+    final p = context.lb;
+    final cell = context.lbCell;
+    final gs = widget.gameState;
 
-              const SizedBox(height: 8),
-
-              // Pause Text
-              Text(
-                l10n.poPaused,
-                style: TextStyle(
-                  color: theme.accentColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: context.letterSpacing(2),
-                ),
-              ).gameEntrance(delay: 100.ms),
-
-              const SizedBox(height: 16),
-
-              // Store Access Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStoreButton(
-                    context: context,
-                    icon: Icons.star,
-                    label: l10n.poPremium,
-                    colors: [Colors.purple, Colors.blue],
-                    onTap: () => context.push(AppRoutes.premiumBenefits),
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStoreButton(
-                    context: context,
-                    icon: Icons.store,
-                    label: l10n.poStore,
-                    colors: [Colors.orange, Colors.amber],
-                    onTap: () => context.push(AppRoutes.store),
-                  ),
-                ],
-              ).gameEntrance(delay: 150.ms),
-
-              const SizedBox(height: 12),
-
-              // Game Guide Section (moved from game screen)
-              _buildGameGuideSection(),
-
-              const SizedBox(height: 12),
-
-              // Main Action Buttons — compact: 170w × 42h with 10px gaps
-              // so the stack of five buttons fits more screens without
-              // dominating the dialog.
-              Column(
-                children: [
-                  GradientButton(
-                    onPressed: onResume,
-                    text: l10n.poResume,
-                    primaryColor: theme.accentColor,
-                    secondaryColor: theme.foodColor,
-                    icon: Icons.play_arrow,
-                    width: 170,
-                    height: 42,
-                  ).gameZoomIn(delay: 200.ms),
-
-                  const SizedBox(height: 10),
-
-                  GradientButton(
-                    onPressed: onRestart,
-                    text: l10n.poRestart,
-                    primaryColor: theme.accentColor.withValues(alpha: 0.8),
-                    secondaryColor: theme.accentColor.withValues(alpha: 0.6),
-                    icon: Icons.refresh,
-                    width: 170,
-                    height: 42,
-                    outlined: true,
-                  ).gameZoomIn(delay: 250.ms),
-
-                  const SizedBox(height: 10),
-
-                  GradientButton(
-                    onPressed: onHome,
-                    text: l10n.poHome,
-                    primaryColor: theme.snakeColor.withValues(alpha: 0.8),
-                    secondaryColor: theme.snakeColor.withValues(alpha: 0.6),
-                    icon: Icons.home,
-                    width: 170,
-                    height: 42,
-                    outlined: true,
-                  ).gameZoomIn(delay: 300.ms),
-
-                  // A downloaded Play update waiting for a restart. Only
-                  // ever visible once the download has landed, so the
-                  // menu is unchanged on every other pause.
-                  ValueListenableBuilder<bool>(
-                    valueListenable:
-                        InAppUpdateService().updateReadyToInstall,
-                    builder: (context, ready, _) {
-                      if (!ready) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: GradientButton(
-                          onPressed: () =>
-                              InAppUpdateService().completeUpdate(),
-                          text: l10n.poUpdateReady,
-                          primaryColor: theme.foodColor,
-                          secondaryColor:
-                              theme.foodColor.withValues(alpha: 0.7),
-                          icon: Icons.system_update_rounded,
-                          width: 170,
-                          height: 42,
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // D-Pad toggle. Wrapped in BlocBuilder so the label /
-                  // icon flip live when the user taps it without closing
-                  // the overlay. Same Cubit method the Settings screen
-                  // uses, so the choice is durable across runs.
-                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
-                    buildWhen: (prev, curr) =>
-                        prev.dPadEnabled != curr.dPadEnabled,
-                    builder: (context, settings) {
-                      final on = settings.dPadEnabled;
-                      return GradientButton(
-                        onPressed: () => context
-                            .read<GameSettingsCubit>()
-                            .updateDPadEnabled(!on),
-                        text: on ? l10n.poDPadOn : l10n.poDPadOff,
-                        primaryColor: on
-                            ? theme.accentColor.withValues(alpha: 0.8)
-                            : theme.accentColor.withValues(alpha: 0.5),
-                        secondaryColor: on
-                            ? theme.accentColor.withValues(alpha: 0.6)
-                            : theme.accentColor.withValues(alpha: 0.3),
-                        icon: on
-                            ? Icons.gamepad
-                            : Icons.gamepad_outlined,
-                        width: 170,
-                        height: 42,
-                        outlined: !on,
-                      ).gameZoomIn(delay: 320.ms);
-                    },
-                  ),
-
-                  // Layout choice (only while the on-screen controls
-                  // are on) and snap movement, right under the D-pad
-                  // toggle: this is where players actually switch
-                  // controls, mid-run, not in Settings.
-                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
-                    buildWhen: (prev, curr) =>
-                        prev.dPadEnabled != curr.dPadEnabled ||
-                        prev.controlLayout != curr.controlLayout ||
-                        prev.snapMovementEnabled != curr.snapMovementEnabled,
-                    builder: (context, settings) {
-                      final cubit = context.read<GameSettingsCubit>();
-                      final snap = settings.snapMovementEnabled;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (settings.dPadEnabled) ...[
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Three text chips in the same 170px
-                                // column as the buttons above.
-                                _buildAudioToggle(
-                                  label: l10n.poLayoutDPad,
-                                  value: settings.controlLayout ==
-                                      ControlLayout.dPad,
-                                  onIcon: Icons.gamepad,
-                                  offIcon: Icons.gamepad_outlined,
-                                  width: 52,
-                                  showIcon: false,
-                                  onChanged: (_) =>
-                                      cubit.setControlLayout(ControlLayout.dPad),
-                                ),
-                                const SizedBox(width: 7),
-                                _buildAudioToggle(
-                                  label: l10n.poLayoutTurn,
-                                  value: settings.controlLayout ==
-                                      ControlLayout.turnButtons,
-                                  onIcon: Icons.turn_left_rounded,
-                                  offIcon: Icons.turn_left_rounded,
-                                  width: 52,
-                                  showIcon: false,
-                                  onChanged: (_) => cubit.setControlLayout(
-                                    ControlLayout.turnButtons,
-                                  ),
-                                ),
-                                const SizedBox(width: 7),
-                                _buildAudioToggle(
-                                  label: l10n.poLayoutStick,
-                                  value: settings.controlLayout ==
-                                      ControlLayout.joystick,
-                                  onIcon: Icons.control_camera_rounded,
-                                  offIcon: Icons.control_camera_rounded,
-                                  width: 52,
-                                  showIcon: false,
-                                  onChanged: (_) => cubit.setControlLayout(
-                                    ControlLayout.joystick,
-                                  ),
-                                ),
-                              ],
-                            ).gameZoomIn(delay: 328.ms),
-                          ],
-                          const SizedBox(height: 10),
-                          GradientButton(
-                            onPressed: () =>
-                                cubit.setSnapMovementEnabled(!snap),
-                            text: snap ? l10n.poSnapOn : l10n.poSnapOff,
-                            primaryColor: snap
-                                ? theme.accentColor.withValues(alpha: 0.8)
-                                : theme.accentColor.withValues(alpha: 0.5),
-                            secondaryColor: snap
-                                ? theme.accentColor.withValues(alpha: 0.6)
-                                : theme.accentColor.withValues(alpha: 0.3),
-                            icon: snap ? Icons.grid_on : Icons.grid_off,
-                            width: 170,
-                            height: 42,
-                            outlined: !snap,
-                          ).gameZoomIn(delay: 334.ms),
-                        ],
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Sound / Music toggles — same 170px footprint as the
-                  // buttons above, split into two chips.
-                  //
-                  // Read straight off GameSettingsCubit, exactly like the
-                  // D-pad and snap toggles above and like the Settings
-                  // screen. This used to mirror AudioService into local
-                  // setState, which meant two widgets each held their own
-                  // copy of one value and the overlay could show a stale
-                  // one after anything changed it from elsewhere. The cubit
-                  // drives AudioService, so the flip is still immediate and
-                  // still durable.
-                  BlocBuilder<GameSettingsCubit, GameSettingsState>(
-                    buildWhen: (prev, curr) =>
-                        prev.soundEnabled != curr.soundEnabled ||
-                        prev.musicEnabled != curr.musicEnabled,
-                    builder: (context, settings) {
-                      final cubit = context.read<GameSettingsCubit>();
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildAudioToggle(
-                            label: l10n.poSound,
-                            value: settings.soundEnabled,
-                            onIcon: Icons.volume_up,
-                            offIcon: Icons.volume_off,
-                            onChanged: cubit.setSoundEnabled,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildAudioToggle(
-                            label: l10n.poMusic,
-                            value: settings.musicEnabled,
-                            onIcon: Icons.music_note,
-                            offIcon: Icons.music_off,
-                            onChanged: cubit.setMusicEnabled,
-                          ),
-                        ],
-                      );
-                    },
-                  ).gameZoomIn(delay: 340.ms),
-
-                  if (onShowTutorial != null) ...[
-                    const SizedBox(height: 10),
-                    GradientButton(
-                      onPressed: onShowTutorial!,
-                      text: l10n.poHowToPlay,
-                      primaryColor:
-                          theme.accentColor.withValues(alpha: 0.7),
-                      secondaryColor:
-                          theme.accentColor.withValues(alpha: 0.4),
-                      icon: Icons.help_outline,
-                      width: 170,
-                      height: 42,
-                      outlined: true,
-                    ).gameZoomIn(delay: 350.ms),
-                  ],
-                ],
-              ),
-            ],
-          ),
-              ),
-              // Close button — top-right corner of the dialog. Tapping it
-              // resumes the game (same as the RESUME button below) so the
-              // gesture matches every other modal X in the app.
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: onResume,
-                    child: Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 22,
-                        color: theme.accentColor.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          )),
-        ),
-      ),
-      ),
-    );
-  }
-
-  /// Compact 80×42 toggle chip — two of these plus the 10px gap match the
-  /// 170px main-button column width. Dimmed/outlined when off, mirroring
-  /// the D-Pad button's on/off treatment above.
-  Widget _buildAudioToggle({
-    required String label,
-    required bool value,
-    required IconData onIcon,
-    required IconData offIcon,
-    required ValueChanged<bool> onChanged,
-    double width = 80,
-    bool showIcon = true,
-  }) {
-    final color = theme.accentColor;
-    return GestureDetector(
-      onTap: () {
-        // Click cue fires before the flip so toggling sound OFF still
-        // confirms the tap; the service gates it when sound is off.
-        // Playback only — the overlay no longer holds any audio STATE, that
-        // is GameSettingsCubit's now.
-        AudioService().playSound('button_click');
-        onChanged(!value);
-      },
-      child: Container(
-        width: width,
-        height: 42,
-        decoration: BoxDecoration(
-          color: value
-              ? color.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: value ? 0.7 : 0.35),
-            width: 1.5,
+    Widget content;
+    if (_count != null) {
+      content = Center(
+        child: Semantics(
+          liveRegion: true,
+          label: '$_count',
+          child: LBAnimatedCellText(
+            '$_count',
+            cell: cell * 1.2,
+            glow: true,
+            duration: const Duration(milliseconds: 160),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (showIcon) ...[
-              Icon(
-                value ? onIcon : offIcon,
-                size: 16,
-                color: color.withValues(alpha: value ? 0.9 : 0.45),
-              ),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withValues(alpha: value ? 0.9 : 0.45),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: context.letterSpacing(0.8),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGameGuideSection() {
-    final l10n = AppLocalizations.of(context)!;
-    // Color + border were on an outer DecoratedBox, which hid ExpansionTile's
-    // (internally a ListTile) ink ripple and triggered Flutter's
-    // Material-ancestor warning. Moved onto ExpansionTile's own
-    // backgroundColor + shape (both states) so ripples render correctly.
-    // Widened from 220 → 260 to fit the expanded section labels
-    // ("PowerUp Madness", "Slow Motion", etc.) without ellipsizing.
-    final guideShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: theme.accentColor.withValues(alpha: 0.3)),
-    );
-    return SizedBox(
-      width: 260,
-      child: Theme(
-        // copyWith, not a fresh ThemeData: constructing one from scratch here
-        // dropped everything the app had configured for this subtree — the
-        // game's text theme and, once it existed, the no-ripple setting — so
-        // this one expander kept splashing while nothing else did.
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: false,
-          backgroundColor: theme.backgroundColor.withValues(alpha: 0.5),
-          collapsedBackgroundColor:
-              theme.backgroundColor.withValues(alpha: 0.5),
-          shape: guideShape,
-          collapsedShape: guideShape,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
-          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.help_outline,
-                color: theme.accentColor.withValues(alpha: 0.8),
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.poGameGuide,
-                style: TextStyle(
-                  color: theme.accentColor.withValues(alpha: 0.9),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: context.letterSpacing(1),
-                ),
-              ),
-            ],
-          ),
-          iconColor: theme.accentColor,
-          collapsedIconColor: theme.accentColor.withValues(alpha: 0.6),
-          children: [
-            // FOOD
-            _buildGuideSubheader(l10n.poFoodUpper),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      );
+    } else {
+      content = Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: context.lbGutter + cell * 2, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // context.scaled keeps tablet parity: the emojis these
-                // replaced grew via the root textScaler, images don't.
-                _buildFoodItem(
-                    PickupIcon.food(FoodType.normal,
-                        size: context.scaled(22)),
-                    l10n.poPts10),
-                _buildFoodItem(
-                    PickupIcon.food(FoodType.bonus,
-                        size: context.scaled(22)),
-                    l10n.poPts25),
-                _buildFoodItem(
-                    PickupIcon.food(FoodType.special,
-                        size: context.scaled(22)),
-                    l10n.poPts50),
+                Center(
+                  child: Semantics(
+                    header: true,
+                    child: LBCellText(l10n.lbPauseTitle, cell: 11 * context.uiScale, glow: true),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  l10n.lbPauseLine,
+                  textAlign: TextAlign.center,
+                  style: LBText.body(p, color: p.ink.withValues(alpha: .7), size: 13),
+                ),
+                SizedBox(height: cell * 1.6),
+                LBBlock(
+                  kind: LBBlockKind.fill,
+                  height: cell * 3.6,
+                  alignment: Alignment.center,
+                  semanticLabel: l10n.lbResume,
+                  onTap: _startResume,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(l10n.lbResume, style: LBText.button(p, color: p.onLime, size: 17).copyWith(letterSpacing: 4)),
+                      const SizedBox(height: 6),
+                      Text(l10n.lbResumeSub, style: LBText.label(p, color: p.onLime.withValues(alpha: .65))),
+                    ],
+                  ),
+                ),
+                _PauseRow(
+                  title: l10n.lbRestart,
+                  aside: l10n.lbRestartSub,
+                  onTap: widget.onRestart,
+                ),
+                _PauseRow(
+                  title: l10n.lbPauseSettings,
+                  aside: l10n.lbPauseSettingsSub,
+                  onTap: () => _openSettings(context),
+                ),
+                _PauseRow(
+                  title: l10n.lbQuit,
+                  aside: l10n.lbQuitSub,
+                  kind: LBBlockKind.danger,
+                  onTap: widget.onHome,
+                ),
+                // A downloaded Play update waiting for a restart. Only ever
+                // visible once the download has landed.
+                ValueListenableBuilder<bool>(
+                  valueListenable: InAppUpdateService().updateReadyToInstall,
+                  builder: (context, ready, _) => ready
+                      ? _PauseRow(
+                          title: l10n.poUpdateReady,
+                          kind: LBBlockKind.gold,
+                          onTap: () => InAppUpdateService().completeUpdate(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                if (gs != null) ...[
+                  SizedBox(height: cell),
+                  Text(
+                    l10n.lbPauseSoFar(
+                      context.formatInt(gs.score),
+                      '${gs.snake.length}',
+                      _elapsed(gs),
+                    ),
+                    textAlign: TextAlign.center,
+                    style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10),
+                  ),
+                ],
+                SizedBox(height: cell * .8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _TextLink(label: l10n.poStore, onTap: () => context.push(AppRoutes.store)),
+                    Text('  ·  ', style: LBText.label(p, color: p.inkDim)),
+                    _TextLink(
+                      label: l10n.lbGoPro,
+                      color: LB.gold,
+                      onTap: () => context.push(AppRoutes.premiumBenefits),
+                    ),
+                  ],
+                ),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            // COMBO
-            _buildGuideSubheader(l10n.poComboUpper),
-            const SizedBox(height: 4),
-            _buildGuideRow('🔥', l10n.poBites5, '1.5×'),
-            _buildGuideRow('🔥', l10n.poBites10, '2×'),
-            _buildGuideRow('🔥', l10n.poBites20, '3×'),
-            const SizedBox(height: 2),
-            _buildGuideHint(l10n.poComboHint),
-
-            const SizedBox(height: 12),
-
-            // POWER-UPS
-            _buildGuideSubheader(l10n.poPowerUpsUpper),
-            const SizedBox(height: 4),
-            _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.speedBoost,
-                    size: context.scaled(15)),
-                PowerUpType.speedBoost.localizedName(l10n),
-                l10n.poDur7s),
-            _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.invincibility,
-                    size: context.scaled(15)),
-                PowerUpType.invincibility.localizedName(l10n),
-                l10n.poDur6s),
-            _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.scoreMultiplier,
-                    size: context.scaled(15)),
-                l10n.poScore2x,
-                l10n.poDur10s),
-            _buildGuideRowIcon(
-                PickupIcon.powerUp(PowerUpType.slowMotion,
-                    size: context.scaled(15)),
-                PowerUpType.slowMotion.localizedName(l10n),
-                l10n.poDur8s),
-            const SizedBox(height: 2),
-            _buildGuideHint(l10n.poPowerUpHint),
-
-            const SizedBox(height: 12),
-
-            // CRASH FEEDBACK
-            _buildGuideSubheader(l10n.poCrashUpper),
-            const SizedBox(height: 4),
-            _buildGuideHint(l10n.poCrashHint),
-
-            const SizedBox(height: 12),
-
-            // MODES
-            _buildGuideSubheader(l10n.poModesUpper),
-            const SizedBox(height: 4),
-            _buildGuideRow(
-                '🐍', GameMode.classic.localizedName(l10n), l10n.poModeWallsOn),
-            _buildGuideRow(
-                '🌿', GameMode.zen.localizedName(l10n), l10n.poModeWallsOff),
-            _buildGuideRow('⚡', GameMode.speedChallenge.localizedName(l10n),
-                l10n.poModeFastTick),
-            _buildGuideRow('🍎', GameMode.multiFood.localizedName(l10n),
-                l10n.poModeThreeFoods),
-            _buildGuideRow('❤️', GameMode.survival.localizedName(l10n),
-                l10n.poModeThreeLives),
-            _buildGuideRow('⏱', GameMode.timeAttack.localizedName(l10n),
-                l10n.poModeThreeMin),
-            _buildGuideRow('🎆', GameMode.powerUpMadness.localizedName(l10n),
-                l10n.poModeFrequentPowerUps),
-            _buildGuideRow('💎', GameMode.perfectGame.localizedName(l10n),
-                l10n.poModeDontCross),
-          ],
+          ),
         ),
-      ),
-    ).gameEntrance(delay: 180.ms);
-  }
+      );
+    }
 
-  Widget _buildGuideSubheader(String label) {
-    return Text(
-      label,
-      style: TextStyle(
-        color: theme.accentColor.withValues(alpha: 0.65),
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
-        letterSpacing: context.letterSpacing(1.4),
+    // Blur the board behind the overlay so the pause visibly disengages the
+    // world while it stays faintly readable underneath.
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+      child: ColoredBox(
+        color: p.board.withValues(alpha: .78),
+        child: SafeArea(child: content),
       ),
     );
   }
 
-  Widget _buildGuideRow(String emoji, String label, String value) {
-    return _buildGuideRowIcon(
-      Text(emoji, style: const TextStyle(fontSize: 12)),
-      label,
-      value,
-    );
+  static String _elapsed(GameState gs) {
+    final start = gs.gameStartTime;
+    if (start == null) return '0:00';
+    final d = (gs.pausedAt ?? DateTime.now()).difference(start);
+    final s = d.inSeconds < 0 ? 0 : d.inSeconds;
+    return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
   }
 
-  /// Guide row with a widget icon — used for the pickup rows so they show
-  /// the same sprite art as the board.
-  Widget _buildGuideRowIcon(Widget icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.5),
+  void _openSettings(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showLBSheet<void>(
+      context: context,
+      title: l10n.lbPauseSettings,
+      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
+        builder: (context, settings) {
+          final cubit = context.read<GameSettingsCubit>();
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LBSectionLabel(l10n.lbControls),
+                Row(
+                  children: [
+                    for (final (label, sub, on, apply) in [
+                      (l10n.lbCtrlSwipe, l10n.lbCtrlSwipeSub, !settings.dPadEnabled, () => cubit.setDPadEnabled(false)),
+                      (
+                        l10n.lbCtrlDpad,
+                        l10n.lbCtrlDpadSub,
+                        settings.dPadEnabled && settings.controlLayout == ControlLayout.dPad,
+                        () {
+                          cubit.setDPadEnabled(true);
+                          cubit.setControlLayout(ControlLayout.dPad);
+                        },
+                      ),
+                      (
+                        l10n.lbCtrlTurn,
+                        l10n.lbCtrlTurnSub,
+                        settings.dPadEnabled && settings.controlLayout == ControlLayout.turnButtons,
+                        () {
+                          cubit.setDPadEnabled(true);
+                          cubit.setControlLayout(ControlLayout.turnButtons);
+                        },
+                      ),
+                      (
+                        l10n.lbCtrlStick,
+                        l10n.lbCtrlStickSub,
+                        settings.dPadEnabled && settings.controlLayout == ControlLayout.joystick,
+                        () {
+                          cubit.setDPadEnabled(true);
+                          cubit.setControlLayout(ControlLayout.joystick);
+                        },
+                      ),
+                    ])
+                      Expanded(
+                        child: LBControlChoice(title: label, subtitle: sub, selected: on, onTap: apply),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                LBRow(
+                  title: settings.snapMovementEnabled ? l10n.poSnapOn : l10n.poSnapOff,
+                  trailing: LBToggle(
+                    value: settings.snapMovementEnabled,
+                    onChanged: cubit.setSnapMovementEnabled,
+                  ),
+                  onTap: () => cubit.setSnapMovementEnabled(!settings.snapMovementEnabled),
+                ),
+                LBRow(
+                  title: l10n.lbSoundFx,
+                  subtitle: l10n.lbSoundFxSub,
+                  trailing: LBToggle(value: settings.soundEnabled, onChanged: cubit.setSoundEnabled),
+                  onTap: () => cubit.setSoundEnabled(!settings.soundEnabled),
+                ),
+                LBRow(
+                  title: l10n.lbMusic,
+                  trailing: LBToggle(value: settings.musicEnabled, onChanged: cubit.setMusicEnabled),
+                  onTap: () => cubit.setMusicEnabled(!settings.musicEnabled),
+                ),
+                if (widget.onShowTutorial != null)
+                  LBRow(
+                    title: l10n.poHowToPlay,
+                    leading: const LBPixelIcon(LBIcon.eye, cell: 3.6),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      widget.onShowTutorial!();
+                    },
+                  ),
+                LBRow(
+                  title: l10n.poGameGuide,
+                  leading: const LBPixelIcon(LBIcon.grid, cell: 3.6),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.push(AppRoutes.instructions);
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PauseRow extends StatelessWidget {
+  const _PauseRow({
+    required this.title,
+    required this.onTap,
+    this.aside,
+    this.kind = LBBlockKind.outline,
+  });
+
+  final String title;
+  final String? aside;
+  final VoidCallback onTap;
+  final LBBlockKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    final fg = LBBlock.foregroundOf(kind, p);
+    return LBBlock(
+      kind: kind,
+      height: context.lbCell * 3,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
         children: [
-          // Slot scales with the icon it holds (icons are context.scaled
-          // at the call sites for tablet parity).
-          SizedBox(width: context.scaled(16), child: Center(child: icon)),
-          const SizedBox(width: 6),
           Expanded(
             child: Text(
-              label,
-              style: TextStyle(
-                color: theme.accentColor.withValues(alpha: 0.85),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2.4),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: theme.foodColor,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          if (aside != null)
+            Text(aside!, style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildGuideHint(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: theme.accentColor.withValues(alpha: 0.55),
-        fontSize: 10,
-        height: 1.3,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
+class _TextLink extends StatelessWidget {
+  const _TextLink({required this.label, required this.onTap, this.color});
 
-  Widget _buildFoodItem(Widget icon, String points) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        icon,
-        const SizedBox(height: 2),
-        Text(
-          points,
-          style: TextStyle(
-            color: theme.foodColor,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            LBFeedback.tap();
+            onTap();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+            child: Text(
+              label.toUpperCase(),
+              style: LBText.label(context.lb, color: color ?? context.lb.inkMuted).copyWith(
+                fontSize: 10,
+                decoration: TextDecoration.underline,
+                decorationColor: (color ?? context.lb.inkMuted).withValues(alpha: .5),
+              ),
+            ),
           ),
         ),
-      ],
-    );
-  }
+      );
+}
 
-  Widget _buildStoreButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required List<Color> colors,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: colors.map((c) => c.withValues(alpha: 0.2)).toList(),
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: colors.first.withValues(alpha: 0.4),
-            width: 1,
-          ),
-        ),
-        child: Row(
+/// A control-layout choice block (SWIPE / D-PAD / TURN / STICK). Shared by
+/// the pause settings sheet and the Settings screen.
+class LBControlChoice extends StatelessWidget {
+  const LBControlChoice({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    final kind = selected ? LBBlockKind.fill : LBBlockKind.outline;
+    final fg = LBBlock.foregroundOf(kind, p);
+    return Semantics(
+      selected: selected,
+      child: LBBlock(
+        kind: kind,
+        height: context.lbCell * 3.5,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        alignment: Alignment.center,
+        onTap: onTap,
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: colors.first, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: colors.first,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(title, style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: 1.6)),
+            ),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(subtitle, style: LBText.body(p, color: fg.withValues(alpha: .7), size: 10.5)),
             ),
           ],
         ),

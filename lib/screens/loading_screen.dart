@@ -22,7 +22,6 @@ import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
-import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 

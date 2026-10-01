@@ -30,7 +30,6 @@ import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
-import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -443,7 +442,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _loadHomeReadouts() async {
     try {
-      final info = await LeaderboardService().getCacheInfo(LeaderboardBoardType.global);
+      final info = await LeaderboardService().getCacheInfo(
+        LeaderboardBoardType.global,
+      );
       final rank = info?['currentUserRank'] as int?;
       if (mounted && rank != _globalRank) setState(() => _globalRank = rank);
     } catch (e) {
@@ -500,7 +501,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           body: LBGridBackground(
             child: LayoutBuilder(
-              builder: (context, constraints) => _buildBoard(context, constraints),
+              builder: (context, constraints) =>
+                  _buildBoard(context, constraints),
             ),
           ),
         ),
@@ -571,7 +573,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final modeIndex = modes.indexOf(settings.gameMode);
 
     // ── Snake: loop one cell outside PLAY, clockwise from the top-left ──
-    final ringL = playC0 - 1, ringR = playC0 + playW, ringT = playR0 - 1, ringB = playR0 + 4;
+    final ringL = playC0 - 1,
+        ringR = playC0 + playW,
+        ringT = playR0 - 1,
+        ringB = playR0 + 4;
     final loop = <HomeCell>[
       for (var x = ringL; x <= ringR; x++) (x, ringT),
       for (var y = ringT + 1; y <= ringB; y++) (ringR, y),
@@ -579,17 +584,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       for (var y = ringB - 1; y > ringT; y--) (ringL, y),
     ];
     final half = contentCols / 2;
-    final tiles = <String>['versus', 'daily', 'season', 'ranks', 'store', 'profile'];
+    final tiles = <String>[
+      'versus',
+      'daily',
+      'season',
+      'ranks',
+      'store',
+      'profile',
+    ];
     Rect tileRect(int i) {
       final col = i % 2, row = i ~/ 2;
-      return r(c0 + (col == 0 ? 0 : half), tilesTop + row * 3, col == 0 ? half : contentCols - half, 3);
+      return r(
+        c0 + (col == 0 ? 0 : half),
+        tilesTop + row * 3,
+        col == 0 ? half : contentCols - half,
+        3,
+      );
     }
 
     final targets = <HomeSnakeTarget>[
       HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + 4),
       HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + 1),
-      HomeSnakeTarget('best', c0, bestLabelRow, c0 + contentCols, bestRow + bestRows),
-      HomeSnakeTarget('menu', c0 + contentCols - 2, headerRow, c0 + contentCols, headerRow + 2),
+      HomeSnakeTarget(
+        'best',
+        c0,
+        bestLabelRow,
+        c0 + contentCols,
+        bestRow + bestRows,
+      ),
+      HomeSnakeTarget(
+        'menu',
+        c0 + contentCols - 2,
+        headerRow,
+        c0 + contentCols,
+        headerRow + 2,
+      ),
       HomeSnakeTarget('setup', c0, modeBarRow, c0 + contentCols, modeRow + 1),
       for (var i = 0; i < tiles.length; i++)
         HomeSnakeTarget(
@@ -623,7 +652,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Positioned.fromRect(
             rect: r(c0, headerRow, contentCols - 2, 2),
             child: _HomeHeader(
-              greeting: l10n.lbHomeGreeting(context.watch<AuthCubit>().state.publicLabel),
+              greeting: l10n.lbHomeGreeting(
+                context.watch<AuthCubit>().state.publicLabel,
+              ),
               onMark: () => showCreditsDialog(
                 context,
                 context.read<ThemeCubit>().state.currentTheme,
@@ -648,7 +679,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Expanded(
                   child: Text(
                     l10n.lbYourBest,
-                    style: LBText.label(p, color: LB.gold.withValues(alpha: .8)).copyWith(fontSize: 10.5),
+                    style: LBText.label(
+                      p,
+                      color: LB.gold.withValues(alpha: .8),
+                    ).copyWith(fontSize: 10.5),
                   ),
                 ),
                 BlocBuilder<CoinsCubit, CoinsState>(
@@ -686,7 +720,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Daily nag strip.
           Positioned.fromRect(
             rect: r(c0, stripRow, contentCols, 1),
-            child: _DailyStrip(onTap: () => context.push(AppRoutes.dailyChallenges)),
+            child: _DailyStrip(
+              onTap: () => context.push(AppRoutes.dailyChallenges),
+            ),
           ),
 
           // PLAY — the one loud thing.
@@ -697,20 +733,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               kind: LBBlockKind.fill,
               padding: EdgeInsets.zero,
               alignment: Alignment.center,
-              semanticLabel: '${l10n.lbPlay}, ${settings.gameMode.localizedName(l10n)}',
+              semanticLabel:
+                  '${l10n.lbPlay}, ${settings.gameMode.localizedName(l10n)}',
               onTap: () => _startGame(context),
               onLongPress: () => context.push(AppRoutes.runSetup),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  LBCellText(l10n.lbPlay, cell: 7 * context.uiScale, color: p.onLime),
+                  LBCellText(
+                    l10n.lbPlay,
+                    cell: 7 * context.uiScale,
+                    color: p.onLime,
+                  ),
                   SizedBox(height: 8 * context.uiScale),
                   Text(
                     l10n.lbModeBoard(
                       settings.gameMode.localizedName(l10n).toUpperCase(),
                       settings.boardSize.id.replaceAll('x', '×'),
                     ),
-                    style: LBText.label(p, color: p.onLime.withValues(alpha: .7)),
+                    style: LBText.label(
+                      p,
+                      color: p.onLime.withValues(alpha: .7),
+                    ),
                   ),
                 ],
               ),
@@ -736,11 +780,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 settings.gameMode.localizedName(l10n).toUpperCase(),
               ),
               onPrev: () => context.read<GameSettingsCubit>().setGameMode(
-                    modes[(modeIndex - 1 + modes.length) % modes.length],
-                  ),
+                modes[(modeIndex - 1 + modes.length) % modes.length],
+              ),
               onNext: () => context.read<GameSettingsCubit>().setGameMode(
-                    modes[(modeIndex + 1) % modes.length],
-                  ),
+                modes[(modeIndex + 1) % modes.length],
+              ),
               onOpen: () => context.push(AppRoutes.runSetup),
             ),
           ),
@@ -757,7 +801,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Destinations.
           for (var i = 0; i < tiles.length; i++)
-            Positioned.fromRect(rect: tileRect(i), child: _tile(context, tiles[i])),
+            Positioned.fromRect(
+              rect: tileRect(i),
+              child: _tile(context, tiles[i]),
+            ),
 
           if (showHint)
             Positioned.fromRect(
@@ -767,7 +814,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   l10n.lbHomeHint,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 8.5),
+                  style: LBText.label(
+                    p,
+                    color: p.inkDim,
+                  ).copyWith(fontSize: 8.5),
                 ),
               ),
             ),
@@ -837,12 +887,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .where((c) => !c.claimedReward)
             .fold<int>(0, (sum, c) => sum + c.coinReward);
         final now = DateTime.now();
-        final reset = DateTime(now.year, now.month, now.day + 1).difference(now);
+        final reset = DateTime(
+          now.year,
+          now.month,
+          now.day + 1,
+        ).difference(now);
         return _HomeTile(
           key: HomeWalkthrough.dailyChallengesKey,
           icon: LBIcon.calendar,
-          title: l10n.lbHomeDaily('${daily.completedCount}', '${daily.totalCount}'),
-          subtitle: l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft)),
+          title: l10n.lbHomeDaily(
+            '${daily.completedCount}',
+            '${daily.totalCount}',
+          ),
+          subtitle: l10n.lbHomeDailySub(
+            _hm(reset),
+            context.formatInt(coinsLeft),
+          ),
           kind: claimable ? LBBlockKind.gold : LBBlockKind.outline,
           onTap: go,
         );
@@ -885,7 +945,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: l10n.lbHomeProfile,
             subtitle: l10n.lbHomeProfileSub(
               '${ProgressionService().level}',
-              context.formatInt(StatisticsService().statistics.totalGamesPlayed),
+              context.formatInt(
+                StatisticsService().statistics.totalGamesPlayed,
+              ),
             ),
             onTap: go,
           ),
@@ -893,7 +955,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  static String _hm(Duration d) => '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+  static String _hm(Duration d) =>
+      '${d.inHours}h ${d.inMinutes.remainder(60)}m';
 
   void _openMenu(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1085,24 +1148,35 @@ class _HomeHeader extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SNAKE CLASSIC',
-                maxLines: 1,
-                style: LBText.button(p, color: p.lime, size: 13).copyWith(letterSpacing: 3),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                greeting,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: LBText.body(p, color: p.ink.withValues(alpha: .75), size: 10.5)
-                    .copyWith(height: 1.25),
-              ),
-            ],
+          // Two rows of grid, so the type is fixed rather than scaled.
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.0,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SNAKE CLASSIC',
+                  maxLines: 1,
+                  style: LBText.button(
+                    p,
+                    color: p.lime,
+                    size: 12.5,
+                  ).copyWith(letterSpacing: 3, height: 1.15),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  greeting,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.body(
+                    p,
+                    color: p.ink.withValues(alpha: .75),
+                    size: 10,
+                  ).copyWith(height: 1.15),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -1175,14 +1249,22 @@ class _DailyStrip extends ConsumerWidget {
       onTap: onTap,
       child: Row(
         children: [
-          const LBPixelIcon(LBIcon.flame, cell: 2.6, color: LB.gold, accent: LB.bonk),
+          const LBPixelIcon(
+            LBIcon.flame,
+            cell: 2.6,
+            color: LB.gold,
+            accent: LB.bonk,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LBText.label(p, color: LB.gold).copyWith(fontSize: 9.5, letterSpacing: 1.6),
+              style: LBText.label(
+                p,
+                color: LB.gold,
+              ).copyWith(fontSize: 9.5, letterSpacing: 1.6),
             ),
           ),
           Text('→', style: LBText.label(p, color: LB.gold)),
@@ -1208,7 +1290,8 @@ class _ModeCycler extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.lb;
     final style = LBText.label(p, color: p.inkMuted).copyWith(fontSize: 10.5);
-    Widget arrow(String glyph, VoidCallback onTap, String semantic) => Semantics(
+    Widget arrow(String glyph, VoidCallback onTap, String semantic) =>
+        Semantics(
           button: true,
           label: semantic,
           child: GestureDetector(
@@ -1217,13 +1300,22 @@ class _ModeCycler extends StatelessWidget {
               LBFeedback.tap();
               onTap();
             },
-            child: SizedBox(width: 44, child: Center(child: Text(glyph, style: style.copyWith(fontSize: 14)))),
+            child: SizedBox(
+              width: 44,
+              child: Center(
+                child: Text(glyph, style: style.copyWith(fontSize: 14)),
+              ),
+            ),
           ),
         );
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        arrow('‹', onPrev, MaterialLocalizations.of(context).previousPageTooltip),
+        arrow(
+          '‹',
+          onPrev,
+          MaterialLocalizations.of(context).previousPageTooltip,
+        ),
         Flexible(
           child: Semantics(
             button: true,
@@ -1233,7 +1325,12 @@ class _ModeCycler extends StatelessWidget {
                 LBFeedback.tap();
                 onOpen();
               },
-              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style,
+              ),
             ),
           ),
         ),
@@ -1252,14 +1349,17 @@ class _HomeChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+    final adsOn =
+        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
     return BlocBuilder<PowerUpCubit, PowerUpState>(
       builder: (context, state) {
         final armed = state.armed;
         final children = <Widget>[
           if (armed != null)
             _ChipButton(
-              label: l10n.lbArmedChip(loadoutLabelFor(l10n, armed).toUpperCase()),
+              label: l10n.lbArmedChip(
+                loadoutLabelFor(l10n, armed).toUpperCase(),
+              ),
               icon: LBIcon.bolt,
               kind: LBChipKind.outline,
               onTap: onArmed,
@@ -1274,7 +1374,12 @@ class _HomeChips extends StatelessWidget {
         ];
         if (children.isEmpty) return const SizedBox.shrink();
         return Center(
-          child: Wrap(spacing: 8, runSpacing: 6, alignment: WrapAlignment.center, children: children),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: children,
+          ),
         );
       },
     );
@@ -1282,7 +1387,12 @@ class _HomeChips extends StatelessWidget {
 }
 
 class _ChipButton extends StatelessWidget {
-  const _ChipButton({required this.label, required this.icon, required this.kind, required this.onTap});
+  const _ChipButton({
+    required this.label,
+    required this.icon,
+    required this.kind,
+    required this.onTap,
+  });
 
   final String label;
   final LBIcon icon;
@@ -1291,19 +1401,19 @@ class _ChipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        button: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            LBFeedback.tap();
-            onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: LBChip(label: label, icon: icon, kind: kind, height: 26),
-          ),
-        ),
-      );
+    button: true,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        LBFeedback.tap();
+        onTap();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: LBChip(label: label, icon: icon, kind: kind, height: 26),
+      ),
+    ),
+  );
 }
 
 /// One destination block: icon + title, subtitle beneath.
@@ -1345,7 +1455,11 @@ class _HomeTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2),
+                  style: LBText.button(
+                    p,
+                    color: fg,
+                    size: 14,
+                  ).copyWith(letterSpacing: 2),
                 ),
               ),
             ],
@@ -1355,7 +1469,11 @@ class _HomeTile extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: LBText.body(p, color: p.ink.withValues(alpha: .62), size: 10.5),
+            style: LBText.body(
+              p,
+              color: p.ink.withValues(alpha: .62),
+              size: 10.5,
+            ),
           ),
         ],
       ),
@@ -1365,7 +1483,8 @@ class _HomeTile extends StatelessWidget {
 
 /// Localized name of a loadout inventory key. Shared with the run setup
 /// screen.
-String loadoutLabelFor(AppLocalizations l10n, String inventoryKey) => switch (inventoryKey) {
+String loadoutLabelFor(AppLocalizations l10n, String inventoryKey) =>
+    switch (inventoryKey) {
       'speed_boost' => l10n.puSpeedBoost,
       'invincibility' => l10n.puInvincibility,
       'score_multiplier' => l10n.puScoreMultiplier,

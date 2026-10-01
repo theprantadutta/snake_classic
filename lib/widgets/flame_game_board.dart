@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -93,6 +94,8 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                     initialSnapMovement: snapMovement,
                   );
                 }
+                _game.ghostScoreLabel =
+                    AppLocalizations.of(context)!.lbScoreLabel;
                 _game.syncState(
                   cubitState,
                   themeState.currentTheme,

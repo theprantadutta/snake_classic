@@ -46,9 +46,9 @@ class RunSetupScreen extends StatelessWidget {
           _TwoColumn(
             children: [
               for (final mode in GameMode.values)
-                _ChoiceBlock(
+                LBChoiceBlock(
                   title: mode.localizedName(l10n),
-                  line: _modeLine(l10n, mode),
+                  line: modeLine(l10n, mode),
                   selected: settings.gameMode == mode,
                   onTap: () {
                     cubit.setGameMode(mode);
@@ -102,7 +102,7 @@ class RunSetupScreen extends StatelessWidget {
             children: [
               for (final d in Difficulty.values)
                 Expanded(
-                  child: _ChoiceBlock(
+                  child: LBChoiceBlock(
                     title: d.localizedLabel(l10n),
                     line: switch (d) {
                       Difficulty.easy => l10n.lbDiffEasyLine,
@@ -209,7 +209,8 @@ class RunSetupScreen extends StatelessWidget {
     context.push(AppRoutes.playLoading);
   }
 
-  static String _modeLine(AppLocalizations l10n, GameMode mode) => switch (mode) {
+  /// The Living Board one-liner for a mode (COPY.md "Mode one-liners").
+  static String modeLine(AppLocalizations l10n, GameMode mode) => switch (mode) {
         GameMode.classic => l10n.lbModeLineClassic,
         GameMode.zen => l10n.lbModeLineZen,
         GameMode.speedChallenge => l10n.lbModeLineSpeed,
@@ -251,63 +252,6 @@ class _TwoColumn extends StatelessWidget {
       ));
     }
     return Column(children: rows);
-  }
-}
-
-/// A selectable block: uppercase title + one-liner. Selected = lime fill.
-class _ChoiceBlock extends StatelessWidget {
-  const _ChoiceBlock({
-    required this.title,
-    required this.line,
-    required this.selected,
-    required this.onTap,
-    this.centered = false,
-  });
-
-  final String title;
-  final String line;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool centered;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.lb;
-    final kind = selected ? LBBlockKind.fill : LBBlockKind.outline;
-    final fg = LBBlock.foregroundOf(kind, p);
-    return Semantics(
-      selected: selected,
-      child: LBBlock(
-        kind: kind,
-        height: context.lbCell * 3.5,
-        onTap: onTap,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: centered ? Alignment.center : AlignmentDirectional.centerStart,
-              child: Text(
-                title.toUpperCase(),
-                maxLines: 1,
-                style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: 1.8),
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              line,
-              maxLines: 2,
-              textAlign: centered ? TextAlign.center : TextAlign.start,
-              overflow: TextOverflow.ellipsis,
-              style: LBText.body(p, color: fg.withValues(alpha: selected ? .75 : .6), size: 10.5)
-                  .copyWith(height: 1.25),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
