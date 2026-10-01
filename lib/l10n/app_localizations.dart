@@ -11587,7 +11587,7 @@ abstract class AppLocalizations {
   /// Home Season block subtitle
   ///
   /// In en, this message translates to:
-  /// **'Tier {tier} · {days} days left'**
+  /// **'Tier {tier} · {days, plural, =1{1 day left} other{{days} days left}}'**
   String lbHomeSeasonSub(String tier, int days);
 
   /// Home block (leaderboard)
@@ -11617,7 +11617,7 @@ abstract class AppLocalizations {
   /// Home Store block subtitle
   ///
   /// In en, this message translates to:
-  /// **'Skins · themes · trails'**
+  /// **'Skins, themes, trails'**
   String get lbHomeStoreSub;
 
   /// Home block
@@ -11632,10 +11632,10 @@ abstract class AppLocalizations {
   /// **'LV {level} · {runs} runs'**
   String lbHomeProfileSub(String level, String runs);
 
-  /// Accessibility label of the home menu button
+  /// Home menu button and sheet title
   ///
   /// In en, this message translates to:
-  /// **'Menu'**
+  /// **'MENU'**
   String get lbHomeMenu;
 
   /// Home rewarded button: watch an ad for a free power-up
@@ -11751,12 +11751,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'LOADOUT'**
   String get lbSetupLoadout;
-
-  /// Aside next to the loadout label
-  ///
-  /// In en, this message translates to:
-  /// **'{armed} OF {total} ARMED'**
-  String lbSetupLoadoutArmed(String armed, String total);
 
   /// Loadout slot with none owned: opens the store
   ///
@@ -12463,7 +12457,7 @@ abstract class AppLocalizations {
   /// Battle pass subtitle
   ///
   /// In en, this message translates to:
-  /// **'{season} · {days} days left. Make them count.'**
+  /// **'{season} · {days, plural, =1{1 day left} other{{days} days left}}. Make them count.'**
   String lbSeasonSubtitle(String season, int days);
 
   /// Battle pass subtitle after the season ends
@@ -13587,6 +13581,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No rival found. The house snake is warming up.'**
   String get lbMatchTimeout;
+
+  /// Home Versus block subtitle when the rating is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'1v1 · real rivals'**
+  String get lbHomeVersusSubOffline;
+
+  /// Home Season block subtitle when no season is active
+  ///
+  /// In en, this message translates to:
+  /// **'Earn XP every run'**
+  String get lbHomeSeasonSubNone;
+
+  /// Menu item
+  ///
+  /// In en, this message translates to:
+  /// **'HOW TO PLAY'**
+  String get lbMenuHowToPlay;
+
+  /// Menu item
+  ///
+  /// In en, this message translates to:
+  /// **'TOURNAMENTS'**
+  String get lbMenuTournaments;
+
+  /// Menu item: version and credits
+  ///
+  /// In en, this message translates to:
+  /// **'ABOUT'**
+  String get lbMenuAbout;
+
+  /// Menu item subline
+  ///
+  /// In en, this message translates to:
+  /// **'swipes, modes, power-ups'**
+  String get lbMenuHowToPlaySub;
+
+  /// Menu item subline
+  ///
+  /// In en, this message translates to:
+  /// **'version, credits, legal'**
+  String get lbMenuAboutSub;
+
+  /// Aside next to the loadout label when nothing is armed; one power-up can be armed per run
+  ///
+  /// In en, this message translates to:
+  /// **'TAP ONE TO ARM'**
+  String get lbSetupLoadoutNone;
+
+  /// Aside next to the loadout label: the armed power-up
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ARMED'**
+  String lbSetupLoadoutArmedOne(String name);
+
+  /// Number of a power-up owned
+  ///
+  /// In en, this message translates to:
+  /// **'×{count}'**
+  String lbOwnedCount(String count);
+
+  /// Home chip showing the power-up armed for the next run
+  ///
+  /// In en, this message translates to:
+  /// **'ARMED · {name}'**
+  String lbArmedChip(String name);
 }
 
 class _AppLocalizationsDelegate

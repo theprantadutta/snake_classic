@@ -28,6 +28,7 @@ import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/replay_viewer_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/run_setup_screen.dart';
 import 'package:snake_classic/screens/route_error_screen.dart';
 import 'package:snake_classic/screens/settings_screen.dart';
 import 'package:snake_classic/screens/statistics_screen.dart';
@@ -322,6 +323,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       },
     ),
 
+    GoRoute(
+      path: AppRoutes.runSetup,
+      name: 'runSetup',
+      pageBuilder: (context, state) =>
+          _zoomPage(state, const RunSetupScreen()),
+    ),
     if (kDebugMode)
       GoRoute(
         path: AppRoutes.lbGallery,

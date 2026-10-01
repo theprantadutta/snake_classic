@@ -6494,7 +6494,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String lbHomeSeasonSub(String tier, int days) {
-    return 'Tier $tier · $days days left';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+    );
+    return 'Tier $tier · $_temp0';
   }
 
   @override
@@ -6514,7 +6520,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lbHomeStore => 'STORE';
 
   @override
-  String get lbHomeStoreSub => 'Skins · themes · trails';
+  String get lbHomeStoreSub => 'Skins, themes, trails';
 
   @override
   String get lbHomeProfile => 'PROFILE';
@@ -6525,7 +6531,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get lbHomeMenu => 'Menu';
+  String get lbHomeMenu => 'MENU';
 
   @override
   String get lbFreePowerUp => 'FREE POWER-UP · AD';
@@ -6591,11 +6597,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lbSetupLoadout => 'LOADOUT';
-
-  @override
-  String lbSetupLoadoutArmed(String armed, String total) {
-    return '$armed OF $total ARMED';
-  }
 
   @override
   String get lbSetupGet => 'GET';
@@ -7033,7 +7034,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String lbSeasonSubtitle(String season, int days) {
-    return '$season · $days days left. Make them count.';
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+    );
+    return '$season · $_temp0. Make them count.';
   }
 
   @override
@@ -7685,4 +7692,43 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lbMatchTimeout => 'No rival found. The house snake is warming up.';
+
+  @override
+  String get lbHomeVersusSubOffline => '1v1 · real rivals';
+
+  @override
+  String get lbHomeSeasonSubNone => 'Earn XP every run';
+
+  @override
+  String get lbMenuHowToPlay => 'HOW TO PLAY';
+
+  @override
+  String get lbMenuTournaments => 'TOURNAMENTS';
+
+  @override
+  String get lbMenuAbout => 'ABOUT';
+
+  @override
+  String get lbMenuHowToPlaySub => 'swipes, modes, power-ups';
+
+  @override
+  String get lbMenuAboutSub => 'version, credits, legal';
+
+  @override
+  String get lbSetupLoadoutNone => 'TAP ONE TO ARM';
+
+  @override
+  String lbSetupLoadoutArmedOne(String name) {
+    return '$name ARMED';
+  }
+
+  @override
+  String lbOwnedCount(String count) {
+    return '×$count';
+  }
+
+  @override
+  String lbArmedChip(String name) {
+    return 'ARMED · $name';
+  }
 }

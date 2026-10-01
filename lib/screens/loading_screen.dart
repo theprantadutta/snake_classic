@@ -24,7 +24,6 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/logger.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
 class LoadingScreen extends StatefulWidget {

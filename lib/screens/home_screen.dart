@@ -3,10 +3,19 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/home/lb_home_snake.dart';
+import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/services/leaderboard_service.dart';
+import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/progression_service.dart';
+import 'package:snake_classic/services/statistics_service.dart';
+import 'package:snake_classic/l10n/enum_l10n.dart';
+import 'package:snake_classic/data/daos/leaderboard_dao.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
@@ -21,32 +30,21 @@ import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
-import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/formatting.dart';
 import 'package:snake_classic/utils/logger.dart';
-import 'package:snake_classic/utils/responsive.dart';
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
-import 'package:snake_classic/utils/typography.dart';
 import 'package:snake_classic/widgets/app_update_dialog.dart';
 import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
-import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
-import 'package:snake_classic/widgets/ads/rewarded_action_button.dart';
 import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
-import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/first_run_legal_notice.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/notification_permission_softask.dart';
-import 'package:snake_classic/widgets/player_progression.dart';
-import 'package:snake_classic/widgets/theme_transition_system.dart';
 import 'package:snake_classic/services/haptic_service.dart';
-import 'package:snake_classic/widgets/home/attract_board.dart';
-import 'package:snake_classic/widgets/home/home_arcade_bar.dart';
-import 'package:snake_classic/widgets/home/home_arcade_widgets.dart';
 import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
@@ -62,11 +60,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _logoController;
-  late AnimationController _playButtonPulseController;
-  late Animation<double> _playButtonPulseAnimation;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _dailyBonusChecked = false;
   bool _walkthroughChecked = false;
 
@@ -79,33 +73,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void initState() {
     super.initState();
-
-    _logoController = AnimationController(
-      duration: const Duration(milliseconds: 1500), // Reduced duration
-      vsync: this,
-    );
-
-    // Play button pulse animation - calm breathing
-    _playButtonPulseController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
-      vsync: this,
-    );
-    _playButtonPulseAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
-      CurvedAnimation(
-        parent: _playButtonPulseController,
-        curve: Curves.easeInOut,
-      ),
-    );
-    _playButtonPulseController.repeat(reverse: true);
-
-    // Theme transitions are handled by ThemeTransitionWidget directly
-
-    // Start logo animation with a slight delay
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _logoController.forward();
-      }
-    });
 
     // First-launch prompts (walkthrough, daily bonus, notification
     // soft-ask/primer) used to fire on independent timers and could
@@ -132,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // the outcome is a dialog rather than a Play-owned download. Runs on
       // Android too and returns immediately there.
       unawaited(_checkIosAppRelease());
+      unawaited(_loadHomeReadouts());
       _maybeOpenDebugRoute();
     });
   }
@@ -465,12 +433,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _logoController.dispose();
-    _playButtonPulseController.dispose();
-    super.dispose();
+  /// Global rank from the Drift leaderboard cache (offline-first; refreshed
+  /// by the leaderboard screen and sync). Null until a ranked run is cached.
+  int? _globalRank;
+
+  /// Versus rating, fetched once per session; null = unknown/offline.
+  static int? _versusRating;
+  static bool _versusRatingRequested = false;
+
+  Future<void> _loadHomeReadouts() async {
+    try {
+      final info = await LeaderboardService().getCacheInfo(LeaderboardBoardType.global);
+      final rank = info?['currentUserRank'] as int?;
+      if (mounted && rank != _globalRank) setState(() => _globalRank = rank);
+    } catch (e) {
+      AppLogger.warning('Home rank readout unavailable: $e');
+    }
+    if (_versusRatingRequested) return;
+    _versusRatingRequested = true;
+    try {
+      final record = await ApiService().getMultiplayerRecord();
+      final rating = (record?['rating'] as num?)?.toInt();
+      if (rating != null) {
+        _versusRating = rating;
+        if (mounted) setState(() {});
+      }
+    } catch (_) {
+      // Offline or signed out: the block falls back to its plain subtitle.
+    }
   }
+
+  final _snakeKey = GlobalKey<LBHomeSnakeState>();
+  Offset _panDelta = Offset.zero;
+  bool _panSteered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -487,466 +482,482 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       });
     }
 
-    return BlocBuilder<ThemeCubit, ThemeState>(
-      builder: (context, themeState) {
-        final theme = themeState.currentTheme;
+    final theme = context.watch<ThemeCubit>().state.currentTheme;
 
-        return BlocBuilder<AuthCubit, AuthState>(
-          builder: (context, authState) {
-            return BlocBuilder<GameCubit, GameCubitState>(
-              builder: (context, gameState) {
-                return Stack(
-                  children: [
-                    ThemeTransitionWidget(
-                      controller: ThemeTransitionController(vsync: this),
-                      currentTheme: theme,
-                      child: Scaffold(
-                        // The legal strip rides above the banner ad rather
-                        // than inside the scrolling body: it must stay visible
-                        // without the user hunting for it, and anchoring it
-                        // here keeps it out of the height math the play area
-                        // and nav grid do against `constraints`. Renders
-                        // nothing once acceptance is on file.
-                        bottomNavigationBar: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            UpdateReadyNotice(theme: theme),
-                            FirstRunLegalNotice(theme: theme),
-                            const SnakeBannerAd(),
-                          ],
-                        ),
-                        body: AppBackground(
-                          theme: theme,
-                          child: SafeArea(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final screenHeight = constraints.maxHeight;
+    return Stack(
+      children: [
+        Scaffold(
+          // The legal strip rides above the banner ad rather than inside the
+          // board: it must stay visible without the user hunting for it.
+          // Renders nothing once acceptance is on file.
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              UpdateReadyNotice(theme: theme),
+              FirstRunLegalNotice(theme: theme),
+              const LBBannerSlot(),
+            ],
+          ),
+          body: LBGridBackground(
+            child: LayoutBuilder(
+              builder: (context, constraints) => _buildBoard(context, constraints),
+            ),
+          ),
+        ),
+        if (walkthroughState.isActive && walkthroughState.currentStep != null)
+          WalkthroughOverlay(
+            step: walkthroughState.currentStep!,
+            theme: theme,
+            currentStepIndex: walkthroughState.currentStepIndex,
+            totalSteps: walkthroughState.steps.length,
+            onNext: () => ref.read(walkthroughProvider.notifier).next(),
+            onSkip: () => ref.read(walkthroughProvider.notifier).skip(),
+          ),
+      ],
+    );
+  }
 
-                                // Cap the home hub's content width on tablets
-                                // so it forms a centered column instead of
-                                // stretching edge-to-edge. Unbounded on phones,
-                                // so all the screenWidth-based math below is
-                                // unchanged there.
-                                final maxContentWidth = context
-                                    .responsive<double>(
-                                      phone: double.infinity,
-                                      tablet: ContentWidth.menuMaxWidth,
-                                      largeTablet: ContentWidth.menuMaxWidth,
-                                    );
-                                final screenWidth =
-                                    constraints.maxWidth > maxContentWidth
-                                    ? maxContentWidth
-                                    : constraints.maxWidth;
+  /// The home board (Living Board screen 02). Everything is placed on whole
+  /// grid cells in the body's own coordinates, so blocks line up with the
+  /// background grid and the snake can be steered into them cell by cell.
+  Widget _buildBoard(BuildContext context, BoxConstraints constraints) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
+    final w = constraints.maxWidth;
+    final h = constraints.maxHeight;
+    final cols = (w / cell).floor();
+    final rows = (h / cell).floor();
+    final x0 = (w - cols * cell) / 2;
 
-                                // Enhanced screen size detection with more granular breakpoints
-                                final isVerySmallScreen =
-                                    screenHeight < 600 || screenWidth < 350;
+    // Content columns: one cell of margin each side, capped to a centred
+    // column on tablets (no-op on phones).
+    final maxCols = context.isTablet
+        ? (ContentWidth.menuMaxWidth * context.uiScale / cell).floor()
+        : cols - 2;
+    final contentCols = math.min(cols - 2, maxCols);
+    final c0 = (cols - contentCols) ~/ 2;
+    Rect r(num col, num row, num cw, num ch) =>
+        Rect.fromLTWH(x0 + col * cell, row * cell, cw * cell, ch * cell);
 
-                                // Use a simple Column with proper constraints for better stability
-                                return _buildArcadeBody(
-                                  context: context,
-                                  authState: authState,
-                                  theme: theme,
-                                  screenWidth: screenWidth,
-                                  screenHeight: screenHeight,
-                                  isVerySmallScreen: isVerySmallScreen,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
+    // ── Vertical plan, top-down and bottom-up ──────────────────────────
+    final top = ((MediaQuery.paddingOf(context).top + 6) / cell).ceil();
+    var hintRow = rows - 2;
+    var tilesTop = hintRow - 9;
+    var bestRows = 5;
+    int needed() => top + 3 + 1 + bestRows + 1 + 6 + 2;
+    if (needed() > tilesTop) bestRows = 3;
+    var showHint = true;
+    if (needed() > tilesTop) {
+      showHint = false;
+      hintRow = rows;
+      tilesTop = rows - 9 - 1;
+    }
+
+    final headerRow = top;
+    final bestLabelRow = top + 3;
+    final bestRow = bestLabelRow + 1;
+    final stripRow = bestRow + bestRows;
+    final playW = (contentCols - 8).isEven ? 8 : 9;
+    final playC0 = c0 + (contentCols - playW) ~/ 2;
+    final playR0 = stripRow + 2;
+    final modeBarRow = playR0 + 4 + 1;
+    final modeRow = modeBarRow + 1;
+    final chipsRow = modeRow + 1;
+    final gapRows = tilesTop - chipsRow;
+
+    final settings = context.watch<GameSettingsCubit>().state;
+    final modes = GameMode.values;
+    final modeIndex = modes.indexOf(settings.gameMode);
+
+    // ── Snake: loop one cell outside PLAY, clockwise from the top-left ──
+    final ringL = playC0 - 1, ringR = playC0 + playW, ringT = playR0 - 1, ringB = playR0 + 4;
+    final loop = <HomeCell>[
+      for (var x = ringL; x <= ringR; x++) (x, ringT),
+      for (var y = ringT + 1; y <= ringB; y++) (ringR, y),
+      for (var x = ringR - 1; x >= ringL; x--) (x, ringB),
+      for (var y = ringB - 1; y > ringT; y--) (ringL, y),
+    ];
+    final half = contentCols / 2;
+    final tiles = <String>['versus', 'daily', 'season', 'ranks', 'store', 'profile'];
+    Rect tileRect(int i) {
+      final col = i % 2, row = i ~/ 2;
+      return r(c0 + (col == 0 ? 0 : half), tilesTop + row * 3, col == 0 ? half : contentCols - half, 3);
+    }
+
+    final targets = <HomeSnakeTarget>[
+      HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + 4),
+      HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + 1),
+      HomeSnakeTarget('best', c0, bestLabelRow, c0 + contentCols, bestRow + bestRows),
+      HomeSnakeTarget('menu', c0 + contentCols - 2, headerRow, c0 + contentCols, headerRow + 2),
+      HomeSnakeTarget('setup', c0, modeBarRow, c0 + contentCols, modeRow + 1),
+      for (var i = 0; i < tiles.length; i++)
+        HomeSnakeTarget(
+          tiles[i],
+          c0 + (i.isEven ? 0 : half.floor()),
+          tilesTop + (i ~/ 2) * 3,
+          i.isEven ? c0 + half.ceil() : c0 + contentCols,
+          tilesTop + (i ~/ 2) * 3 + 3,
+        ),
+    ];
+
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onPanStart: (_) {
+        _panDelta = Offset.zero;
+        _panSteered = false;
+      },
+      onPanUpdate: (d) {
+        if (_panSteered) return;
+        _panDelta += d.delta;
+        if (_panDelta.distance < 18) return;
+        _panSteered = true;
+        final dir = _panDelta.dx.abs() > _panDelta.dy.abs()
+            ? (_panDelta.dx > 0 ? AxisDirection.right : AxisDirection.left)
+            : (_panDelta.dy > 0 ? AxisDirection.down : AxisDirection.up);
+        _snakeKey.currentState?.steer(dir);
+      },
+      child: Stack(
+        children: [
+          // Header: mark + name + greeting, menu block on the right.
+          Positioned.fromRect(
+            rect: r(c0, headerRow, contentCols - 2, 2),
+            child: _HomeHeader(
+              greeting: l10n.lbHomeGreeting(context.watch<AuthCubit>().state.publicLabel),
+              onMark: () => showCreditsDialog(
+                context,
+                context.read<ThemeCubit>().state.currentTheme,
+              ),
+            ),
+          ),
+          Positioned.fromRect(
+            rect: r(c0 + contentCols - 2, headerRow, 2, 2),
+            child: LBIconBlock(
+              key: HomeWalkthrough.helpKey,
+              icon: LBIcon.grid,
+              semanticLabel: l10n.lbHomeMenu,
+              onTap: () => _openMenu(context),
+            ),
+          ),
+
+          // Best score in snake cells, coins on the right.
+          Positioned.fromRect(
+            rect: r(c0, bestLabelRow, contentCols, 1),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.lbYourBest,
+                    style: LBText.label(p, color: LB.gold.withValues(alpha: .8)).copyWith(fontSize: 10.5),
+                  ),
+                ),
+                BlocBuilder<CoinsCubit, CoinsState>(
+                  builder: (context, coins) => _CoinReadout(
+                    key: HomeWalkthrough.coinsKey,
+                    value: context.formatInt(coins.total),
+                    onTap: () => context.push(AppRoutes.store),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned.fromRect(
+            rect: r(c0, bestRow, contentCols, bestRows),
+            child: Semantics(
+              button: true,
+              label: '${l10n.lbYourBest} ${settings.highScore}',
+              child: GestureDetector(
+                onTap: () {
+                  LBFeedback.tap();
+                  context.push(AppRoutes.statistics);
+                },
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: LBAnimatedCellText(
+                    '${settings.highScore}',
+                    cell: bestRows * cell / 5,
+                    color: LB.gold.withValues(alpha: .34),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Daily nag strip.
+          Positioned.fromRect(
+            rect: r(c0, stripRow, contentCols, 1),
+            child: _DailyStrip(onTap: () => context.push(AppRoutes.dailyChallenges)),
+          ),
+
+          // PLAY — the one loud thing.
+          Positioned.fromRect(
+            rect: r(playC0, playR0, playW, 4),
+            child: LBBlock(
+              key: HomeWalkthrough.playButtonKey,
+              kind: LBBlockKind.fill,
+              padding: EdgeInsets.zero,
+              alignment: Alignment.center,
+              semanticLabel: '${l10n.lbPlay}, ${settings.gameMode.localizedName(l10n)}',
+              onTap: () => _startGame(context),
+              onLongPress: () => context.push(AppRoutes.runSetup),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LBCellText(l10n.lbPlay, cell: 7 * context.uiScale, color: p.onLime),
+                  SizedBox(height: 8 * context.uiScale),
+                  Text(
+                    l10n.lbModeBoard(
+                      settings.gameMode.localizedName(l10n).toUpperCase(),
+                      settings.boardSize.id.replaceAll('x', '×'),
                     ),
+                    style: LBText.label(p, color: p.onLime.withValues(alpha: .7)),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
-                    // Walkthrough overlay
-                    if (walkthroughState.isActive &&
-                        walkthroughState.currentStep != null)
-                      WalkthroughOverlay(
-                        step: walkthroughState.currentStep!,
-                        theme: theme,
-                        currentStepIndex: walkthroughState.currentStepIndex,
-                        totalSteps: walkthroughState.steps.length,
-                        onNext: () =>
-                            ref.read(walkthroughProvider.notifier).next(),
-                        onSkip: () =>
-                            ref.read(walkthroughProvider.notifier).skip(),
-                      ),
+          // Mode indicator cells + cycler.
+          Positioned.fromRect(
+            rect: r(playC0 + (playW - 8) / 2, modeBarRow, 8, 1),
+            child: LBCellsBar(
+              count: modes.length,
+              value: 1,
+              cell: cell,
+              colorAt: (i) => i == modeIndex ? p.lime : p.cellOff,
+            ),
+          ),
+          Positioned.fromRect(
+            rect: r(c0, modeRow, contentCols, 1).inflate(6),
+            child: _ModeCycler(
+              label: l10n.lbModeRow(
+                '${modeIndex + 1}',
+                '${modes.length}',
+                settings.gameMode.localizedName(l10n).toUpperCase(),
+              ),
+              onPrev: () => context.read<GameSettingsCubit>().setGameMode(
+                    modes[(modeIndex - 1 + modes.length) % modes.length],
+                  ),
+              onNext: () => context.read<GameSettingsCubit>().setGameMode(
+                    modes[(modeIndex + 1) % modes.length],
+                  ),
+              onOpen: () => context.push(AppRoutes.runSetup),
+            ),
+          ),
 
-                    // Sync restore overlay is mounted globally in
-                    // SnakeClassicApp.builder so it appears regardless
-                    // of which screen is active during the pull.
-                  ],
-                );
-              },
-            );
-          },
+          // Armed power-up + free power-up (rewarded), when there is room.
+          if (gapRows >= 2)
+            Positioned.fromRect(
+              rect: r(c0, chipsRow + (gapRows - 2) / 2, contentCols, 2),
+              child: _HomeChips(
+                onArmed: () => context.push(AppRoutes.runSetup),
+                onFree: () => _watchForFreePowerUp(context),
+              ),
+            ),
+
+          // Destinations.
+          for (var i = 0; i < tiles.length; i++)
+            Positioned.fromRect(rect: tileRect(i), child: _tile(context, tiles[i])),
+
+          if (showHint)
+            Positioned.fromRect(
+              rect: r(c0, hintRow, contentCols, 1),
+              child: Center(
+                child: Text(
+                  l10n.lbHomeHint,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 8.5),
+                ),
+              ),
+            ),
+
+          Positioned.fill(
+            child: LBHomeSnake(
+              key: _snakeKey,
+              cell: cell,
+              originX: x0,
+              loop: loop,
+              targets: targets,
+              columns: cols,
+              rows: rows,
+              onEnter: (id) => _enter(context, id),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A destination reached by steering the snake into it (or tapping it).
+  void _enter(BuildContext context, String id) {
+    HapticService().selectionClick();
+    switch (id) {
+      case 'play':
+        _startGame(context);
+      case 'daily':
+        context.push(AppRoutes.dailyChallenges);
+      case 'best':
+        context.push(AppRoutes.statistics);
+      case 'menu':
+        _openMenu(context);
+      case 'setup':
+        context.push(AppRoutes.runSetup);
+      case 'versus':
+        _openVersusLobby(context);
+      case 'season':
+        context.push(AppRoutes.battlePass);
+      case 'ranks':
+        context.push(AppRoutes.leaderboard);
+      case 'store':
+        context.push(AppRoutes.store);
+      case 'profile':
+        context.push(AppRoutes.profile);
+    }
+  }
+
+  Widget _tile(BuildContext context, String id) {
+    final l10n = AppLocalizations.of(context)!;
+    void go() => _enter(context, id);
+    switch (id) {
+      case 'versus':
+        return _HomeTile(
+          key: HomeWalkthrough.versusKey,
+          icon: LBIcon.swords,
+          title: l10n.lbHomeVersus,
+          subtitle: _versusRating != null
+              ? l10n.lbHomeVersusSub(context.formatInt(_versusRating!))
+              : l10n.lbHomeVersusSubOffline,
+          onTap: go,
+        );
+      case 'daily':
+        final daily = ref.watch(dailyChallengesProvider);
+        final claimable = ref.watch(unclaimedRewardsCountProvider) > 0;
+        final coinsLeft = daily.challenges
+            .where((c) => !c.claimedReward)
+            .fold<int>(0, (sum, c) => sum + c.coinReward);
+        final now = DateTime.now();
+        final reset = DateTime(now.year, now.month, now.day + 1).difference(now);
+        return _HomeTile(
+          key: HomeWalkthrough.dailyChallengesKey,
+          icon: LBIcon.calendar,
+          title: l10n.lbHomeDaily('${daily.completedCount}', '${daily.totalCount}'),
+          subtitle: l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft)),
+          kind: claimable ? LBBlockKind.gold : LBBlockKind.outline,
+          onTap: go,
+        );
+      case 'season':
+        final bp = context.watch<BattlePassCubit>().state;
+        final end = bp.season?.endDate ?? bp.expiryDate;
+        final daysLeft = end?.difference(DateTime.now()).inDays;
+        return _HomeTile(
+          icon: LBIcon.star,
+          title: l10n.lbHomeSeason,
+          subtitle: bp.isActive && daysLeft != null && daysLeft >= 0
+              ? l10n.lbHomeSeasonSub('${bp.currentTier}', daysLeft)
+              : l10n.lbHomeSeasonSubNone,
+          onTap: go,
+        );
+      case 'ranks':
+        final best = context.watch<GameSettingsCubit>().state.highScore;
+        return _HomeTile(
+          icon: LBIcon.trophy,
+          title: l10n.lbHomeRanks,
+          subtitle: _globalRank != null
+              ? l10n.lbHomeRanksSub(context.formatInt(_globalRank!))
+              : l10n.lbHomeRanksSubNone(context.formatInt(best)),
+          onTap: go,
+        );
+      case 'store':
+        return _HomeTile(
+          key: HomeWalkthrough.storeKey,
+          icon: LBIcon.coin,
+          title: l10n.lbHomeStore,
+          subtitle: l10n.lbHomeStoreSub,
+          onTap: go,
+        );
+      default:
+        return ListenableBuilder(
+          listenable: ProgressionService(),
+          builder: (context, _) => _HomeTile(
+            key: HomeWalkthrough.profileKey,
+            icon: LBIcon.user,
+            title: l10n.lbHomeProfile,
+            subtitle: l10n.lbHomeProfileSub(
+              '${ProgressionService().level}',
+              context.formatInt(StatisticsService().statistics.totalGamesPlayed),
+            ),
+            onTap: go,
+          ),
+        );
+    }
+  }
+
+  static String _hm(Duration d) => '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+
+  void _openMenu(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+    showLBSheet<void>(
+      context: context,
+      title: l10n.lbHomeMenu,
+      builder: (sheetContext) {
+        void go(String route) {
+          Navigator.of(sheetContext).pop();
+          context.push(route);
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LBRow(
+                title: l10n.lbSettingsTitle,
+                subtitle: l10n.lbPauseSettingsSub,
+                leading: const LBPixelIcon(LBIcon.gear, cell: 4),
+                onTap: () => go(AppRoutes.settings),
+              ),
+              LBRow(
+                title: l10n.lbMenuHowToPlay,
+                subtitle: l10n.lbMenuHowToPlaySub,
+                leading: const LBPixelIcon(LBIcon.eye, cell: 4),
+                onTap: () => go(AppRoutes.instructions),
+              ),
+              LBRow(
+                title: l10n.lbMenuTournaments,
+                subtitle: l10n.lbTournamentsLine,
+                leading: const LBPixelIcon(LBIcon.crown, cell: 4),
+                onTap: () => go(AppRoutes.tournaments),
+              ),
+              LBRow(
+                title: l10n.lbFriends,
+                leading: const LBPixelIcon(LBIcon.friends, cell: 4),
+                onTap: () => go(AppRoutes.friends),
+              ),
+              LBRow(
+                title: l10n.lbTrophies,
+                leading: const LBPixelIcon(LBIcon.trophy, cell: 4),
+                onTap: () => go(AppRoutes.achievements),
+              ),
+              LBRow(
+                title: l10n.lbReplays,
+                leading: const LBPixelIcon(LBIcon.film, cell: 4),
+                onTap: () => go(AppRoutes.replays),
+              ),
+              LBRow(
+                title: l10n.lbMenuAbout,
+                subtitle: l10n.lbMenuAboutSub,
+                leading: const LBPixelIcon(LBIcon.star, cell: 4),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showCreditsDialog(context, theme);
+                },
+              ),
+            ],
+          ),
         );
       },
     );
-  }
-
-  /// The arcade home: a live board you tap to play, two rails of context, and
-  /// four destinations across the bottom.
-  ///
-  /// The old hub was a stack of five bands — title, hero button, versus pill,
-  /// three action buttons, eight nav tiles — each competing for the same eye.
-  /// This borrows the shape the endless runners settled on, because it solves
-  /// exactly that: the middle of the screen IS the game and IS the button, the
-  /// things you might want are pinned to the edges where they can be ignored,
-  /// and the four destinations worth a permanent slot sit under the thumb.
-  Widget _buildArcadeBody({
-    required BuildContext context,
-    required AuthState authState,
-    required GameTheme theme,
-    required double screenWidth,
-    required double screenHeight,
-    required bool isVerySmallScreen,
-  }) {
-    final horizontal = screenWidth * 0.04;
-
-    return Center(
-      child: SizedBox(
-        width: screenWidth,
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontal,
-                vertical: isVerySmallScreen ? 4 : 8,
-              ),
-              child: _buildTopNavigation(
-                context,
-                authState,
-                theme,
-                isVerySmallScreen,
-              ),
-            ),
-
-            // Everything between the bars is one tap target.
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontal),
-                child: _buildArcadeStage(context, theme, isVerySmallScreen),
-              ),
-            ),
-
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                horizontal,
-                isVerySmallScreen ? 4 : 8,
-                horizontal,
-                isVerySmallScreen ? 6 : 10,
-              ),
-              child: HomeArcadeBar(
-                theme: theme,
-                compact: isVerySmallScreen,
-                destinations: _arcadeDestinations(context, theme),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// The stage: demo board at the back, the tap layer over it, rails on top.
-  ///
-  /// Order matters for hit testing — Stack tests its children back to front,
-  /// so the rails and their buttons take a tap before the play layer sees it.
-  Widget _buildArcadeStage(
-    BuildContext context,
-    GameTheme theme,
-    bool isCompact,
-  ) {
-    return Stack(
-      children: [
-        Positioned.fill(child: AttractBoard(theme: theme)),
-        Positioned.fill(child: _buildTapToPlay(context, theme, isCompact)),
-        Positioned(
-          left: 0,
-          top: 0,
-          child: _buildLeftRail(context, theme, isCompact),
-        ),
-        Positioned(
-          right: 0,
-          top: 0,
-          child: _buildRightRail(context, theme, isCompact),
-        ),
-      ],
-    );
-  }
-
-  /// The whole middle, and the only thing on this screen that starts a game.
-  ///
-  /// There is no button because there does not need to be one: a player who
-  /// opens a game wants to play it, and asking them to find a 300px circle
-  /// first is ceremony. The caption is the affordance; the target is the
-  /// screen.
-  Widget _buildTapToPlay(
-    BuildContext context,
-    GameTheme theme,
-    bool isCompact,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    // The middle of this screen is mostly air, so the brand takes it. The
-    // logo and wordmark are the only things up here competing for attention
-    // and they are supposed to win.
-    // The full logo carries its own wordmark, so it stands in for the mark
-    // AND the two lines of type that used to sit under it.
-    //
-    // Capped against the screen width rather than set outright. isCompact only
-    // trips below 350dp, so a flat 328 was landing on a 360dp phone as 91% of
-    // the width, which put the logo's leaves inside the left and right rails.
-    // The artwork fills its canvas edge to edge, so the box size is very
-    // nearly the ink size — unlike the old mark, which had air around it.
-    final logoSize = math.min(
-      isCompact ? 200.0 : 264.0,
-      MediaQuery.sizeOf(context).width * 0.66,
-    );
-
-    return Semantics(
-      button: true,
-      label: l10n.homePlay,
-      onTap: () => _startGame(context),
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () => _startGame(context),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Weighted rather than equal: the brand block sits below the
-            // optical centre, which leaves the rails at the top their own
-            // clear band and drops the logo nearer the thumb.
-            const Spacer(flex: 5),
-            ScaleTransition(
-              scale: _playButtonPulseAnimation,
-              child:
-                  Image.asset(
-                        'assets/images/snake_classic_logo.png',
-                        width: logoSize,
-                        height: logoSize,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.games,
-                          size: logoSize * 0.5,
-                          color: theme.accentColor,
-                        ),
-                      )
-                      .animate(
-                        onPlay: (controller) =>
-                            controller.repeat(reverse: true),
-                      )
-                      .shimmer(
-                        duration: 2500.ms,
-                        color: theme.accentColor.withValues(alpha: 0.25),
-                      ),
-            ),
-            // The drawn wordmark that used to sit here is gone — the logo
-            // above carries "Snake Classic" itself, and keeping both would
-            // print the title twice. Nothing is lost in translation: all nine
-            // locales spell appTitle "Snake Classic". If that ever stops being
-            // true for a locale, the wordmark has to come back, because the
-            // one in the image cannot be localized.
-            const Spacer(flex: 3),
-            // The armed power-up, still the last thing seen before the tap.
-            _buildPowerUpLoadoutChip(theme),
-            SizedBox(height: isCompact ? 6 : 10),
-            // The caption breathes so it reads as an invitation rather than a
-            // label, and sits low where a thumb already is.
-            Padding(
-              padding: EdgeInsets.only(bottom: isCompact ? 10 : 18),
-              child:
-                  Text(
-                        l10n.homeTapToPlay.toUpperCase(),
-                        style: TextStyle(
-                          // The theme's own accent, not white — it is the
-                          // game's voice asking, and every other piece of
-                          // type on this screen already speaks in it.
-                          color: theme.accentColor,
-                          fontSize: isCompact ? 16 : 19,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: context.letterSpacing(3),
-                          shadows: [
-                            // A dark shadow for legibility over the board,
-                            // and a little of the accent bleeding out so it
-                            // glows rather than sits.
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.55),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                            Shadow(
-                              color: theme.accentColor.withValues(alpha: 0.45),
-                              blurRadius: 16,
-                            ),
-                          ],
-                        ),
-                      )
-                      .animate(
-                        onPlay: (controller) =>
-                            controller.repeat(reverse: true),
-                      )
-                      .fadeIn(duration: 900.ms)
-                      .then()
-                      // Floor raised from 0.45: white survived that, but the
-                      // accent is green on a green board and disappeared at
-                      // the bottom of the pulse.
-                      .fade(end: 0.72, duration: 900.ms),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Left rail: who you are and what you have done.
-  Widget _buildLeftRail(BuildContext context, GameTheme theme, bool isCompact) {
-    final l10n = AppLocalizations.of(context)!;
-    final highScore = context.watch<GameSettingsCubit>().state.highScore;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        HomeStatPanel(
-          theme: theme,
-          icon: Icons.emoji_events,
-          iconColor: const Color(0xFFFFC53D),
-          label: l10n.homeHighScore,
-          value: context.formatInt(highScore),
-          compact: isCompact,
-          onTap: () => context.push(AppRoutes.statistics),
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        BlocBuilder<CoinsCubit, CoinsState>(
-          builder: (context, coinsState) => HomeStatPanel(
-            theme: theme,
-            icon: Icons.monetization_on,
-            iconColor: Colors.amber,
-            // The balance, labelled as the balance. It read "STORE 0" before,
-            // which says the store is empty rather than the wallet is.
-            label: l10n.storeTabCoins,
-            value: context.formatCompact(coinsState.total),
-            compact: isCompact,
-            onTap: () => context.push(AppRoutes.store),
-          ),
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        // Two readouts, then two places to go. Both are about you rather than
-        // about the game, which is why they are on this side and the offers
-        // are on the other.
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.people_alt_outlined,
-          label: l10n.homeTileFriends,
-          onTap: () => context.push(AppRoutes.friends),
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.military_tech_outlined,
-          label: l10n.homeTileAwards,
-          onTap: () => context.push(AppRoutes.achievements),
-        ),
-      ],
-    );
-  }
-
-  /// Right rail: what is waiting for you.
-  Widget _buildRightRail(
-    BuildContext context,
-    GameTheme theme,
-    bool isCompact,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    final adsOn =
-        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.timeline_rounded,
-          label: l10n.homeTileBattle,
-          onTap: () => context.push(AppRoutes.battlePass),
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.emoji_events_outlined,
-          label: l10n.homeTileEvents,
-          tint: Colors.deepOrange,
-          onTap: () => context.push(AppRoutes.tournaments),
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        // Versus gets a rail slot as well as its bottom-bar destination. Two
-        // ways in is not clutter for the one mode nobody discovers on their
-        // own — it was the eighth tile of a nav grid for most of this app's
-        // life — and the subtitle says what it actually is.
-        HomeRailButton(
-          theme: theme,
-          icon: Icons.sports_esports,
-          label: l10n.homeTileVersus,
-          subtitle: l10n.insVersusOnline,
-          onTap: () => _openVersusLobby(context),
-        ),
-        // The free reward sits at the bottom of the rail, nearest the thumb.
-        if (adsOn) ...[
-          SizedBox(height: isCompact ? 6 : 8),
-          HomeRailButton(
-            theme: theme,
-            icon: Icons.bolt,
-            label: l10n.homeTileFree,
-            tint: const Color(0xFF2FBF71),
-            highlight: true,
-            onTap: () => _watchForFreePowerUp(context),
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// The four that earn a permanent slot.
-  ///
-  /// Missions carries the badge because it is the only one with something
-  /// waiting in it — an unclaimed daily reward is the reason to come back
-  /// tomorrow, and a number on a button is how that gets noticed.
-  List<ArcadeDestination> _arcadeDestinations(
-    BuildContext context,
-    GameTheme theme,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    return [
-      ArcadeDestination(
-        icon: Icons.checklist_rounded,
-        label: l10n.homeTileDaily,
-        badgeCount: _getDailyChallengesBadge() ?? 0,
-        widgetKey: HomeWalkthrough.dailyChallengesKey,
-        onTap: () => context.push(AppRoutes.dailyChallenges),
-      ),
-      // Profile is not homeless: the avatar in the top bar has always opened
-      // it, and it is the more natural place to tap your own face. The slot
-      // goes to the leaderboard, which had no entry point at all once the
-      // eight-tile grid went.
-      ArcadeDestination(
-        icon: Icons.leaderboard_rounded,
-        label: l10n.homeTileBoard,
-        onTap: () => context.push(AppRoutes.leaderboard),
-      ),
-      ArcadeDestination(
-        icon: Icons.store_rounded,
-        label: l10n.homeTileStore,
-        widgetKey: HomeWalkthrough.storeKey,
-        onTap: () => context.push(AppRoutes.store),
-      ),
-      ArcadeDestination(
-        icon: Icons.sports_esports_rounded,
-        label: l10n.homeTileVersus,
-        widgetKey: HomeWalkthrough.versusKey,
-        onTap: () => _openVersusLobby(context),
-      ),
-    ];
   }
 
   /// Open the lobby, and say where the player came from.
@@ -966,12 +977,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     context.push(AppRoutes.multiplayerLobby);
   }
 
-  /// Start a game — the one action the middle of this screen performs.
+  /// Start a game — PLAY's action.
   ///
-  /// Same path the old hero button took, including the first-run skip of the
-  /// mode picker: a player who has never seen the board cannot choose between
-  /// Classic, Zen, Survival and Time Attack, so they get Classic and the
-  /// picker on their second tap.
+  /// Includes the first-run skip of the mode picker: a player who has never
+  /// seen the board cannot choose between Classic, Zen, Survival and Time
+  /// Attack, so they get Classic and the picker on their second tap.
   Future<void> _startGame(BuildContext context) async {
     unawaited(LegalAcceptance.recordAccepted());
     HapticService().mediumImpact();
@@ -983,278 +993,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     context.push(AppRoutes.playLoading);
   }
 
-  Widget _buildTopNavigation(
-    BuildContext context,
-    AuthState authState,
-    GameTheme theme,
-    bool isSmallScreen,
-  ) {
-    return Row(
-      children: [
-        // Left: player identity (profile) + About — two tools, mirroring the
-        // settings + how-to-play pair on the right.
-        PlayerIdentityBadge(
-          key: HomeWalkthrough.profileKey,
-          theme: theme,
-          isSmallScreen: isSmallScreen,
-          photoUrl: authState.isSignedIn ? authState.photoURL : null,
-          onTap: () => context.push(AppRoutes.profile),
-        ),
-
-        SizedBox(width: isSmallScreen ? 8 : 12),
-
-        // About & credits (app version, credits, links).
-        GestureDetector(
-          onTap: () => showCreditsDialog(context, theme),
-          child: Container(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-            decoration: BoxDecoration(
-              color: theme.accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.info_outline,
-              color: theme.accentColor,
-              size: isSmallScreen ? 20 : 24,
-            ),
-          ),
-        ),
-
-        // Center: coins pill → store.
-        Expanded(
-          child: Center(
-            child: BlocBuilder<CoinsCubit, CoinsState>(
-              builder: (context, coinsState) {
-                return GestureDetector(
-                  onTap: () {
-                    context.push(AppRoutes.store);
-                  },
-                  child: Container(
-                    key: HomeWalkthrough.coinsKey,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 10 : 14,
-                      vertical: isSmallScreen ? 6 : 8,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.amber.withValues(alpha: 0.15),
-                          Colors.orange.withValues(alpha: 0.08),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        isSmallScreen ? 16 : 20,
-                      ),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: Colors.amber,
-                          size: isSmallScreen ? 18 : 22,
-                        ),
-                        SizedBox(width: isSmallScreen ? 4 : 6),
-                        Text(
-                          context.formatCompact(coinsState.total),
-                          style: TextStyle(
-                            color: Colors.amber,
-                            fontSize: isSmallScreen ? 14 : 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-
-        // Right: tools — settings + how-to-play.
-        Row(
-          children: [
-            // Settings
-            GestureDetector(
-              onTap: () {
-                context.push(AppRoutes.settings);
-              },
-              child: Container(
-                key: HomeWalkthrough.settingsKey,
-                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                decoration: BoxDecoration(
-                  color: theme.accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-                  border: Border.all(
-                    color: theme.accentColor.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.settings_rounded,
-                  color: theme.accentColor,
-                  size: isSmallScreen ? 20 : 24,
-                ),
-              ),
-            ),
-
-            SizedBox(width: isSmallScreen ? 8 : 12),
-
-            // How to play
-            GestureDetector(
-              onTap: () {
-                context.push(AppRoutes.instructions);
-              },
-              child: Container(
-                key: HomeWalkthrough.helpKey,
-                padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
-                decoration: BoxDecoration(
-                  color: theme.foodColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
-                  border: Border.all(
-                    color: theme.foodColor.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.help_outline,
-                  color: theme.foodColor,
-                  size: isSmallScreen ? 20 : 24,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPowerUpLoadoutChip(GameTheme theme) {
-    return BlocBuilder<PowerUpCubit, PowerUpState>(
-      builder: (context, powerUpState) {
-        // Hide entirely when the user has no inventory — keeps the home
-        // screen uncluttered for free users / users who haven't bought
-        // power-ups yet.
-        if (powerUpState.totalOwned == 0) return const SizedBox.shrink();
-
-        final l10n = AppLocalizations.of(context)!;
-        final armed = powerUpState.armed;
-        final armedLabel = armed == null
-            ? null
-            : _loadoutLabelFor(context, armed);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: GestureDetector(
-            onTap: () => _openLoadoutSheet(theme, powerUpState),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: armed != null
-                    ? theme.accentColor.withValues(alpha: 0.18)
-                    : theme.accentColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: armed != null
-                      ? theme.accentColor
-                      : theme.accentColor.withValues(alpha: 0.25),
-                  width: armed != null ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    armed != null ? Icons.flash_on : Icons.flash_on_outlined,
-                    color: armed != null ? Colors.amber : theme.accentColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    armed != null
-                        ? l10n.homeArmedPowerUp(armedLabel!)
-                        : l10n.homeLoadoutCount(powerUpState.totalOwned),
-                    style: TextStyle(
-                      color: theme.accentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  String _loadoutLabelFor(BuildContext context, String inventoryKey) {
-    final l10n = AppLocalizations.of(context)!;
-    switch (inventoryKey) {
-      case 'speed_boost':
-        return l10n.puSpeedBoost;
-      case 'invincibility':
-        return l10n.puInvincibility;
-      case 'score_multiplier':
-        return l10n.puScoreMultiplier;
-      case 'slow_motion':
-        return l10n.puSlowMotion;
-      default:
-        return inventoryKey;
-    }
-  }
-
-  IconData _loadoutIconFor(String inventoryKey) {
-    switch (inventoryKey) {
-      case 'speed_boost':
-        return Icons.speed;
-      case 'invincibility':
-        return Icons.shield;
-      case 'score_multiplier':
-        return Icons.star;
-      case 'slow_motion':
-        return Icons.slow_motion_video;
-      default:
-        return Icons.flash_on;
-    }
-  }
-
-  void _openLoadoutSheet(GameTheme theme, PowerUpState state) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      // Cap width so the sheet centers on tablets (no-op on phones).
-      constraints: const BoxConstraints(maxWidth: 640),
-      builder: (sheetContext) {
-        return _LoadoutBottomSheet(
-          theme: theme,
-          labelFor: _loadoutLabelFor,
-          iconFor: _loadoutIconFor,
-        );
-      },
-    );
-  }
-
-  /// Opt-in rewarded watch from the home action row. Tells the user up front
-  /// exactly what they'll get (a free Speed Boost power-up), then confirms the
-  /// grant with a toast. Grants no coins, so the economy stays safe. Opt-in and
-  /// uncapped — only gated on a loaded ad.
+  /// Opt-in rewarded watch for a free Speed Boost. Tells the user up front
+  /// exactly what they'll get, then confirms the grant with a toast. Grants
+  /// no coins, so the economy stays safe. Opt-in and uncapped.
   Future<void> _watchForFreePowerUp(BuildContext context) async {
     final ads = getIt<AdService>();
     final messenger = ScaffoldMessenger.of(context);
@@ -1274,44 +1015,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     // Tell the user what they're opting into BEFORE the ad plays.
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showLBDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: theme.backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: theme.accentColor.withValues(alpha: 0.4)),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.bolt, color: theme.foodColor),
-            const SizedBox(width: 8),
-            Text(
-              l10n.homeFreeSpeedBoostTitle,
-              style: TextStyle(color: theme.primaryColor),
-            ),
-          ],
-        ),
-        content: Text(
-          l10n.homeFreeSpeedBoostBody,
-          style: TextStyle(color: theme.accentColor.withValues(alpha: 0.85)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              l10n.homeNotNow,
-              style: TextStyle(color: theme.accentColor.withValues(alpha: 0.7)),
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: theme.accentColor),
-            icon: const Icon(Icons.play_arrow, size: 18),
-            label: Text(l10n.homeWatchAd),
-          ),
-        ],
-      ),
+      title: l10n.homeFreeSpeedBoostTitle,
+      body: l10n.homeFreeSpeedBoostBody,
+      primaryLabel: l10n.homeWatchAd,
+      onPrimary: () => Navigator.of(context).pop(true),
+      secondaryLabel: l10n.homeNotNow,
+      onSecondary: () => Navigator.of(context).pop(false),
     );
     if (confirmed != true) return;
 
@@ -1343,256 +1054,321 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
   }
-
-  int? _getDailyChallengesBadge() {
-    final count = ref.watch(unclaimedRewardsCountProvider);
-    return count > 0 ? count : null;
-  }
 }
 
-/// Pre-game power-up loadout sheet. Lists every type the user owns,
-/// highlights the currently armed one, and lets them switch / unarm.
-/// Closing the sheet without picking leaves the previous selection
-/// intact — the sheet is a passive viewer/editor, not a wizard.
-class _LoadoutBottomSheet extends StatelessWidget {
-  final GameTheme theme;
-  final String Function(BuildContext context, String key) labelFor;
-  final IconData Function(String key) iconFor;
+/// Mark, name and greeting. Tapping the mark opens About.
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.greeting, required this.onMark});
 
-  const _LoadoutBottomSheet({
-    required this.theme,
-    required this.labelFor,
-    required this.iconFor,
-  });
+  final String greeting;
+  final VoidCallback onMark;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PowerUpCubit, PowerUpState>(
-      builder: (context, state) {
-        final l10n = AppLocalizations.of(context)!;
-        final entries = state.inventory.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
-        return SafeArea(
-          top: false,
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.backgroundColor.withValues(alpha: 0.98),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              border: Border.all(
-                color: theme.accentColor.withValues(alpha: 0.4),
-                width: 2,
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: theme.accentColor.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.flash_on, color: theme.accentColor, size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.homeLoadoutTitle,
-                      style: TextStyle(
-                        color: theme.accentColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.homeLoadoutSubtitle,
-                  style: TextStyle(
-                    color: theme.accentColor.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Rewarded — grab a free Speed Boost without spending coins.
-                RewardedActionButton(
-                  theme: theme,
-                  icon: Icons.bolt,
-                  label: l10n.homeWatchAdFreeSpeedBoost,
-                  placement: AdService.placementFreePowerUp,
-                  onWatch: () async {
-                    final powerUps = context.read<PowerUpCubit>();
-                    // Capture before the ad — onReward fires after dismissal,
-                    // an async gap where reading context is unsafe.
-                    final messenger = ScaffoldMessenger.of(context);
-                    await getIt<AdService>().showRewardedFor(
-                      placement: AdService.placementFreePowerUp,
-                      onReward: () {
-                        powerUps.grantFreePowerUp();
-                        showRewardToast(
-                          messenger,
-                          '🎉 ${l10n.homeFreeSpeedBoostAdded}',
-                          icon: Icons.flash_on,
-                        );
-                      },
-                    );
-                  },
-                ),
-                if (entries.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Center(
-                      child: Text(
-                        l10n.homeNoPowerUps,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: theme.accentColor.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ...entries.map((e) {
-                    final key = e.key;
-                    final count = e.value;
-                    final isArmed = state.armed == key;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          if (isArmed) {
-                            context.read<PowerUpCubit>().unarm();
-                          } else {
-                            context.read<PowerUpCubit>().arm(key);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isArmed
-                                ? theme.accentColor.withValues(alpha: 0.20)
-                                : Colors.white.withValues(alpha: 0.04),
-                            border: Border.all(
-                              color: isArmed
-                                  ? theme.accentColor
-                                  : Colors.white.withValues(alpha: 0.10),
-                              width: isArmed ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: theme.accentColor.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  iconFor(key),
-                                  color: theme.accentColor,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      labelFor(context, key),
-                                      style: TextStyle(
-                                        color: theme.accentColor,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      l10n.homeOwnedCount(count),
-                                      style: TextStyle(
-                                        color: theme.accentColor.withValues(
-                                          alpha: 0.65,
-                                        ),
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isArmed)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.accentColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    l10n.homeArmed,
-                                    style: TextStyle(
-                                      color: theme.backgroundColor,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                )
-                              else
-                                Icon(
-                                  Icons.add_circle_outline,
-                                  color: theme.accentColor.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                  size: 22,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.accentColor,
-                      foregroundColor: theme.backgroundColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      l10n.homeDone,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: context.letterSpacing(1.5),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+    final p = context.lb;
+    final s = context.lbCell * 2;
+    return Row(
+      children: [
+        Semantics(
+          button: true,
+          label: AppLocalizations.of(context)!.lbMenuAbout,
+          child: GestureDetector(
+            onTap: () {
+              LBFeedback.tap();
+              onMark();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(1),
+              child: LBCellSMark(size: s - 2),
             ),
           ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SNAKE CLASSIC',
+                maxLines: 1,
+                style: LBText.button(p, color: p.lime, size: 13).copyWith(letterSpacing: 3),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                greeting,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.body(p, color: p.ink.withValues(alpha: .75), size: 10.5)
+                    .copyWith(height: 1.25),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CoinReadout extends StatelessWidget {
+  const _CoinReadout({super.key, required this.value, required this.onTap});
+
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    return Semantics(
+      button: true,
+      label: '${AppLocalizations.of(context)!.lbSnakeCoins} $value',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          LBFeedback.tap();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LBPixelIcon(LBIcon.coin, cell: 3, color: LB.gold),
+              const SizedBox(width: 7),
+              Text(value, style: LBText.value(p, color: LB.gold, size: 15)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The daily nag strip: what is left today, or that you are done.
+class _DailyStrip extends ConsumerWidget {
+  const _DailyStrip({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final daily = ref.watch(dailyChallengesProvider);
+    final unclaimed = ref.watch(unclaimedRewardsCountProvider);
+    final done = daily.completedCount, total = daily.totalCount;
+    final String text;
+    if (total == 0) {
+      text = l10n.lbHomeDaily('0', '0');
+    } else if (unclaimed > 0) {
+      text = '${l10n.lbHomeDaily('$done', '$total')} · ${l10n.lbClaim}';
+    } else if (done >= total) {
+      text = l10n.lbDailyAllFed;
+    } else {
+      text = l10n.lbDailyNag('$done', '$total');
+    }
+    return LBBlock(
+      kind: LBBlockKind.gold,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      radius: 5,
+      onTap: onTap,
+      child: Row(
+        children: [
+          const LBPixelIcon(LBIcon.flame, cell: 2.6, color: LB.gold, accent: LB.bonk),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LBText.label(p, color: LB.gold).copyWith(fontSize: 9.5, letterSpacing: 1.6),
+            ),
+          ),
+          Text('→', style: LBText.label(p, color: LB.gold)),
+        ],
+      ),
+    );
+  }
+}
+
+/// `‹ MODE 1/8 · CLASSIC ›` — arrows cycle the mode, the label opens setup.
+class _ModeCycler extends StatelessWidget {
+  const _ModeCycler({
+    required this.label,
+    required this.onPrev,
+    required this.onNext,
+    required this.onOpen,
+  });
+
+  final String label;
+  final VoidCallback onPrev, onNext, onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    final style = LBText.label(p, color: p.inkMuted).copyWith(fontSize: 10.5);
+    Widget arrow(String glyph, VoidCallback onTap, String semantic) => Semantics(
+          button: true,
+          label: semantic,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              LBFeedback.tap();
+              onTap();
+            },
+            child: SizedBox(width: 44, child: Center(child: Text(glyph, style: style.copyWith(fontSize: 14)))),
+          ),
+        );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        arrow('‹', onPrev, MaterialLocalizations.of(context).previousPageTooltip),
+        Flexible(
+          child: Semantics(
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                LBFeedback.tap();
+                onOpen();
+              },
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+            ),
+          ),
+        ),
+        arrow('›', onNext, MaterialLocalizations.of(context).nextPageTooltip),
+      ],
+    );
+  }
+}
+
+/// Armed loadout and the free power-up (rewarded) offer.
+class _HomeChips extends StatelessWidget {
+  const _HomeChips({required this.onArmed, required this.onFree});
+
+  final VoidCallback onArmed, onFree;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+    return BlocBuilder<PowerUpCubit, PowerUpState>(
+      builder: (context, state) {
+        final armed = state.armed;
+        final children = <Widget>[
+          if (armed != null)
+            _ChipButton(
+              label: l10n.lbArmedChip(loadoutLabelFor(l10n, armed).toUpperCase()),
+              icon: LBIcon.bolt,
+              kind: LBChipKind.outline,
+              onTap: onArmed,
+            ),
+          if (adsOn)
+            _ChipButton(
+              label: l10n.lbFreePowerUp,
+              icon: LBIcon.tv,
+              kind: LBChipKind.gold,
+              onTap: onFree,
+            ),
+        ];
+        if (children.isEmpty) return const SizedBox.shrink();
+        return Center(
+          child: Wrap(spacing: 8, runSpacing: 6, alignment: WrapAlignment.center, children: children),
         );
       },
     );
   }
 }
+
+class _ChipButton extends StatelessWidget {
+  const _ChipButton({required this.label, required this.icon, required this.kind, required this.onTap});
+
+  final String label;
+  final LBIcon icon;
+  final LBChipKind kind;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            LBFeedback.tap();
+            onTap();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: LBChip(label: label, icon: icon, kind: kind, height: 26),
+          ),
+        ),
+      );
+}
+
+/// One destination block: icon + title, subtitle beneath.
+class _HomeTile extends StatelessWidget {
+  const _HomeTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.kind = LBBlockKind.outline,
+  });
+
+  final LBIcon icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final LBBlockKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    final fg = kind == LBBlockKind.gold ? LB.gold : p.head;
+    return LBBlock(
+      kind: kind,
+      onTap: onTap,
+      semanticLabel: '$title, $subtitle',
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              LBPixelIcon(icon, cell: 3.2, color: fg),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LBText.body(p, color: p.ink.withValues(alpha: .62), size: 10.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Localized name of a loadout inventory key. Shared with the run setup
+/// screen.
+String loadoutLabelFor(AppLocalizations l10n, String inventoryKey) => switch (inventoryKey) {
+      'speed_boost' => l10n.puSpeedBoost,
+      'invincibility' => l10n.puInvincibility,
+      'score_multiplier' => l10n.puScoreMultiplier,
+      'slow_motion' => l10n.puSlowMotion,
+      _ => inventoryKey,
+    };

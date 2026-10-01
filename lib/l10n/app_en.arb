@@ -2532,7 +2532,7 @@
   "@lbHomeSeason": {
     "description": "Home block (battle pass)"
   },
-  "lbHomeSeasonSub": "Tier {tier} · {days} days left",
+  "lbHomeSeasonSub": "Tier {tier} · {days, plural, =1{1 day left} other{{days} days left}}",
   "@lbHomeSeasonSub": {
     "description": "Home Season block subtitle",
     "placeholders": {
@@ -2570,7 +2570,7 @@
   "@lbHomeStore": {
     "description": "Home block"
   },
-  "lbHomeStoreSub": "Skins · themes · trails",
+  "lbHomeStoreSub": "Skins, themes, trails",
   "@lbHomeStoreSub": {
     "description": "Home Store block subtitle"
   },
@@ -2590,9 +2590,9 @@
       }
     }
   },
-  "lbHomeMenu": "Menu",
+  "lbHomeMenu": "MENU",
   "@lbHomeMenu": {
-    "description": "Accessibility label of the home menu button"
+    "description": "Home menu button and sheet title"
   },
   "lbFreePowerUp": "FREE POWER-UP · AD",
   "@lbFreePowerUp": {
@@ -2684,18 +2684,6 @@
   "lbSetupLoadout": "LOADOUT",
   "@lbSetupLoadout": {
     "description": "Section label: power-ups armed for the next run"
-  },
-  "lbSetupLoadoutArmed": "{armed} OF {total} ARMED",
-  "@lbSetupLoadoutArmed": {
-    "description": "Aside next to the loadout label",
-    "placeholders": {
-      "armed": {
-        "type": "String"
-      },
-      "total": {
-        "type": "String"
-      }
-    }
   },
   "lbSetupGet": "GET",
   "@lbSetupGet": {
@@ -3403,7 +3391,7 @@
   "@lbSeasonTitle": {
     "description": "Battle pass screen title"
   },
-  "lbSeasonSubtitle": "{season} · {days} days left. Make them count.",
+  "lbSeasonSubtitle": "{season} · {days, plural, =1{1 day left} other{{days} days left}}. Make them count.",
   "@lbSeasonSubtitle": {
     "description": "Battle pass subtitle",
     "placeholders": {
@@ -4355,5 +4343,64 @@
   "lbMatchTimeout": "No rival found. The house snake is warming up.",
   "@lbMatchTimeout": {
     "description": "Matchmaking timeout"
+  },
+  "lbHomeVersusSubOffline": "1v1 · real rivals",
+  "@lbHomeVersusSubOffline": {
+    "description": "Home Versus block subtitle when the rating is unknown"
+  },
+  "lbHomeSeasonSubNone": "Earn XP every run",
+  "@lbHomeSeasonSubNone": {
+    "description": "Home Season block subtitle when no season is active"
+  },
+  "lbMenuHowToPlay": "HOW TO PLAY",
+  "@lbMenuHowToPlay": {
+    "description": "Menu item"
+  },
+  "lbMenuTournaments": "TOURNAMENTS",
+  "@lbMenuTournaments": {
+    "description": "Menu item"
+  },
+  "lbMenuAbout": "ABOUT",
+  "@lbMenuAbout": {
+    "description": "Menu item: version and credits"
+  },
+  "lbMenuHowToPlaySub": "swipes, modes, power-ups",
+  "@lbMenuHowToPlaySub": {
+    "description": "Menu item subline"
+  },
+  "lbMenuAboutSub": "version, credits, legal",
+  "@lbMenuAboutSub": {
+    "description": "Menu item subline"
+  },
+  "lbSetupLoadoutNone": "TAP ONE TO ARM",
+  "@lbSetupLoadoutNone": {
+    "description": "Aside next to the loadout label when nothing is armed; one power-up can be armed per run"
+  },
+  "lbSetupLoadoutArmedOne": "{name} ARMED",
+  "@lbSetupLoadoutArmedOne": {
+    "description": "Aside next to the loadout label: the armed power-up",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lbOwnedCount": "×{count}",
+  "@lbOwnedCount": {
+    "description": "Number of a power-up owned",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lbArmedChip": "ARMED · {name}",
+  "@lbArmedChip": {
+    "description": "Home chip showing the power-up armed for the next run",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }
