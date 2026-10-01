@@ -13647,6 +13647,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ARMED · {name}'**
   String lbArmedChip(String name);
+
+  /// First-time sign-in: note under the guest button on platforms that show Sign in with Apple (iOS, macOS)
+  ///
+  /// In en, this message translates to:
+  /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.'**
+  String get lbGuestNoteApple;
+
+  /// First-time sign-in: note under the guest button on platforms without Sign in with Apple (Android and others)
+  ///
+  /// In en, this message translates to:
+  /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.'**
+  String get lbGuestNoteNoApple;
+
+  /// First-time sign-in: screen title (cell font) while the Privacy Policy and Terms are shown
+  ///
+  /// In en, this message translates to:
+  /// **'PRIVACY + TERMS'**
+  String get lbAuthLegalTitle;
+
+  /// Re-consent screen title (cell font) shown when the Privacy Policy or Terms changed
+  ///
+  /// In en, this message translates to:
+  /// **'TERMS UPDATED'**
+  String get lbConsentTitle;
+
+  /// Email sign-in screen title (cell font)
+  ///
+  /// In en, this message translates to:
+  /// **'EMAIL'**
+  String get lbEmailTitle;
+
+  /// Email screen title (cell font) when a guest links an email account
+  ///
+  /// In en, this message translates to:
+  /// **'SAVE PROGRESS'**
+  String get lbEmailLinkTitle;
+
+  /// Username setup screen title (cell font)
+  ///
+  /// In en, this message translates to:
+  /// **'USERNAME'**
+  String get lbUsernameTitle;
+
+  /// Accessibility label for the button that reveals the password
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get lbShowPassword;
+
+  /// Accessibility label for the button that hides the password
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get lbHidePassword;
+
+  /// Account chip when the sign-in provider is unknown
+  ///
+  /// In en, this message translates to:
+  /// **'SIGNED IN'**
+  String get lbSignedIn;
+
+  /// Sign-in provider name in the SIGNED IN chip
+  ///
+  /// In en, this message translates to:
+  /// **'GOOGLE'**
+  String get lbProviderGoogle;
+
+  /// Sign-in provider name in the SIGNED IN chip
+  ///
+  /// In en, this message translates to:
+  /// **'APPLE'**
+  String get lbProviderApple;
+
+  /// Sign-in provider name in the SIGNED IN chip
+  ///
+  /// In en, this message translates to:
+  /// **'EMAIL'**
+  String get lbProviderEmail;
+
+  /// Statistics screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Every run, counted. Even the bad ones.'**
+  String get lbStatsSubtitle;
+
+  /// Score trend: improving
+  ///
+  /// In en, this message translates to:
+  /// **'CLIMBING'**
+  String get lbTrendUp;
+
+  /// Score trend: declining
+  ///
+  /// In en, this message translates to:
+  /// **'SLIPPING'**
+  String get lbTrendDown;
+
+  /// Score trend: stable
+  ///
+  /// In en, this message translates to:
+  /// **'STEADY'**
+  String get lbTrendFlat;
+
+  /// Replays screen subtitle (replays are device-local)
+  ///
+  /// In en, this message translates to:
+  /// **'Kept on this phone. Never uploaded.'**
+  String get lbReplaysSubtitle;
+
+  /// Replay viewer title
+  ///
+  /// In en, this message translates to:
+  /// **'REPLAY'**
+  String get lbReplayTitle;
+
+  /// Replay outcome when the run did not end in a crash
+  ///
+  /// In en, this message translates to:
+  /// **'ENDED'**
+  String get lbReplayEnded;
+
+  /// Playback speed option, e.g. 0.5×
+  ///
+  /// In en, this message translates to:
+  /// **'{speed}×'**
+  String lbSpeedX(String speed);
+
+  /// Pause playback button label
+  ///
+  /// In en, this message translates to:
+  /// **'PAUSE'**
+  String get lbPause;
+
+  /// Replay viewer: step one frame back
+  ///
+  /// In en, this message translates to:
+  /// **'PREVIOUS FRAME'**
+  String get lbReplayPrevFrame;
+
+  /// Replay viewer: step one frame forward
+  ///
+  /// In en, this message translates to:
+  /// **'NEXT FRAME'**
+  String get lbReplayNextFrame;
+
+  /// Friends screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Snakes you know. Rivals you\'ll beat.'**
+  String get lbFriendsSubtitle;
+
+  /// Compact duration, days and hours (reset countdowns)
+  ///
+  /// In en, this message translates to:
+  /// **'{d}d {h}h'**
+  String lbDurDayHour(String d, String h);
+
+  /// Daily bonus popup streak chip
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 DAY STREAK} other{{days} DAY STREAK}}'**
+  String lbBonusStreak(int days);
+
+  /// Achievement points chip
+  ///
+  /// In en, this message translates to:
+  /// **'{points} PTS'**
+  String lbPoints(String points);
+
+  /// Button that reloads a list from the server
+  ///
+  /// In en, this message translates to:
+  /// **'REFRESH'**
+  String get lbRefresh;
+
+  /// Route error screen title: the link pointed at a screen this build does not have
+  ///
+  /// In en, this message translates to:
+  /// **'LOST THE TRAIL'**
+  String get lbRouteErrorTitle;
+
+  /// Route error screen body
+  ///
+  /// In en, this message translates to:
+  /// **'That screen does not exist in this version of the game.'**
+  String get lbRouteErrorBody;
+
+  /// Route error screen button: go to the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'BACK TO HOME'**
+  String get lbRouteErrorHome;
+
+  /// Settings footer: app version, e.g. v7.0.0
+  ///
+  /// In en, this message translates to:
+  /// **'v{version}'**
+  String lbVersionShort(String version);
+
+  /// Settings row that opens the list of every gesture and key
+  ///
+  /// In en, this message translates to:
+  /// **'GESTURES & KEYS'**
+  String get lbCtrlReference;
+
+  /// Subtitle of the gestures and keys row
+  ///
+  /// In en, this message translates to:
+  /// **'what every swipe and key does'**
+  String get lbCtrlReferenceSub;
+
+  /// Screen-reader label for a locked premium theme swatch
+  ///
+  /// In en, this message translates to:
+  /// **'{theme}, locked'**
+  String lbThemeSwatchLocked(String theme);
+
+  /// Settings row that opens the language picker
+  ///
+  /// In en, this message translates to:
+  /// **'APP LANGUAGE'**
+  String get lbLanguageRow;
+
+  /// Store / Pro screen: secondary line under the yearly plan price
+  ///
+  /// In en, this message translates to:
+  /// **'per year · best value'**
+  String get lbPerYearBestValue;
+
+  /// Pro screen: section label above the extra Pro perks (spawn boosts, tournament entries)
+  ///
+  /// In en, this message translates to:
+  /// **'ALSO INCLUDED'**
+  String get lbProAlsoIncluded;
+
+  /// Battle pass chip when the player is on the free track only
+  ///
+  /// In en, this message translates to:
+  /// **'FREE TRACK'**
+  String get lbFreeTrack;
+
+  /// Battle pass subtitle in the last day; left is e.g. '5h left' or 'Ending soon'
+  ///
+  /// In en, this message translates to:
+  /// **'{season} · {left}. Make them count.'**
+  String lbSeasonSubtitleSoon(String season, String left);
+
+  /// Label over a tournament countdown
+  ///
+  /// In en, this message translates to:
+  /// **'ENDS IN'**
+  String get lbEndsIn;
+
+  /// Label over an upcoming tournament countdown
+  ///
+  /// In en, this message translates to:
+  /// **'STARTS IN'**
+  String get lbStartsIn;
 }
 
 class _AppLocalizationsDelegate

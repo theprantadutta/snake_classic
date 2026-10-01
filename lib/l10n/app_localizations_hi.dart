@@ -7662,4 +7662,156 @@ class AppLocalizationsHi extends AppLocalizations {
   String lbArmedChip(String name) {
     return 'ARMED · $name';
   }
+
+  @override
+  String get lbGuestNoteApple =>
+      'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.';
+
+  @override
+  String get lbGuestNoteNoApple =>
+      'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.';
+
+  @override
+  String get lbAuthLegalTitle => 'PRIVACY + TERMS';
+
+  @override
+  String get lbConsentTitle => 'TERMS UPDATED';
+
+  @override
+  String get lbEmailTitle => 'EMAIL';
+
+  @override
+  String get lbEmailLinkTitle => 'SAVE PROGRESS';
+
+  @override
+  String get lbUsernameTitle => 'USERNAME';
+
+  @override
+  String get lbShowPassword => 'Show password';
+
+  @override
+  String get lbHidePassword => 'Hide password';
+
+  @override
+  String get lbSignedIn => 'SIGNED IN';
+
+  @override
+  String get lbProviderGoogle => 'GOOGLE';
+
+  @override
+  String get lbProviderApple => 'APPLE';
+
+  @override
+  String get lbProviderEmail => 'EMAIL';
+
+  @override
+  String get lbStatsSubtitle => 'Every run, counted. Even the bad ones.';
+
+  @override
+  String get lbTrendUp => 'CLIMBING';
+
+  @override
+  String get lbTrendDown => 'SLIPPING';
+
+  @override
+  String get lbTrendFlat => 'STEADY';
+
+  @override
+  String get lbReplaysSubtitle => 'Kept on this phone. Never uploaded.';
+
+  @override
+  String get lbReplayTitle => 'REPLAY';
+
+  @override
+  String get lbReplayEnded => 'ENDED';
+
+  @override
+  String lbSpeedX(String speed) {
+    return '$speed×';
+  }
+
+  @override
+  String get lbPause => 'PAUSE';
+
+  @override
+  String get lbReplayPrevFrame => 'PREVIOUS FRAME';
+
+  @override
+  String get lbReplayNextFrame => 'NEXT FRAME';
+
+  @override
+  String get lbFriendsSubtitle => 'Snakes you know. Rivals you\'ll beat.';
+
+  @override
+  String lbDurDayHour(String d, String h) {
+    return '${d}d ${h}h';
+  }
+
+  @override
+  String lbBonusStreak(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days DAY STREAK',
+      one: '1 DAY STREAK',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lbPoints(String points) {
+    return '$points PTS';
+  }
+
+  @override
+  String get lbRefresh => 'REFRESH';
+
+  @override
+  String get lbRouteErrorTitle => 'LOST THE TRAIL';
+
+  @override
+  String get lbRouteErrorBody =>
+      'That screen does not exist in this version of the game.';
+
+  @override
+  String get lbRouteErrorHome => 'BACK TO HOME';
+
+  @override
+  String lbVersionShort(String version) {
+    return 'v$version';
+  }
+
+  @override
+  String get lbCtrlReference => 'GESTURES & KEYS';
+
+  @override
+  String get lbCtrlReferenceSub => 'what every swipe and key does';
+
+  @override
+  String lbThemeSwatchLocked(String theme) {
+    return '$theme, locked';
+  }
+
+  @override
+  String get lbLanguageRow => 'APP LANGUAGE';
+
+  @override
+  String get lbPerYearBestValue => 'per year · best value';
+
+  @override
+  String get lbProAlsoIncluded => 'ALSO INCLUDED';
+
+  @override
+  String get lbFreeTrack => 'FREE TRACK';
+
+  @override
+  String lbSeasonSubtitleSoon(String season, String left) {
+    return '$season · $left. Make them count.';
+  }
+
+  @override
+  String get lbEndsIn => 'ENDS IN';
+
+  @override
+  String get lbStartsIn => 'STARTS IN';
 }

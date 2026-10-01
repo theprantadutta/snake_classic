@@ -4402,5 +4402,218 @@
         "type": "String"
       }
     }
+  },
+  "lbGuestNoteApple": "Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.",
+  "@lbGuestNoteApple": {
+    "description": "First-time sign-in: note under the guest button on platforms that show Sign in with Apple (iOS, macOS)"
+  },
+  "lbGuestNoteNoApple": "Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.",
+  "@lbGuestNoteNoApple": {
+    "description": "First-time sign-in: note under the guest button on platforms without Sign in with Apple (Android and others)"
+  },
+  "lbAuthLegalTitle": "PRIVACY + TERMS",
+  "@lbAuthLegalTitle": {
+    "description": "First-time sign-in: screen title (cell font) while the Privacy Policy and Terms are shown"
+  },
+  "lbConsentTitle": "TERMS UPDATED",
+  "@lbConsentTitle": {
+    "description": "Re-consent screen title (cell font) shown when the Privacy Policy or Terms changed"
+  },
+  "lbEmailTitle": "EMAIL",
+  "@lbEmailTitle": {
+    "description": "Email sign-in screen title (cell font)"
+  },
+  "lbEmailLinkTitle": "SAVE PROGRESS",
+  "@lbEmailLinkTitle": {
+    "description": "Email screen title (cell font) when a guest links an email account"
+  },
+  "lbUsernameTitle": "USERNAME",
+  "@lbUsernameTitle": {
+    "description": "Username setup screen title (cell font)"
+  },
+  "lbShowPassword": "Show password",
+  "@lbShowPassword": {
+    "description": "Accessibility label for the button that reveals the password"
+  },
+  "lbHidePassword": "Hide password",
+  "@lbHidePassword": {
+    "description": "Accessibility label for the button that hides the password"
+  },
+  "lbSignedIn": "SIGNED IN",
+  "@lbSignedIn": {
+    "description": "Account chip when the sign-in provider is unknown"
+  },
+  "lbProviderGoogle": "GOOGLE",
+  "@lbProviderGoogle": {
+    "description": "Sign-in provider name in the SIGNED IN chip"
+  },
+  "lbProviderApple": "APPLE",
+  "@lbProviderApple": {
+    "description": "Sign-in provider name in the SIGNED IN chip"
+  },
+  "lbProviderEmail": "EMAIL",
+  "@lbProviderEmail": {
+    "description": "Sign-in provider name in the SIGNED IN chip"
+  },
+  "lbStatsSubtitle": "Every run, counted. Even the bad ones.",
+  "@lbStatsSubtitle": {
+    "description": "Statistics screen subtitle"
+  },
+  "lbTrendUp": "CLIMBING",
+  "@lbTrendUp": {
+    "description": "Score trend: improving"
+  },
+  "lbTrendDown": "SLIPPING",
+  "@lbTrendDown": {
+    "description": "Score trend: declining"
+  },
+  "lbTrendFlat": "STEADY",
+  "@lbTrendFlat": {
+    "description": "Score trend: stable"
+  },
+  "lbReplaysSubtitle": "Kept on this phone. Never uploaded.",
+  "@lbReplaysSubtitle": {
+    "description": "Replays screen subtitle (replays are device-local)"
+  },
+  "lbReplayTitle": "REPLAY",
+  "@lbReplayTitle": {
+    "description": "Replay viewer title"
+  },
+  "lbReplayEnded": "ENDED",
+  "@lbReplayEnded": {
+    "description": "Replay outcome when the run did not end in a crash"
+  },
+  "lbSpeedX": "{speed}×",
+  "@lbSpeedX": {
+    "description": "Playback speed option, e.g. 0.5×",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "lbPause": "PAUSE",
+  "@lbPause": {
+    "description": "Pause playback button label"
+  },
+  "lbReplayPrevFrame": "PREVIOUS FRAME",
+  "@lbReplayPrevFrame": {
+    "description": "Replay viewer: step one frame back"
+  },
+  "lbReplayNextFrame": "NEXT FRAME",
+  "@lbReplayNextFrame": {
+    "description": "Replay viewer: step one frame forward"
+  },
+  "lbFriendsSubtitle": "Snakes you know. Rivals you'll beat.",
+  "@lbFriendsSubtitle": {
+    "description": "Friends screen subtitle"
+  },
+  "lbDurDayHour": "{d}d {h}h",
+  "@lbDurDayHour": {
+    "description": "Compact duration, days and hours (reset countdowns)",
+    "placeholders": {
+      "d": {
+        "type": "String"
+      },
+      "h": {
+        "type": "String"
+      }
+    }
+  },
+  "lbBonusStreak": "{days, plural, =1{1 DAY STREAK} other{{days} DAY STREAK}}",
+  "@lbBonusStreak": {
+    "description": "Daily bonus popup streak chip",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lbPoints": "{points} PTS",
+  "@lbPoints": {
+    "description": "Achievement points chip",
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "lbRefresh": "REFRESH",
+  "@lbRefresh": {
+    "description": "Button that reloads a list from the server"
+  },
+  "lbRouteErrorTitle": "LOST THE TRAIL",
+  "@lbRouteErrorTitle": {
+    "description": "Route error screen title: the link pointed at a screen this build does not have"
+  },
+  "lbRouteErrorBody": "That screen does not exist in this version of the game.",
+  "@lbRouteErrorBody": {
+    "description": "Route error screen body"
+  },
+  "lbRouteErrorHome": "BACK TO HOME",
+  "@lbRouteErrorHome": {
+    "description": "Route error screen button: go to the home screen"
+  },
+  "lbVersionShort": "v{version}",
+  "@lbVersionShort": {
+    "description": "Settings footer: app version, e.g. v7.0.0",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "lbCtrlReference": "GESTURES & KEYS",
+  "@lbCtrlReference": {
+    "description": "Settings row that opens the list of every gesture and key"
+  },
+  "lbCtrlReferenceSub": "what every swipe and key does",
+  "@lbCtrlReferenceSub": {
+    "description": "Subtitle of the gestures and keys row"
+  },
+  "lbThemeSwatchLocked": "{theme}, locked",
+  "@lbThemeSwatchLocked": {
+    "description": "Screen-reader label for a locked premium theme swatch",
+    "placeholders": {
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "lbLanguageRow": "APP LANGUAGE",
+  "@lbLanguageRow": {
+    "description": "Settings row that opens the language picker"
+  },
+  "lbPerYearBestValue": "per year · best value",
+  "@lbPerYearBestValue": {
+    "description": "Store / Pro screen: secondary line under the yearly plan price"
+  },
+  "lbProAlsoIncluded": "ALSO INCLUDED",
+  "@lbProAlsoIncluded": {
+    "description": "Pro screen: section label above the extra Pro perks (spawn boosts, tournament entries)"
+  },
+  "lbFreeTrack": "FREE TRACK",
+  "@lbFreeTrack": {
+    "description": "Battle pass chip when the player is on the free track only"
+  },
+  "lbSeasonSubtitleSoon": "{season} · {left}. Make them count.",
+  "@lbSeasonSubtitleSoon": {
+    "description": "Battle pass subtitle in the last day; left is e.g. '5h left' or 'Ending soon'",
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "lbEndsIn": "ENDS IN",
+  "@lbEndsIn": {
+    "description": "Label over a tournament countdown"
+  },
+  "lbStartsIn": "STARTS IN",
+  "@lbStartsIn": {
+    "description": "Label over an upcoming tournament countdown"
   }
 }
