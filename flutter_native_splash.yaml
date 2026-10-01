@@ -7,10 +7,13 @@
 # Info.plist, LaunchScreen.storyboard, web/index.html and the .xcassets
 # manifests. See the comment in values/styles.xml.
 #
-# All five images below are true alpha over the `color` window background —
-# nothing carries a baked-in backdrop. android_12_splash_dark.png is derived
-# from splash_logo_transparent.png and is cropped by the system to a circle
-# 2/3 the canvas wide, so its content must stay inside that radius.
+# Both images below are true alpha over the `color` window background —
+# nothing carries a baked-in backdrop (checked over magenta). They are the
+# Living Board "Cell S" mark: android_12_splash_dark.png is the kit's
+# splash-logo-android12-1152.png (content radius 310 px, under the 384 px
+# = width/3 the system circle crop allows) and splash_logo_transparent.png
+# is its centre crop. No branding strip: the in-app splash draws the
+# wordmark right after.
 flutter_native_splash:
   color: "#0F380F"
   color_dark: "#0F380F"
@@ -28,13 +31,8 @@ flutter_native_splash:
   image: assets/splash/splash_logo_transparent.png
   image_dark: assets/splash/splash_logo_transparent.png
 
-  branding: assets/splash/branding_text_dark.png
-  branding_dark: assets/splash/branding_text_dark.png
-
   android_12:
     image: assets/splash/android_12_splash_dark.png
     image_dark: assets/splash/android_12_splash_dark.png
     color: "#0F380F"
     color_dark: "#0F380F"
-    branding: assets/splash/branding_dark.png
-    branding_dark: assets/splash/branding_dark.png
