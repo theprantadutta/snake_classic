@@ -809,37 +809,23 @@ class PremiumCubit extends Cubit<PremiumState> {
       // expiry is in the future). Don't grant Pro off it here — the local
       // self-expiry and the is_premium==false branch settle that case.
     } else if (data['is_premium'] == false && state.tier == PremiumTier.pro) {
-      // Subscription was revoked. Downgrade tier locally so paywall gating
-      // reactivates immediately, then also revert the per-feature state
-      // that depended on Pro. The backend EntitlementRecomputer already
-      // pruned OwnedThemes / OwnedCosmetics / PowerUpInventory /
-      // TournamentEntries on the server — the sections above have already
+      // Subscription lapsed or was revoked. Downgrade tier locally so
+      // paywall gating reactivates immediately, then also revert the
+      // per-feature state that depended on Pro. The backend
+      // EntitlementRecomputer already pruned Pro's implicit OwnedThemes /
+      // OwnedCosmetics on the server — the sections above have already
       // mirrored those down. What remains here is the client-only
       // bookkeeping that nothing else touches.
+      //
+      // Tournament entries are NOT touched: they are the player's to keep,
+      // like Pro's power-up grant, whether Pro granted them or they were
+      // bought. A lapse takes the perks, never the entries.
       emit(state.copyWith(tier: PremiumTier.free));
       _storageService.setPremiumActive(false);
 
       // Coin multiplier: drop from 2x / 2.25x back to 1.0x. Without this
       // the player keeps earning at Pro rate until the next app start.
       _coinsCubit?.updatePremiumMultiplier(false, state.hasBattlePass);
-
-      // Tournament entries: the server-side recomputer cleared them all.
-      // Force-set local counts to match (the regular sync block above is
-      // additive-only and wouldn't zero them out).
-      if (state.bronzeTournamentEntries != 0 ||
-          state.silverTournamentEntries != 0 ||
-          state.goldTournamentEntries != 0) {
-        emit(state.copyWith(
-          bronzeTournamentEntries: 0,
-          silverTournamentEntries: 0,
-          goldTournamentEntries: 0,
-        ));
-        await _storageService.setTournamentEntries(
-          bronze: 0,
-          silver: 0,
-          gold: 0,
-        );
-      }
 
       // Power-up inventory: pull fresh from the server so the wiped Pro
       // power-up charges land locally without waiting for the next
