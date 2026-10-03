@@ -51,17 +51,17 @@ void main() {
   }
 
   // Every version a shipped build could have left a device at.
-  for (var from = 1; from < 22; from++) {
+  for (var from = 1; from < 23; from++) {
     test('replaying the upgrade from v$from onto a complete schema succeeds',
         () async {
       final file = await completeSchemaStampedAs(from);
       final db = AppDatabase.forTesting(NativeDatabase(file));
       addTearDown(db.close);
 
-      // Any query opens the database, which runs onUpgrade(from, 22).
+      // Any query opens the database, which runs onUpgrade(from, 23).
       await db.customSelect('SELECT 1').get();
 
-      expect(await userVersion(db), 22, reason: 'the upgrade completed');
+      expect(await userVersion(db), 23, reason: 'the upgrade completed');
 
       // The schema is still whole: the columns the crash loops were about,
       // and the newest table, all readable.
@@ -77,9 +77,49 @@ void main() {
         'SELECT snap_movement_enabled, control_layout_index '
         'FROM device_preferences LIMIT 1',
       ).get();
+      await db.customSelect(
+        'SELECT session_id, revision, poisoned FROM telemetry_sessions LIMIT 1',
+      ).get();
+      await db.customSelect(
+        'SELECT feedback_id, rating FROM telemetry_feedback LIMIT 1',
+      ).get();
       await db.initializeDefaults();
     });
   }
+
+  test('a real v22 database gains the telemetry tables, and they work',
+      () async {
+    // A complete schema minus what v23 adds, stamped 22: the state of every
+    // device on the build before telemetry.
+    final file = await completeSchemaStampedAs(22);
+    final raw = AppDatabase.forTesting(NativeDatabase(file));
+    await raw.customSelect('SELECT 1').get();
+    await raw.customStatement('DROP TABLE telemetry_sessions');
+    await raw.customStatement('DROP TABLE telemetry_feedback');
+    await raw.customStatement('PRAGMA user_version = 22');
+    await raw.close();
+
+    final db = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(db.close);
+    await db.customSelect('SELECT 1').get();
+    expect(await userVersion(db), 23);
+
+    final now = DateTime(2026, 10, 3, 9);
+    await db.telemetryDao.upsertSession(
+      TelemetrySessionsCompanion.insert(
+        sessionId: '0b0c3a52-1c1e-4c43-9a55-3d0b6f4d2f10',
+        design: 'living_board',
+        appVersion: '6.8.0',
+        build: 60,
+        startedAt: now,
+        lastActiveAt: now,
+        localDay: '2026-10-03',
+      ),
+    );
+    final dirty = await db.telemetryDao.dirtySessions(limit: 10);
+    expect(dirty.single.poisoned, isFalse);
+    expect(dirty.single.dirty, isTrue);
+  });
 
   test('a failed step leaves nothing behind for the next launch to trip on',
       () async {
@@ -93,6 +133,6 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 22);
+    expect(await userVersion(db), 23);
   });
 }
