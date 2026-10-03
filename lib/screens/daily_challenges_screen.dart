@@ -417,7 +417,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                       expanded: true,
                       icon: LBIcon.calendar,
                       title: l10n.dcNoChallenges,
-                      line: '${failed ? l10n.lbServerDown : l10n.dchCheckBack}\n$subline',
+                      line: '${failed ? l10n.lbServerDown : l10n.dchCheckBack}\n\n$subline',
                       action: failed
                           ? LBBlock(
                               kind: LBBlockKind.outline,
