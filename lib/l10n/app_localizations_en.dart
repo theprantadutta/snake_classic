@@ -5159,14 +5159,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lbHomeHint => 'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'DAILY $done/$total · ONE MORE SNACK, PLEASE';
-  }
-
-  @override
-  String get lbDailyCheck => 'DAILY · TODAY\'S CHALLENGES';
-
-  @override
   String get lbDailyAllFed => 'ALL FED. COME BACK TOMORROW.';
 
   @override

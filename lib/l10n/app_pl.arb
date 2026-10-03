@@ -1544,8 +1544,6 @@
   "updateActionLater": "Później",
   "updateOpenStoreFailed": "Nie udało się otworzyć App Store",
   "lbHomeHint": "WJEDŹ W BLOK. ALBO GO DOTKNIJ. NIE OCENIAMY.",
-  "lbDailyNag": "DZIENNE {done}/{total} · JESZCZE PRZEKĄSKĘ, PROSZĘ",
-  "lbDailyCheck": "WYZWANIA NA DZIŚ",
   "lbDailyAllFed": "NAJEDZONY. WRÓĆ JUTRO.",
   "lbModeRow": "TRYB {index}/{count} · {mode}",
   "lbYourBest": "TWÓJ REKORD",

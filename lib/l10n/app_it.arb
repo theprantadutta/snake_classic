@@ -1544,8 +1544,6 @@
   "updateActionLater": "Più tardi",
   "updateOpenStoreFailed": "Impossibile aprire App Store",
   "lbHomeHint": "PUNTA UN BLOCCO. O TOCCALO. NON GIUDICHIAMO.",
-  "lbDailyNag": "SFIDE {done}/{total} · ANCORA UNO SPUNTINO, DAI",
-  "lbDailyCheck": "SFIDE DI OGGI",
   "lbDailyAllFed": "TUTTI SAZI. TORNA DOMANI.",
   "lbModeRow": "MODALITÀ {index}/{count} · {mode}",
   "lbYourBest": "IL TUO RECORD",

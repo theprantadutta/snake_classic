@@ -5150,14 +5150,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbHomeHint => 'وجّه الثعبان نحو مربع. أو انقر. لن نحكم عليك.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'اليومية $done/$total · وجبة أخرى من فضلك';
-  }
-
-  @override
-  String get lbDailyCheck => 'تحديات اليوم';
-
-  @override
   String get lbDailyAllFed => 'شبعنا. عُد غدًا.';
 
   @override

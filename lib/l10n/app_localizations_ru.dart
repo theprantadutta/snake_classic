@@ -5186,14 +5186,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbHomeHint => 'ЗАРУЛИ В БЛОК. ИЛИ ТАПНИ. МЫ НЕ СУДИМ.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'ЗАДАНИЯ $done/$total · ЕЩЁ КУСОЧЕК, ПЛИЗ';
-  }
-
-  @override
-  String get lbDailyCheck => 'ЗАДАНИЯ НА СЕГОДНЯ';
-
-  @override
   String get lbDailyAllFed => 'ВСЕ СЫТЫ. ПРИХОДИ ЗАВТРА.';
 
   @override

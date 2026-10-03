@@ -5231,14 +5231,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbHomeHint => 'FONCE DANS UN BLOC. OU TOUCHE-LE. ON NE JUGE PAS.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'DÉFIS $done/$total · ENCORE UN EN-CAS, STP';
-  }
-
-  @override
-  String get lbDailyCheck => 'DÉFIS DU JOUR';
-
-  @override
   String get lbDailyAllFed => 'RASSASIÉ. REVIENS DEMAIN.';
 
   @override

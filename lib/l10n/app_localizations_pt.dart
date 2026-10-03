@@ -5209,14 +5209,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lbHomeHint => 'GUIE ATÉ UM BLOCO. OU TOQUE. SEM JULGAMENTOS.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'DIÁRIO $done/$total · MAIS UM LANCHINHO, VAI';
-  }
-
-  @override
-  String get lbDailyCheck => 'DIÁRIO · DESAFIOS DE HOJE';
-
-  @override
   String get lbDailyAllFed => 'BARRIGA CHEIA. VOLTE AMANHÃ.';
 
   @override

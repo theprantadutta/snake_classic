@@ -5152,14 +5152,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'साँप को ब्लॉक में घुसाइए। या टैप कीजिए। हम जज नहीं करते।';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'दैनिक $done/$total · बस एक निवाला और, प्लीज़';
-  }
-
-  @override
-  String get lbDailyCheck => 'आज के चैलेंज';
-
-  @override
   String get lbDailyAllFed => 'पेट भर गया। कल फिर आइए।';
 
   @override

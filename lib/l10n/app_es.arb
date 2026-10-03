@@ -1544,8 +1544,6 @@
   "updateActionLater": "Más tarde",
   "updateOpenStoreFailed": "No se pudo abrir la App Store",
   "lbHomeHint": "GUÍA HACIA UN BLOQUE. O TÓCALO. NO JUZGAMOS.",
-  "lbDailyNag": "DIARIO {done}/{total} · OTRO BOCADO, PORFA",
-  "lbDailyCheck": "DIARIO · RETOS DE HOY",
   "lbDailyAllFed": "TODO COMIDO. VUELVE MAÑANA.",
   "lbModeRow": "MODO {index}/{count} · {mode}",
   "lbYourBest": "TU RÉCORD",

@@ -5210,14 +5210,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get lbHomeHint => 'PUNTA UN BLOCCO. O TOCCALO. NON GIUDICHIAMO.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'SFIDE $done/$total · ANCORA UNO SPUNTINO, DAI';
-  }
-
-  @override
-  String get lbDailyCheck => 'SFIDE DI OGGI';
-
-  @override
   String get lbDailyAllFed => 'TUTTI SAZI. TORNA DOMANI.';
 
   @override

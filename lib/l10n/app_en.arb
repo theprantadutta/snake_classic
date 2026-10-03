@@ -1946,22 +1946,6 @@
   "@lbHomeHint": {
     "description": "Home footer hint: the idle snake can be steered into a menu block, or the block tapped"
   },
-  "lbDailyNag": "DAILY {done}/{total} · ONE MORE SNACK, PLEASE",
-  "lbDailyCheck": "DAILY · TODAY'S CHALLENGES",
-  "@lbDailyCheck": {
-    "description": "Home daily strip when today's challenges have not loaded yet (offline)"
-  },
-  "@lbDailyNag": {
-    "description": "Home strip when daily challenges remain",
-    "placeholders": {
-      "done": {
-        "type": "String"
-      },
-      "total": {
-        "type": "String"
-      }
-    }
-  },
   "lbDailyAllFed": "ALL FED. COME BACK TOMORROW.",
   "@lbDailyAllFed": {
     "description": "All daily challenges done and claimed"

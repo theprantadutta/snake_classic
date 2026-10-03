@@ -1544,8 +1544,6 @@
   "updateActionLater": "لاحقًا",
   "updateOpenStoreFailed": "تعذّر فتح App Store",
   "lbHomeHint": "وجّه الثعبان نحو مربع. أو انقر. لن نحكم عليك.",
-  "lbDailyNag": "اليومية {done}/{total} · وجبة أخرى من فضلك",
-  "lbDailyCheck": "تحديات اليوم",
   "lbDailyAllFed": "شبعنا. عُد غدًا.",
   "lbModeRow": "الوضع {index}/{count} · {mode}",
   "lbYourBest": "أفضل نتيجة لك",

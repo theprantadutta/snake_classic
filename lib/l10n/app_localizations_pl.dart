@@ -5193,14 +5193,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lbHomeHint => 'WJEDŹ W BLOK. ALBO GO DOTKNIJ. NIE OCENIAMY.';
 
   @override
-  String lbDailyNag(String done, String total) {
-    return 'DZIENNE $done/$total · JESZCZE PRZEKĄSKĘ, PROSZĘ';
-  }
-
-  @override
-  String get lbDailyCheck => 'WYZWANIA NA DZIŚ';
-
-  @override
   String get lbDailyAllFed => 'NAJEDZONY. WRÓĆ JUTRO.';
 
   @override

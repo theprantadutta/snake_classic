@@ -566,10 +566,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
     final hasChips = adsOn || context.watch<PowerUpCubit>().state.armed != null;
     final chipRows = hasChips ? 2 : 0;
-    var bestRows = 5, playH = 4, tileH = 3, stripH = 1;
+    // One clear row between YOUR BEST and the snake's ring around PLAY.
+    const scoreGap = 1;
+    var bestRows = 5, playH = 4, tileH = 3;
     var showHint = true;
     int fixedRows() =>
-        2 + 1 + bestRows + stripH + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
+        2 + 1 + bestRows + scoreGap + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
     final available = rows - 1 - top;
     var spare = available - fixedRows();
     if (spare < 0) {
@@ -579,12 +581,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (spare < 0) {
       showHint = false;
       spare = available - fixedRows();
-    }
-    // The daily strip is a tap target, not a caption: two rows (a real
-    // button height) before anything else grows.
-    if (spare >= 1) {
-      stripH = 2;
-      spare -= 1;
     }
     if (spare >= 5) {
       tileH = 4;
@@ -608,10 +604,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final headerRow = top;
     final bestLabelRow = headerRow + 2 + gaps[1] + 1;
     final bestRow = bestLabelRow + 1;
-    final stripRow = bestRow + bestRows;
+    final gapRow = bestRow + bestRows;
     final playW = (contentCols - 8).isEven ? 8 : 9;
     final playC0 = c0 + (contentCols - playW) ~/ 2;
-    final playR0 = stripRow + stripH + 1;
+    final playR0 = gapRow + scoreGap + 1;
     final modeBarRow = playR0 + playH + 1;
     final modeRow = modeBarRow + 1;
     final chipsRow = modeRow + 1 + gaps[2];
@@ -654,7 +650,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final targets = <HomeSnakeTarget>[
       HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + playH),
-      HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + stripH),
       HomeSnakeTarget(
         'best',
         c0,
@@ -762,15 +757,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-            ),
-          ),
-
-          // Daily nag strip.
-          Positioned.fromRect(
-            rect: r(c0, stripRow, contentCols, stripH),
-            child: _DailyStrip(
-              tall: stripH > 1,
-              onTap: () => context.push(AppRoutes.dailyChallenges),
             ),
           ),
 
@@ -1271,71 +1257,6 @@ class _CoinReadout extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The daily nag strip: what is left today, or that you are done.
-class _DailyStrip extends ConsumerWidget {
-  const _DailyStrip({required this.onTap, this.tall = false});
-
-  final VoidCallback onTap;
-
-  /// Two grid rows: button-sized type and icon instead of a caption.
-  final bool tall;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final p = context.lb;
-    final daily = ref.watch(dailyChallengesProvider);
-    final unclaimed = ref.watch(unclaimedRewardsCountProvider);
-    final done = daily.completedCount, total = daily.totalCount;
-    final String text;
-    if (total == 0) {
-      // Today's board has not loaded (offline): no 0/0, just the way in.
-      text = l10n.lbDailyCheck;
-    } else if (unclaimed > 0) {
-      text = '${l10n.lbHomeDaily('$done', '$total')} · ${l10n.lbClaim}';
-    } else if (done >= total) {
-      text = l10n.lbDailyAllFed;
-    } else {
-      text = l10n.lbDailyNag('$done', '$total');
-    }
-    return LBBlock(
-      kind: LBBlockKind.gold,
-      padding: EdgeInsets.symmetric(horizontal: tall ? 14 : 12),
-      radius: tall ? LB.blockRadius : 5,
-      onTap: onTap,
-      child: Row(
-        children: [
-          LBPixelIcon(
-            LBIcon.flame,
-            cell: tall ? 3.4 : 2.6,
-            color: LB.gold,
-            accent: LB.bonk,
-          ),
-          SizedBox(width: tall ? 12 : 10),
-          Expanded(
-            child: Text(
-              text,
-              // Two rows have room for a second line, so a long nag or
-              // translation wraps instead of losing its end.
-              maxLines: tall ? 2 : 1,
-              overflow: TextOverflow.ellipsis,
-              style: LBText.label(
-                p,
-                color: LB.gold,
-              ).copyWith(height: 1.25, fontSize: tall ? 12 : 9.5, letterSpacing: tall ? 1.8 : 1.6),
-            ),
-          ),
-          LBPixelIcon(
-            Directionality.of(context) == TextDirection.rtl ? LBIcon.back : LBIcon.next,
-            cell: tall ? 2.6 : 2,
-            color: LB.gold,
-          ),
-        ],
       ),
     );
   }
