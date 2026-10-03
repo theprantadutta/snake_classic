@@ -123,9 +123,15 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
         await _service.clearCache();
       }
 
-      await _service.refreshChallenges();
+      final answered = await _service.refreshChallenges();
       _lastRefreshDate = today;
       _syncStateFromService();
+      if (!answered && state.challenges.isEmpty) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to refresh daily challenges',
+        );
+      }
     } catch (_) {
       // Ignore errors in background refresh
     }
@@ -172,8 +178,9 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
       // generous enough for cold-start networks but bounded so the
       // loading state doesn't hang forever.
       await _service.initialize();
+      var answered = false;
       try {
-        await _service
+        answered = await _service
             .refreshChallenges()
             .timeout(const Duration(seconds: 8));
       } catch (_) {
@@ -183,7 +190,14 @@ class DailyChallengesNotifier extends StateNotifier<DailyChallengesState> {
       }
       _lastRefreshDate = DateTime.now().toIso8601String().split('T')[0];
       _syncStateFromService();
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        // Nothing cached and the server never answered: that is a failure
+        // to load, not a day without challenges.
+        error: !answered && state.challenges.isEmpty
+            ? 'Failed to load daily challenges'
+            : null,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

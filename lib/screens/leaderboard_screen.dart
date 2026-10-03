@@ -414,11 +414,23 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               color: theme.primaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
+            // The provider's error is an English diagnostic; the player
+            // gets the localized "couldn't load" line.
             Text(
-              leaderboardState.globalError!,
+              l10n.tnLeaderboardFailed,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.tnCheckConnection,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
               ),
             ),
             const SizedBox(height: 16),
@@ -505,11 +517,23 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               color: theme.primaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
+            // The provider's error is an English diagnostic; the player
+            // gets the localized "couldn't load" line.
             Text(
-              leaderboardState.weeklyError!,
+              l10n.tnLeaderboardFailed,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.tnCheckConnection,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
               ),
             ),
             const SizedBox(height: 16),

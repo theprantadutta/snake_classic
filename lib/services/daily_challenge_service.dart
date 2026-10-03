@@ -153,19 +153,22 @@ class DailyChallengeService extends ChangeNotifier {
   /// request fails (offline / 5xx) the in-memory list is left as-is
   /// — the screen continues to show whatever the previous successful
   /// refresh produced, or an empty state on a first-launch offline.
-  Future<void> refreshChallenges() async {
-    if (!ApiService().isAuthenticated) return;
+  ///
+  /// Returns whether the server answered with today's list, so a screen
+  /// can tell "no challenges today" from "could not reach the server".
+  Future<bool> refreshChallenges() async {
+    if (!ApiService().isAuthenticated) return false;
     _isLoading = true;
     notifyListeners();
     try {
       final body = await ApiService().getTodaysChallengesRemote();
-      if (body == null) return;
+      if (body == null) return false;
       final raw = body['challenges'];
       if (raw is! List) {
         AppLogger.warning(
           'DailyChallengeService.refreshChallenges: missing challenges list',
         );
-        return;
+        return false;
       }
       final parsed = <DailyChallenge>[];
       for (final entry in raw) {
@@ -179,8 +182,10 @@ class DailyChallengeService extends ChangeNotifier {
         }
       }
       await setChallengesFromBackend(parsed);
+      return true;
     } catch (e) {
       AppLogger.error('DailyChallengeService.refreshChallenges errored', e);
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

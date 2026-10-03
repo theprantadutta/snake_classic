@@ -16,6 +16,7 @@ class LeaderboardState {
   final Map<String, dynamic>? userRank;
   final bool isLoading;
   final String? error;
+
   /// When the Drift cache for this board was last successfully refreshed
   /// from the server. Null until the first refresh lands. Used by the
   /// "Updated X ago" chip.
@@ -169,13 +170,13 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   Future<void> _doRefresh() async {
     switch (_type) {
       case LeaderboardType.global:
-        return _service.refreshGlobal();
+        await _service.refreshGlobal();
       case LeaderboardType.weekly:
-        return _service.refreshWeekly();
+        await _service.refreshWeekly();
       case LeaderboardType.daily:
-        return _service.refreshDaily();
+        await _service.refreshDaily();
       case LeaderboardType.friends:
-        return _service.refreshFriends();
+        await _service.refreshFriends();
     }
   }
 
@@ -260,6 +261,7 @@ class CombinedLeaderboardState {
   final bool isLoadingWeekly;
   final String? globalError;
   final String? weeklyError;
+
   /// Drift-cache freshness timestamps; null until the first network
   /// refresh lands. Surfaced to the screen so it can show an
   /// "Updated X ago" chip per board.
@@ -379,10 +381,7 @@ class CombinedLeaderboardNotifier
     // whatever the server returned (or the previous good cache when
     // the network is down).
     try {
-      await Future.wait([
-        _service.refreshGlobal(),
-        _service.refreshWeekly(),
-      ]);
+      await Future.wait([_service.refreshGlobal(), _service.refreshWeekly()]);
       final results = await Future.wait([
         _service.getGlobalLeaderboard(),
         _service.getWeeklyLeaderboard(),
@@ -390,10 +389,8 @@ class CombinedLeaderboardNotifier
       state = state.copyWith(
         globalEntries: results[0],
         weeklyEntries: results[1],
-        globalLastRefreshedAt:
-            await _service.getLastRefreshedAt('global'),
-        weeklyLastRefreshedAt:
-            await _service.getLastRefreshedAt('weekly'),
+        globalLastRefreshedAt: await _service.getLastRefreshedAt('global'),
+        weeklyLastRefreshedAt: await _service.getLastRefreshedAt('weekly'),
       );
     } catch (_) {
       // Ignore errors in background refresh
@@ -447,7 +444,9 @@ class CombinedLeaderboardNotifier
       DateTime? refreshedAt;
       try {
         refreshedAt = await _service.getLastRefreshedAt('global');
-      } catch (_) {/* non-fatal */}
+      } catch (_) {
+        /* non-fatal */
+      }
 
       state = state.copyWith(
         globalEntries: cached,
@@ -456,12 +455,18 @@ class CombinedLeaderboardNotifier
         globalLastRefreshedAt: refreshedAt,
       );
 
-      await _service.refreshGlobal();
+      // An unanswered refresh is a failure: with nothing cached it must
+      // read as "couldn't load", not as an empty board.
+      if (!await _service.refreshGlobal()) {
+        throw StateError('global leaderboard unreachable');
+      }
       final entries = await _service.getGlobalLeaderboard();
       DateTime? refreshedAfter;
       try {
         refreshedAfter = await _service.getLastRefreshedAt('global');
-      } catch (_) {/* non-fatal */}
+      } catch (_) {
+        /* non-fatal */
+      }
       state = state.copyWith(
         globalEntries: entries,
         isLoadingGlobal: false,
@@ -497,7 +502,9 @@ class CombinedLeaderboardNotifier
       DateTime? refreshedAt;
       try {
         refreshedAt = await _service.getLastRefreshedAt('weekly');
-      } catch (_) {/* non-fatal */}
+      } catch (_) {
+        /* non-fatal */
+      }
 
       state = state.copyWith(
         weeklyEntries: cached,
@@ -506,12 +513,18 @@ class CombinedLeaderboardNotifier
         weeklyLastRefreshedAt: refreshedAt,
       );
 
-      await _service.refreshWeekly();
+      // An unanswered refresh is a failure: with nothing cached it must
+      // read as "couldn't load", not as an empty board.
+      if (!await _service.refreshWeekly()) {
+        throw StateError('weekly leaderboard unreachable');
+      }
       final entries = await _service.getWeeklyLeaderboard();
       DateTime? refreshedAfter;
       try {
         refreshedAfter = await _service.getLastRefreshedAt('weekly');
-      } catch (_) {/* non-fatal */}
+      } catch (_) {
+        /* non-fatal */
+      }
       state = state.copyWith(
         weeklyEntries: entries,
         isLoadingWeekly: false,
@@ -521,8 +534,9 @@ class CombinedLeaderboardNotifier
       AppLogger.error('Weekly leaderboard load failed', e, st);
       state = state.copyWith(
         isLoadingWeekly: false,
-        weeklyError:
-            cachedWasEmpty ? 'Failed to load weekly leaderboard' : null,
+        weeklyError: cachedWasEmpty
+            ? 'Failed to load weekly leaderboard'
+            : null,
       );
     } finally {
       if (state.isLoadingWeekly) {
@@ -538,13 +552,21 @@ class CombinedLeaderboardNotifier
   /// Calculate and set user rank for a given user ID
   void calculateUserRankFor(String? userId) {
     if (userId == null || state.globalEntries.isEmpty) {
-      state = state.copyWith(userRank: null);
+      state = state.copyWith(
+        userRank: null,
+        globalError: state.globalError,
+        weeklyError: state.weeklyError,
+      );
       return;
     }
 
     for (int i = 0; i < state.globalEntries.length; i++) {
       if (state.globalEntries[i]['uid'] == userId) {
         state = state.copyWith(
+          // copyWith clears the error fields when they are omitted; a rank
+          // update must not erase a failed load.
+          globalError: state.globalError,
+          weeklyError: state.weeklyError,
           userRank: {
             'rank': i + 1,
             'totalPlayers': state.globalEntries.length,
@@ -560,7 +582,11 @@ class CombinedLeaderboardNotifier
       }
     }
 
-    state = state.copyWith(userRank: null);
+    state = state.copyWith(
+      userRank: null,
+      globalError: state.globalError,
+      weeklyError: state.weeklyError,
+    );
   }
 
   /// Refresh all leaderboards
@@ -574,7 +600,11 @@ class CombinedLeaderboardNotifier
       globalError: null,
     );
     try {
-      await _service.refreshGlobal();
+      // An unanswered refresh is a failure: with nothing cached it must
+      // read as "couldn't load", not as an empty board.
+      if (!await _service.refreshGlobal()) {
+        throw StateError('global leaderboard unreachable');
+      }
       final entries = await _service.getGlobalLeaderboard();
       state = state.copyWith(
         globalEntries: entries,
@@ -597,7 +627,11 @@ class CombinedLeaderboardNotifier
       weeklyError: null,
     );
     try {
-      await _service.refreshWeekly();
+      // An unanswered refresh is a failure: with nothing cached it must
+      // read as "couldn't load", not as an empty board.
+      if (!await _service.refreshWeekly()) {
+        throw StateError('weekly leaderboard unreachable');
+      }
       final entries = await _service.getWeeklyLeaderboard();
       state = state.copyWith(
         weeklyEntries: entries,

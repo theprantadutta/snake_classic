@@ -105,20 +105,23 @@ class LeaderboardService {
     ]);
   }
 
-  Future<void> refreshGlobal({int limit = 50}) =>
+  /// The refresh methods return whether the server answered: false means
+  /// offline or a failed call, so a screen can tell "nobody has a score"
+  /// from "we never reached the server".
+  Future<bool> refreshGlobal({int limit = 50}) =>
       _refresh(LeaderboardBoardType.global, limit: limit);
 
-  Future<void> refreshWeekly({int limit = 50}) =>
+  Future<bool> refreshWeekly({int limit = 50}) =>
       _refresh(LeaderboardBoardType.weekly, limit: limit);
 
-  Future<void> refreshDaily({int limit = 50}) =>
+  Future<bool> refreshDaily({int limit = 50}) =>
       _refresh(LeaderboardBoardType.daily, limit: limit);
 
   /// Skips when the caller isn't authenticated (the friends endpoint
   /// is gated on auth and would 401 every time).
-  Future<void> refreshFriends({int limit = 50}) async {
-    if (!_api.isAuthenticated) return;
-    await _refresh(LeaderboardBoardType.friends, limit: limit);
+  Future<bool> refreshFriends({int limit = 50}) async {
+    if (!_api.isAuthenticated) return false;
+    return _refresh(LeaderboardBoardType.friends, limit: limit);
   }
 
   Future<void> clearCache() => _dao.clear();
@@ -133,7 +136,7 @@ class LeaderboardService {
     return entries.take(limit).map(_entryToMap).toList();
   }
 
-  Future<void> _refresh(String boardType, {required int limit}) async {
+  Future<bool> _refresh(String boardType, {required int limit}) async {
     Map<String, dynamic>? body;
     try {
       switch (boardType) {
@@ -152,13 +155,13 @@ class LeaderboardService {
       }
     } catch (e) {
       AppLogger.error('LeaderboardService: refresh $boardType errored', e);
-      return;
+      return false;
     }
     if (body == null) {
       AppLogger.network(
         'LeaderboardService: refresh $boardType returned null (offline?)',
       );
-      return;
+      return false;
     }
 
     final rawEntries = body['entries'];
@@ -166,7 +169,7 @@ class LeaderboardService {
       AppLogger.warning(
         'LeaderboardService: refresh $boardType — no entries field',
       );
-      return;
+      return false;
     }
 
     final companions = <LeaderboardEntriesCompanion>[];
@@ -205,6 +208,7 @@ class LeaderboardService {
       entries: companions,
       meta: meta,
     );
+    return true;
   }
 
   /// Map a typed Drift row onto the legacy `Map<String, dynamic>` shape

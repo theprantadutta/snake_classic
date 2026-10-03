@@ -274,6 +274,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
                     // arrives is this tall, so nothing below it moves when it
                     // does.
                     ...List.generate(3, (_) => _skeletonCard(theme))
+                  else if (challenges.isEmpty && challengesState.error != null)
+                    // Nothing cached and the server never answered: say so
+                    // and offer a retry, not "check back later".
+                    _buildLoadFailedState(theme)
                   else if (challenges.isEmpty)
                     _buildEmptyState(theme)
                   else
@@ -666,6 +670,41 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
               color: Colors.white.withValues(alpha: 0.55),
               fontSize: 13,
               height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadFailedState(GameTheme theme) {
+    final l10n = AppLocalizations.of(context)!;
+    return _card(
+      theme,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.mpLobbyUnreachableBody,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 14,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _refreshChallenges,
+            icon: Icon(Icons.refresh, color: theme.accentColor, size: 18),
+            label: Text(
+              l10n.commonRetry,
+              style: TextStyle(
+                color: theme.accentColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: theme.accentColor.withValues(alpha: 0.5)),
             ),
           ),
         ],
