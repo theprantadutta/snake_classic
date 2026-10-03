@@ -5105,7 +5105,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'القواعد والتحكم والمواجهة كلها موضحة هنا، والإعدادات بجوارها.';
+      'القواعد والتحكم والمواجهة والإعدادات، كلها في هذه القائمة.';
 
   @override
   String get insOnPhone => 'على الهاتف';

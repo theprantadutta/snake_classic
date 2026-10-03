@@ -5163,7 +5163,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'Regras, controlos e Versus estão explicados aqui. As definições estão mesmo ao lado.';
+      'Regras, controlos, Versus e definições estão todos neste menu.';
 
   @override
   String get insOnPhone => 'No telemóvel';

@@ -5113,7 +5113,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'Rules, controls and Versus are all explained here. Settings sits right beside it.';
+      'Rules, controls, Versus and Settings all live in this menu.';
 
   @override
   String get insOnPhone => 'On your phone';

@@ -9253,7 +9253,7 @@ abstract class AppLocalizations {
   /// No description provided for @hwHelpMsg.
   ///
   /// In en, this message translates to:
-  /// **'Rules, controls and Versus are all explained here. Settings sits right beside it.'**
+  /// **'Rules, controls, Versus and Settings all live in this menu.'**
   String get hwHelpMsg;
 
   /// No description provided for @insOnPhone.

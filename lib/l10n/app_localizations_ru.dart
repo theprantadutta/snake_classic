@@ -5141,7 +5141,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'Здесь описаны правила, управление и режим Версус. Настройки — рядом.';
+      'Правила, управление, Версус и настройки — всё в этом меню.';
 
   @override
   String get insOnPhone => 'На телефоне';

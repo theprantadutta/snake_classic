@@ -5165,7 +5165,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'Regole, controlli e Versus sono spiegati qui. Le impostazioni sono qui accanto.';
+      'Regole, controlli, Versus e impostazioni: tutto in questo menu.';
 
   @override
   String get insOnPhone => 'Sul telefono';

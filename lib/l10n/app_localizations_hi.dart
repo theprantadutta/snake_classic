@@ -5106,7 +5106,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get hwHelpMsg =>
-      'नियम, नियंत्रण और वर्सेस — सब यहाँ समझाया गया है। सेटिंग्स इसके बगल में है।';
+      'नियम, नियंत्रण, वर्सेस और सेटिंग्स — सब इसी मेन्यू में हैं।';
 
   @override
   String get insOnPhone => 'आपके फ़ोन पर';
