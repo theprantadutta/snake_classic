@@ -1173,7 +1173,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'كل السمات والمظاهر والآثار المميزة · لوحات كبيرة · عملات 2× · تعزيزات مميزة · دخول البطولات · تذكرة المعركة المميزة';
+      'كل السمات والمظاهر والآثار المميزة · عملات 2× · تعزيزات · دخول البطولات · تذكرة المعركة المميزة';
 
   @override
   String get storeMonthly => 'شهري';
@@ -1262,13 +1262,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get storeFeatureTrails => 'كل الآثار المميزة الأحد عشر';
 
   @override
-  String get storeFeatureBoards => 'لوحات مميزة (35×35، 40×40، 50×50)';
-
-  @override
   String get storeFeatureCoins => 'مضاعفة كسب العملات 2×';
 
   @override
-  String get storeFeaturePowerUps => '5× تعزيزات مميزة كل دورة';
+  String get storeFeaturePowerUps => '5× من كل تعزيز عند الاشتراك';
 
   @override
   String get storeFeatureTournaments =>
@@ -2952,13 +2949,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal و5 أخرى';
 
   @override
-  String get pbFeatBoards => 'لوحات لعب كبيرة';
-
-  @override
-  String get pbFeatBoardsDesc => 'العب على لوحات 35x35 و40x40 و50x50';
-
-  @override
-  String get pbFeatCoins => 'مكافآت عملات 2x';
+  String get pbFeatCoins => 'مكافآت عملات 2×';
 
   @override
   String get pbFeatCoinsDesc => 'ضعف عملات Snake من كل جولة';
@@ -2977,11 +2968,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pbFeatPowerUpsDesc => '+30% لمعدل ظهور التعزيزات على اللوحة';
 
   @override
-  String get pbFeatBundle => 'حزمة تعزيزات مميزة';
+  String get pbFeatBundle => 'حزمة تعزيزات';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport وGhost Mode وMagnetic Food وScore Shield وMega Invincibility في كل دورة فوترة';
+      '5 من كلٍّ من تعزيز السرعة والمناعة ومضاعف النقاط والحركة البطيئة عند الاشتراك. تبقى لك.';
 
   @override
   String get pbFeatTournament => 'دخول البطولات';
@@ -3124,6 +3115,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get faGuestNote =>
       'يمكن للضيوف اللعب وحفظ التقدم محليًا، لكن لا يمكنهم الشراء. سجّل الدخول عبر Apple أو Google أو البريد عندما تريد الاشتراك أو الشراء.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'يمكن للضيوف اللعب وحفظ التقدم محليًا، لكن لا يمكنهم الشراء. سجّل الدخول عبر Google أو البريد عندما تريد الاشتراك أو الشراء.';
 
   @override
   String get faPrivacyTerms => 'الخصوصية والشروط';
@@ -4539,18 +4534,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get bundleMegaPackDesc => 'نسخ محسّنة من التعزيزات الكلاسيكية';
-
-  @override
-  String get bundleTacticalPack => 'الحزمة التكتيكية';
-
-  @override
-  String get bundleTacticalPackDesc => 'تعزيزات استراتيجية للاعبين المهرة';
-
-  @override
-  String get bundleUltimatePack => 'الحزمة المطلقة';
-
-  @override
-  String get bundleUltimatePackDesc => 'كل التعزيزات المميزة المتاحة';
 
   @override
   String get skinClassic => 'كلاسيكي';

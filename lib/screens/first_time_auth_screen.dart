@@ -424,7 +424,14 @@ By using Snake Classic, you acknowledge that you have read, understood, and agre
                                   horizontal: 16,
                                 ),
                                 child: Text(
-                                  l10n.faGuestNote,
+                                  // Apple sign-in is offered only on Apple
+                                  // platforms (see the button above), so the
+                                  // note must not name it anywhere else.
+                                  defaultTargetPlatform == TargetPlatform.iOS ||
+                                          defaultTargetPlatform ==
+                                              TargetPlatform.macOS
+                                      ? l10n.faGuestNote
+                                      : l10n.faGuestNoteNoApple,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.65),

@@ -831,7 +831,9 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
     // grants on Pro verify (VerifyPurchaseCommandHandler). The previous
     // 'Exclusive Game Modes' line was a false promise (modes are uniformly
     // free per project rules) and 'Premium Power-ups' / 'VIP Tournaments'
-    // were unimplemented — those are now real recurring bundles.
+    // were unimplemented. Board sizes are free for everyone, so they are not
+    // a perk; the power-up bundle is the one-time grant of 5 of each working
+    // power-up (PowerUpCubit.grantProBundle mirrors it locally).
     final features = [
       _FeatureItem(
         Icons.favorite,
@@ -843,7 +845,6 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
       _FeatureItem(Icons.palette, l10n.pbFeatThemes, l10n.pbFeatThemesDesc),
       _FeatureItem(Icons.pets, l10n.pbFeatSkins, l10n.pbFeatSkinsDesc),
       _FeatureItem(Icons.gradient, l10n.pbFeatTrails, l10n.pbFeatTrailsDesc),
-      _FeatureItem(Icons.grid_on, l10n.pbFeatBoards, l10n.pbFeatBoardsDesc),
       _FeatureItem(
         Icons.monetization_on,
         l10n.pbFeatCoins,

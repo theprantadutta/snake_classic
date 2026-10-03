@@ -1183,7 +1183,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'Wszystkie motywy, skórki i ślady premium · duże plansze · 2× monety · wzmocnienia premium · wejścia na turnieje · Przepustka bojowa Premium';
+      'Wszystkie motywy, skórki i ślady premium · 2× monety · wzmocnienia · wejścia na turnieje · Przepustka bojowa Premium';
 
   @override
   String get storeMonthly => 'Miesięczny';
@@ -1272,13 +1272,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get storeFeatureTrails => 'Wszystkie 11 śladów premium';
 
   @override
-  String get storeFeatureBoards => 'Plansze premium (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => 'Zarobki monet 2×';
 
   @override
-  String get storeFeaturePowerUps => '5× wzmocnień premium w każdym cyklu';
+  String get storeFeaturePowerUps => '5× każdego wzmocnienia przy subskrypcji';
 
   @override
   String get storeFeatureTournaments =>
@@ -2977,13 +2974,7 @@ class AppLocalizationsPl extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal i 5 innych';
 
   @override
-  String get pbFeatBoards => 'Duże plansze';
-
-  @override
-  String get pbFeatBoardsDesc => 'Graj na planszach 35x35, 40x40 i 50x50';
-
-  @override
-  String get pbFeatCoins => 'Nagrody monet 2x';
+  String get pbFeatCoins => 'Nagrody monet 2×';
 
   @override
   String get pbFeatCoinsDesc => 'Podwójne monety Snake z każdej gry';
@@ -3003,11 +2994,11 @@ class AppLocalizationsPl extends AppLocalizations {
       '+30% częstości pojawiania się wzmocnień na planszy';
 
   @override
-  String get pbFeatBundle => 'Pakiet wzmocnień premium';
+  String get pbFeatBundle => 'Pakiet wzmocnień';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield i Mega Invincibility w każdym cyklu rozliczeniowym';
+      'Po 5 sztuk: Przyspieszenie, Nieśmiertelność, Mnożnik punktów i Spowolnienie przy subskrypcji. Zostają z tobą.';
 
   @override
   String get pbFeatTournament => 'Wejścia na turnieje';
@@ -3154,6 +3145,10 @@ class AppLocalizationsPl extends AppLocalizations {
   @override
   String get faGuestNote =>
       'Goście mogą grać i zapisywać postępy lokalnie, ale nie mogą kupować. Zaloguj się przez Apple, Google lub e-mail, gdy zechcesz subskrybować lub kupować.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'Goście mogą grać i zapisywać postępy lokalnie, ale nie mogą kupować. Zaloguj się przez Google lub e-mail, gdy zechcesz subskrybować lub kupować.';
 
   @override
   String get faPrivacyTerms => 'Prywatność i warunki';
@@ -4587,19 +4582,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get bundleMegaPackDesc => 'Ulepszone wersje klasycznych wzmocnień';
-
-  @override
-  String get bundleTacticalPack => 'Pakiet Taktyczny';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Strategiczne wzmocnienia dla wprawnych graczy';
-
-  @override
-  String get bundleUltimatePack => 'Pakiet Ostateczny';
-
-  @override
-  String get bundleUltimatePackDesc => 'Wszystkie wzmocnienia premium w jednym';
 
   @override
   String get skinClassic => 'Klasyczna';

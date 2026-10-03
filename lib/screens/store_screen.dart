@@ -1136,7 +1136,6 @@ class _StoreScreenState extends State<StoreScreen>
       (Icons.color_lens, l10n.storeFeatureThemes, false),
       (Icons.pets, l10n.storeFeatureSkins, false),
       (Icons.gradient, l10n.storeFeatureTrails, false),
-      (Icons.grid_4x4, l10n.storeFeatureBoards, false),
       (Icons.monetization_on, l10n.storeFeatureCoins, false),
       (Icons.flash_on, l10n.storeFeaturePowerUps, false),
       (Icons.emoji_events, l10n.storeFeatureTournaments, false),

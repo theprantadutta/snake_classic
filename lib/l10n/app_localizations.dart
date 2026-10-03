@@ -2167,7 +2167,7 @@ abstract class AppLocalizations {
   /// No description provided for @storeProHeroSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'All premium themes, skins & trails · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium'**
+  /// **'All premium themes, skins & trails · 2× coins · power-ups · tournament entries · Battle Pass Premium'**
   String get storeProHeroSubtitle;
 
   /// No description provided for @storeMonthly.
@@ -2320,12 +2320,6 @@ abstract class AppLocalizations {
   /// **'All 11 premium trail effects'**
   String get storeFeatureTrails;
 
-  /// No description provided for @storeFeatureBoards.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium board sizes (35×35, 40×40, 50×50)'**
-  String get storeFeatureBoards;
-
   /// No description provided for @storeFeatureCoins.
   ///
   /// In en, this message translates to:
@@ -2335,7 +2329,7 @@ abstract class AppLocalizations {
   /// No description provided for @storeFeaturePowerUps.
   ///
   /// In en, this message translates to:
-  /// **'5× premium power-ups every cycle'**
+  /// **'5× each power-up when you subscribe'**
   String get storeFeaturePowerUps;
 
   /// No description provided for @storeFeatureTournaments.
@@ -5206,22 +5200,10 @@ abstract class AppLocalizations {
   /// **'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more'**
   String get pbFeatTrailsDesc;
 
-  /// No description provided for @pbFeatBoards.
-  ///
-  /// In en, this message translates to:
-  /// **'Large Game Boards'**
-  String get pbFeatBoards;
-
-  /// No description provided for @pbFeatBoardsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Play on 35x35, 40x40 & 50x50 boards'**
-  String get pbFeatBoardsDesc;
-
   /// No description provided for @pbFeatCoins.
   ///
   /// In en, this message translates to:
-  /// **'2x Coin Rewards'**
+  /// **'2× Coin Rewards'**
   String get pbFeatCoins;
 
   /// No description provided for @pbFeatCoinsDesc.
@@ -5257,13 +5239,13 @@ abstract class AppLocalizations {
   /// No description provided for @pbFeatBundle.
   ///
   /// In en, this message translates to:
-  /// **'Premium Power-up Bundle'**
+  /// **'Power-up Bundle'**
   String get pbFeatBundle;
 
   /// No description provided for @pbFeatBundleDesc.
   ///
   /// In en, this message translates to:
-  /// **'5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle'**
+  /// **'5 each of Speed Boost, Invincibility, Score Multiplier & Slow Motion when you subscribe. Yours to keep.'**
   String get pbFeatBundleDesc;
 
   /// No description provided for @pbFeatTournament.
@@ -5523,6 +5505,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.'**
   String get faGuestNote;
+
+  /// Guest note on the first-run sign-in screen where Sign in with Apple is NOT offered (Android and others). Must not mention Apple. faGuestNote is the iOS/macOS variant; keep the two in sync apart from Apple.
+  ///
+  /// In en, this message translates to:
+  /// **'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.'**
+  String get faGuestNoteNoApple;
 
   /// No description provided for @faPrivacyTerms.
   ///
@@ -8247,30 +8235,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enhanced versions of classic power-ups'**
   String get bundleMegaPackDesc;
-
-  /// No description provided for @bundleTacticalPack.
-  ///
-  /// In en, this message translates to:
-  /// **'Tactical Power Pack'**
-  String get bundleTacticalPack;
-
-  /// No description provided for @bundleTacticalPackDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Strategic power-ups for skilled players'**
-  String get bundleTacticalPackDesc;
-
-  /// No description provided for @bundleUltimatePack.
-  ///
-  /// In en, this message translates to:
-  /// **'Ultimate Power Pack'**
-  String get bundleUltimatePack;
-
-  /// No description provided for @bundleUltimatePackDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Every premium power-up available'**
-  String get bundleUltimatePackDesc;
 
   /// No description provided for @skinClassic.
   ///

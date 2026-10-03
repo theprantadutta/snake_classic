@@ -1188,7 +1188,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'Todos los temas, aspectos y estelas premium · tableros grandes · 2× monedas · potenciadores premium · entradas de torneo · Pase de Batalla Premium';
+      'Todos los temas, aspectos y estelas premium · 2× monedas · potenciadores · entradas de torneo · Pase de Batalla Premium';
 
   @override
   String get storeMonthly => 'Mensual';
@@ -1278,13 +1278,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get storeFeatureTrails => 'Las 11 estelas premium';
 
   @override
-  String get storeFeatureBoards => 'Tableros premium (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => 'Ganancia de monedas 2×';
 
   @override
-  String get storeFeaturePowerUps => '5× potenciadores premium por ciclo';
+  String get storeFeaturePowerUps => '5× de cada potenciador al suscribirte';
 
   @override
   String get storeFeatureTournaments =>
@@ -2979,13 +2976,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal y 5 más';
 
   @override
-  String get pbFeatBoards => 'Tableros grandes';
-
-  @override
-  String get pbFeatBoardsDesc => 'Juega en tableros de 35x35, 40x40 y 50x50';
-
-  @override
-  String get pbFeatCoins => 'Recompensas de monedas 2x';
+  String get pbFeatCoins => 'Recompensas de monedas 2×';
 
   @override
   String get pbFeatCoinsDesc => 'El doble de Monedas Snake en cada partida';
@@ -3005,11 +2996,11 @@ class AppLocalizationsEs extends AppLocalizations {
       '+30% de aparición de potenciadores en el tablero';
 
   @override
-  String get pbFeatBundle => 'Pack de potenciadores premium';
+  String get pbFeatBundle => 'Pack de potenciadores';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield y Mega Invincibility por ciclo de facturación';
+      '5 de cada uno: Impulso de Velocidad, Invencibilidad, Multiplicador de Puntos y Cámara Lenta al suscribirte. Son tuyos.';
 
   @override
   String get pbFeatTournament => 'Entradas de torneo';
@@ -3156,6 +3147,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get faGuestNote =>
       'Los invitados pueden jugar y guardar el progreso localmente, pero no comprar. Inicia sesión con Apple, Google o correo cuando quieras suscribirte o comprar.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'Los invitados pueden jugar y guardar el progreso localmente, pero no comprar. Inicia sesión con Google o correo cuando quieras suscribirte o comprar.';
 
   @override
   String get faPrivacyTerms => 'Privacidad y Términos';
@@ -4596,20 +4591,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get bundleMegaPackDesc =>
       'Versiones mejoradas de los potenciadores clásicos';
-
-  @override
-  String get bundleTacticalPack => 'Pack Táctico';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Potenciadores estratégicos para jugadores hábiles';
-
-  @override
-  String get bundleUltimatePack => 'Pack Definitivo';
-
-  @override
-  String get bundleUltimatePackDesc =>
-      'Todos los potenciadores premium disponibles';
 
   @override
   String get skinClassic => 'Clásica';

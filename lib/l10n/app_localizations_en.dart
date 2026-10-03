@@ -1176,7 +1176,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'All premium themes, skins & trails · big boards · 2× coins · premium power-ups · tournament entries · Battle Pass Premium';
+      'All premium themes, skins & trails · 2× coins · power-ups · tournament entries · Battle Pass Premium';
 
   @override
   String get storeMonthly => 'Monthly';
@@ -1265,13 +1265,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeFeatureTrails => 'All 11 premium trail effects';
 
   @override
-  String get storeFeatureBoards => 'Premium board sizes (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => '2× coin earnings';
 
   @override
-  String get storeFeaturePowerUps => '5× premium power-ups every cycle';
+  String get storeFeaturePowerUps => '5× each power-up when you subscribe';
 
   @override
   String get storeFeatureTournaments =>
@@ -2955,13 +2952,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal & 5 more';
 
   @override
-  String get pbFeatBoards => 'Large Game Boards';
-
-  @override
-  String get pbFeatBoardsDesc => 'Play on 35x35, 40x40 & 50x50 boards';
-
-  @override
-  String get pbFeatCoins => '2x Coin Rewards';
+  String get pbFeatCoins => '2× Coin Rewards';
 
   @override
   String get pbFeatCoinsDesc => 'Double Snake Coins from every game';
@@ -2981,11 +2972,11 @@ class AppLocalizationsEn extends AppLocalizations {
       '+30% spawn rate for on-board power-ups during gameplay';
 
   @override
-  String get pbFeatBundle => 'Premium Power-up Bundle';
+  String get pbFeatBundle => 'Power-up Bundle';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield & Mega Invincibility every billing cycle';
+      '5 each of Speed Boost, Invincibility, Score Multiplier & Slow Motion when you subscribe. Yours to keep.';
 
   @override
   String get pbFeatTournament => 'Tournament Entries';
@@ -3131,6 +3122,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get faGuestNote =>
       'Guests can play and save progress locally, but cannot make purchases. Sign in with Apple, Google or Email when you are ready to subscribe or buy.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'Guests can play and save progress locally, but cannot make purchases. Sign in with Google or Email when you are ready to subscribe or buy.';
 
   @override
   String get faPrivacyTerms => 'Privacy & Terms';
@@ -4554,19 +4549,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bundleMegaPackDesc => 'Enhanced versions of classic power-ups';
-
-  @override
-  String get bundleTacticalPack => 'Tactical Power Pack';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Strategic power-ups for skilled players';
-
-  @override
-  String get bundleUltimatePack => 'Ultimate Power Pack';
-
-  @override
-  String get bundleUltimatePackDesc => 'Every premium power-up available';
 
   @override
   String get skinClassic => 'Classic';

@@ -1187,7 +1187,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'Tous les thèmes, skins et traînées premium · grands plateaux · 2× pièces · power-ups premium · entrées de tournoi · Passe de combat Premium';
+      'Tous les thèmes, skins et traînées premium · 2× pièces · power-ups · entrées de tournoi · Passe de combat Premium';
 
   @override
   String get storeMonthly => 'Mensuel';
@@ -1276,13 +1276,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get storeFeatureTrails => 'Les 11 traînées premium';
 
   @override
-  String get storeFeatureBoards => 'Plateaux premium (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => 'Gains de pièces 2×';
 
   @override
-  String get storeFeaturePowerUps => '5× power-ups premium par cycle';
+  String get storeFeaturePowerUps => '5× chaque power-up à l\'abonnement';
 
   @override
   String get storeFeatureTournaments =>
@@ -2985,13 +2982,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal et 5 autres';
 
   @override
-  String get pbFeatBoards => 'Grands plateaux';
-
-  @override
-  String get pbFeatBoardsDesc => 'Jouez sur des plateaux 35x35, 40x40 et 50x50';
-
-  @override
-  String get pbFeatCoins => 'Récompenses de pièces 2x';
+  String get pbFeatCoins => 'Récompenses de pièces 2×';
 
   @override
   String get pbFeatCoinsDesc =>
@@ -3012,11 +3003,11 @@ class AppLocalizationsFr extends AppLocalizations {
       '+30 % de taux d\'apparition des power-ups sur le plateau';
 
   @override
-  String get pbFeatBundle => 'Pack de power-ups premium';
+  String get pbFeatBundle => 'Pack de power-ups';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield et Mega Invincibility par cycle de facturation';
+      '5 de chaque : Boost de Vitesse, Invincibilité, Multiplicateur de Score et Ralenti à l\'abonnement. Ils sont à vous.';
 
   @override
   String get pbFeatTournament => 'Entrées de tournoi';
@@ -3163,6 +3154,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get faGuestNote =>
       'Les invités peuvent jouer et sauvegarder localement, mais pas acheter. Connectez-vous avec Apple, Google ou e-mail quand vous voudrez vous abonner ou acheter.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'Les invités peuvent jouer et sauvegarder localement, mais pas acheter. Connectez-vous avec Google ou e-mail quand vous voudrez vous abonner ou acheter.';
 
   @override
   String get faPrivacyTerms => 'Confidentialité et conditions';
@@ -4610,19 +4605,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get bundleMegaPackDesc =>
       'Versions améliorées des power-ups classiques';
-
-  @override
-  String get bundleTacticalPack => 'Pack Tactique';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Power-ups stratégiques pour joueurs aguerris';
-
-  @override
-  String get bundleUltimatePack => 'Pack Ultime';
-
-  @override
-  String get bundleUltimatePackDesc => 'Tous les power-ups premium disponibles';
 
   @override
   String get skinClassic => 'Classique';

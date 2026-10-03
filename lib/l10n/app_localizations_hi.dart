@@ -1177,7 +1177,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'सभी प्रीमियम थीम, स्किन और ट्रेल · बड़े बोर्ड · 2× सिक्के · प्रीमियम पावर-अप · टूर्नामेंट एंट्री · बैटल पास प्रीमियम';
+      'सभी प्रीमियम थीम, स्किन और ट्रेल · 2× सिक्के · पावर-अप · टूर्नामेंट एंट्री · बैटल पास प्रीमियम';
 
   @override
   String get storeMonthly => 'मासिक';
@@ -1267,13 +1267,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get storeFeatureTrails => 'सभी 11 प्रीमियम ट्रेल प्रभाव';
 
   @override
-  String get storeFeatureBoards => 'प्रीमियम बोर्ड आकार (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => '2× सिक्का कमाई';
 
   @override
-  String get storeFeaturePowerUps => 'हर चक्र में 5× प्रीमियम पावर-अप';
+  String get storeFeaturePowerUps => 'सदस्यता पर हर पावर-अप 5×';
 
   @override
   String get storeFeatureTournaments =>
@@ -2954,13 +2951,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal और 5 अन्य';
 
   @override
-  String get pbFeatBoards => 'बड़े गेम बोर्ड';
-
-  @override
-  String get pbFeatBoardsDesc => '35x35, 40x40 और 50x50 बोर्ड पर खेलें';
-
-  @override
-  String get pbFeatCoins => '2x सिक्का इनाम';
+  String get pbFeatCoins => '2× सिक्का इनाम';
 
   @override
   String get pbFeatCoinsDesc => 'हर गेम से दोगुने स्नेक सिक्के';
@@ -2979,11 +2970,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pbFeatPowerUpsDesc => 'गेमप्ले में बोर्ड पावर-अप की +30% दर';
 
   @override
-  String get pbFeatBundle => 'प्रीमियम पावर-अप बंडल';
+  String get pbFeatBundle => 'पावर-अप बंडल';
 
   @override
   String get pbFeatBundleDesc =>
-      'हर बिलिंग चक्र में 5× Teleport, Ghost Mode, Magnetic Food, Score Shield और Mega Invincibility';
+      'सदस्यता लेने पर स्पीड बूस्ट, अजेयता, स्कोर गुणक और स्लो मोशन — हर एक के 5। ये आपके ही रहेंगे।';
 
   @override
   String get pbFeatTournament => 'टूर्नामेंट प्रविष्टियाँ';
@@ -3128,6 +3119,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get faGuestNote =>
       'अतिथि खेल सकते हैं और प्रगति स्थानीय रूप से सहेज सकते हैं, पर खरीदारी नहीं कर सकते। सदस्यता या खरीद के लिए तैयार हों तो Apple, Google या ईमेल से साइन इन करें।';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'अतिथि खेल सकते हैं और प्रगति स्थानीय रूप से सहेज सकते हैं, पर खरीदारी नहीं कर सकते। सदस्यता या खरीद के लिए तैयार हों तो Google या ईमेल से साइन इन करें।';
 
   @override
   String get faPrivacyTerms => 'गोपनीयता और शर्तें';
@@ -4546,18 +4541,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get bundleMegaPackDesc => 'क्लासिक पावर-अप्स के उन्नत संस्करण';
-
-  @override
-  String get bundleTacticalPack => 'टैक्टिकल पावर पैक';
-
-  @override
-  String get bundleTacticalPackDesc => 'कुशल खिलाड़ियों के लिए रणनीतिक पावर-अप';
-
-  @override
-  String get bundleUltimatePack => 'अल्टीमेट पावर पैक';
-
-  @override
-  String get bundleUltimatePackDesc => 'हर प्रीमियम पावर-अप उपलब्ध';
 
   @override
   String get skinClassic => 'क्लासिक';

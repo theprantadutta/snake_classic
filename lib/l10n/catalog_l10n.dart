@@ -64,15 +64,11 @@ extension PremiumPowerUpTypeL10n on PremiumPowerUpType {
 extension PowerUpBundleL10n on PowerUpBundle {
   String localizedName(AppLocalizations l10n) => switch (id) {
         'mega_pack' => l10n.bundleMegaPack,
-        'tactical_pack' => l10n.bundleTacticalPack,
-        'ultimate_pack' => l10n.bundleUltimatePack,
         _ => name,
       };
 
   String localizedDescription(AppLocalizations l10n) => switch (id) {
         'mega_pack' => l10n.bundleMegaPackDesc,
-        'tactical_pack' => l10n.bundleTacticalPackDesc,
-        'ultimate_pack' => l10n.bundleUltimatePackDesc,
         _ => description,
       };
 }

@@ -1183,7 +1183,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get storeProHeroSubtitle =>
-      'Все премиум-темы, скины и следы · большие поля · 2× монеты · премиум-усиления · турнирные входы · премиум боевого пропуска';
+      'Все премиум-темы, скины и следы · 2× монеты · усиления · турнирные входы · премиум боевого пропуска';
 
   @override
   String get storeMonthly => 'Месяц';
@@ -1272,13 +1272,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storeFeatureTrails => 'Все 11 премиум-следов';
 
   @override
-  String get storeFeatureBoards => 'Премиум-поля (35×35, 40×40, 50×50)';
-
-  @override
   String get storeFeatureCoins => 'Монеты 2×';
 
   @override
-  String get storeFeaturePowerUps => '5× премиум-усилений каждый цикл';
+  String get storeFeaturePowerUps => '5× каждого усиления при подписке';
 
   @override
   String get storeFeatureTournaments =>
@@ -2970,13 +2967,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Particle, Glow, Rainbow, Fire, Cosmic, Crystal и ещё 5';
 
   @override
-  String get pbFeatBoards => 'Большие игровые поля';
-
-  @override
-  String get pbFeatBoardsDesc => 'Играйте на полях 35x35, 40x40 и 50x50';
-
-  @override
-  String get pbFeatCoins => 'Монеты 2x';
+  String get pbFeatCoins => 'Монеты 2×';
 
   @override
   String get pbFeatCoinsDesc => 'Вдвое больше монет Snake за каждую игру';
@@ -2995,11 +2986,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pbFeatPowerUpsDesc => '+30% к частоте появления усилений на поле';
 
   @override
-  String get pbFeatBundle => 'Премиум-набор усилений';
+  String get pbFeatBundle => 'Набор усилений';
 
   @override
   String get pbFeatBundleDesc =>
-      '5× Teleport, Ghost Mode, Magnetic Food, Score Shield и Mega Invincibility каждый платёжный цикл';
+      'По 5 штук: Ускорение, Неуязвимость, Множитель очков и Замедление при оформлении подписки. Остаются у вас.';
 
   @override
   String get pbFeatTournament => 'Турнирные входы';
@@ -3145,6 +3136,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get faGuestNote =>
       'Гости могут играть и сохранять прогресс локально, но не могут покупать. Войдите через Apple, Google или почту, когда решите подписаться или купить.';
+
+  @override
+  String get faGuestNoteNoApple =>
+      'Гости могут играть и сохранять прогресс локально, но не могут покупать. Войдите через Google или почту, когда решите подписаться или купить.';
 
   @override
   String get faPrivacyTerms => 'Конфиденциальность и условия';
@@ -4575,19 +4570,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bundleMegaPackDesc => 'Улучшенные версии классических усилений';
-
-  @override
-  String get bundleTacticalPack => 'Тактический набор';
-
-  @override
-  String get bundleTacticalPackDesc =>
-      'Стратегические усиления для умелых игроков';
-
-  @override
-  String get bundleUltimatePack => 'Абсолютный набор';
-
-  @override
-  String get bundleUltimatePackDesc => 'Все премиум-усиления сразу';
 
   @override
   String get skinClassic => 'Классическая';
