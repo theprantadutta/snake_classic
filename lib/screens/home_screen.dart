@@ -14,7 +14,6 @@ import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/services/leaderboard_service.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
-import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/data/daos/leaderboard_dao.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
@@ -563,15 +562,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // bigger PLAY, then breathing room between the groups — so no phone
     // gets a cramped board or a dead band.
     final top = ((MediaQuery.paddingOf(context).top + 6) / cell).ceil();
-    final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
-    final hasChips = adsOn || context.watch<PowerUpCubit>().state.armed != null;
-    final chipRows = hasChips ? 2 : 0;
     // One clear row between YOUR BEST and the snake's ring around PLAY.
     const scoreGap = 1;
     var bestRows = 5, playH = 4, tileH = 3;
     var showHint = true;
     int fixedRows() =>
-        2 + 1 + bestRows + scoreGap + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
+        2 + 1 + bestRows + scoreGap + 1 + playH + 1 + 1 + 1 + tileH * 3 + (showHint ? 1 : 0);
     final available = rows - 1 - top;
     var spare = available - fixedRows();
     if (spare < 0) {
@@ -582,17 +578,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       showHint = false;
       spare = available - fixedRows();
     }
-    if (spare >= 5) {
-      tileH = 4;
-      spare -= 3;
-    }
-    if (spare >= 3) {
+    // PLAY is the one loud thing: it grows first (two more rows), then the
+    // destination tiles.
+    if (spare >= 2) {
+      playH = 6;
+      spare -= 2;
+    } else if (spare >= 1) {
       playH = 5;
       spare -= 1;
     }
-    if (spare >= 6) {
-      playH = 6;
-      spare -= 1;
+    if (spare >= 4) {
+      tileH = 4;
+      spare -= 3;
     }
     // Whatever is left becomes even gaps: above the tiles, under the
     // header, and between the mode row and the chips.
@@ -605,13 +602,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final bestLabelRow = headerRow + 2 + gaps[1] + 1;
     final bestRow = bestLabelRow + 1;
     final gapRow = bestRow + bestRows;
-    final playW = (contentCols - 8).isEven ? 8 : 9;
+    // As wide as the ring allows: three columns each side for the snake's
+    // loop and the food, capped so it stays a button on wide screens, and
+    // the same parity as the content so it centres on the grid.
+    var playW = math.min(contentCols - 6, 12);
+    if ((contentCols - playW).isOdd) playW -= 1;
     final playC0 = c0 + (contentCols - playW) ~/ 2;
     final playR0 = gapRow + scoreGap + 1;
     final modeBarRow = playR0 + playH + 1;
     final modeRow = modeBarRow + 1;
-    final chipsRow = modeRow + 1 + gaps[2];
-    final tilesTop = chipsRow + chipRows + gaps[0];
+    final tilesTop = modeRow + 1 + gaps[2] + gaps[0];
     final hintRow = tilesTop + tileH * 3;
 
     final settings = context.watch<GameSettingsCubit>().state;
@@ -636,7 +636,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'season',
       'ranks',
       'store',
-      'profile',
+      'powerup',
     ];
     Rect tileRect(int i) {
       final col = i % 2, row = i ~/ 2;
@@ -698,10 +698,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             rect: r(c0, headerRow, contentCols - 2, 2),
             child: _HomeHeader(
               player: context.watch<AuthCubit>().state.publicLabel,
-              onMark: () => showCreditsDialog(
-                context,
-                context.read<ThemeCubit>().state.currentTheme,
-              ),
+              photoUrl: context.watch<AuthCubit>().state.photoURL,
+              onAvatar: () => _enter(context, 'profile'),
             ),
           ),
           Positioned.fromRect(
@@ -824,16 +822,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // Armed power-up + free power-up (rewarded), when there is room.
-          if (hasChips)
-            Positioned.fromRect(
-              rect: r(c0, chipsRow, contentCols, 2),
-              child: _HomeChips(
-                onArmed: () => context.push(AppRoutes.runSetup),
-                onFree: () => _watchForFreePowerUp(context),
-              ),
-            ),
-
           // Destinations.
           for (var i = 0; i < tiles.length; i++)
             Positioned.fromRect(
@@ -898,6 +886,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         context.push(AppRoutes.store);
       case 'profile':
         context.push(AppRoutes.profile);
+      case 'powerup':
+        // Free players watch for one; Pro (no ads) arms what they own.
+        if (getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled) {
+          _watchForFreePowerUp(context);
+        } else {
+          context.push(AppRoutes.runSetup);
+        }
     }
   }
 
@@ -978,21 +973,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onTap: go,
         );
       default:
-        return ListenableBuilder(
-          listenable: ProgressionService(),
-          builder: (context, _) => _HomeTile(
-            tall: tall,
-            key: HomeWalkthrough.profileKey,
-            icon: LBIcon.user,
-            title: l10n.lbHomeProfile,
-            subtitle: l10n.lbHomeProfileSub(
-              '${ProgressionService().level}',
-              context.formatInt(
-                StatisticsService().statistics.totalGamesPlayed,
-              ),
-            ),
-            onTap: go,
-          ),
+        // Power-ups: the free (rewarded) one for players who see ads, the
+        // owned stock for Pro; the armed one, if any, in the subtitle.
+        final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
+        return BlocBuilder<PowerUpCubit, PowerUpState>(
+          builder: (context, state) {
+            final armed = state.armed;
+            final owned = state.inventory.values.fold<int>(0, (a, b) => a + b);
+            return _HomeTile(
+              tall: tall,
+              icon: adsOn ? LBIcon.tv : LBIcon.bolt,
+              title: adsOn ? l10n.lbHomeFreePowerUp : l10n.lbHomePowerUps,
+              subtitle: armed != null
+                  ? l10n.lbArmedChip(loadoutLabelFor(l10n, armed).toUpperCase())
+                  : adsOn
+                      ? l10n.lbHomeFreePowerUpSub
+                      : l10n.lbHomePowerUpsSub(context.formatInt(owned)),
+              kind: adsOn ? LBBlockKind.gold : LBBlockKind.outline,
+              onTap: go,
+            );
+          },
         );
     }
   }
@@ -1163,11 +1163,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 /// Mark, name and greeting. Tapping the mark opens About.
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.player, required this.onMark});
+  const _HomeHeader({required this.player, required this.photoUrl, required this.onAvatar});
 
   /// Who is playing — the signed-in name, or the guest label.
   final String player;
-  final VoidCallback onMark;
+
+  /// Account photo (Google sign-in), if any.
+  final String? photoUrl;
+  final VoidCallback onAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -1175,19 +1178,12 @@ class _HomeHeader extends StatelessWidget {
     final s = context.lbCell * 2;
     return Row(
       children: [
-        Semantics(
-          button: true,
-          label: AppLocalizations.of(context)!.lbMenuAbout,
-          child: GestureDetector(
-            onTap: () {
-              LBFeedback.tap();
-              onMark();
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(1),
-              child: LBCellSMark(size: s - 2),
-            ),
-          ),
+        _HomeAvatar(
+          key: HomeWalkthrough.profileKey,
+          size: s,
+          initial: player.trim().isEmpty ? '?' : player.trim()[0].toUpperCase(),
+          photoUrl: photoUrl,
+          onTap: onAvatar,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1328,81 +1324,6 @@ class _ModeCycler extends StatelessWidget {
   }
 }
 
-/// Armed loadout and the free power-up (rewarded) offer.
-class _HomeChips extends StatelessWidget {
-  const _HomeChips({required this.onArmed, required this.onFree});
-
-  final VoidCallback onArmed, onFree;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final adsOn =
-        getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
-    return BlocBuilder<PowerUpCubit, PowerUpState>(
-      builder: (context, state) {
-        final armed = state.armed;
-        final children = <Widget>[
-          if (armed != null)
-            _ChipButton(
-              label: l10n.lbArmedChip(
-                loadoutLabelFor(l10n, armed).toUpperCase(),
-              ),
-              icon: LBIcon.bolt,
-              kind: LBChipKind.outline,
-              onTap: onArmed,
-            ),
-          if (adsOn)
-            _ChipButton(
-              label: l10n.lbFreePowerUp,
-              icon: LBIcon.tv,
-              kind: LBChipKind.gold,
-              onTap: onFree,
-            ),
-        ];
-        if (children.isEmpty) return const SizedBox.shrink();
-        return Center(
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: children,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ChipButton extends StatelessWidget {
-  const _ChipButton({
-    required this.label,
-    required this.icon,
-    required this.kind,
-    required this.onTap,
-  });
-
-  final String label;
-  final LBIcon icon;
-  final LBChipKind kind;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        LBFeedback.tap();
-        onTap();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: LBChip(label: label, icon: icon, kind: kind, height: 26),
-      ),
-    ),
-  );
-}
 
 /// One destination block: icon + title, subtitle beneath.
 class _HomeTile extends StatelessWidget {
@@ -1482,3 +1403,101 @@ String loadoutLabelFor(AppLocalizations l10n, String inventoryKey) =>
       'slow_motion' => l10n.puSlowMotion,
       _ => inventoryKey,
     };
+
+/// The player's avatar in the top bar: their account photo, else the pixel
+/// figure, with the level on a gold tab. Opens Profile.
+class _HomeAvatar extends StatelessWidget {
+  const _HomeAvatar({
+    super.key,
+    required this.size,
+    required this.initial,
+    required this.photoUrl,
+    required this.onTap,
+  });
+
+  final double size;
+
+  /// The player's first letter, drawn in cells like Profile's hero.
+  final String initial;
+  final String? photoUrl;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final figure = Center(
+      child: LBCellText(initial, cell: size / 9, glow: true, color: p.lime),
+    );
+    return ListenableBuilder(
+      listenable: ProgressionService(),
+      builder: (context, _) {
+        final level = l10n.lbLevelShort('${ProgressionService().level}');
+        return Semantics(
+          button: true,
+          label: '${l10n.lbHomeProfile}, $level',
+          excludeSemantics: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              LBFeedback.tap();
+              onTap();
+            },
+            child: SizedBox.square(
+              dimension: size,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: LBBlock(
+                      padding: EdgeInsets.zero,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(LB.blockRadius - 1),
+                        child: photoUrl == null || photoUrl!.isEmpty
+                            ? figure
+                            : Image.network(
+                                photoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => figure,
+                              ),
+                      ),
+                    ),
+                  ),
+                  // The level tab hangs off the bottom edge, like the old
+                  // avatar's badge.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: -7,
+                    child: Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: LB.gold,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          child: MediaQuery.withNoTextScaling(
+                            child: Text(
+                              level,
+                              maxLines: 1,
+                              style: LBText.label(p, color: p.board).copyWith(
+                                fontSize: 8.5,
+                                letterSpacing: 1,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

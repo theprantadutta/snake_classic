@@ -2072,25 +2072,9 @@
   "@lbHomeProfile": {
     "description": "Home block"
   },
-  "lbHomeProfileSub": "LV {level} · {runs} runs",
-  "@lbHomeProfileSub": {
-    "description": "Home Profile block subtitle",
-    "placeholders": {
-      "level": {
-        "type": "String"
-      },
-      "runs": {
-        "type": "String"
-      }
-    }
-  },
   "lbHomeMenu": "MENU",
   "@lbHomeMenu": {
     "description": "Home menu button and sheet title"
-  },
-  "lbFreePowerUp": "FREE POWER-UP · AD",
-  "@lbFreePowerUp": {
-    "description": "Home rewarded button: watch an ad for a free power-up"
   },
   "lbTipLabel": "TIP",
   "@lbTipLabel": {
@@ -4106,5 +4090,26 @@
   "dfThanks": "Thanks — that really helps.",
   "@dfThanks": {
     "description": "Snackbar shown after feedback is sent"
+  },
+  "lbHomeFreePowerUp": "POWER-UP",
+  "@lbHomeFreePowerUp": {
+    "description": "Home tile title: get a free power-up for watching a rewarded ad"
+  },
+  "lbHomeFreePowerUpSub": "free · short ad",
+  "@lbHomeFreePowerUpSub": {
+    "description": "Home tile subtitle under FREE POWER-UP"
+  },
+  "lbHomePowerUps": "POWER-UPS",
+  "@lbHomePowerUps": {
+    "description": "Home tile title for players without ads (Pro): their power-ups"
+  },
+  "lbHomePowerUpsSub": "{count} ready · arm one",
+  "@lbHomePowerUpsSub": {
+    "description": "Home tile subtitle: how many power-ups the player owns",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   }
 }

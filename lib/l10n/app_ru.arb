@@ -1561,9 +1561,7 @@
   "lbHomeStore": "МАГАЗИН",
   "lbHomeStoreSub": "Скины, темы, следы",
   "lbHomeProfile": "ПРОФИЛЬ",
-  "lbHomeProfileSub": "УР {level} · забеги: {runs}",
   "lbHomeMenu": "МЕНЮ",
-  "lbFreePowerUp": "УСИЛЕНИЕ ЗА РЕКЛАМУ",
   "lbTipLabel": "СОВЕТ",
   "lbTip1": "Стена не двигается. Двигаешься ты.",
   "lbTip2": "Комбо гаснет через 6 секунд. Жуй дальше.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Комментарий (необязательно)",
   "dfSend": "Отправить",
   "dfNotNow": "Не сейчас",
-  "dfThanks": "Спасибо — это очень помогает."
+  "dfThanks": "Спасибо — это очень помогает.",
+  "lbHomeFreePowerUp": "УСИЛЕНИЕ",
+  "lbHomeFreePowerUpSub": "даром · короткая реклама",
+  "lbHomePowerUps": "УСИЛЕНИЯ",
+  "lbHomePowerUpsSub": "готово: {count} · выбери одно"
 }

@@ -1561,9 +1561,7 @@
   "lbHomeStore": "SKLEP",
   "lbHomeStoreSub": "Skórki, motywy, ślady",
   "lbHomeProfile": "PROFIL",
-  "lbHomeProfileSub": "POZ. {level} · gry: {runs}",
   "lbHomeMenu": "MENU",
-  "lbFreePowerUp": "WZMOCNIENIE ZA REKLAMĘ",
   "lbTipLabel": "RADA",
   "lbTip1": "Ściana się nie rusza. Ty tak.",
   "lbTip2": "Combo gaśnie po 6 sekundach. Gryź dalej.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Komentarz (opcjonalnie)",
   "dfSend": "Wyślij",
   "dfNotNow": "Nie teraz",
-  "dfThanks": "Dzięki — to bardzo pomaga."
+  "dfThanks": "Dzięki — to bardzo pomaga.",
+  "lbHomeFreePowerUp": "WZMOCNIENIE",
+  "lbHomeFreePowerUpSub": "za darmo · krótka reklama",
+  "lbHomePowerUps": "WZMOCNIENIA",
+  "lbHomePowerUpsSub": "gotowe: {count} · uzbrój jedno"
 }

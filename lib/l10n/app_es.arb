@@ -1561,9 +1561,7 @@
   "lbHomeStore": "TIENDA",
   "lbHomeStoreSub": "Aspectos, temas, estelas",
   "lbHomeProfile": "PERFIL",
-  "lbHomeProfileSub": "NV {level} · {runs} partidas",
   "lbHomeMenu": "MENÚ",
-  "lbFreePowerUp": "POTENCIADOR GRATIS · ANUNCIO",
   "lbTipLabel": "CONSEJO",
   "lbTip1": "La pared no se mueve. Tú sí.",
   "lbTip2": "Los combos caducan a los 6 segundos. Sigue masticando.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Comentario (opcional)",
   "dfSend": "Enviar",
   "dfNotNow": "Ahora no",
-  "dfThanks": "¡Gracias! Nos ayuda mucho."
+  "dfThanks": "¡Gracias! Nos ayuda mucho.",
+  "lbHomeFreePowerUp": "POTENCIADOR",
+  "lbHomeFreePowerUpSub": "gratis · anuncio corto",
+  "lbHomePowerUps": "POTENCIADORES",
+  "lbHomePowerUpsSub": "{count} listos · equipa uno"
 }

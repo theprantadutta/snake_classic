@@ -1561,9 +1561,7 @@
   "lbHomeStore": "NEGOZIO",
   "lbHomeStoreSub": "Skin, temi, scie",
   "lbHomeProfile": "PROFILO",
-  "lbHomeProfileSub": "LV {level} · {runs} partite",
   "lbHomeMenu": "MENU",
-  "lbFreePowerUp": "POWER-UP GRATIS · ANNUNCIO",
   "lbTipLabel": "CONSIGLIO",
   "lbTip1": "Il muro non si muove. Tu sì.",
   "lbTip2": "Le combo svaniscono dopo 6 secondi. Continua a masticare.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Commento (facoltativo)",
   "dfSend": "Invia",
   "dfNotNow": "Non ora",
-  "dfThanks": "Grazie, ci aiuta molto."
+  "dfThanks": "Grazie, ci aiuta molto.",
+  "lbHomeFreePowerUp": "POWER-UP",
+  "lbHomeFreePowerUpSub": "gratis · breve annuncio",
+  "lbHomePowerUps": "POWER-UP",
+  "lbHomePowerUpsSub": "{count} pronti · armane uno"
 }

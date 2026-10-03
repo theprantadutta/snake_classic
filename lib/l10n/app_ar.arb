@@ -1561,9 +1561,7 @@
   "lbHomeStore": "المتجر",
   "lbHomeStoreSub": "مظاهر، سمات، آثار",
   "lbHomeProfile": "الملف",
-  "lbHomeProfileSub": "مستوى {level} · الجولات: {runs}",
   "lbHomeMenu": "القائمة",
-  "lbFreePowerUp": "تعزيز مجاني · إعلان",
   "lbTipLabel": "نصيحة",
   "lbTip1": "الجدار لا يتحرك. أنت من يتحرك.",
   "lbTip2": "السلاسل تتلاشى بعد 6 ثوانٍ. واصل المضغ.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "تعليق (اختياري)",
   "dfSend": "إرسال",
   "dfNotNow": "ليس الآن",
-  "dfThanks": "شكرًا — هذا يساعدنا كثيرًا."
+  "dfThanks": "شكرًا — هذا يساعدنا كثيرًا.",
+  "lbHomeFreePowerUp": "تعزيز",
+  "lbHomeFreePowerUpSub": "مجانًا · إعلان قصير",
+  "lbHomePowerUps": "التعزيزات",
+  "lbHomePowerUpsSub": "جاهزة: {count} · جهّز واحدًا"
 }

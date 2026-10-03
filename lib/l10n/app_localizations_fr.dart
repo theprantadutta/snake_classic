@@ -5304,15 +5304,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbHomeProfile => 'PROFIL';
 
   @override
-  String lbHomeProfileSub(String level, String runs) {
-    return 'NIV $level · $runs parties';
-  }
-
-  @override
   String get lbHomeMenu => 'MENU';
-
-  @override
-  String get lbFreePowerUp => 'POWER-UP GRATUIT · PUB';
 
   @override
   String get lbTipLabel => 'ASTUCE';
@@ -6690,4 +6682,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dfThanks => 'Merci, ça nous aide beaucoup.';
+
+  @override
+  String get lbHomeFreePowerUp => 'POWER-UP';
+
+  @override
+  String get lbHomeFreePowerUpSub => 'gratuit · pub courte';
+
+  @override
+  String get lbHomePowerUps => 'POWER-UPS';
+
+  @override
+  String lbHomePowerUpsSub(String count) {
+    return '$count prêts · arme-en un';
+  }
 }

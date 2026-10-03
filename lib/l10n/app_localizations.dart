@@ -9436,23 +9436,11 @@ abstract class AppLocalizations {
   /// **'PROFILE'**
   String get lbHomeProfile;
 
-  /// Home Profile block subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'LV {level} · {runs} runs'**
-  String lbHomeProfileSub(String level, String runs);
-
   /// Home menu button and sheet title
   ///
   /// In en, this message translates to:
   /// **'MENU'**
   String get lbHomeMenu;
-
-  /// Home rewarded button: watch an ad for a free power-up
-  ///
-  /// In en, this message translates to:
-  /// **'FREE POWER-UP · AD'**
-  String get lbFreePowerUp;
 
   /// Splash tip prefix
   ///
@@ -11703,6 +11691,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thanks — that really helps.'**
   String get dfThanks;
+
+  /// Home tile title: get a free power-up for watching a rewarded ad
+  ///
+  /// In en, this message translates to:
+  /// **'POWER-UP'**
+  String get lbHomeFreePowerUp;
+
+  /// Home tile subtitle under FREE POWER-UP
+  ///
+  /// In en, this message translates to:
+  /// **'free · short ad'**
+  String get lbHomeFreePowerUpSub;
+
+  /// Home tile title for players without ads (Pro): their power-ups
+  ///
+  /// In en, this message translates to:
+  /// **'POWER-UPS'**
+  String get lbHomePowerUps;
+
+  /// Home tile subtitle: how many power-ups the player owns
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ready · arm one'**
+  String lbHomePowerUpsSub(String count);
 }
 
 class _AppLocalizationsDelegate

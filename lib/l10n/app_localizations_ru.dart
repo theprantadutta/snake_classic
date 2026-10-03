@@ -5261,15 +5261,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbHomeProfile => 'ПРОФИЛЬ';
 
   @override
-  String lbHomeProfileSub(String level, String runs) {
-    return 'УР $level · забеги: $runs';
-  }
-
-  @override
   String get lbHomeMenu => 'МЕНЮ';
-
-  @override
-  String get lbFreePowerUp => 'УСИЛЕНИЕ ЗА РЕКЛАМУ';
 
   @override
   String get lbTipLabel => 'СОВЕТ';
@@ -6652,4 +6644,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dfThanks => 'Спасибо — это очень помогает.';
+
+  @override
+  String get lbHomeFreePowerUp => 'УСИЛЕНИЕ';
+
+  @override
+  String get lbHomeFreePowerUpSub => 'даром · короткая реклама';
+
+  @override
+  String get lbHomePowerUps => 'УСИЛЕНИЯ';
+
+  @override
+  String lbHomePowerUpsSub(String count) {
+    return 'готово: $count · выбери одно';
+  }
 }

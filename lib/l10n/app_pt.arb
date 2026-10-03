@@ -1561,9 +1561,7 @@
   "lbHomeStore": "LOJA",
   "lbHomeStoreSub": "Skins, temas, rastros",
   "lbHomeProfile": "PERFIL",
-  "lbHomeProfileSub": "NV {level} · {runs} partidas",
   "lbHomeMenu": "MENU",
-  "lbFreePowerUp": "POWER-UP GRÁTIS · ANÚNCIO",
   "lbTipLabel": "DICA",
   "lbTip1": "A parede não se mexe. Você, sim.",
   "lbTip2": "Combos somem após 6 segundos. Continue mastigando.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Comentário (opcional)",
   "dfSend": "Enviar",
   "dfNotNow": "Agora não",
-  "dfThanks": "Obrigado! Isso ajuda muito."
+  "dfThanks": "Obrigado! Isso ajuda muito.",
+  "lbHomeFreePowerUp": "POWER-UP",
+  "lbHomeFreePowerUpSub": "grátis · anúncio curto",
+  "lbHomePowerUps": "POWER-UPS",
+  "lbHomePowerUpsSub": "{count} prontos · equipe um"
 }

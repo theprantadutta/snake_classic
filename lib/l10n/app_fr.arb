@@ -1561,9 +1561,7 @@
   "lbHomeStore": "BOUTIQUE",
   "lbHomeStoreSub": "Skins, thèmes, traînées",
   "lbHomeProfile": "PROFIL",
-  "lbHomeProfileSub": "NIV {level} · {runs} parties",
   "lbHomeMenu": "MENU",
-  "lbFreePowerUp": "POWER-UP GRATUIT · PUB",
   "lbTipLabel": "ASTUCE",
   "lbTip1": "Le mur ne bouge pas. Toi, si.",
   "lbTip2": "Les combos s'éteignent après 6 secondes. Continue à mâcher.",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "Commentaire (facultatif)",
   "dfSend": "Envoyer",
   "dfNotNow": "Plus tard",
-  "dfThanks": "Merci, ça nous aide beaucoup."
+  "dfThanks": "Merci, ça nous aide beaucoup.",
+  "lbHomeFreePowerUp": "POWER-UP",
+  "lbHomeFreePowerUpSub": "gratuit · pub courte",
+  "lbHomePowerUps": "POWER-UPS",
+  "lbHomePowerUpsSub": "{count} prêts · arme-en un"
 }

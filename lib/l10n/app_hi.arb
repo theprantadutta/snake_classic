@@ -1561,9 +1561,7 @@
   "lbHomeStore": "स्टोर",
   "lbHomeStoreSub": "स्किन, थीम, ट्रेल",
   "lbHomeProfile": "प्रोफ़ाइल",
-  "lbHomeProfileSub": "लेवल {level} · {runs} रन",
   "lbHomeMenu": "मेन्यू",
-  "lbFreePowerUp": "मुफ़्त पावर-अप · विज्ञापन",
   "lbTipLabel": "टिप",
   "lbTip1": "दीवार नहीं हिलती। आप हिलते हैं।",
   "lbTip2": "कॉम्बो 6 सेकंड में ठंडा पड़ जाता है। चबाते रहिए।",
@@ -1938,5 +1936,9 @@
   "dfCommentLabel": "टिप्पणी (वैकल्पिक)",
   "dfSend": "भेजें",
   "dfNotNow": "अभी नहीं",
-  "dfThanks": "धन्यवाद — इससे बहुत मदद मिलती है।"
+  "dfThanks": "धन्यवाद — इससे बहुत मदद मिलती है।",
+  "lbHomeFreePowerUp": "पावर-अप",
+  "lbHomeFreePowerUpSub": "फ्री · छोटा विज्ञापन",
+  "lbHomePowerUps": "पावर-अप",
+  "lbHomePowerUpsSub": "{count} तैयार · एक चुनें"
 }
