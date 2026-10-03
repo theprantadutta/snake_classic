@@ -1,4 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:snake_classic/config/ui_design.dart';
+import 'package:snake_classic/services/telemetry/install_identity.dart';
 
 import 'analytics_client.dart';
 
@@ -28,8 +30,16 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackAppOpened() {
-    return _analytics.logAppOpen();
+  Future<void> trackAppOpened() async {
+    // Once per launch: which design and build this install is running, so
+    // GA4 can split every report by design the way the telemetry dashboard
+    // does. Set before the app_open event so it carries them.
+    await _analytics.setUserProperty(name: 'ui_design', value: kUiDesign);
+    final build = InstallIdentity.current?.build;
+    if (build != null && build > 0) {
+      await _analytics.setUserProperty(name: 'app_build', value: '$build');
+    }
+    await _analytics.logAppOpen();
   }
 
   @override

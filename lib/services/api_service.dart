@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_result.dart';
 import 'connectivity_service.dart';
+import 'telemetry/install_identity.dart';
 import '../utils/logger.dart';
 
 /// Outcome of a `/sync/*` POST. The SyncEngine uses this to route
@@ -159,6 +160,7 @@ class ApiService {
 
   Map<String, String> get _authHeaders => {
     'Content-Type': 'application/json',
+    ...InstallIdentity.clientHeaders,
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
@@ -197,6 +199,8 @@ class ApiService {
     final uri = Uri.parse('$baseUrl$path');
     final requestHeaders = <String, String>{
       'Content-Type': 'application/json',
+      // On every request, signed in or not — see InstallIdentity.
+      ...InstallIdentity.clientHeaders,
       if (authenticated) ..._authHeaders,
       ...?headers,
     };
@@ -303,7 +307,10 @@ class ApiService {
       final response = await http
           .post(
             Uri.parse('$baseUrl/auth/firebase'),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              ...InstallIdentity.clientHeaders,
+            },
             body: jsonEncode({
               'firebase_token': firebaseIdToken,
               'time_zone_offset_minutes': tzOffsetMinutes,
@@ -1056,7 +1063,10 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('$baseUrl/app-release/$platform'),
-            headers: const {'Accept': 'application/json'},
+            headers: {
+              'Accept': 'application/json',
+              ...InstallIdentity.clientHeaders,
+            },
           )
           .timeout(const Duration(seconds: 5));
       return _handleResponse(response);
@@ -1585,6 +1595,26 @@ class ApiService {
     // call; retrying forever just spams the backend.
     AppLogger.error('POST /$path failed with $code (permanent)', response.body);
     return SyncOutcome.permanent(statusCode: code);
+  }
+
+  // ==================== Telemetry ====================
+
+  /// `POST /telemetry/batch` — design-metrics sessions and feedback answers
+  /// (docs/design-metrics/CONTRACT.md). Called only by TelemetryUploader.
+  ///
+  /// The endpoint is anonymous: guests have to be counted too. A JWT is
+  /// attached only when it is still good, so the server can link the install
+  /// to an account; an expiring one is left off rather than risk a 401
+  /// clearing the session over a telemetry upload.
+  Future<ApiResult<Map<String, dynamic>>> postTelemetryBatch(
+    Map<String, dynamic> body,
+  ) {
+    return sendJson(
+      method: 'POST',
+      path: '/telemetry/batch',
+      body: body,
+      authenticated: isAuthenticated,
+    );
   }
 
   // ==================== Notifications ====================

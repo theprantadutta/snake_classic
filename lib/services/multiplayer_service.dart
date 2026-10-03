@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:signalr_netcore/ihub_protocol.dart' show MessageHeaders;
 import 'package:signalr_netcore/signalr_client.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_error.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/multiplayer/queue_resolution.dart';
+import 'package:snake_classic/services/telemetry/install_identity.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -452,6 +454,12 @@ class MultiplayerService {
 
   /// Establish the hub connection. Returns whether we ended up connected —
   /// callers must not proceed to invoke anything on a false.
+  static MessageHeaders _clientHeaders() {
+    final headers = MessageHeaders();
+    InstallIdentity.clientHeaders.forEach(headers.setHeaderValue);
+    return headers;
+  }
+
   Future<bool> _connectSignalR() async {
     try {
       if (_hubConnection?.state == HubConnectionState.Connected) {
@@ -466,6 +474,9 @@ class MultiplayerService {
             hubUrl,
             options: HttpConnectionOptions(
               accessTokenFactory: () async => _apiService.accessToken ?? '',
+              // The same install/build headers as every REST request, so the
+              // hub's negotiate call is attributable like the rest.
+              headers: _clientHeaders(),
               // signalr_netcore defaults this to TWO SECONDS, which is the
               // budget for the whole negotiate round-trip. A warm connection
               // fits; a cold one — the first search after a match ended and
