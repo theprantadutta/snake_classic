@@ -6578,4 +6578,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lbStartsIn => 'STARTS IN';
+
+  @override
+  String get dfTitle => 'How\'s the game feeling?';
+
+  @override
+  String get dfBody => 'Rate it from 1 to 5. A comment is optional.';
+
+  @override
+  String get dfLow => 'Not great';
+
+  @override
+  String get dfHigh => 'Love it';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '$rating out of 5';
+  }
+
+  @override
+  String get dfCommentLabel => 'Comment (optional)';
+
+  @override
+  String get dfSend => 'Send';
+
+  @override
+  String get dfNotNow => 'Not now';
+
+  @override
+  String get dfThanks => 'Thanks — that really helps.';
 }

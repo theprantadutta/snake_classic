@@ -1930,5 +1930,14 @@
   "lbFreeTrack": "PERCORSO GRATIS",
   "lbSeasonSubtitleSoon": "{season} · {left}. Dacci dentro.",
   "lbEndsIn": "TERMINA TRA",
-  "lbStartsIn": "INIZIA TRA"
+  "lbStartsIn": "INIZIA TRA",
+  "dfTitle": "Come ti sembra il gioco?",
+  "dfBody": "Dagli un voto da 1 a 5. Il commento è facoltativo.",
+  "dfLow": "Non granché",
+  "dfHigh": "Lo adoro",
+  "dfRatingOption": "{rating} su 5",
+  "dfCommentLabel": "Commento (facoltativo)",
+  "dfSend": "Invia",
+  "dfNotNow": "Non ora",
+  "dfThanks": "Grazie, ci aiuta molto."
 }

@@ -1930,5 +1930,14 @@
   "lbFreeTrack": "БЕСПЛ. ЛИНИЯ",
   "lbSeasonSubtitleSoon": "{season} · {left}. Не трать зря.",
   "lbEndsIn": "ДО КОНЦА",
-  "lbStartsIn": "ДО НАЧАЛА"
+  "lbStartsIn": "ДО НАЧАЛА",
+  "dfTitle": "Как вам игра?",
+  "dfBody": "Оцените от 1 до 5. Комментарий — по желанию.",
+  "dfLow": "Не очень",
+  "dfHigh": "Обожаю",
+  "dfRatingOption": "{rating} из 5",
+  "dfCommentLabel": "Комментарий (необязательно)",
+  "dfSend": "Отправить",
+  "dfNotNow": "Не сейчас",
+  "dfThanks": "Спасибо — это очень помогает."
 }

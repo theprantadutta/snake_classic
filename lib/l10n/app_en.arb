@@ -4077,5 +4077,46 @@
   "lbStartsIn": "STARTS IN",
   "@lbStartsIn": {
     "description": "Label over an upcoming tournament countdown"
+  },
+  "dfTitle": "How's the game feeling?",
+  "@dfTitle": {
+    "description": "Title of the in-app design feedback sheet. Must stay this neutral question: both UI designs ask it word for word so their answers compare."
+  },
+  "dfBody": "Rate it from 1 to 5. A comment is optional.",
+  "@dfBody": {
+    "description": "One line under the design feedback title"
+  },
+  "dfLow": "Not great",
+  "@dfLow": {
+    "description": "Label under the lowest (1) end of the 1–5 rating row"
+  },
+  "dfHigh": "Love it",
+  "@dfHigh": {
+    "description": "Label under the highest (5) end of the 1–5 rating row"
+  },
+  "dfRatingOption": "{rating} out of 5",
+  "@dfRatingOption": {
+    "description": "Screen-reader label for one rating block, e.g. '4 out of 5'",
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      }
+    }
+  },
+  "dfCommentLabel": "Comment (optional)",
+  "@dfCommentLabel": {
+    "description": "Label of the optional comment field on the feedback sheet"
+  },
+  "dfSend": "Send",
+  "@dfSend": {
+    "description": "Button that sends the feedback answer"
+  },
+  "dfNotNow": "Not now",
+  "@dfNotNow": {
+    "description": "Button that closes the feedback sheet without answering"
+  },
+  "dfThanks": "Thanks — that really helps.",
+  "@dfThanks": {
+    "description": "Snackbar shown after feedback is sent"
   }
 }

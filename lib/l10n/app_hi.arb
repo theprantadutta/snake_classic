@@ -1930,5 +1930,14 @@
   "lbFreeTrack": "मुफ़्त ट्रैक",
   "lbSeasonSubtitleSoon": "{season} · {left}। हर पल क़ीमती है।",
   "lbEndsIn": "ख़त्म होने में",
-  "lbStartsIn": "शुरू होने में"
+  "lbStartsIn": "शुरू होने में",
+  "dfTitle": "गेम कैसा लग रहा है?",
+  "dfBody": "1 से 5 तक रेटिंग दें। टिप्पणी देना ज़रूरी नहीं है।",
+  "dfLow": "अच्छा नहीं",
+  "dfHigh": "बहुत पसंद है",
+  "dfRatingOption": "5 में से {rating}",
+  "dfCommentLabel": "टिप्पणी (वैकल्पिक)",
+  "dfSend": "भेजें",
+  "dfNotNow": "अभी नहीं",
+  "dfThanks": "धन्यवाद — इससे बहुत मदद मिलती है।"
 }

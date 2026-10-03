@@ -1930,5 +1930,14 @@
   "lbFreeTrack": "PASE GRATIS",
   "lbSeasonSubtitleSoon": "{season} · {left}. Aprovéchalo.",
   "lbEndsIn": "TERMINA EN",
-  "lbStartsIn": "EMPIEZA EN"
+  "lbStartsIn": "EMPIEZA EN",
+  "dfTitle": "¿Qué tal se siente el juego?",
+  "dfBody": "Puntúalo del 1 al 5. El comentario es opcional.",
+  "dfLow": "Nada bien",
+  "dfHigh": "Me encanta",
+  "dfRatingOption": "{rating} de 5",
+  "dfCommentLabel": "Comentario (opcional)",
+  "dfSend": "Enviar",
+  "dfNotNow": "Ahora no",
+  "dfThanks": "¡Gracias! Nos ayuda mucho."
 }

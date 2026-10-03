@@ -6627,4 +6627,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lbStartsIn => 'ДО НАЧАЛА';
+
+  @override
+  String get dfTitle => 'Как вам игра?';
+
+  @override
+  String get dfBody => 'Оцените от 1 до 5. Комментарий — по желанию.';
+
+  @override
+  String get dfLow => 'Не очень';
+
+  @override
+  String get dfHigh => 'Обожаю';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '$rating из 5';
+  }
+
+  @override
+  String get dfCommentLabel => 'Комментарий (необязательно)';
+
+  @override
+  String get dfSend => 'Отправить';
+
+  @override
+  String get dfNotNow => 'Не сейчас';
+
+  @override
+  String get dfThanks => 'Спасибо — это очень помогает.';
 }

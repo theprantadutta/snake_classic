@@ -6639,4 +6639,33 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get lbStartsIn => 'INIZIA TRA';
+
+  @override
+  String get dfTitle => 'Come ti sembra il gioco?';
+
+  @override
+  String get dfBody => 'Dagli un voto da 1 a 5. Il commento è facoltativo.';
+
+  @override
+  String get dfLow => 'Non granché';
+
+  @override
+  String get dfHigh => 'Lo adoro';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '$rating su 5';
+  }
+
+  @override
+  String get dfCommentLabel => 'Commento (facoltativo)';
+
+  @override
+  String get dfSend => 'Invia';
+
+  @override
+  String get dfNotNow => 'Non ora';
+
+  @override
+  String get dfThanks => 'Grazie, ci aiuta molto.';
 }

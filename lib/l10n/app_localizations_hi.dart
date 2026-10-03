@@ -6576,4 +6576,33 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get lbStartsIn => 'शुरू होने में';
+
+  @override
+  String get dfTitle => 'गेम कैसा लग रहा है?';
+
+  @override
+  String get dfBody => '1 से 5 तक रेटिंग दें। टिप्पणी देना ज़रूरी नहीं है।';
+
+  @override
+  String get dfLow => 'अच्छा नहीं';
+
+  @override
+  String get dfHigh => 'बहुत पसंद है';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '5 में से $rating';
+  }
+
+  @override
+  String get dfCommentLabel => 'टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get dfSend => 'भेजें';
+
+  @override
+  String get dfNotNow => 'अभी नहीं';
+
+  @override
+  String get dfThanks => 'धन्यवाद — इससे बहुत मदद मिलती है।';
 }

@@ -6604,4 +6604,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get lbStartsIn => 'يبدأ خلال';
+
+  @override
+  String get dfTitle => 'ما رأيك في اللعبة؟';
+
+  @override
+  String get dfBody => 'قيّمها من 1 إلى 5. التعليق اختياري.';
+
+  @override
+  String get dfLow => 'ليست جيدة';
+
+  @override
+  String get dfHigh => 'أحببتها';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '$rating من 5';
+  }
+
+  @override
+  String get dfCommentLabel => 'تعليق (اختياري)';
+
+  @override
+  String get dfSend => 'إرسال';
+
+  @override
+  String get dfNotNow => 'ليس الآن';
+
+  @override
+  String get dfThanks => 'شكرًا — هذا يساعدنا كثيرًا.';
 }

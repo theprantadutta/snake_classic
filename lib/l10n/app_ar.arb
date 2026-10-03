@@ -1930,5 +1930,14 @@
   "lbFreeTrack": "المسار المجاني",
   "lbSeasonSubtitleSoon": "{season} · {left}. لا تضيّع الوقت.",
   "lbEndsIn": "ينتهي خلال",
-  "lbStartsIn": "يبدأ خلال"
+  "lbStartsIn": "يبدأ خلال",
+  "dfTitle": "ما رأيك في اللعبة؟",
+  "dfBody": "قيّمها من 1 إلى 5. التعليق اختياري.",
+  "dfLow": "ليست جيدة",
+  "dfHigh": "أحببتها",
+  "dfRatingOption": "{rating} من 5",
+  "dfCommentLabel": "تعليق (اختياري)",
+  "dfSend": "إرسال",
+  "dfNotNow": "ليس الآن",
+  "dfThanks": "شكرًا — هذا يساعدنا كثيرًا."
 }
