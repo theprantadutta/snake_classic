@@ -2304,11 +2304,11 @@ class AppLocalizationsEn extends AppLocalizations {
       '+30% spawn rate for on-board power-ups during gameplay';
 
   @override
-  String get pbFeatTournament => 'Tournament Entries';
+  String get pbFeatTournament => 'Tournaments';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle';
+      'Enter every tournament free while you\'re Pro, plus a Bronze, Silver & Gold entry each billing period — yours to keep';
 
   @override
   String get pbNotAvailable => 'Premium subscription not available';

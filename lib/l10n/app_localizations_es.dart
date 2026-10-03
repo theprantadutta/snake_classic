@@ -2324,11 +2324,11 @@ class AppLocalizationsEs extends AppLocalizations {
       '+30% de aparición de potenciadores en el tablero';
 
   @override
-  String get pbFeatTournament => 'Entradas de torneo';
+  String get pbFeatTournament => 'Torneos';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× Bronce + 1× Plata + 1× Oro por ciclo de facturación';
+      'Entra gratis a todos los torneos mientras seas Pro, y una entrada de Bronce, Plata y Oro cada periodo de facturación — tuyas para siempre';
 
   @override
   String get pbNotAvailable => 'Suscripción premium no disponible';

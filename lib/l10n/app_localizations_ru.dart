@@ -2310,11 +2310,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pbFeatPowerUpsDesc => '+30% к частоте появления усилений на поле';
 
   @override
-  String get pbFeatTournament => 'Турнирные входы';
+  String get pbFeatTournament => 'Турниры';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× бронзовый + 1× серебряный + 1× золотой вход каждый платёжный цикл';
+      'Бесплатный вход во все турниры, пока у тебя Pro, плюс билет Бронза, Серебро и Золото за каждый оплаченный период — они остаются у тебя';
 
   @override
   String get pbNotAvailable => 'Премиум-подписка недоступна';

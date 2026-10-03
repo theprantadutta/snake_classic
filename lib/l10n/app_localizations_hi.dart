@@ -2303,11 +2303,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pbFeatPowerUpsDesc => 'गेमप्ले में बोर्ड पावर-अप की +30% दर';
 
   @override
-  String get pbFeatTournament => 'टूर्नामेंट प्रविष्टियाँ';
+  String get pbFeatTournament => 'टूर्नामेंट';
 
   @override
   String get pbFeatTournamentDesc =>
-      'हर बिलिंग चक्र में 1× कांस्य + 1× रजत + 1× स्वर्ण टूर्नामेंट प्रविष्टि';
+      'Pro रहते हर टूर्नामेंट में मुफ़्त एंट्री, साथ ही हर बिलिंग अवधि में कांस्य, रजत और स्वर्ण एंट्री — हमेशा आपकी';
 
   @override
   String get pbNotAvailable => 'प्रीमियम सदस्यता उपलब्ध नहीं';

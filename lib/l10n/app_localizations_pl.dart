@@ -2318,11 +2318,11 @@ class AppLocalizationsPl extends AppLocalizations {
       '+30% częstości pojawiania się wzmocnień na planszy';
 
   @override
-  String get pbFeatTournament => 'Wejścia na turnieje';
+  String get pbFeatTournament => 'Turnieje';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× brązowe + 1× srebrne + 1× złote wejście w każdym cyklu rozliczeniowym';
+      'Darmowy udział we wszystkich turniejach, dopóki masz Pro, plus wejściówka Brązowa, Srebrna i Złota w każdym okresie rozliczeniowym — zostają u ciebie';
 
   @override
   String get pbNotAvailable => 'Subskrypcja premium niedostępna';

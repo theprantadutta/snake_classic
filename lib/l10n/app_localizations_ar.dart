@@ -2290,11 +2290,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pbFeatPowerUpsDesc => '+30% لمعدل ظهور التعزيزات على اللوحة';
 
   @override
-  String get pbFeatTournament => 'دخول البطولات';
+  String get pbFeatTournament => 'البطولات';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× برونزي + 1× فضي + 1× ذهبي في كل دورة فوترة';
+      'ادخل كل البطولات مجانًا ما دمت Pro، مع تذكرة برونزية وفضية وذهبية في كل فترة فوترة — تبقى لك';
 
   @override
   String get pbNotAvailable => 'اشتراك بريميوم غير متاح';

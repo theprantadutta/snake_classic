@@ -2323,11 +2323,11 @@ class AppLocalizationsIt extends AppLocalizations {
       '+30% di frequenza dei power-up sulla tavola';
 
   @override
-  String get pbFeatTournament => 'Ingressi ai tornei';
+  String get pbFeatTournament => 'Tornei';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× Bronzo + 1× Argento + 1× Oro a ogni ciclo di fatturazione';
+      'Entra gratis in ogni torneo finché sei Pro, più un ingresso Bronzo, Argento e Oro a ogni periodo di fatturazione — tuoi per sempre';
 
   @override
   String get pbNotAvailable => 'Abbonamento premium non disponibile';
