@@ -288,6 +288,19 @@ class PremiumStatus extends Table {
       integer().withDefault(const Constant(0))();
   IntColumn get goldTournamentEntries =>
       integer().withDefault(const Constant(0))();
+  // How many of the SERVER's tournament-entry grants the counts above
+  // already include, per tier (the backend's TournamentEntryLedger). The
+  // server grants entries the device never minted — Pro's one-of-each per
+  // billing period, Silver/Gold purchases — and the device folds
+  // `granted - absorbed` into its own count, so a grant is absorbed exactly
+  // once however often premium-content is fetched, and spending (which
+  // only lowers the count) is never undone by it. Null = not known yet (an
+  // install from before the ledger, or a restore from an older server):
+  // the first fetch adopts the server's value instead of re-adding grants
+  // the count already holds. Synced with the premium_status row.
+  IntColumn get bronzeGrantsAbsorbed => integer().nullable()();
+  IntColumn get silverGrantsAbsorbed => integer().nullable()();
+  IntColumn get goldGrantsAbsorbed => integer().nullable()();
   TextColumn get purchaseReceiptData =>
       text().nullable()(); // For purchase validation
   DateTimeColumn get lastUpdated =>
@@ -1043,7 +1056,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1335,6 +1348,14 @@ class AppDatabase extends _$AppDatabase {
           // indexes: pruning keeps both tables to a couple of weeks of rows.
           await m.createTable(telemetrySessions);
           await m.createTable(telemetryFeedback);
+        }
+        if (from < 24) {
+          // v24: the tournament-entry ledger's absorbed counters. Null until
+          // the first premium-content fetch adopts the server's value — the
+          // existing counts already hold every grant fetched so far.
+          await _addColumnIfMissing(m, premiumStatus, premiumStatus.bronzeGrantsAbsorbed);
+          await _addColumnIfMissing(m, premiumStatus, premiumStatus.silverGrantsAbsorbed);
+          await _addColumnIfMissing(m, premiumStatus, premiumStatus.goldGrantsAbsorbed);
         }
       });
     },

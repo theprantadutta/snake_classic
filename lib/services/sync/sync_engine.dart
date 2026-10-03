@@ -1467,6 +1467,12 @@ class SyncEngine {
     'bronze_tournament_entries': r.bronzeTournamentEntries,
     'silver_tournament_entries': r.silverTournamentEntries,
     'gold_tournament_entries': r.goldTournamentEntries,
+    // How many server grants those counts include (TournamentEntryLedger).
+    // The server keeps the highest it has seen and never lets a push erase
+    // a grant it has not absorbed. Null until this install knows.
+    'bronze_tournament_grants_absorbed': r.bronzeGrantsAbsorbed,
+    'silver_tournament_grants_absorbed': r.silverGrantsAbsorbed,
+    'gold_tournament_grants_absorbed': r.goldGrantsAbsorbed,
     'updated_at': _utcIso(r.updatedAt),
   };
 
@@ -2043,6 +2049,18 @@ class SyncEngine {
             ),
             goldTournamentEntries: Value(
               premium['gold_tournament_entries'] as int? ?? 0,
+            ),
+            // The restored counts are the server's totals, every grant
+            // folded in, so its absorbed counters come with them (null from
+            // an older server: the next premium-content fetch adopts them).
+            bronzeGrantsAbsorbed: Value(
+              (premium['bronze_tournament_grants_absorbed'] as num?)?.toInt(),
+            ),
+            silverGrantsAbsorbed: Value(
+              (premium['silver_tournament_grants_absorbed'] as num?)?.toInt(),
+            ),
+            goldGrantsAbsorbed: Value(
+              (premium['gold_tournament_grants_absorbed'] as num?)?.toInt(),
             ),
           ),
         );

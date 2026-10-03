@@ -335,6 +335,41 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     };
   }
 
+  /// How many of the server's grants each tier's count already includes
+  /// (null = not known yet). See `TournamentEntryLedger`.
+  Future<Map<String, int?>> getTournamentGrantsAbsorbed() async {
+    final status = await getPremiumStatus();
+    return {
+      'bronze': status?.bronzeGrantsAbsorbed,
+      'silver': status?.silverGrantsAbsorbed,
+      'gold': status?.goldGrantsAbsorbed,
+    };
+  }
+
+  /// Folds absorbed server grants into the balance: each tier in
+  /// [balances] gets its new count AND its new absorbed counter in one
+  /// write, with the outbox row, so the push that follows carries both and
+  /// a grant can never be counted without being marked absorbed (or the
+  /// other way round). Tiers not in [balances] are left alone.
+  Future<void> absorbTournamentGrants(
+    Map<String, ({int count, int absorbed})> balances,
+  ) {
+    Value<int> count(String tier) => balances.containsKey(tier)
+        ? Value(balances[tier]!.count)
+        : const Value.absent();
+    Value<int?> absorbed(String tier) => balances.containsKey(tier)
+        ? Value(balances[tier]!.absorbed)
+        : const Value.absent();
+    return _writePremiumStatus(PremiumStatusCompanion(
+      bronzeTournamentEntries: count('bronze'),
+      silverTournamentEntries: count('silver'),
+      goldTournamentEntries: count('gold'),
+      bronzeGrantsAbsorbed: absorbed('bronze'),
+      silverGrantsAbsorbed: absorbed('silver'),
+      goldGrantsAbsorbed: absorbed('gold'),
+    ));
+  }
+
   // ==================== Unlocked Items ====================
 
   /// Get unlocked items by type

@@ -51,17 +51,17 @@ void main() {
   }
 
   // Every version a shipped build could have left a device at.
-  for (var from = 1; from < 23; from++) {
+  for (var from = 1; from < 24; from++) {
     test('replaying the upgrade from v$from onto a complete schema succeeds',
         () async {
       final file = await completeSchemaStampedAs(from);
       final db = AppDatabase.forTesting(NativeDatabase(file));
       addTearDown(db.close);
 
-      // Any query opens the database, which runs onUpgrade(from, 23).
+      // Any query opens the database, which runs onUpgrade(from, 24).
       await db.customSelect('SELECT 1').get();
 
-      expect(await userVersion(db), 23, reason: 'the upgrade completed');
+      expect(await userVersion(db), 24, reason: 'the upgrade completed');
 
       // The schema is still whole: the columns the crash loops were about,
       // and the newest table, all readable.
@@ -83,6 +83,10 @@ void main() {
       await db.customSelect(
         'SELECT feedback_id, rating FROM telemetry_feedback LIMIT 1',
       ).get();
+      await db.customSelect(
+        'SELECT bronze_grants_absorbed, silver_grants_absorbed, '
+        'gold_grants_absorbed FROM premium_status LIMIT 1',
+      ).get();
       await db.initializeDefaults();
     });
   }
@@ -102,7 +106,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 23);
+    expect(await userVersion(db), 24);
 
     final now = DateTime(2026, 10, 3, 9);
     await db.telemetryDao.upsertSession(
@@ -280,6 +284,42 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 23);
+    expect(await userVersion(db), 24);
+  });
+
+  test('a real v23 database gains the absorbed counters, unknown, with its '
+      'entries intact', () async {
+    // A complete schema minus what v24 adds, stamped 23, with entries the
+    // player already holds.
+    final file = await completeSchemaStampedAs(23);
+    final raw = AppDatabase.forTesting(NativeDatabase(file));
+    await raw.customSelect('SELECT 1').get();
+    await raw.initializeDefaults();
+    await raw.customStatement(
+      'UPDATE premium_status SET bronze_tournament_entries = 2, '
+      'gold_tournament_entries = 1 WHERE id = 1',
+    );
+    for (final column in [
+      'bronze_grants_absorbed',
+      'silver_grants_absorbed',
+      'gold_grants_absorbed',
+    ]) {
+      await raw.customStatement('ALTER TABLE premium_status DROP COLUMN $column');
+    }
+    await raw.customStatement('PRAGMA user_version = 23');
+    await raw.close();
+
+    final db = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(db.close);
+    await db.customSelect('SELECT 1').get();
+    expect(await userVersion(db), 24);
+
+    final status = await db.storeDao.getPremiumStatus();
+    expect(status!.bronzeTournamentEntries, 2);
+    expect(status.goldTournamentEntries, 1);
+    // Unknown until the first premium-content fetch adopts the server's.
+    expect(status.bronzeGrantsAbsorbed, isNull);
+    expect(status.silverGrantsAbsorbed, isNull);
+    expect(status.goldGrantsAbsorbed, isNull);
   });
 }
