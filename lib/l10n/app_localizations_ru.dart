@@ -1279,7 +1279,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'Бронзовый + серебряный + золотой турнирные входы каждый цикл';
+      'Турниры бесплатно + 3 билета навсегда за период';
 
   @override
   String get storeFeatureBattlePass =>
@@ -2993,11 +2993,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'По 5 штук: Ускорение, Неуязвимость, Множитель очков и Замедление при оформлении подписки. Остаются у вас.';
 
   @override
-  String get pbFeatTournament => 'Турнирные входы';
+  String get pbFeatTournament => 'Турниры';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× бронзовый + 1× серебряный + 1× золотой вход каждый платёжный цикл';
+      'Бесплатный вход во все турниры, пока у тебя Pro, плюс билет Бронза, Серебро и Золото за каждый оплаченный период — они остаются у тебя';
 
   @override
   String get pbIncludes => 'Премиум включает:';

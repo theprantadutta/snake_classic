@@ -1269,7 +1269,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'دخول بطولات البرونز + الفضة + الذهب كل دورة';
+      'دخول مجاني للبطولات + 3 تذاكر تبقى لك كل فترة';
 
   @override
   String get storeFeatureBattlePass => 'مسار تذكرة المعركة المميز كل موسم';
@@ -2975,11 +2975,11 @@ class AppLocalizationsAr extends AppLocalizations {
       '5 من كلٍّ من تعزيز السرعة والمناعة ومضاعف النقاط والحركة البطيئة عند الاشتراك. تبقى لك.';
 
   @override
-  String get pbFeatTournament => 'دخول البطولات';
+  String get pbFeatTournament => 'البطولات';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× برونزي + 1× فضي + 1× ذهبي في كل دورة فوترة';
+      'ادخل كل البطولات مجانًا ما دمت Pro، مع تذكرة برونزية وفضية وذهبية في كل فترة فوترة — تبقى لك';
 
   @override
   String get pbIncludes => 'يشمل بريميوم:';

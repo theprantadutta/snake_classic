@@ -1272,7 +1272,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'Bronze + Silver + Gold tournament entries each cycle';
+      'Free tournament entry + 3 entries to keep each cycle';
 
   @override
   String get storeFeatureBattlePass => 'Battle Pass Premium track every season';
@@ -2979,11 +2979,11 @@ class AppLocalizationsEn extends AppLocalizations {
       '5 each of Speed Boost, Invincibility, Score Multiplier & Slow Motion when you subscribe. Yours to keep.';
 
   @override
-  String get pbFeatTournament => 'Tournament Entries';
+  String get pbFeatTournament => 'Tournaments';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle';
+      'Enter every tournament free while you\'re Pro, plus a Bronze, Silver & Gold entry each billing period — yours to keep';
 
   @override
   String get pbIncludes => 'Premium Includes:';

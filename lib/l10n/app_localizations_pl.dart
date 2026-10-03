@@ -1279,7 +1279,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'Wejścia na turnieje Brąz + Srebro + Złoto w każdym cyklu';
+      'Darmowe turnieje + 3 wejściówki na stałe co okres';
 
   @override
   String get storeFeatureBattlePass =>
@@ -3001,11 +3001,11 @@ class AppLocalizationsPl extends AppLocalizations {
       'Po 5 sztuk: Przyspieszenie, Nieśmiertelność, Mnożnik punktów i Spowolnienie przy subskrypcji. Zostają z tobą.';
 
   @override
-  String get pbFeatTournament => 'Wejścia na turnieje';
+  String get pbFeatTournament => 'Turnieje';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× brązowe + 1× srebrne + 1× złote wejście w każdym cyklu rozliczeniowym';
+      'Darmowy udział we wszystkich turniejach, dopóki masz Pro, plus wejściówka Brązowa, Srebrna i Złota w każdym okresie rozliczeniowym — zostają u ciebie';
 
   @override
   String get pbIncludes => 'Premium obejmuje:';

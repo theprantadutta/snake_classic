@@ -1279,7 +1279,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'Entradas de torneio Bronze + Prata + Ouro por ciclo';
+      'Torneios grátis + 3 entradas para guardar a cada período';
 
   @override
   String get storeFeatureBattlePass =>
@@ -2999,11 +2999,11 @@ class AppLocalizationsPt extends AppLocalizations {
       '5 de cada: Impulso de Velocidade, Invencibilidade, Multiplicador de Pontos e Câmera Lenta ao assinar. São seus.';
 
   @override
-  String get pbFeatTournament => 'Entradas de torneio';
+  String get pbFeatTournament => 'Torneios';
 
   @override
   String get pbFeatTournamentDesc =>
-      '1× Bronze + 1× Prata + 1× Ouro por ciclo de cobrança';
+      'Entre de graça em todos os torneios enquanto for Pro, mais uma entrada Bronze, Prata e Ouro a cada período de cobrança — suas para sempre';
 
   @override
   String get pbIncludes => 'O Premium inclui:';

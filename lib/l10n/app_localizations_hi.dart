@@ -1274,7 +1274,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get storeFeatureTournaments =>
-      'हर चक्र में कांस्य + रजत + स्वर्ण टूर्नामेंट एंट्री';
+      'मुफ़्त टूर्नामेंट एंट्री + हर अवधि 3 एंट्री आपकी';
 
   @override
   String get storeFeatureBattlePass => 'हर सीज़न बैटल पास प्रीमियम ट्रैक';
@@ -2977,11 +2977,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'सदस्यता लेने पर स्पीड बूस्ट, अजेयता, स्कोर गुणक और स्लो मोशन — हर एक के 5। ये आपके ही रहेंगे।';
 
   @override
-  String get pbFeatTournament => 'टूर्नामेंट प्रविष्टियाँ';
+  String get pbFeatTournament => 'टूर्नामेंट';
 
   @override
   String get pbFeatTournamentDesc =>
-      'हर बिलिंग चक्र में 1× कांस्य + 1× रजत + 1× स्वर्ण टूर्नामेंट प्रविष्टि';
+      'Pro रहते हर टूर्नामेंट में मुफ़्त एंट्री, साथ ही हर बिलिंग अवधि में कांस्य, रजत और स्वर्ण एंट्री — हमेशा आपकी';
 
   @override
   String get pbIncludes => 'प्रीमियम में शामिल:';

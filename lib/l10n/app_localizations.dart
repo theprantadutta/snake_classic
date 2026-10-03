@@ -2335,7 +2335,7 @@ abstract class AppLocalizations {
   /// No description provided for @storeFeatureTournaments.
   ///
   /// In en, this message translates to:
-  /// **'Bronze + Silver + Gold tournament entries each cycle'**
+  /// **'Free tournament entry + 3 entries to keep each cycle'**
   String get storeFeatureTournaments;
 
   /// No description provided for @storeFeatureBattlePass.
@@ -5251,13 +5251,13 @@ abstract class AppLocalizations {
   /// No description provided for @pbFeatTournament.
   ///
   /// In en, this message translates to:
-  /// **'Tournament Entries'**
+  /// **'Tournaments'**
   String get pbFeatTournament;
 
   /// No description provided for @pbFeatTournamentDesc.
   ///
   /// In en, this message translates to:
-  /// **'1× Bronze + 1× Silver + 1× Gold tournament entry every billing cycle'**
+  /// **'Enter every tournament free while you\'re Pro, plus a Bronze, Silver & Gold entry each billing period — yours to keep'**
   String get pbFeatTournamentDesc;
 
   /// No description provided for @pbIncludes.
