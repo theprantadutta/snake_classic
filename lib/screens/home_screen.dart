@@ -37,6 +37,7 @@ import 'package:snake_classic/utils/legal_acceptance.dart';
 import 'package:snake_classic/widgets/app_background.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
+import 'package:snake_classic/widgets/design_feedback_dialog.dart';
 import 'package:snake_classic/widgets/first_run_legal_notice.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
 import 'package:snake_classic/widgets/notification_permission_softask.dart';
@@ -146,7 +147,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   /// Runs the first-launch prompts strictly one at a time, in priority
-  /// order: home walkthrough → daily bonus → notification soft-ask/primer.
+  /// order: home walkthrough → daily bonus → design feedback → notification
+  /// soft-ask/primer.
   /// Each step awaits the previous prompt's dismissal before it is even
   /// considered; every step keeps its own has-shown / cadence gating, so
   /// the queue only decides ORDER, not WHETHER anything shows.
@@ -202,7 +204,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     await _checkDailyBonus();
     if (!mounted) return;
 
-    // 3. Notification init + soft-ask → primer chain.
+    // 3. "How's the game feeling?" — once, after five finished runs and two
+    //    days installed (DesignFeedbackPolicy). Home rather than game over,
+    //    so it can never land on a run or on top of its rewards. When it
+    //    shows, that is the visit's interruption: the notification ask
+    //    self-gates and waits for the next one.
+    if (await maybeShowDesignFeedback(context)) return;
+    if (!mounted) return;
+
+    // 4. Notification init + soft-ask → primer chain.
     await _maybeInitNotifications();
   }
 

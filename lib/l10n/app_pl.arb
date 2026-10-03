@@ -1899,5 +1899,14 @@
   "updateRequiredBody": "Ta wersja Snake Classic nie jest już wspierana. Zaktualizuj z App Store, aby grać dalej.",
   "updateActionUpdate": "Aktualizuj",
   "updateActionLater": "Później",
-  "updateOpenStoreFailed": "Nie udało się otworzyć App Store"
+  "updateOpenStoreFailed": "Nie udało się otworzyć App Store",
+  "dfTitle": "Jak ci się gra?",
+  "dfBody": "Oceń od 1 do 5. Komentarz jest opcjonalny.",
+  "dfLow": "Słabo",
+  "dfHigh": "Uwielbiam",
+  "dfRatingOption": "{rating} z 5",
+  "dfCommentLabel": "Komentarz (opcjonalnie)",
+  "dfSend": "Wyślij",
+  "dfNotNow": "Nie teraz",
+  "dfThanks": "Dzięki — to bardzo pomaga."
 }

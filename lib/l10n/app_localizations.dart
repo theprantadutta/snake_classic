@@ -11469,6 +11469,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the App Store'**
   String get updateOpenStoreFailed;
+
+  /// Title of the in-app design feedback sheet. Must stay this neutral question: both UI designs ask it word for word so their answers compare.
+  ///
+  /// In en, this message translates to:
+  /// **'How\'s the game feeling?'**
+  String get dfTitle;
+
+  /// One line under the design feedback title
+  ///
+  /// In en, this message translates to:
+  /// **'Rate it from 1 to 5. A comment is optional.'**
+  String get dfBody;
+
+  /// Label under the lowest (1) end of the 1–5 rating row
+  ///
+  /// In en, this message translates to:
+  /// **'Not great'**
+  String get dfLow;
+
+  /// Label under the highest (5) end of the 1–5 rating row
+  ///
+  /// In en, this message translates to:
+  /// **'Love it'**
+  String get dfHigh;
+
+  /// Screen-reader label for one rating block, e.g. '4 out of 5'
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} out of 5'**
+  String dfRatingOption(int rating);
+
+  /// Label of the optional comment field on the feedback sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Comment (optional)'**
+  String get dfCommentLabel;
+
+  /// Button that sends the feedback answer
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get dfSend;
+
+  /// Button that closes the feedback sheet without answering
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get dfNotNow;
+
+  /// Snackbar shown after feedback is sent
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks — that really helps.'**
+  String get dfThanks;
 }
 
 class _AppLocalizationsDelegate

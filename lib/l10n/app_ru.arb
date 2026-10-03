@@ -1899,5 +1899,14 @@
   "updateRequiredBody": "Эта версия Snake Classic больше не поддерживается. Обновите приложение в App Store, чтобы продолжить игру.",
   "updateActionUpdate": "Обновить",
   "updateActionLater": "Позже",
-  "updateOpenStoreFailed": "Не удалось открыть App Store"
+  "updateOpenStoreFailed": "Не удалось открыть App Store",
+  "dfTitle": "Как вам игра?",
+  "dfBody": "Оцените от 1 до 5. Комментарий — по желанию.",
+  "dfLow": "Не очень",
+  "dfHigh": "Обожаю",
+  "dfRatingOption": "{rating} из 5",
+  "dfCommentLabel": "Комментарий (необязательно)",
+  "dfSend": "Отправить",
+  "dfNotNow": "Не сейчас",
+  "dfThanks": "Спасибо — это очень помогает."
 }

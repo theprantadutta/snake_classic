@@ -6409,4 +6409,33 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Nie udało się otworzyć App Store';
+
+  @override
+  String get dfTitle => 'Jak ci się gra?';
+
+  @override
+  String get dfBody => 'Oceń od 1 do 5. Komentarz jest opcjonalny.';
+
+  @override
+  String get dfLow => 'Słabo';
+
+  @override
+  String get dfHigh => 'Uwielbiam';
+
+  @override
+  String dfRatingOption(int rating) {
+    return '$rating z 5';
+  }
+
+  @override
+  String get dfCommentLabel => 'Komentarz (opcjonalnie)';
+
+  @override
+  String get dfSend => 'Wyślij';
+
+  @override
+  String get dfNotNow => 'Nie teraz';
+
+  @override
+  String get dfThanks => 'Dzięki — to bardzo pomaga.';
 }
