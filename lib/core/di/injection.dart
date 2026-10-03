@@ -29,6 +29,13 @@ import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/services/first_run_service.dart';
+import 'package:snake_classic/services/telemetry/design_feedback.dart';
+import 'package:snake_classic/services/telemetry/install_identity.dart';
+import 'package:snake_classic/services/telemetry/telemetry_analytics_client.dart';
+import 'package:snake_classic/services/telemetry/telemetry_service.dart';
+import 'package:snake_classic/services/telemetry/telemetry_session_tracker.dart';
+import 'package:snake_classic/services/telemetry/telemetry_uploader.dart';
 
 // Core
 import 'package:snake_classic/core/network/network_info.dart';
@@ -101,11 +108,60 @@ Future<void> configureDependencies() async {
     ),
   );
 
+  // ==================== Telemetry ====================
+  // Design-metrics sessions + feedback (docs/design-metrics/CONTRACT.md).
+  // InstallIdentity.load() has already run in the bootstrap, before this.
+  getIt.registerLazySingleton<DesignFeedbackStore>(() => DesignFeedbackStore());
+
+  getIt.registerLazySingleton<TelemetrySessionTracker>(
+    () => TelemetrySessionTracker(
+      dao: getIt<AppDatabase>().telemetryDao,
+      identity: InstallIdentity.current ?? InstallIdentity.unloaded(),
+    ),
+  );
+
+  getIt.registerLazySingleton<TelemetryUploader>(
+    () => TelemetryUploader(
+      dao: getIt<AppDatabase>().telemetryDao,
+      api: getIt<ApiService>(),
+      identity: () => InstallIdentity.current,
+      locale: _telemetryLocale,
+      installedAt: () => FirstRunService().installedAt,
+      beforeFlush: () => getIt<TelemetrySessionTracker>().persistNow(),
+      canAttempt: () =>
+          getIt<ConnectivityService>().shouldAttemptNetworkWork,
+    ),
+  );
+
+  getIt.registerLazySingleton<TelemetryService>(
+    () => TelemetryService(
+      tracker: getIt<TelemetrySessionTracker>(),
+      uploader: getIt<TelemetryUploader>(),
+      connectivity: getIt<ConnectivityService>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<DesignFeedbackService>(
+    () => DesignFeedbackService(
+      store: getIt<DesignFeedbackStore>(),
+      dao: getIt<AppDatabase>().telemetryDao,
+      identity: () => InstallIdentity.current ?? InstallIdentity.unloaded(),
+      installedAt: () => FirstRunService().installedAt,
+      onAnswered: () => getIt<TelemetryUploader>().flush(),
+    ),
+  );
+
   // ==================== Analytics ====================
   // Debug builds never hit production Firebase Analytics — they log locally only.
+  // The telemetry client rides along in BOTH: it counts the same events into
+  // the design-metrics session, and debug builds report to the dev backend.
   getIt.registerLazySingleton<AnalyticsFacade>(() {
     return AnalyticsFacade([
       if (kDebugMode) LoggerAnalyticsClient() else FirebaseAnalyticsClient(),
+      TelemetryAnalyticsClient(
+        tracker: getIt<TelemetrySessionTracker>(),
+        feedbackStore: getIt<DesignFeedbackStore>(),
+      ),
     ]);
   });
 
@@ -248,6 +304,15 @@ Future<void> configureDependencies() async {
   // batch endpoints). Registered as a lazy singleton; `initialize`
   // is kicked off from main.dart after the DB is ready.
   getIt.registerLazySingleton<SyncEngine>(() => SyncEngine());
+}
+
+/// The language telemetry reports: the player's in-app choice, else the
+/// device's.
+String _telemetryLocale() {
+  final chosen = getIt.isRegistered<GameSettingsCubit>()
+      ? getIt<GameSettingsCubit>().state.localeCode
+      : null;
+  return chosen ?? PlatformDispatcher.instance.locale.languageCode;
 }
 
 /// Reset all dependencies (useful for testing)
