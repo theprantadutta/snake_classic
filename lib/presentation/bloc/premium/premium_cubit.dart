@@ -13,6 +13,7 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/models/tournament_entry_ledger.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -292,14 +293,16 @@ class PremiumCubit extends Cubit<PremiumState> {
 
     // Tournament entries. Only Silver and Gold are sold as IAPs; bronze
     // entries are earned via rewarded ad / Pro, not purchased.
+    //
+    // A purchased entry is a SERVER grant: the verify call added it to the
+    // server's grant counter, and it reaches this device the way Pro's
+    // per-period entries do — absorbed from premium-content
+    // ([_applyBackendEntitlements]). Adding it here as well would count it
+    // twice. When the backend could not be reached the grant lands with the
+    // queued verify, and the resume refresh absorbs it; joining a
+    // tournament needs the backend anyway.
     if (internalId.contains('tournament')) {
-      if (internalId.contains('bronze')) {
-        await addTournamentEntry('bronze');
-      } else if (internalId.contains('silver')) {
-        await addTournamentEntry('silver');
-      } else if (internalId.contains('gold')) {
-        await addTournamentEntry('gold');
-      }
+      unawaited(syncWithBackend());
       return;
     }
 
@@ -515,12 +518,17 @@ class PremiumCubit extends Cubit<PremiumState> {
     AppLogger.info('Bundle unlocked: $bundleId');
   }
 
-  /// Add tournament entry
+  /// Add tournament entries the DEVICE mints (the rewarded-ad Bronze
+  /// entry, battle-pass rewards). Server grants are absorbed in
+  /// [_applyBackendEntitlements] instead (they come through here only from
+  /// a backend too old to report its grant ledger). Accepts a tier
+  /// (`bronze`) or an entry id (`tournament_bronze`, which is what
+  /// battle-pass rewards carry).
   Future<void> addTournamentEntry(
     String tournamentType, {
     int count = 1,
   }) async {
-    switch (tournamentType.toLowerCase()) {
+    switch (TournamentEntryLedger.tierOf(tournamentType)) {
       case 'bronze':
         emit(
           state.copyWith(
@@ -738,11 +746,17 @@ class PremiumCubit extends Cubit<PremiumState> {
       }
     }
 
-    // ---- Tournament entries (additive — counts can't be "revoked" in
-    // the same sense, they're consumed) ----
-    if (data['tournament_entries'] is Map) {
+    // ---- Tournament entries ----
+    // Entries are the player's to keep: nothing here ever lowers a count.
+    // The server reports its grant ledger; fold in the grants this device
+    // has not absorbed yet (TournamentEntryLedger). Only an older backend
+    // without the ledger falls back to raising each count to its total.
+    final ledger = TournamentEntryLedger.parse(data['tournament_entry_ledger']);
+    if (ledger != null) {
+      await _absorbServerGrants(ledger);
+    } else if (data['tournament_entries'] is Map) {
       final entries = data['tournament_entries'] as Map<String, dynamic>;
-      for (final tier in ['bronze', 'silver', 'gold']) {
+      for (final tier in TournamentEntryLedger.tiers) {
         final backendCount = (entries[tier] ?? 0) as int;
         final localCount = state.getTournamentEntryCount(tier);
         if (backendCount > localCount) {
@@ -882,6 +896,48 @@ class PremiumCubit extends Cubit<PremiumState> {
     } catch (e) {
       AppLogger.warning('Failed to evaluate theme revocation fallback: $e');
     }
+  }
+
+  /// Folds the server's tournament-entry grants this device hasn't absorbed
+  /// into its own counts — Pro's per-period entries, purchased entries —
+  /// writing each tier's count and absorbed counter together through Drift
+  /// (one transaction, one outbox row), so the push that follows tells the
+  /// server they're in.
+  ///
+  /// Runs one at a time: the resume refresh and the post-auth sync can both
+  /// fetch premium-content at once, and two absorbs reading the same
+  /// absorbed counter would add the same grant twice.
+  Future<void> _absorbServerGrants(Map<String, ServerTierLedger> ledger) {
+    final run = _absorbing.then((_) => _absorbServerGrantsNow(ledger));
+    _absorbing = run.catchError((Object _) {});
+    return run;
+  }
+
+  Future<void> _absorbing = Future.value();
+
+  Future<void> _absorbServerGrantsNow(Map<String, ServerTierLedger> ledger) async {
+    final counts = await _storageService.getTournamentEntries();
+    final absorbed = await _storageService.getTournamentGrantsAbsorbed();
+    final changes = <String, ({int count, int absorbed})>{};
+    for (final entry in ledger.entries) {
+      final next = TournamentEntryLedger.absorb(
+        count: counts[entry.key] ?? 0,
+        absorbed: absorbed[entry.key],
+        server: entry.value,
+      );
+      if (next != null) {
+        changes[entry.key] = (count: next.count, absorbed: next.absorbed);
+      }
+    }
+    if (changes.isEmpty) return;
+
+    await _storageService.absorbTournamentGrants(changes);
+    emit(state.copyWith(
+      bronzeTournamentEntries: changes['bronze']?.count,
+      silverTournamentEntries: changes['silver']?.count,
+      goldTournamentEntries: changes['gold']?.count,
+    ));
+    AppLogger.info('Absorbed server tournament-entry grants: $changes');
   }
 
   /// Clear error

@@ -752,6 +752,19 @@ class StorageService {
     );
   }
 
+  /// See [StoreDao.getTournamentGrantsAbsorbed].
+  Future<Map<String, int?>> getTournamentGrantsAbsorbed() async {
+    return await _storeDao?.getTournamentGrantsAbsorbed() ??
+        {'bronze': null, 'silver': null, 'gold': null};
+  }
+
+  /// See [StoreDao.absorbTournamentGrants].
+  Future<void> absorbTournamentGrants(
+    Map<String, ({int count, int absorbed})> balances,
+  ) async {
+    await _storeDao?.absorbTournamentGrants(balances);
+  }
+
   // ==================== Clear All Data ====================
 
   Future<void> clearAllData() async {
