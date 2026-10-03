@@ -15,6 +15,7 @@ import 'package:snake_classic/data/daos/sync_dao.dart';
 import 'package:snake_classic/data/daos/leaderboard_dao.dart';
 import 'package:snake_classic/data/daos/tournament_dao.dart';
 import 'package:snake_classic/data/daos/friends_dao.dart';
+import 'package:snake_classic/data/daos/telemetry_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -665,6 +666,99 @@ class DevicePreferences extends Table {
 }
 
 // =====================================================
+// TABLES: Design-metrics telemetry (append-only device data)
+// =====================================================
+//
+// One row per app session and one per in-app feedback answer, uploaded by
+// TelemetryUploader to `POST /telemetry/batch` (docs/design-metrics/
+// CONTRACT.md). Like [DevicePreferences] these describe the install, not the
+// account, and the same three omissions keep that true:
+//   * SyncEngine never reads them — it drains only for signed-in players, and
+//     guests are exactly who the funnel loses.
+//   * `clearAllData()` leaves them alone. Signing out does not end a session.
+//   * Nothing ever reads them back into game state; telemetry never
+//     overwrites user state.
+//
+// `dirty` means "the server has not seen this version yet". A session row is
+// rewritten as it grows, so the uploader marks it clean only if [revision]
+// still matches what it sent — a counter bumped mid-upload stays dirty and
+// goes out on the next flush. Re-sending is safe: the server keeps the max of
+// every counter.
+class TelemetrySessions extends Table {
+  TextColumn get sessionId => text()();
+  TextColumn get design => text()();
+  TextColumn get appVersion => text()();
+  IntColumn get build => integer()();
+  DateTimeColumn get startedAt => dateTime()();
+
+  /// Null while the session is open. Set when the app goes to the background
+  /// (and cleared again if it returns within the 30-minute window), or, for a
+  /// session that never recorded its end, set to [lastActiveAt] on the next
+  /// launch along with [abnormalEnd].
+  DateTimeColumn get endedAt => dateTime().nullable()();
+
+  /// The last time this row was written — the best available estimate of
+  /// when a session that was killed outright actually stopped.
+  DateTimeColumn get lastActiveAt => dateTime()();
+
+  /// The device's local calendar day at session start, `yyyy-MM-dd`.
+  TextColumn get localDay => text()();
+  IntColumn get foregroundMs => integer().withDefault(const Constant(0))();
+  IntColumn get runsStarted => integer().withDefault(const Constant(0))();
+  IntColumn get runsFinished => integer().withDefault(const Constant(0))();
+  IntColumn get runsAgain => integer().withDefault(const Constant(0))();
+  IntColumn get bestScore => integer().withDefault(const Constant(0))();
+  IntColumn get totalScore => integer().withDefault(const Constant(0))();
+  IntColumn get runMs => integer().withDefault(const Constant(0))();
+  IntColumn get multiplayerMatches => integer().withDefault(const Constant(0))();
+  IntColumn get adImpressionsBanner => integer().withDefault(const Constant(0))();
+  IntColumn get adImpressionsInterstitial =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get adImpressionsRewarded =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get adImpressionsAppOpen =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get rewardedCompleted => integer().withDefault(const Constant(0))();
+  IntColumn get rewardedAbandoned => integer().withDefault(const Constant(0))();
+  IntColumn get adRevenueMicros => integer().withDefault(const Constant(0))();
+  IntColumn get purchasesStarted => integer().withDefault(const Constant(0))();
+  IntColumn get purchasesCompleted =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get storeViews => integer().withDefault(const Constant(0))();
+  BoolColumn get abnormalEnd => boolean().withDefault(const Constant(false))();
+
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+  IntColumn get revision => integer().withDefault(const Constant(0))();
+  DateTimeColumn get uploadedAt => dateTime().nullable()();
+
+  /// The server refused this session (400), or it failed the client's own
+  /// copy of the server's checks. Sticky: the tracker's later writes do not
+  /// clear it, so a session the server will never accept is not resent on
+  /// every flush. Pruned with the stale rows.
+  BoolColumn get poisoned => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {sessionId};
+}
+
+/// One answer to the in-app "How's the game feeling?" question. Immutable
+/// once written, so unlike [TelemetrySessions] it needs no revision.
+class TelemetryFeedback extends Table {
+  TextColumn get feedbackId => text()();
+  TextColumn get design => text()();
+  TextColumn get appVersion => text()();
+  IntColumn get rating => integer()();
+  TextColumn get comment => text().nullable()();
+  TextColumn get trigger => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get uploadedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {feedbackId};
+}
+
+// =====================================================
 // TABLE 11: Cache Store (Offline cache with TTL)
 // =====================================================
 class CacheStore extends Table {
@@ -913,6 +1007,8 @@ class PlayerProgressTable extends Table {
     ScoreDeadLetters,
     CacheStore,
     DevicePreferences,
+    TelemetrySessions,
+    TelemetryFeedback,
     UserProfile,
     PurchaseHistory,
     LeaderboardEntries,
@@ -933,6 +1029,7 @@ class PlayerProgressTable extends Table {
     LeaderboardDao,
     TournamentDao,
     FriendsDao,
+    TelemetryDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -946,7 +1043,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1228,6 +1325,16 @@ class AppDatabase extends _$AppDatabase {
           // the hand — snap movement and the on-screen control layout.
           await _addColumnIfMissing(m, devicePreferences, devicePreferences.snapMovementEnabled);
           await _addColumnIfMissing(m, devicePreferences, devicePreferences.controlLayoutIndex);
+        }
+        if (from < 23) {
+          // v23: design-metrics telemetry — sessions and feedback answers,
+          // uploaded by TelemetryUploader and never read back into game
+          // state. Nothing to backfill: telemetry starts counting from the
+          // launch that ships it. createTable is CREATE TABLE IF NOT EXISTS,
+          // so a replay onto a schema that already has them is a no-op. No
+          // indexes: pruning keeps both tables to a couple of weeks of rows.
+          await m.createTable(telemetrySessions);
+          await m.createTable(telemetryFeedback);
         }
       });
     },
