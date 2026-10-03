@@ -397,17 +397,30 @@ class _PowerUpReadout extends StatelessWidget {
       PowerUpType.slowMotion => (l10n.puSlowMotion, l10n.lbPowerSlow('$secs'), l10n.lbPowerSlowLine, LBIcon.hourglass),
       PowerUpType.scoreMultiplier => (l10n.puScoreMultiplier, l10n.lbPowerScore('$secs'), '', LBIcon.star),
     };
-    final label = ending ? l10n.lbPowerEnding(name.toUpperCase(), '$secs') : full;
+    // The ending line uses the chip's short name (SPEED, SLOW-MO…): the
+    // full catalogue name ("SCORE MULTIPLIER ENDING · 3") ran ~30 dp past
+    // the room beside LEN · SPEED on a 384 dp phone.
+    final short = full.contains(' · ') ? full.split(' · ').first : name.toUpperCase();
+    final label = ending ? l10n.lbPowerEnding(short, '$secs') : full;
     final color = ending ? LB.bonk : LB.gold;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         LBPixelIcon(icon, cell: 2.6, color: color),
         const SizedBox(width: 6),
-        Text(label, style: LBText.button(p, color: color, size: 12.5).copyWith(letterSpacing: 1.6)),
+        Flexible(
+          flex: 3,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LBText.button(p, color: color, size: 12.5).copyWith(letterSpacing: 1.6),
+          ),
+        ),
         if (showJoke && joke.isNotEmpty && !ending) ...[
           const SizedBox(width: 10),
           Flexible(
+            flex: 2,
             child: Text(
               joke.toUpperCase(),
               maxLines: 1,

@@ -33,6 +33,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
 import 'package:snake_classic/widgets/walkthrough/game_tutorial.dart';
 import 'package:snake_classic/models/food.dart';
+import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 
 class GameScreen extends StatefulWidget {
@@ -229,8 +230,13 @@ class _GameScreenState extends State<GameScreen>
     _tutorialController?.dispose();
     _calloutTimer?.cancel();
     _callout.dispose();
+    _swipeCue.dispose();
     super.dispose();
   }
+
+  /// The last steering input and whether it was taken, for the swipe
+  /// compass under the board (swipe players only).
+  final ValueNotifier<LBSwipeCue?> _swipeCue = ValueNotifier(null);
 
   /// The run's one-line callout in the strip under the board (COPY.md
   /// "In-run": level up, combo dropped, life lost, Time Attack's last 10s).
@@ -303,7 +309,30 @@ class _GameScreenState extends State<GameScreen>
       return;
     }
 
-    context.read<GameCubit>().changeDirection(direction);
+    final result = context.read<GameCubit>().changeDirection(direction);
+    if (result != InputResult.ignored) {
+      // A fresh object each time, so a repeat swipe re-fires the cue.
+      _swipeCue.value = LBSwipeCue(direction, rejected: result.isRejected);
+    }
+  }
+
+  /// The swipe compass, sized to [spare] (the height left under the info
+  /// row), or nothing when there is no room or the player uses a D-pad.
+  Widget _swipeCompassSlot(double spare) {
+    final cell = context.lbCell;
+    final size = math.min(spare - cell * 1.5, cell * 5.4);
+    if (size < cell * 3) return const SizedBox.shrink();
+    return BlocSelector<GameSettingsCubit, GameSettingsState, bool>(
+      selector: (s) => s.dPadEnabled,
+      builder: (context, dPad) => dPad
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: EdgeInsets.only(top: cell * .75),
+              child: IgnorePointer(
+                child: LBSwipeCompass(cue: _swipeCue, size: size),
+              ),
+            ),
+    );
   }
 
   /// The strip under the board (power-ups, clock, lives, length, speed).
@@ -856,6 +885,16 @@ class _GameScreenState extends State<GameScreen>
                                                                         _boardInfoRow(
                                                                           gameState,
                                                                           boardW,
+                                                                        ),
+                                                                        // Swipe compass, in the band a
+                                                                        // width-bound board leaves on a
+                                                                        // tall phone — only when it fits
+                                                                        // and only for swipe players.
+                                                                        _swipeCompassSlot(
+                                                                          boardConstraints.maxHeight -
+                                                                              wallH -
+                                                                              boardH -
+                                                                              context.lbCell * 2,
                                                                         ),
                                                                       ],
                                                                     ),

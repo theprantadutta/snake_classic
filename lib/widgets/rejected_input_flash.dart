@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/presentation/bloc/game/game_cubit.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
-/// Brief red ring flashed at screen center when the cubit denies a direction
+/// Brief Living Board danger block (pixel ✕) flashed at screen center when the cubit denies a direction
 /// change. Subscribes only to `lastRejectedInputAt` so it doesn't drag the
 /// game screen into per-tick rebuilds.
 class RejectedInputFlash extends StatelessWidget {
@@ -22,22 +23,15 @@ class RejectedInputFlash extends StatelessWidget {
         final opacity = (1.0 - t).clamp(0.0, 1.0);
         return IgnorePointer(
           child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 60),
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.red.withValues(alpha: opacity * 0.25),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: opacity * 0.85),
-                  width: 3,
-                ),
-              ),
-              child: Icon(
-                Icons.do_disturb_alt_rounded,
-                color: Colors.white.withValues(alpha: opacity * 0.85),
-                size: 36,
+            child: Opacity(
+              opacity: opacity,
+              child: const LBBlock(
+                kind: LBBlockKind.danger,
+                width: 64,
+                height: 64,
+                padding: EdgeInsets.zero,
+                alignment: Alignment.center,
+                child: LBPixelIcon(LBIcon.x, cell: 5, color: LB.bonk),
               ),
             ),
           ),

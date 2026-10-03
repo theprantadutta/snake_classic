@@ -18,3 +18,4 @@ export 'lb_pixel_icon.dart';
 export 'lb_run_chart.dart';
 export 'lb_scaffold.dart';
 export 'lb_sheet.dart';
+export 'lb_swipe_compass.dart';
