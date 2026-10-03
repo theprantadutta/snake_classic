@@ -41,6 +41,8 @@ import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
+import 'package:snake_classic/services/telemetry/install_identity.dart';
+import 'package:snake_classic/services/telemetry/telemetry_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/responsive.dart';
@@ -259,6 +261,11 @@ Future<void> _bootstrap() async {
       }
     });
 
+    // Install id + build facts. Before DI and before any request: every API
+    // call carries them as headers, and the telemetry tracker stamps them on
+    // its rows. One prefs read and one package-info call; never throws.
+    await InstallIdentity.load();
+
     // Initialize dependency injection. Also guarded for the retry path —
     // get_it throws on re-registering an existing singleton.
     if (!_dependenciesReady) {
@@ -316,6 +323,12 @@ Future<void> _bootstrap() async {
       );
       _routerReady = true;
     }
+
+    // Design-metrics telemetry: closes the session a killed process left
+    // open, starts this one and its uploader. Before the first analytics
+    // event only so the ordering is obvious — events that beat it are kept
+    // in memory and written when it starts. Never throws.
+    await getIt<TelemetryService>().start();
 
     // Track app open (fire-and-forget)
     unawaited(getIt<AnalyticsFacade>().trackAppOpened());

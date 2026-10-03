@@ -158,6 +158,15 @@ class FirstRunService {
   /// the deferred sign-in prompt as its "now they have something to lose" cue.
   bool get hasCompletedOnboarding => !isInOnboarding;
 
+  /// When this install first launched, or null if unknown. The telemetry's
+  /// `installed_at` and the feedback question's install-age gate read it.
+  DateTime? get installedAt {
+    final stamped = _prefs?.getInt(_kInstalledAtMs);
+    return stamped == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(stamped);
+  }
+
   /// Milliseconds since this install first launched, or null if unknown.
   int? get msSinceInstall {
     final stamped = _prefs?.getInt(_kInstalledAtMs);
