@@ -121,6 +121,153 @@ void main() {
     expect(dirty.single.dirty, isTrue);
   });
 
+  // The classic and living_board builds both ship schema v23, and a player
+  // can move between them in either direction (the classic build is the
+  // redesign's fallback). With the same version number on both sides
+  // neither build runs a migration on the other's file, so the two v23
+  // telemetry tables must be byte-for-byte the same shape on both branches.
+  // These are the CREATE statements Drift generates for them; if one branch
+  // changes a column, this fails there and the other branch must follow (or
+  // the schema version must move on both).
+  const telemetrySessionsSql =
+      'CREATE TABLE "telemetry_sessions" ("session_id" TEXT NOT NULL, '
+      '"design" TEXT NOT NULL, "app_version" TEXT NOT NULL, '
+      '"build" INTEGER NOT NULL, "started_at" INTEGER NOT NULL, '
+      '"ended_at" INTEGER NULL, "last_active_at" INTEGER NOT NULL, '
+      '"local_day" TEXT NOT NULL, '
+      '"foreground_ms" INTEGER NOT NULL DEFAULT 0, '
+      '"runs_started" INTEGER NOT NULL DEFAULT 0, '
+      '"runs_finished" INTEGER NOT NULL DEFAULT 0, '
+      '"runs_again" INTEGER NOT NULL DEFAULT 0, '
+      '"best_score" INTEGER NOT NULL DEFAULT 0, '
+      '"total_score" INTEGER NOT NULL DEFAULT 0, '
+      '"run_ms" INTEGER NOT NULL DEFAULT 0, '
+      '"multiplayer_matches" INTEGER NOT NULL DEFAULT 0, '
+      '"ad_impressions_banner" INTEGER NOT NULL DEFAULT 0, '
+      '"ad_impressions_interstitial" INTEGER NOT NULL DEFAULT 0, '
+      '"ad_impressions_rewarded" INTEGER NOT NULL DEFAULT 0, '
+      '"ad_impressions_app_open" INTEGER NOT NULL DEFAULT 0, '
+      '"rewarded_completed" INTEGER NOT NULL DEFAULT 0, '
+      '"rewarded_abandoned" INTEGER NOT NULL DEFAULT 0, '
+      '"ad_revenue_micros" INTEGER NOT NULL DEFAULT 0, '
+      '"purchases_started" INTEGER NOT NULL DEFAULT 0, '
+      '"purchases_completed" INTEGER NOT NULL DEFAULT 0, '
+      '"store_views" INTEGER NOT NULL DEFAULT 0, '
+      '"abnormal_end" INTEGER NOT NULL DEFAULT 0 '
+      'CHECK ("abnormal_end" IN (0, 1)), '
+      '"dirty" INTEGER NOT NULL DEFAULT 1 CHECK ("dirty" IN (0, 1)), '
+      '"revision" INTEGER NOT NULL DEFAULT 0, '
+      '"uploaded_at" INTEGER NULL, '
+      '"poisoned" INTEGER NOT NULL DEFAULT 0 CHECK ("poisoned" IN (0, 1)), '
+      'PRIMARY KEY ("session_id"))';
+  const telemetryFeedbackSql =
+      'CREATE TABLE "telemetry_feedback" ("feedback_id" TEXT NOT NULL, '
+      '"design" TEXT NOT NULL, "app_version" TEXT NOT NULL, '
+      '"rating" INTEGER NOT NULL, "comment" TEXT NULL, '
+      '"trigger" TEXT NOT NULL, "created_at" INTEGER NOT NULL, '
+      '"dirty" INTEGER NOT NULL DEFAULT 1 CHECK ("dirty" IN (0, 1)), '
+      '"uploaded_at" INTEGER NULL, PRIMARY KEY ("feedback_id"))';
+
+  Future<Map<String, String?>> telemetryTableSql(AppDatabase db) async {
+    final rows = await db
+        .customSelect(
+          "SELECT name, sql FROM sqlite_master WHERE type = 'table' "
+          "AND name LIKE 'telemetry_%' ORDER BY name",
+        )
+        .get();
+    return {
+      for (final r in rows) r.read<String>('name'): r.read<String?>('sql'),
+    };
+  }
+
+  test(
+    'v23 telemetry tables have the exact shape both designs create',
+    () async {
+      // Fresh install path (onCreate) ...
+      final fresh = AppDatabase.forTesting(NativeDatabase.memory());
+      expect(await telemetryTableSql(fresh), {
+        'telemetry_feedback': telemetryFeedbackSql,
+        'telemetry_sessions': telemetrySessionsSql,
+      });
+      await fresh.close();
+
+      // ... and the upgrade path (v22 -> v23) end up identical.
+      final file = await completeSchemaStampedAs(22);
+      final raw = AppDatabase.forTesting(NativeDatabase(file));
+      await raw.customSelect('SELECT 1').get();
+      await raw.customStatement('DROP TABLE telemetry_sessions');
+      await raw.customStatement('DROP TABLE telemetry_feedback');
+      await raw.customStatement('PRAGMA user_version = 22');
+      await raw.close();
+      final upgraded = AppDatabase.forTesting(NativeDatabase(file));
+      addTearDown(upgraded.close);
+      expect(await telemetryTableSql(upgraded), {
+        'telemetry_feedback': telemetryFeedbackSql,
+        'telemetry_sessions': telemetrySessionsSql,
+      });
+    },
+  );
+
+  test(
+    'a v23 file written by the other design opens as-is and keeps its rows',
+    () async {
+      // The redesign build left a session and an answer behind; this build
+      // opens the same file at the same version (no onUpgrade at all) and
+      // adds its own rows next to them. Both get uploaded, each tagged with
+      // the design that recorded it.
+      final file = await completeSchemaStampedAs(23);
+      final now = DateTime(2026, 10, 3, 9);
+      final other = AppDatabase.forTesting(NativeDatabase(file));
+      await other.telemetryDao.upsertSession(
+        TelemetrySessionsCompanion.insert(
+          sessionId: '7d1c0d1e-5f0a-4b8e-8f3a-2a6f0c9e4b11',
+          design: 'living_board',
+          appVersion: '6.8.0',
+          build: 60,
+          startedAt: now,
+          lastActiveAt: now,
+          localDay: '2026-10-03',
+        ),
+      );
+      await other.telemetryDao.insertFeedback(
+        TelemetryFeedbackCompanion.insert(
+          feedbackId: '1f6b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+          design: 'living_board',
+          appVersion: '6.8.0',
+          rating: 4,
+          trigger: 'after_runs',
+          createdAt: now,
+        ),
+      );
+      await other.close();
+
+      final db = AppDatabase.forTesting(NativeDatabase(file));
+      addTearDown(db.close);
+      await db.customSelect('SELECT 1').get();
+      expect(await userVersion(db), 23);
+      await db.telemetryDao.upsertSession(
+        TelemetrySessionsCompanion.insert(
+          sessionId: '2a3b4c5d-6e7f-4081-9a2b-3c4d5e6f7a8b',
+          design: 'classic',
+          appVersion: '6.8.0',
+          build: 60,
+          startedAt: now.add(const Duration(hours: 1)),
+          lastActiveAt: now.add(const Duration(hours: 1)),
+          localDay: '2026-10-03',
+        ),
+      );
+
+      final sessions = await db.telemetryDao.dirtySessions(limit: 10);
+      expect(sessions.map((s) => s.design).toSet(), {
+        'living_board',
+        'classic',
+      });
+      final feedback = await db.telemetryDao.dirtyFeedback(limit: 10);
+      expect(feedback.single.design, 'living_board');
+      expect(feedback.single.rating, 4);
+    },
+  );
+
   test('a failed step leaves nothing behind for the next launch to trip on',
       () async {
     // The upgrade runs inside a transaction, so an interrupted step rolls
