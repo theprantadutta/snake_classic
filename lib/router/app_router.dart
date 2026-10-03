@@ -40,6 +40,10 @@ import 'package:snake_classic/screens/tournaments_screen.dart';
 CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
     key: state.pageKey,
+    // The GoRoute name reaches NavigatorObservers as RouteSettings.name —
+    // screen-view analytics and the menu-music observer both read it. It
+    // was unset, so every observer saw null.
+    name: state.name ?? state.matchedLocation,
     child: child,
     transitionDuration: const Duration(milliseconds: 300),
     reverseTransitionDuration: const Duration(milliseconds: 300),
@@ -61,6 +65,10 @@ CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
 CustomTransitionPage<void> _scalePage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
     key: state.pageKey,
+    // The GoRoute name reaches NavigatorObservers as RouteSettings.name —
+    // screen-view analytics and the menu-music observer both read it. It
+    // was unset, so every observer saw null.
+    name: state.name ?? state.matchedLocation,
     child: child,
     transitionDuration: const Duration(milliseconds: 320),
     reverseTransitionDuration: const Duration(milliseconds: 320),
@@ -117,7 +125,7 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       // handed over from the native splash, so there is nothing to animate
       // from. Leaving is animated by whatever page comes next.
       pageBuilder: (context, state) =>
-          NoTransitionPage(key: state.pageKey, child: const LoadingScreen()),
+          NoTransitionPage(key: state.pageKey, name: state.name, child: const LoadingScreen()),
     ),
     GoRoute(
       path: AppRoutes.firstTimeAuth,
