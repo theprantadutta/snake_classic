@@ -1584,6 +1584,7 @@
   "lbHomeGreeting": "Salut, {name}. Tu manquais aux pommes.",
   "lbHomeHint": "FONCE DANS UN BLOC. OU TOUCHE-LE. ON NE JUGE PAS.",
   "lbDailyNag": "DÉFIS {done}/{total} · ENCORE UN EN-CAS, STP",
+  "lbDailyCheck": "DÉFIS DU JOUR",
   "lbDailyAllFed": "RASSASIÉ. REVIENS DEMAIN.",
   "lbModeRow": "MODE {index}/{count} · {mode}",
   "lbYourBest": "TON RECORD",

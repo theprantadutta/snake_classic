@@ -5295,6 +5295,9 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get lbDailyCheck => 'आज के चैलेंज';
+
+  @override
   String get lbDailyAllFed => 'पेट भर गया। कल फिर आइए।';
 
   @override

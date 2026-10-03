@@ -1584,6 +1584,7 @@
   "lbHomeGreeting": "अरे {name}, सेब आपको याद कर रहे थे।",
   "lbHomeHint": "साँप को ब्लॉक में घुसाइए। या टैप कीजिए। हम जज नहीं करते।",
   "lbDailyNag": "दैनिक {done}/{total} · बस एक निवाला और, प्लीज़",
+  "lbDailyCheck": "आज के चैलेंज",
   "lbDailyAllFed": "पेट भर गया। कल फिर आइए।",
   "lbModeRow": "मोड {index}/{count} · {mode}",
   "lbYourBest": "आपका बेस्ट",

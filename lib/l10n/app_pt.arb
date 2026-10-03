@@ -1584,6 +1584,7 @@
   "lbHomeGreeting": "E aí, {name}. As maçãs sentiram sua falta.",
   "lbHomeHint": "GUIE ATÉ UM BLOCO. OU TOQUE. SEM JULGAMENTOS.",
   "lbDailyNag": "DIÁRIO {done}/{total} · MAIS UM LANCHINHO, VAI",
+  "lbDailyCheck": "DIÁRIO · DESAFIOS DE HOJE",
   "lbDailyAllFed": "BARRIGA CHEIA. VOLTE AMANHÃ.",
   "lbModeRow": "MODO {index}/{count} · {mode}",
   "lbYourBest": "SEU RECORDE",

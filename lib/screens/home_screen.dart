@@ -352,7 +352,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     day: b.day,
                     coins: b.coins,
                     bonusItem: b.bonusItem,
-                    claimed: b.isCollected,
+                    // From the streak, like the reward itself: the stored
+                    // per-day flag outlives a broken streak, which drew D1
+                    // as claimed on the very day D1 was being offered.
+                    claimed: b.day < localBonus.day,
                   ),
                 )
                 .toList(),
@@ -553,10 +556,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
     final hasChips = adsOn || context.watch<PowerUpCubit>().state.armed != null;
     final chipRows = hasChips ? 2 : 0;
-    var bestRows = 5, playH = 4, tileH = 3;
+    var bestRows = 5, playH = 4, tileH = 3, stripH = 1;
     var showHint = true;
     int fixedRows() =>
-        2 + 1 + bestRows + 1 + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
+        2 + 1 + bestRows + stripH + 1 + playH + 1 + 1 + 1 + chipRows + tileH * 3 + (showHint ? 1 : 0);
     final available = rows - 1 - top;
     var spare = available - fixedRows();
     if (spare < 0) {
@@ -566,6 +569,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (spare < 0) {
       showHint = false;
       spare = available - fixedRows();
+    }
+    // The daily strip is a tap target, not a caption: two rows (a real
+    // button height) before anything else grows.
+    if (spare >= 1) {
+      stripH = 2;
+      spare -= 1;
     }
     if (spare >= 5) {
       tileH = 4;
@@ -592,7 +601,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final stripRow = bestRow + bestRows;
     final playW = (contentCols - 8).isEven ? 8 : 9;
     final playC0 = c0 + (contentCols - playW) ~/ 2;
-    final playR0 = stripRow + 2;
+    final playR0 = stripRow + stripH + 1;
     final modeBarRow = playR0 + playH + 1;
     final modeRow = modeBarRow + 1;
     final chipsRow = modeRow + 1 + gaps[2];
@@ -635,7 +644,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final targets = <HomeSnakeTarget>[
       HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + playH),
-      HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + 1),
+      HomeSnakeTarget('daily', c0, stripRow, c0 + contentCols, stripRow + stripH),
       HomeSnakeTarget(
         'best',
         c0,
@@ -750,8 +759,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Daily nag strip.
           Positioned.fromRect(
-            rect: r(c0, stripRow, contentCols, 1),
+            rect: r(c0, stripRow, contentCols, stripH),
             child: _DailyStrip(
+              tall: stripH > 1,
               onTap: () => context.push(AppRoutes.dailyChallenges),
             ),
           ),
@@ -928,10 +938,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           tall: tall,
           key: HomeWalkthrough.dailyChallengesKey,
           icon: LBIcon.calendar,
-          title: l10n.lbHomeDaily(
-            '${daily.completedCount}',
-            '${daily.totalCount}',
-          ),
+          title: daily.totalCount == 0
+              ? l10n.lbDailyTitle
+              : l10n.lbHomeDaily(
+                  '${daily.completedCount}',
+                  '${daily.totalCount}',
+                ),
           subtitle: coinsLeft > 0
               ? l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft))
               : l10n.lbResetsIn(_hm(reset)),
@@ -1257,9 +1269,12 @@ class _CoinReadout extends StatelessWidget {
 
 /// The daily nag strip: what is left today, or that you are done.
 class _DailyStrip extends ConsumerWidget {
-  const _DailyStrip({required this.onTap});
+  const _DailyStrip({required this.onTap, this.tall = false});
 
   final VoidCallback onTap;
+
+  /// Two grid rows: button-sized type and icon instead of a caption.
+  final bool tall;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1270,7 +1285,8 @@ class _DailyStrip extends ConsumerWidget {
     final done = daily.completedCount, total = daily.totalCount;
     final String text;
     if (total == 0) {
-      text = l10n.lbHomeDaily('0', '0');
+      // Today's board has not loaded (offline): no 0/0, just the way in.
+      text = l10n.lbDailyCheck;
     } else if (unclaimed > 0) {
       text = '${l10n.lbHomeDaily('$done', '$total')} · ${l10n.lbClaim}';
     } else if (done >= total) {
@@ -1280,30 +1296,36 @@ class _DailyStrip extends ConsumerWidget {
     }
     return LBBlock(
       kind: LBBlockKind.gold,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      radius: 5,
+      padding: EdgeInsets.symmetric(horizontal: tall ? 14 : 12),
+      radius: tall ? LB.blockRadius : 5,
       onTap: onTap,
       child: Row(
         children: [
-          const LBPixelIcon(
+          LBPixelIcon(
             LBIcon.flame,
-            cell: 2.6,
+            cell: tall ? 3.4 : 2.6,
             color: LB.gold,
             accent: LB.bonk,
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: tall ? 12 : 10),
           Expanded(
             child: Text(
               text,
-              maxLines: 1,
+              // Two rows have room for a second line, so a long nag or
+              // translation wraps instead of losing its end.
+              maxLines: tall ? 2 : 1,
               overflow: TextOverflow.ellipsis,
               style: LBText.label(
                 p,
                 color: LB.gold,
-              ).copyWith(fontSize: 9.5, letterSpacing: 1.6),
+              ).copyWith(height: 1.25, fontSize: tall ? 12 : 9.5, letterSpacing: tall ? 1.8 : 1.6),
             ),
           ),
-          Text('→', style: LBText.label(p, color: LB.gold)),
+          LBPixelIcon(
+            Directionality.of(context) == TextDirection.rtl ? LBIcon.back : LBIcon.next,
+            cell: tall ? 2.6 : 2,
+            color: LB.gold,
+          ),
         ],
       ),
     );

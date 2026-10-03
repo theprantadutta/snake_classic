@@ -5342,6 +5342,9 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String get lbDailyCheck => 'WYZWANIA NA DZIŚ';
+
+  @override
   String get lbDailyAllFed => 'NAJEDZONY. WRÓĆ JUTRO.';
 
   @override

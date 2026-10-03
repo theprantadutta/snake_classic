@@ -5304,6 +5304,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get lbDailyCheck => 'DAILY · TODAY\'S CHALLENGES';
+
+  @override
   String get lbDailyAllFed => 'ALL FED. COME BACK TOMORROW.';
 
   @override

@@ -9574,6 +9574,12 @@ abstract class AppLocalizations {
   /// **'DAILY {done}/{total} · ONE MORE SNACK, PLEASE'**
   String lbDailyNag(String done, String total);
 
+  /// Home daily strip when today's challenges have not loaded yet (offline)
+  ///
+  /// In en, this message translates to:
+  /// **'DAILY · TODAY\'S CHALLENGES'**
+  String get lbDailyCheck;
+
   /// All daily challenges done and claimed
   ///
   /// In en, this message translates to:

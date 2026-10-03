@@ -5332,6 +5332,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get lbDailyCheck => 'ЗАДАНИЯ НА СЕГОДНЯ';
+
+  @override
   String get lbDailyAllFed => 'ВСЕ СЫТЫ. ПРИХОДИ ЗАВТРА.';
 
   @override

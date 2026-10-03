@@ -1584,6 +1584,7 @@
   "lbHomeGreeting": "Привет, {name}. Яблоки скучали.",
   "lbHomeHint": "ЗАРУЛИ В БЛОК. ИЛИ ТАПНИ. МЫ НЕ СУДИМ.",
   "lbDailyNag": "ЗАДАНИЯ {done}/{total} · ЕЩЁ КУСОЧЕК, ПЛИЗ",
+  "lbDailyCheck": "ЗАДАНИЯ НА СЕГОДНЯ",
   "lbDailyAllFed": "ВСЕ СЫТЫ. ПРИХОДИ ЗАВТРА.",
   "lbModeRow": "РЕЖИМ {index}/{count} · {mode}",
   "lbYourBest": "ТВОЙ РЕКОРД",

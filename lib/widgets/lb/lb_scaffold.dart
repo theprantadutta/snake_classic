@@ -85,7 +85,7 @@ class LBScaffold extends StatelessWidget {
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: context.lbCell * .6,
+                      height: context.lbCell * .85,
                       child: IgnorePointer(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
