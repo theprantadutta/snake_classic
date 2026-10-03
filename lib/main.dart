@@ -13,6 +13,7 @@ import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:snake_classic/services/menu_music_route_observer.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/core/observability/sentry_bootstrap.dart';
@@ -309,6 +310,7 @@ Future<void> _bootstrap() async {
       appRouter = createAppRouter(
         observers: [
           AnalyticsRouteObserver(getIt<AnalyticsFacade>()),
+          MenuMusicRouteObserver(AudioService()),
           // Names each screen for Sentry: navigation breadcrumbs, the
           // "screen where it broke" on every issue, and a transaction per
           // route so a slow screen is visible as a slow screen rather than
