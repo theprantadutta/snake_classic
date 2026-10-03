@@ -139,7 +139,9 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
 
     return Positioned.fill(
       child: ColoredBox(
-        color: p.board.withValues(alpha: .82),
+        // Dense enough that the info row under the board (LEN · SPEED, the
+        // swipe compass) cannot read through the NAH link that lands on it.
+        color: p.board.withValues(alpha: .93),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
