@@ -959,16 +959,20 @@ class _GameOverActionsState extends State<_GameOverActions> {
                         ),
                         const Spacer(),
                         Text(
-                          isPro
-                              ? l10n.lbGoContinueProSub(
-                                  '${widget.gameState.snake.length}',
-                                )
-                              : l10n.lbGoContinueSub(
-                                  context.formatInt(
-                                    cubit.currentReviveCoinCost,
-                                  ),
-                                  '${widget.gameState.snake.length}',
-                                ),
+                          // Two whole lines ("1,500¢ or ad" / "keep len 3"),
+                          // never a wrap that strands the number: every
+                          // locale joins the halves with " · ".
+                          (isPro
+                                  ? l10n.lbGoContinueProSub(
+                                      '${widget.gameState.snake.length}',
+                                    )
+                                  : l10n.lbGoContinueSub(
+                                      context.formatInt(
+                                        cubit.currentReviveCoinCost,
+                                      ),
+                                      '${widget.gameState.snake.length}',
+                                    ))
+                              .replaceFirst(' · ', '\n'),
                           maxLines: 3,
                           style: LBText.body(
                             p,

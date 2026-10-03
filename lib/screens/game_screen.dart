@@ -320,8 +320,11 @@ class _GameScreenState extends State<GameScreen>
   /// row), or nothing when there is no room or the player uses a D-pad.
   Widget _swipeCompassSlot(double spare) {
     final cell = context.lbCell;
-    final size = math.min(spare - cell * 1.5, cell * 5.4);
-    if (size < cell * 3) return const SizedBox.shrink();
+    // Reserve exactly the gap above it; below ~54 dp the cross stops
+    // reading as one (an absolute floor: on tablets a 3-scaled-cell
+    // minimum hid it by 2 dp).
+    final size = math.min(spare - cell * .75, cell * 5.4);
+    if (size < 54) return const SizedBox.shrink();
     return BlocSelector<GameSettingsCubit, GameSettingsState, bool>(
       selector: (s) => s.dPadEnabled,
       builder: (context, dPad) => dPad
