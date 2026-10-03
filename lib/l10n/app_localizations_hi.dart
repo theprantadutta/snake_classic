@@ -185,22 +185,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'मूल गेम की तरह एक-एक सेल चलें। मोड़ दबाते ही लगते हैं।';
 
   @override
-  String get settingsControlLayout => 'बटन लेआउट';
-
-  @override
-  String get settingsControlLayoutDPad => 'डी-पैड';
-
-  @override
-  String get settingsControlLayoutDPadDesc => 'ऊपर, नीचे, बाएँ, दाएँ';
-
-  @override
-  String get settingsControlLayoutTurn => 'मोड़ बटन';
-
-  @override
-  String get settingsControlLayoutTurnDesc =>
-      'अपनी दिशा से बाएँ या दाएँ मुड़ें। कभी उल्टा नहीं।';
-
-  @override
   String get gameTurnLeft => 'बाएँ मुड़ें';
 
   @override
@@ -208,13 +192,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get gameTurnControls => 'मोड़ बटन';
-
-  @override
-  String get settingsControlLayoutStick => 'जॉयस्टिक';
-
-  @override
-  String get settingsControlLayoutStickDesc =>
-      'बार में कहीं भी जिस दिशा में जाना है उधर धकेलें। दबाए रखकर चलाते रहें।';
 
   @override
   String get gameJoystick => 'जॉयस्टिक';
@@ -2667,25 +2644,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'बोनस सिक्कों और इनामों के लिए दैनिक चुनौतियाँ पूरी करें। हर दिन नई चुनौतियाँ!';
 
   @override
-  String get hudScoreUpper => 'स्कोर';
-
-  @override
-  String hudScoreSemantics(Object value) {
-    return 'स्कोर $value';
-  }
-
-  @override
-  String hudLevelBadge(Object level) {
-    return 'स्तर$level';
-  }
-
-  @override
   String get hudTournamentBadge => 'टूर्नामेंट';
-
-  @override
-  String hudComboMultiplier(Object multiplier) {
-    return '${multiplier}x';
-  }
 
   @override
   String get poStore => 'स्टोर';
@@ -4397,21 +4356,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cfTapSkip => 'छोड़ने के लिए कहीं भी टैप करें';
 
   @override
-  String ppgLvShort(Object level) {
-    return 'Lv $level';
-  }
-
-  @override
-  String ppgLvUpper(Object level) {
-    return 'LV $level';
-  }
-
-  @override
-  String ppgLevel(Object level) {
-    return 'लेवल $level';
-  }
-
-  @override
   String get xgTitle => 'गेम छोड़ें?';
 
   @override
@@ -5047,14 +4991,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'एक तेज़ गेम? आपका पहला हाई स्कोर इंतज़ार कर रहा है।';
 
   @override
-  String get goTomorrowLabel => 'कल फिर आएँ';
-
-  @override
-  String goTomorrowReward(int coins, int day) {
-    return 'अपनी स्ट्रीक के दिन $day पर $coins सिक्के पाएँ';
-  }
-
-  @override
   String get rvAteFoodUnknown => '🍎 भोजन खाया';
 
   @override
@@ -5087,9 +5023,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get gameDirectionalPad => 'दिशा पैड';
-
-  @override
-  String get gameGoHome => 'होम स्क्रीन पर जाएँ';
 
   @override
   String get gamePauseGame => 'गेम पॉज करें';

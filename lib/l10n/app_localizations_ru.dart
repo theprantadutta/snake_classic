@@ -184,22 +184,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Двигайтесь по клеткам, как в оригинале. Повороты срабатывают сразу.';
 
   @override
-  String get settingsControlLayout => 'Раскладка кнопок';
-
-  @override
-  String get settingsControlLayoutDPad => 'D-Pad';
-
-  @override
-  String get settingsControlLayoutDPadDesc => 'Вверх, вниз, влево, вправо';
-
-  @override
-  String get settingsControlLayoutTurn => 'Кнопки поворота';
-
-  @override
-  String get settingsControlLayoutTurnDesc =>
-      'Поворачивайте влево или вправо относительно курса. Никакого разворота.';
-
-  @override
   String get gameTurnLeft => 'Повернуть влево';
 
   @override
@@ -207,13 +191,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameTurnControls => 'Кнопки поворота';
-
-  @override
-  String get settingsControlLayoutStick => 'Джойстик';
-
-  @override
-  String get settingsControlLayoutStickDesc =>
-      'Толкните в любом месте панели в нужную сторону. Держите палец, чтобы продолжать управлять.';
 
   @override
   String get gameJoystick => 'Джойстик';
@@ -2677,25 +2654,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выполняйте ежедневные задания ради бонусных монет и наград. Каждый день новые!';
 
   @override
-  String get hudScoreUpper => 'СЧЁТ';
-
-  @override
-  String hudScoreSemantics(Object value) {
-    return 'Счёт $value';
-  }
-
-  @override
-  String hudLevelBadge(Object level) {
-    return 'УР$level';
-  }
-
-  @override
   String get hudTournamentBadge => 'ТУРНИР';
-
-  @override
-  String hudComboMultiplier(Object multiplier) {
-    return '${multiplier}x';
-  }
 
   @override
   String get poStore => 'Магазин';
@@ -4426,21 +4385,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cfTapSkip => 'Нажмите в любом месте, чтобы пропустить';
 
   @override
-  String ppgLvShort(Object level) {
-    return 'Ур. $level';
-  }
-
-  @override
-  String ppgLvUpper(Object level) {
-    return 'УР. $level';
-  }
-
-  @override
-  String ppgLevel(Object level) {
-    return 'Уровень $level';
-  }
-
-  @override
   String get xgTitle => 'Выйти из игры?';
 
   @override
@@ -5082,14 +5026,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Быстрая партия? Твой первый рекорд ждёт.';
 
   @override
-  String get goTomorrowLabel => 'ВОЗВРАЩАЙСЯ ЗАВТРА';
-
-  @override
-  String goTomorrowReward(int coins, int day) {
-    return 'Забери $coins монет в день $day твоей серии';
-  }
-
-  @override
   String get rvAteFoodUnknown => '🍎 Съел еду';
 
   @override
@@ -5122,9 +5058,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gameDirectionalPad => 'Крестовина';
-
-  @override
-  String get gameGoHome => 'На главный экран';
 
   @override
   String get gamePauseGame => 'Пауза';

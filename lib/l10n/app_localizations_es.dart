@@ -187,23 +187,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Muévete casilla a casilla como en el original. Los giros ocurren al instante.';
 
   @override
-  String get settingsControlLayout => 'Disposición de botones';
-
-  @override
-  String get settingsControlLayoutDPad => 'Cruceta';
-
-  @override
-  String get settingsControlLayoutDPadDesc =>
-      'Arriba, abajo, izquierda, derecha';
-
-  @override
-  String get settingsControlLayoutTurn => 'Botones de giro';
-
-  @override
-  String get settingsControlLayoutTurnDesc =>
-      'Gira a la izquierda o a la derecha desde tu rumbo. Nunca marcha atrás.';
-
-  @override
   String get gameTurnLeft => 'Girar a la izquierda';
 
   @override
@@ -211,13 +194,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gameTurnControls => 'Botones de giro';
-
-  @override
-  String get settingsControlLayoutStick => 'Joystick';
-
-  @override
-  String get settingsControlLayoutStickDesc =>
-      'Empuja en cualquier parte de la barra hacia donde quieras ir. Mantén pulsado para seguir girando.';
 
   @override
   String get gameJoystick => 'Joystick';
@@ -2692,25 +2668,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Completa desafíos diarios para conseguir monedas y recompensas. ¡Desafíos nuevos cada día!';
 
   @override
-  String get hudScoreUpper => 'PUNTOS';
-
-  @override
-  String hudScoreSemantics(Object value) {
-    return 'Puntuación $value';
-  }
-
-  @override
-  String hudLevelBadge(Object level) {
-    return 'NV$level';
-  }
-
-  @override
   String get hudTournamentBadge => 'TORNEO';
-
-  @override
-  String hudComboMultiplier(Object multiplier) {
-    return '${multiplier}x';
-  }
 
   @override
   String get poStore => 'Tienda';
@@ -4449,21 +4407,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cfTapSkip => 'Toca en cualquier parte para saltar';
 
   @override
-  String ppgLvShort(Object level) {
-    return 'Nv $level';
-  }
-
-  @override
-  String ppgLvUpper(Object level) {
-    return 'NV $level';
-  }
-
-  @override
-  String ppgLevel(Object level) {
-    return 'Nivel $level';
-  }
-
-  @override
   String get xgTitle => '¿Salir del Juego?';
 
   @override
@@ -5111,14 +5054,6 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Una partida rápida? Tu primer récord te espera.';
 
   @override
-  String get goTomorrowLabel => 'VUELVE MAÑANA';
-
-  @override
-  String goTomorrowReward(int coins, int day) {
-    return 'Reclama $coins monedas el día $day de tu racha';
-  }
-
-  @override
   String get rvAteFoodUnknown => '🍎 Comió comida';
 
   @override
@@ -5152,9 +5087,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gameDirectionalPad => 'Pad direccional';
-
-  @override
-  String get gameGoHome => 'Ir a la pantalla de inicio';
 
   @override
   String get gamePauseGame => 'Pausar juego';

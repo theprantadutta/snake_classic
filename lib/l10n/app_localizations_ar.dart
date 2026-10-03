@@ -183,22 +183,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'التحرك خلية بخلية كما في اللعبة الأصلية. تُنفَّذ الانعطافات فور الضغط.';
 
   @override
-  String get settingsControlLayout => 'تخطيط الأزرار';
-
-  @override
-  String get settingsControlLayoutDPad => 'أزرار الاتجاهات';
-
-  @override
-  String get settingsControlLayoutDPadDesc => 'أعلى، أسفل، يسار، يمين';
-
-  @override
-  String get settingsControlLayoutTurn => 'أزرار الانعطاف';
-
-  @override
-  String get settingsControlLayoutTurnDesc =>
-      'انعطف يسارًا أو يمينًا من اتجاهك الحالي. لا رجوع للخلف أبدًا.';
-
-  @override
   String get gameTurnLeft => 'انعطاف يسارًا';
 
   @override
@@ -206,13 +190,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gameTurnControls => 'أزرار الانعطاف';
-
-  @override
-  String get settingsControlLayoutStick => 'عصا التحكم';
-
-  @override
-  String get settingsControlLayoutStickDesc =>
-      'ادفع في أي مكان بالشريط نحو الاتجاه المطلوب. استمر بالضغط للاستمرار في التوجيه.';
 
   @override
   String get gameJoystick => 'عصا التحكم';
@@ -2650,25 +2627,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'أكمل التحديات اليومية لعملات ومكافآت إضافية. تحديات جديدة كل يوم!';
 
   @override
-  String get hudScoreUpper => 'النتيجة';
-
-  @override
-  String hudScoreSemantics(Object value) {
-    return 'النتيجة $value';
-  }
-
-  @override
-  String hudLevelBadge(Object level) {
-    return 'مستوى $level';
-  }
-
-  @override
   String get hudTournamentBadge => 'بطولة';
-
-  @override
-  String hudComboMultiplier(Object multiplier) {
-    return '${multiplier}x';
-  }
 
   @override
   String get poStore => 'المتجر';
@@ -4390,21 +4349,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cfTapSkip => 'المس أي مكان للتخطي';
 
   @override
-  String ppgLvShort(Object level) {
-    return 'مستوى $level';
-  }
-
-  @override
-  String ppgLvUpper(Object level) {
-    return 'مستوى $level';
-  }
-
-  @override
-  String ppgLevel(Object level) {
-    return 'المستوى $level';
-  }
-
-  @override
   String get xgTitle => 'الخروج من اللعبة؟';
 
   @override
@@ -5046,14 +4990,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'جولة سريعة؟ أول نتيجة قياسية بانتظارك.';
 
   @override
-  String get goTomorrowLabel => 'عُد غدًا';
-
-  @override
-  String goTomorrowReward(int coins, int day) {
-    return 'احصل على $coins عملة في اليوم $day من سلسلتك';
-  }
-
-  @override
   String get rvAteFoodUnknown => '🍎 أكل طعامًا';
 
   @override
@@ -5085,9 +5021,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gameDirectionalPad => 'لوحة الاتجاهات';
-
-  @override
-  String get gameGoHome => 'الانتقال إلى الشاشة الرئيسية';
 
   @override
   String get gamePauseGame => 'إيقاف اللعبة مؤقتًا';

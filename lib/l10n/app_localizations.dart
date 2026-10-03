@@ -424,36 +424,6 @@ abstract class AppLocalizations {
   /// **'Move cell by cell like the original. Turns land the instant you press.'**
   String get settingsSnapMovementSubtitle;
 
-  /// No description provided for @settingsControlLayout.
-  ///
-  /// In en, this message translates to:
-  /// **'Button Layout'**
-  String get settingsControlLayout;
-
-  /// No description provided for @settingsControlLayoutDPad.
-  ///
-  /// In en, this message translates to:
-  /// **'D-Pad'**
-  String get settingsControlLayoutDPad;
-
-  /// No description provided for @settingsControlLayoutDPadDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Up, down, left, right'**
-  String get settingsControlLayoutDPadDesc;
-
-  /// No description provided for @settingsControlLayoutTurn.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn Buttons'**
-  String get settingsControlLayoutTurn;
-
-  /// No description provided for @settingsControlLayoutTurnDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn left or right from where you\'re heading. Never a reversal.'**
-  String get settingsControlLayoutTurnDesc;
-
   /// No description provided for @gameTurnLeft.
   ///
   /// In en, this message translates to:
@@ -471,18 +441,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn buttons'**
   String get gameTurnControls;
-
-  /// No description provided for @settingsControlLayoutStick.
-  ///
-  /// In en, this message translates to:
-  /// **'Joystick'**
-  String get settingsControlLayoutStick;
-
-  /// No description provided for @settingsControlLayoutStickDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Push anywhere in the bar toward where you want to go. Keep pressing to keep steering.'**
-  String get settingsControlLayoutStickDesc;
 
   /// No description provided for @gameJoystick.
   ///
@@ -4726,35 +4684,11 @@ abstract class AppLocalizations {
   /// **'Complete daily challenges for bonus coins and rewards. New challenges every day!'**
   String get hwDailyMsg;
 
-  /// No description provided for @hudScoreUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'SCORE'**
-  String get hudScoreUpper;
-
-  /// No description provided for @hudScoreSemantics.
-  ///
-  /// In en, this message translates to:
-  /// **'Score {value}'**
-  String hudScoreSemantics(Object value);
-
-  /// No description provided for @hudLevelBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'LV{level}'**
-  String hudLevelBadge(Object level);
-
   /// No description provided for @hudTournamentBadge.
   ///
   /// In en, this message translates to:
   /// **'TOURNAMENT'**
   String get hudTournamentBadge;
-
-  /// No description provided for @hudComboMultiplier.
-  ///
-  /// In en, this message translates to:
-  /// **'{multiplier}x'**
-  String hudComboMultiplier(Object multiplier);
 
   /// No description provided for @poStore.
   ///
@@ -8008,24 +7942,6 @@ abstract class AppLocalizations {
   /// **'Tap anywhere to skip'**
   String get cfTapSkip;
 
-  /// No description provided for @ppgLvShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Lv {level}'**
-  String ppgLvShort(Object level);
-
-  /// No description provided for @ppgLvUpper.
-  ///
-  /// In en, this message translates to:
-  /// **'LV {level}'**
-  String ppgLvUpper(Object level);
-
-  /// No description provided for @ppgLevel.
-  ///
-  /// In en, this message translates to:
-  /// **'Level {level}'**
-  String ppgLevel(Object level);
-
   /// No description provided for @xgTitle.
   ///
   /// In en, this message translates to:
@@ -9124,18 +9040,6 @@ abstract class AppLocalizations {
   /// **'One quick run? Your first high score is waiting.'**
   String get dayOneReminderBodyNoScore;
 
-  /// Small uppercase label on the game-over card announcing tomorrow daily bonus.
-  ///
-  /// In en, this message translates to:
-  /// **'COME BACK TOMORROW'**
-  String get goTomorrowLabel;
-
-  /// Body of the game-over card announcing the next daily login bonus.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim {coins} coins on day {day} of your streak'**
-  String goTomorrowReward(int coins, int day);
-
   /// Replay event caption when the recorded food type is missing (older recordings stored null). Deliberately omits the type.
   ///
   /// In en, this message translates to:
@@ -9195,12 +9099,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Directional pad'**
   String get gameDirectionalPad;
-
-  /// No description provided for @gameGoHome.
-  ///
-  /// In en, this message translates to:
-  /// **'Go to home screen'**
-  String get gameGoHome;
 
   /// No description provided for @gamePauseGame.
   ///
