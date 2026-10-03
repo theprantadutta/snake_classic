@@ -213,13 +213,17 @@ void main() {
   );
 
   test(
-    'a v23 file written by the other design opens as-is and keeps its rows',
+    'a file at the shared version, written by the other design, opens as-is and keeps its rows',
     () async {
+      // Both designs ship the same schema; whatever it currently is.
+      final probe = AppDatabase.forTesting(NativeDatabase.memory());
+      final current = probe.schemaVersion;
+      await probe.close();
       // The redesign build left a session and an answer behind; this build
       // opens the same file at the same version (no onUpgrade at all) and
       // adds its own rows next to them. Both get uploaded, each tagged with
       // the design that recorded it.
-      final file = await completeSchemaStampedAs(23);
+      final file = await completeSchemaStampedAs(current);
       final now = DateTime(2026, 10, 3, 9);
       final other = AppDatabase.forTesting(NativeDatabase(file));
       await other.telemetryDao.upsertSession(
@@ -248,7 +252,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase(file));
       addTearDown(db.close);
       await db.customSelect('SELECT 1').get();
-      expect(await userVersion(db), 23);
+      expect(await userVersion(db), current);
       await db.telemetryDao.upsertSession(
         TelemetrySessionsCompanion.insert(
           sessionId: '2a3b4c5d-6e7f-4081-9a2b-3c4d5e6f7a8b',
