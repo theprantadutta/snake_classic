@@ -5642,6 +5642,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lbGoChartCaption => '1 SŁUPEK = 1 KĘS · WYŻSZY = SMACZNIEJSZY';
 
   @override
+  String get lbGoNoBites =>
+      'Zero jedzenia w tej grze. Wykres zaczyna się od pierwszego kęsa.';
+
+  @override
   String get lbAgain => 'JESZCZE RAZ';
 
   @override

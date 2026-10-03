@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "TWOJA GRA, ROZWINIĘTA",
   "lbGoChartStats": "JEDZENIE: {food} · MAKS ×{combo}",
   "lbGoChartCaption": "1 SŁUPEK = 1 KĘS · WYŻSZY = SMACZNIEJSZY",
+  "lbGoNoBites": "Zero jedzenia w tej grze. Wykres zaczyna się od pierwszego kęsa.",
   "lbAgain": "JESZCZE RAZ",
   "lbGoContinue": "KONTYNUUJ",
   "lbGoContinueSub": "{cost}¢ lub reklama · zachowaj dł. {len}",

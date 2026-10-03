@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "LA TUA PARTITA, SROTOLATA",
   "lbGoChartStats": "{food} CIBI · PICCO ×{combo}",
   "lbGoChartCaption": "1 COLONNA = 1 CIBO · PIÙ ALTA = PIÙ GUSTOSA",
+  "lbGoNoBites": "Niente cibo in questa partita. Il grafico parte dal primo morso.",
   "lbAgain": "ANCORA",
   "lbGoContinue": "CONTINUA",
   "lbGoContinueSub": "{cost}¢ o annuncio · tieni lun {len}",

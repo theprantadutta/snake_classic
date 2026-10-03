@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "جولتك، مفرودة",
   "lbGoChartStats": "الطعام {food} · الذروة ×{combo}",
   "lbGoChartCaption": "عمود = وجبة · الأطول = الألذ",
+  "lbGoNoBites": "لا طعام في هذه الجولة. يبدأ المخطط مع أول قضمة.",
   "lbAgain": "مجددًا",
   "lbGoContinue": "متابعة",
   "lbGoContinueSub": "{cost}¢ أو إعلان · احتفظ بالطول {len}",

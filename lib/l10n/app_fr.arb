@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "TA PARTIE, DÉROULÉE",
   "lbGoChartStats": "{food} BOUCHÉES · PIC ×{combo}",
   "lbGoChartCaption": "1 COLONNE = 1 BOUCHÉE · PLUS HAUT = PLUS BON",
+  "lbGoNoBites": "Rien mangé cette partie. Le graphique commence à la première bouchée.",
   "lbAgain": "ENCORE",
   "lbGoContinue": "CONTINUER",
   "lbGoContinueSub": "{cost}¢ ou pub · garde ta taille {len}",

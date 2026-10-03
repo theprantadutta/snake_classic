@@ -2650,6 +2650,10 @@
     }
   },
   "lbGoChartCaption": "1 COLUMN = 1 FOOD · TALLER = TASTIER",
+  "lbGoNoBites": "No food this run. The chart starts at the first bite.",
+  "@lbGoNoBites": {
+    "description": "Game over: replaces the run chart when no food was eaten"
+  },
   "@lbGoChartCaption": {
     "description": "Chart caption"
   },

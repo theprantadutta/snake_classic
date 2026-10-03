@@ -10066,6 +10066,12 @@ abstract class AppLocalizations {
   /// **'1 COLUMN = 1 FOOD · TALLER = TASTIER'**
   String get lbGoChartCaption;
 
+  /// Game over: replaces the run chart when no food was eaten
+  ///
+  /// In en, this message translates to:
+  /// **'No food this run. The chart starts at the first bite.'**
+  String get lbGoNoBites;
+
   /// Play again button
   ///
   /// In en, this message translates to:
