@@ -149,6 +149,7 @@ class AudioService {
     debugPrint(
       'AudioService initialized with SoLoud - ${_loadedSounds.length} sounds loaded',
     );
+    _syncMenuMusic();
 
     // Already in the background before the listener existed (it reports
     // transitions, not the current state).
@@ -184,6 +185,8 @@ class AudioService {
     _loadedSounds.clear();
     _musicSource = null;
     _musicHandle = null;
+    _menuSource = null;
+    _menuHandle = null;
     try {
       // The async variant stops the device without blocking the UI isolate
       // while the audio thread is joined — this runs on the way into the
@@ -206,6 +209,7 @@ class AudioService {
     if (_musicSessionActive && _musicWanted) {
       await startGameplayMusic();
     }
+    _syncMenuMusic();
   }
 
   /// Pre-load all sound effects into SoLoud
@@ -340,6 +344,7 @@ class AudioService {
   Future<void> startGameplayMusic() {
     _musicSessionActive = true;
     _musicWanted = true;
+    _syncMenuMusic();
     if (!_initialized || !_musicEnabled) return Future.value();
     return _musicStart ??= _startMusicVoice().whenComplete(() {
       _musicStart = null;
@@ -415,6 +420,7 @@ class AudioService {
     _musicSessionActive = false;
     _musicWanted = false;
     await _stopMusicVoice();
+    _syncMenuMusic();
   }
 
   /// Stops the music voice, if there is one, and forgets it.
@@ -445,6 +451,7 @@ class AudioService {
     } else if (_musicSessionActive) {
       await startGameplayMusic();
     }
+    _syncMenuMusic();
   }
 
   /// Apply audio flags that were changed in storage by someone else,
@@ -475,6 +482,85 @@ class AudioService {
       await _stopMusicVoice();
     } else if (_musicSessionActive) {
       await startGameplayMusic();
+    }
+    _syncMenuMusic();
+  }
+
+  // ---- Menu loop -----------------------------------------------------------
+  //
+  // DESIGN_SPEC §6: `menu_loop_118bpm` on menus, `run_loop_140bpm` in runs.
+  // The menu loop plays whenever music is on and no run owns the music
+  // session, except on routes that are gameplay surfaces (the board before
+  // the first move, a live Versus match) — see [setMenuMusicRouteAllowed].
+  // Full-screen ads need no handling: they background the activity, which
+  // suspends the whole engine, exactly as for the run loop.
+
+  AudioSource? _menuSource;
+  SoundHandle? _menuHandle;
+  Future<void>? _menuStart;
+  bool _menuRouteAllowed = true;
+
+  /// Quieter than the run loop: it sits under browsing, not play.
+  static const double _menuVolume = 0.28;
+  static const Duration _menuFadeIn = Duration(milliseconds: 900);
+  static const Duration _menuFadeOut = Duration(milliseconds: 350);
+
+  SoundHandle? get _liveMenuHandle {
+    final handle = _menuHandle;
+    if (handle == null) return null;
+    if (!_soloud.getIsValidVoiceHandle(handle)) {
+      _menuHandle = null;
+      return null;
+    }
+    return handle;
+  }
+
+  /// Called by the route observer: false on gameplay routes.
+  void setMenuMusicRouteAllowed(bool allowed) {
+    if (_menuRouteAllowed == allowed) return;
+    _menuRouteAllowed = allowed;
+    _syncMenuMusic();
+  }
+
+  bool get _menuMusicWanted =>
+      _initialized && !_suspended && _musicEnabled && !_musicSessionActive && _menuRouteAllowed;
+
+  /// Start or fade out the menu loop to match the current state.
+  void _syncMenuMusic() {
+    if (_menuMusicWanted) {
+      if (_liveMenuHandle == null) {
+        _menuStart ??= _startMenuVoice().whenComplete(() => _menuStart = null);
+      }
+      return;
+    }
+    final handle = _liveMenuHandle;
+    _menuHandle = null;
+    if (handle == null || !_initialized) return;
+    try {
+      _soloud.fadeVolume(handle, 0, _menuFadeOut);
+      _soloud.scheduleStop(handle, _menuFadeOut);
+    } catch (e) {
+      debugPrint('Error stopping menu music: $e');
+    }
+  }
+
+  Future<void> _startMenuVoice() async {
+    try {
+      final generation = _engineGeneration;
+      final source = _menuSource ??
+          await _soloud.loadAsset(
+            'assets/audio/lb/music/menu_loop_118bpm.wav',
+            mode: LoadMode.disk,
+          );
+      if (generation != _engineGeneration) return;
+      _menuSource = source;
+      if (_liveMenuHandle != null || !_menuMusicWanted) return;
+      final handle = _soloud.play(source, volume: 0, looping: true);
+      if (!_soloud.getIsValidVoiceHandle(handle)) return;
+      _menuHandle = handle;
+      _soloud.fadeVolume(handle, _menuVolume, _menuFadeIn);
+    } catch (e) {
+      debugPrint('Menu music not available: $e');
     }
   }
 
