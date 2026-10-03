@@ -5598,6 +5598,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbGoChartCaption => 'عمود = وجبة · الأطول = الألذ';
 
   @override
+  String get lbGoNoBites => 'لا طعام في هذه الجولة. يبدأ المخطط مع أول قضمة.';
+
+  @override
   String get lbAgain => 'مجددًا';
 
   @override

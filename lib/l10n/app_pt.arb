@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "SUA PARTIDA, DESENROLADA",
   "lbGoChartStats": "{food} COMIDAS · PICO ×{combo}",
   "lbGoChartCaption": "1 COLUNA = 1 COMIDA · MAIS ALTA = MAIS GOSTOSA",
+  "lbGoNoBites": "Nada de comida nesta partida. O gráfico começa na primeira mordida.",
   "lbAgain": "DE NOVO",
   "lbGoContinue": "CONTINUAR",
   "lbGoContinueSub": "{cost}¢ ou anúncio · mantém tam {len}",

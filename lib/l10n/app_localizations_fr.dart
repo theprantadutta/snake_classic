@@ -5683,6 +5683,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbGoChartCaption => '1 COLONNE = 1 BOUCHÉE · PLUS HAUT = PLUS BON';
 
   @override
+  String get lbGoNoBites =>
+      'Rien mangé cette partie. Le graphique commence à la première bouchée.';
+
+  @override
   String get lbAgain => 'ENCORE';
 
   @override

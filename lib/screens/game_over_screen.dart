@@ -3,6 +3,7 @@ import 'package:snake_classic/widgets/lb/lb_crash_copy.dart';
 import 'package:snake_classic/widgets/game_over_continue_sheet.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -57,6 +58,35 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
   final AudioService _audioService = AudioService();
   bool _levelUpShown = false;
   bool _doubledCoins = false; // once-per-run "watch to double coins" guard
+
+  // Spare height goes to the run chart: lay out once with the base 9 rows,
+  // measure what is left under the last block, then grow the chart by that
+  // many rows. Measured, not intrinsic — the chart sizes itself with a
+  // LayoutBuilder, which cannot report an intrinsic height.
+  static const int _baseChartRows = 9;
+  static const int _maxChartRows = 18;
+  final GlobalKey _contentKey = GlobalKey();
+  final GlobalKey _chartKey = GlobalKey();
+  double _viewportHeight = 0;
+  int _extraChartRows = 0;
+  bool _chartFitted = false;
+
+  void _fitChart() {
+    if (_chartFitted || !mounted) return;
+    final content = _contentKey.currentContext?.size;
+    final chart = _chartKey.currentContext?.size;
+    if (content == null || chart == null || _viewportHeight <= 0) return;
+    _chartFitted = true;
+    final cellH = chart.height / _baseChartRows;
+    if (cellH <= 0) return;
+    final spare = _viewportHeight - content.height;
+    final extra = (spare / cellH).floor().clamp(
+      0,
+      _maxChartRows - _baseChartRows,
+    );
+    if (extra > 0) setState(() => _extraChartRows = extra);
+  }
+
   List<Achievement> _recentAchievements = [];
   bool _achievementsLoaded = false;
 
@@ -240,7 +270,14 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     if (gameState == null) {
       return Scaffold(
         body: LBGridBackground(
-          child: Center(child: LBCellsBar(count: 6, value: .5, cell: 14, color: context.lb.lime)),
+          child: Center(
+            child: LBCellsBar(
+              count: 6,
+              value: .5,
+              cell: 14,
+              color: context.lb.lime,
+            ),
+          ),
         ),
       );
     }
@@ -249,7 +286,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     final p = context.lb;
     final authState = context.watch<AuthCubit>().state;
     final displayHighScore = math.max(gameState.highScore, authState.highScore);
-    final isHighScore = gameState.score == displayHighScore && gameState.score > 0;
+    final isHighScore =
+        gameState.score == displayHighScore && gameState.score > 0;
 
     // Guests who just beat their own record get the sign-in offer here —
     // the moment their progress is demonstrably worth keeping.
@@ -262,8 +300,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     // Arm the Day-1 comeback nudge with the score they just posted.
     _armDayOneReminder(displayHighScore, l10n);
 
-    final challenges = ref.watch(dailyChallengesProvider.select((s) => s.challenges));
-    final claimable = challenges.where((c) => c.canClaim).toList(growable: false);
+    final challenges = ref.watch(
+      dailyChallengesProvider.select((s) => s.challenges),
+    );
+    final claimable = challenges
+        .where((c) => c.canClaim)
+        .toList(growable: false);
 
     final cubit = context.read<GameCubit>();
     final bites = cubit.bitesThisGame;
@@ -285,95 +327,171 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
       body: LBGridBackground(
         child: SafeArea(
           bottom: false,
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
-            children: [
-              // × YOU BIT YOURSELF. WHY?            RUN 412
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.lbGameOverHeadline(crashCopy.line.toUpperCase()),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: LBText.button(p, color: LB.bonk, size: 12.5).copyWith(letterSpacing: 1.6),
-                    ),
+          child: LayoutBuilder(
+            builder: (context, viewport) {
+              _viewportHeight = viewport.maxHeight;
+              if (!_chartFitted) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => _fitChart(),
+                );
+              }
+              return SingleChildScrollView(
+                child: Padding(
+                  key: _contentKey,
+                  padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // × YOU BIT YOURSELF. WHY?            RUN 412
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.lbGameOverHeadline(
+                                crashCopy.line.toUpperCase(),
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: LBText.button(
+                                p,
+                                color: LB.bonk,
+                                size: 12.5,
+                              ).copyWith(letterSpacing: 1.6),
+                            ),
+                          ),
+                          if (cubit.runNumber > 0) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              l10n.lbGoRun(context.formatInt(cubit.runNumber)),
+                              style: LBText.label(
+                                p,
+                                color: p.inkDim,
+                              ).copyWith(fontSize: 10.5),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (gameCubitState.isTournamentMode &&
+                          gameCubitState.tournamentMode != null) ...[
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: LBChip(
+                            icon: LBIcon.trophy,
+                            height: 26,
+                            kind:
+                                gameCubitState.tournamentScoreSubmission ==
+                                    TournamentScoreSubmission.failed
+                                ? LBChipKind.danger
+                                : LBChipKind.gold,
+                            label: switch (gameCubitState
+                                .tournamentScoreSubmission) {
+                              TournamentScoreSubmission.submitted =>
+                                l10n.goRibbonTournamentSubmitted,
+                              TournamentScoreSubmission.failed =>
+                                l10n.goRibbonTournamentFailed,
+                              _ => l10n.goRibbonTournamentSubmitting,
+                            }.toUpperCase(),
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: cell),
+                      _ScoreRow(
+                        score: gameState.score,
+                        best: displayHighScore,
+                        isNewBest: isHighScore,
+                      ),
+                      SizedBox(height: cell * 1.2),
+                      LBSectionLabel(
+                        l10n.lbGoChartTitle,
+                        color: p.lime,
+                        trailing: l10n.lbGoChartStats(
+                          context.formatInt(bites.length),
+                          '${gameState.maxCombo}',
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      KeyedSubtree(
+                        key: _chartKey,
+                        child: bites.isEmpty
+                            // No food: an empty grid with a lone crash mark reads as
+                            // broken. Same footprint, said in words.
+                            ? LBBlock(
+                                kind: LBBlockKind.muted,
+                                height:
+                                    cell * (_baseChartRows + _extraChartRows) -
+                                    LB.inset * 2,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  l10n.lbGoNoBites,
+                                  textAlign: TextAlign.center,
+                                  style: LBText.body(
+                                    p,
+                                    color: p.inkMuted,
+                                    size: 12,
+                                  ),
+                                ),
+                              )
+                            : LBRunChart(
+                                bites: bites,
+                                rows: _baseChartRows + _extraChartRows,
+                                crashed:
+                                    reason == LBEndReason.wall ||
+                                    reason == LBEndReason.self ||
+                                    reason == LBEndReason.stepped,
+                              ),
+                      ),
+                      if (bites.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.lbGoChartCaption,
+                          style: LBText.label(
+                            p,
+                            color: p.inkDim,
+                          ).copyWith(fontSize: 9),
+                        ),
+                      ],
+                      SizedBox(height: cell * .8),
+                      _GameOverActions(
+                        theme: theme,
+                        gameState: gameState,
+                        coinsEarned:
+                            gameCubitState.coinsEarnedThisGame *
+                            (_doubledCoins ? 2 : 1),
+                        claimable: claimable,
+                        claimingAll: _claimingAll,
+                        onClaimAll: () => _claimAllRewards(claimable),
+                        doubleCoins: _doubleCoinsAction(
+                          gameCubitState.coinsEarnedThisGame,
+                        ),
+                      ),
+                      if (_achievementsLoaded &&
+                          _recentAchievements.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        LBRow(
+                          kind: LBBlockKind.gold,
+                          leading: const LBPixelIcon(
+                            LBIcon.trophy,
+                            cell: 3.4,
+                            color: LB.gold,
+                          ),
+                          title:
+                              '${l10n.lbTrophies} · ${_recentAchievements.length}',
+                          subtitle: _recentAchievements
+                              .map((a) => a.localizedTitle(l10n))
+                              .join(' · '),
+                          trailing: Text(
+                            '→',
+                            style: LBText.button(p, color: LB.gold),
+                          ),
+                          onTap: () => context.push(AppRoutes.achievements),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (cubit.runNumber > 0) ...[
-                    const SizedBox(width: 10),
-                    Text(
-                      l10n.lbGoRun(context.formatInt(cubit.runNumber)),
-                      style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10.5),
-                    ),
-                  ],
-                ],
-              ),
-              if (gameCubitState.isTournamentMode && gameCubitState.tournamentMode != null) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: LBChip(
-                    icon: LBIcon.trophy,
-                    height: 26,
-                    kind: gameCubitState.tournamentScoreSubmission == TournamentScoreSubmission.failed
-                        ? LBChipKind.danger
-                        : LBChipKind.gold,
-                    label: switch (gameCubitState.tournamentScoreSubmission) {
-                      TournamentScoreSubmission.submitted => l10n.goRibbonTournamentSubmitted,
-                      TournamentScoreSubmission.failed => l10n.goRibbonTournamentFailed,
-                      _ => l10n.goRibbonTournamentSubmitting,
-                    }.toUpperCase(),
-                  ),
                 ),
-              ],
-              SizedBox(height: cell),
-              _ScoreRow(
-                score: gameState.score,
-                best: displayHighScore,
-                isNewBest: isHighScore,
-              ),
-              SizedBox(height: cell * 1.2),
-              LBSectionLabel(
-                l10n.lbGoChartTitle,
-                color: p.lime,
-                trailing: l10n.lbGoChartStats(
-                  context.formatInt(bites.length),
-                  '${gameState.maxCombo}',
-                ),
-              ),
-              const SizedBox(height: 6),
-              LBRunChart(
-                bites: bites,
-                rows: bites.isEmpty ? 2 : 9,
-                crashed: reason == LBEndReason.wall || reason == LBEndReason.self || reason == LBEndReason.stepped,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.lbGoChartCaption,
-                style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 9),
-              ),
-              SizedBox(height: cell * .8),
-              _GameOverActions(
-                theme: theme,
-                gameState: gameState,
-                coinsEarned: gameCubitState.coinsEarnedThisGame * (_doubledCoins ? 2 : 1),
-                claimable: claimable,
-                claimingAll: _claimingAll,
-                onClaimAll: () => _claimAllRewards(claimable),
-                doubleCoins: _doubleCoinsAction(gameCubitState.coinsEarnedThisGame),
-              ),
-              if (_achievementsLoaded && _recentAchievements.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                LBRow(
-                  kind: LBBlockKind.gold,
-                  leading: const LBPixelIcon(LBIcon.trophy, cell: 3.4, color: LB.gold),
-                  title: '${l10n.lbTrophies} · ${_recentAchievements.length}',
-                  subtitle: _recentAchievements.map((a) => a.localizedTitle(l10n)).join(' · '),
-                  trailing: Text('→', style: LBText.button(p, color: LB.gold)),
-                  onTap: () => context.push(AppRoutes.achievements),
-                ),
-              ],
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -384,14 +502,16 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
   /// Null (hidden) for Pro, when no coins were earned, or once used.
   VoidCallback? _doubleCoinsAction(int coins) {
     if (coins <= 0 || _doubledCoins) return null;
-    if (!getIt.isRegistered<AdService>() || !getIt<AdService>().adsEnabled) return null;
+    if (!getIt.isRegistered<AdService>() || !getIt<AdService>().adsEnabled) {
+      return null;
+    }
     return () async {
       final l10n = AppLocalizations.of(context)!;
       final ads = getIt<AdService>();
       if (!ads.isRewardedReady) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          arcadeSnackBar(context, message: l10n.goNoAdAvailable),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(arcadeSnackBar(context, message: l10n.goNoAdAvailable));
         return;
       }
       final coinsCubit = context.read<CoinsCubit>();
@@ -408,7 +528,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
             metadata: const {'doubled': true},
           );
           if (mounted) setState(() => _doubledCoins = true);
-          showRewardToast(messenger, l10n.goCoinsDoubled(coins), icon: Icons.monetization_on);
+          showRewardToast(
+            messenger,
+            l10n.goCoinsDoubled(coins),
+            icon: Icons.monetization_on,
+          );
         },
       );
     };
@@ -417,7 +541,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
 
 /// SCORE in big snake cells; BEST and the gap (or NEW BEST) beside it.
 class _ScoreRow extends StatelessWidget {
-  const _ScoreRow({required this.score, required this.best, required this.isNewBest});
+  const _ScoreRow({
+    required this.score,
+    required this.best,
+    required this.isNewBest,
+  });
 
   final int score;
   final int best;
@@ -436,7 +564,10 @@ class _ScoreRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.lbScoreLabel, style: LBText.label(p).copyWith(fontSize: 10.5)),
+              Text(
+                l10n.lbScoreLabel,
+                style: LBText.label(p).copyWith(fontSize: 10.5),
+              ),
               const SizedBox(height: 4),
               Semantics(
                 label: '${l10n.lbScoreLabel} $score',
@@ -461,7 +592,10 @@ class _ScoreRow extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 isNewBest ? l10n.lbGoNewBest : l10n.lbGoBest,
-                style: LBText.label(p, color: isNewBest ? LB.gold : p.inkMuted).copyWith(fontSize: 10.5),
+                style: LBText.label(
+                  p,
+                  color: isNewBest ? LB.gold : p.inkMuted,
+                ).copyWith(fontSize: 10.5),
               ),
               const SizedBox(height: 4),
               FittedBox(
@@ -478,7 +612,11 @@ class _ScoreRow extends StatelessWidget {
               else if (best > score) ...[
                 Text(
                   l10n.lbGoBehind(context.formatInt(best - score)),
-                  style: LBText.body(p, color: p.inkMuted, size: 12).copyWith(fontWeight: FontWeight.w700),
+                  style: LBText.body(
+                    p,
+                    color: p.inkMuted,
+                    size: 12,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(l10n.lbGoBehindLine, style: LBText.body(p, size: 11)),
               ],
@@ -566,7 +704,10 @@ class _GameOverActionsState extends State<_GameOverActions> {
   /// Before anything plays, the confirm step puts up either the rewarded
   /// interstitial's intro screen (Google-required, with a real skip) or a
   /// short tap-absorbing "Ad starting…" curtain.
-  Future<void> _showGameOverAd(BuildContext context, {required GameOverAdFormat announced}) async {
+  Future<void> _showGameOverAd(
+    BuildContext context, {
+    required GameOverAdFormat announced,
+  }) async {
     final coins = context.read<CoinsCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
@@ -584,10 +725,18 @@ class _GameOverActionsState extends State<_GameOverActions> {
               coins: AdService.freeCoinsPerAd,
             );
             if (!watch || !context.mounted) return false;
-            curtain = AdBreakCurtain.show(context, theme: theme, label: l10n.adBreakStarting);
+            curtain = AdBreakCurtain.show(
+              context,
+              theme: theme,
+              label: l10n.adBreakStarting,
+            );
             return true;
           }
-          curtain = AdBreakCurtain.show(context, theme: theme, label: l10n.adBreakStarting);
+          curtain = AdBreakCurtain.show(
+            context,
+            theme: theme,
+            label: l10n.adBreakStarting,
+          );
           await Future<void>.delayed(const Duration(milliseconds: 700));
           return true;
         },
@@ -598,7 +747,11 @@ class _GameOverActionsState extends State<_GameOverActions> {
             customAmount: AdService.freeCoinsPerAd,
             itemName: 'Game over bonus',
           );
-          showRewardToast(messenger, l10n.goAdBonusCoins(AdService.freeCoinsPerAd), icon: Icons.monetization_on);
+          showRewardToast(
+            messenger,
+            l10n.goAdBonusCoins(AdService.freeCoinsPerAd),
+            icon: Icons.monetization_on,
+          );
         },
       );
     } finally {
@@ -606,7 +759,8 @@ class _GameOverActionsState extends State<_GameOverActions> {
     }
   }
 
-  Future<void> _again(BuildContext context, GameOverAdFormat announced) => _press(() async {
+  Future<void> _again(BuildContext context, GameOverAdFormat announced) =>
+      _press(() async {
         final cubit = context.read<GameCubit>();
         await cubit.finalizeGameOver();
         if (!context.mounted) return;
@@ -622,7 +776,8 @@ class _GameOverActionsState extends State<_GameOverActions> {
         context.go(AppRoutes.game);
       });
 
-  Future<void> _home(BuildContext context, GameOverAdFormat announced) => _press(() async {
+  Future<void> _home(BuildContext context, GameOverAdFormat announced) =>
+      _press(() async {
         await context.read<GameCubit>().finalizeGameOver();
         if (!context.mounted) return;
         await _showGameOverAd(context, announced: announced);
@@ -637,29 +792,31 @@ class _GameOverActionsState extends State<_GameOverActions> {
       });
 
   Future<void> _replay(BuildContext context) => _press(() async {
-        final cubit = context.read<GameCubit>();
-        await cubit.finalizeGameOver();
-        if (!context.mounted) return;
-        final id = cubit.lastReplayId;
-        context.push(id == null ? AppRoutes.replays : AppRoutes.replayViewerPath(id));
-      });
+    final cubit = context.read<GameCubit>();
+    await cubit.finalizeGameOver();
+    if (!context.mounted) return;
+    final id = cubit.lastReplayId;
+    context.push(
+      id == null ? AppRoutes.replays : AppRoutes.replayViewerPath(id),
+    );
+  });
 
   /// CONTINUE: hold the window, then let the player pay with an ad, coins
   /// or (Pro) nothing at all.
   Future<void> _continue(BuildContext context) => _press(() async {
-        final cubit = context.read<GameCubit>();
-        if (!cubit.canContinueFromGameOver) return;
-        cubit.holdGameOverContinue();
-        final resumed = await showGameOverContinueSheet(context, theme: theme);
-        if (!context.mounted) return;
-        if (resumed) {
-          context.go(AppRoutes.game);
-        } else {
-          // Declined: the run is over.
-          await cubit.finalizeGameOver();
-          if (mounted) setState(() {});
-        }
-      });
+    final cubit = context.read<GameCubit>();
+    if (!cubit.canContinueFromGameOver) return;
+    cubit.holdGameOverContinue();
+    final resumed = await showGameOverContinueSheet(context, theme: theme);
+    if (!context.mounted) return;
+    if (resumed) {
+      context.go(AppRoutes.game);
+    } else {
+      // Declined: the run is over.
+      await cubit.finalizeGameOver();
+      if (mounted) setState(() {});
+    }
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -672,12 +829,17 @@ class _GameOverActionsState extends State<_GameOverActions> {
     // the press agree even if an ad fills in between.
     final announced = getIt<AdService>().peekGameOverAd();
     final deadline = cubit.gameOverContinueDeadline;
-    final secsLeft = deadline == null ? 0 : deadline.difference(DateTime.now()).inMilliseconds / 1000;
+    final secsLeft = deadline == null
+        ? 0
+        : deadline.difference(DateTime.now()).inMilliseconds / 1000;
     final canContinue = cubit.canContinueFromGameOver && secsLeft > 0;
     if (canContinue) _continueOffered = true;
     final isPro = context.read<PremiumCubit>().state.hasPremium;
 
-    final claimCoins = widget.claimable.fold<int>(0, (s, c) => s + c.coinReward);
+    final claimCoins = widget.claimable.fold<int>(
+      0,
+      (s, c) => s + c.coinReward,
+    );
     final claimXp = widget.claimable.fold<int>(0, (s, c) => s + c.xpReward);
 
     final again = LBBlock(
@@ -689,7 +851,11 @@ class _GameOverActionsState extends State<_GameOverActions> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          LBCellText(l10n.lbAgain, cell: 6.5 * context.uiScale, color: p.onLime),
+          LBCellText(
+            l10n.lbAgain,
+            cell: 6.5 * context.uiScale,
+            color: p.onLime,
+          ),
           const SizedBox(height: 8),
           Text(
             l10n.lbModeBoard(
@@ -720,9 +886,13 @@ class _GameOverActionsState extends State<_GameOverActions> {
                 child: Row(
                   children: [
                     LBPixelIcon(
-                      announced == GameOverAdFormat.rewarded ? LBIcon.coin : LBIcon.tv,
+                      announced == GameOverAdFormat.rewarded
+                          ? LBIcon.coin
+                          : LBIcon.tv,
                       cell: 2.6,
-                      color: announced == GameOverAdFormat.rewarded ? LB.gold : p.inkMuted,
+                      color: announced == GameOverAdFormat.rewarded
+                          ? LB.gold
+                          : p.inkMuted,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -734,7 +904,9 @@ class _GameOverActionsState extends State<_GameOverActions> {
                         overflow: TextOverflow.ellipsis,
                         style: LBText.body(
                           p,
-                          color: announced == GameOverAdFormat.rewarded ? LB.gold : p.inkMuted,
+                          color: announced == GameOverAdFormat.rewarded
+                              ? LB.gold
+                              : p.inkMuted,
                           size: 11,
                         ),
                       ),
@@ -766,27 +938,43 @@ class _GameOverActionsState extends State<_GameOverActions> {
                                 alignment: AlignmentDirectional.centerStart,
                                 child: Text(
                                   l10n.lbGoContinue,
-                                  style: LBText.button(p, color: LB.gold, size: 13),
+                                  style: LBText.button(
+                                    p,
+                                    color: LB.gold,
+                                    size: 13,
+                                  ),
                                 ),
                               ),
                             ),
                             if (canContinue)
                               Text(
                                 '${secsLeft.ceil()}',
-                                style: LBText.value(p, color: LB.gold, size: 22),
+                                style: LBText.value(
+                                  p,
+                                  color: LB.gold,
+                                  size: 22,
+                                ),
                               ),
                           ],
                         ),
                         const Spacer(),
                         Text(
                           isPro
-                              ? l10n.lbGoContinueProSub('${widget.gameState.snake.length}')
+                              ? l10n.lbGoContinueProSub(
+                                  '${widget.gameState.snake.length}',
+                                )
                               : l10n.lbGoContinueSub(
-                                  context.formatInt(cubit.currentReviveCoinCost),
+                                  context.formatInt(
+                                    cubit.currentReviveCoinCost,
+                                  ),
                                   '${widget.gameState.snake.length}',
                                 ),
                           maxLines: 3,
-                          style: LBText.body(p, color: LB.gold.withValues(alpha: .75), size: 11),
+                          style: LBText.body(
+                            p,
+                            color: LB.gold.withValues(alpha: .75),
+                            size: 11,
+                          ),
                         ),
                       ],
                     ),
@@ -798,7 +986,9 @@ class _GameOverActionsState extends State<_GameOverActions> {
             again,
           LBBlock(
             kind: LBBlockKind.outline,
-            onTap: widget.claimable.isEmpty || widget.claimingAll ? null : widget.onClaimAll,
+            onTap: widget.claimable.isEmpty || widget.claimingAll
+                ? null
+                : widget.onClaimAll,
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: Row(
               children: [
@@ -808,7 +998,11 @@ class _GameOverActionsState extends State<_GameOverActions> {
                     children: [
                       Text(
                         l10n.lbGoEarned(context.formatInt(widget.coinsEarned)),
-                        style: LBText.button(p, color: p.head, size: 15).copyWith(letterSpacing: 1.8),
+                        style: LBText.button(
+                          p,
+                          color: p.head,
+                          size: 15,
+                        ).copyWith(letterSpacing: 1.8),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -902,7 +1096,11 @@ class _SmallAction extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: LBText.button(p, color: fg, size: 12.5).copyWith(letterSpacing: 1.4),
+                style: LBText.button(
+                  p,
+                  color: fg,
+                  size: 12.5,
+                ).copyWith(letterSpacing: 1.4),
               ),
             ),
           ),

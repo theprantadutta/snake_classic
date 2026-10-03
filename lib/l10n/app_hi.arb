@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "आपके रन की कुंडली",
   "lbGoChartStats": "{food} फ़ूड · पीक ×{combo}",
   "lbGoChartCaption": "1 कॉलम = 1 फ़ूड · जितना ऊँचा, उतना स्वादिष्ट",
+  "lbGoNoBites": "इस रन में कुछ नहीं खाया। चार्ट पहले निवाले से शुरू होता है।",
   "lbAgain": "फिर से",
   "lbGoContinue": "जारी रखें",
   "lbGoContinueSub": "{cost}¢ या विज्ञापन · लंबाई {len} बचाएँ",

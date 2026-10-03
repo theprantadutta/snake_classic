@@ -1666,6 +1666,7 @@
   "lbGoChartTitle": "ТВОЙ ЗАБЕГ ВО ВСЮ ДЛИНУ",
   "lbGoChartStats": "ЕДА: {food} · ПИК ×{combo}",
   "lbGoChartCaption": "1 СТОЛБИК = 1 ЕДА · ВЫШЕ = ВКУСНЕЕ",
+  "lbGoNoBites": "В этом забеге ни одной еды. График начинается с первого укуса.",
   "lbAgain": "ЕЩЁ РАЗ",
   "lbGoContinue": "ПРОДОЛЖИТЬ",
   "lbGoContinueSub": "{cost}¢ или реклама · с длиной {len}",

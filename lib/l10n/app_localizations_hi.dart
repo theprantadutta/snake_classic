@@ -5600,6 +5600,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get lbGoChartCaption => '1 कॉलम = 1 फ़ूड · जितना ऊँचा, उतना स्वादिष्ट';
 
   @override
+  String get lbGoNoBites =>
+      'इस रन में कुछ नहीं खाया। चार्ट पहले निवाले से शुरू होता है।';
+
+  @override
   String get lbAgain => 'फिर से';
 
   @override

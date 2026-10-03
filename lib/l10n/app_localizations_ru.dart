@@ -5634,6 +5634,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbGoChartCaption => '1 СТОЛБИК = 1 ЕДА · ВЫШЕ = ВКУСНЕЕ';
 
   @override
+  String get lbGoNoBites =>
+      'В этом забеге ни одной еды. График начинается с первого укуса.';
+
+  @override
   String get lbAgain => 'ЕЩЁ РАЗ';
 
   @override

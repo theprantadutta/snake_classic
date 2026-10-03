@@ -5658,6 +5658,10 @@ class AppLocalizationsPt extends AppLocalizations {
       '1 COLUNA = 1 COMIDA · MAIS ALTA = MAIS GOSTOSA';
 
   @override
+  String get lbGoNoBites =>
+      'Nada de comida nesta partida. O gráfico começa na primeira mordida.';
+
+  @override
   String get lbAgain => 'DE NOVO';
 
   @override
