@@ -84,6 +84,7 @@ class LBIconBlock extends StatelessWidget {
     required this.semanticLabel,
     this.kind = LBBlockKind.outline,
     this.size,
+    this.minHitSize,
     this.isBack = false,
     this.color,
   });
@@ -95,6 +96,9 @@ class LBIconBlock extends StatelessWidget {
 
   /// Outer size in dp; defaults to 2 cells.
   final double? size;
+
+  /// See [LBBlock.minHitSize].
+  final double? minHitSize;
   final bool isBack;
   final Color? color;
 
@@ -108,6 +112,7 @@ class LBIconBlock extends StatelessWidget {
       padding: EdgeInsets.zero,
       alignment: Alignment.center,
       semanticLabel: semanticLabel,
+      minHitSize: minHitSize,
       feedback: !isBack,
       onTap: onTap == null
           ? null

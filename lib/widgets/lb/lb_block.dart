@@ -53,11 +53,17 @@ class LBBlock extends StatefulWidget {
     this.semanticLabel,
     this.feedback = true,
     this.accent,
+    this.minHitSize,
   });
 
   final LBBlockKind kind;
   final Widget? child;
   final VoidCallback? onTap;
+
+  /// Grows the tap (and screen-reader) target to at least this many dp
+  /// square around the block without changing how it looks — for small
+  /// controls that must still meet the 48 dp minimum. Needs the room.
+  final double? minHitSize;
   final VoidCallback? onLongPress;
   final double? width;
   final double? height;
@@ -163,13 +169,24 @@ class _LBBlockState extends State<LBBlock> {
                 if (widget.feedback) LBFeedback.tap();
                 widget.onLongPress!();
               },
-        child: AnimatedScale(
-          scale: _pressed ? .97 : 1,
-          duration: LB.tap,
-          curve: Curves.easeOut,
-          child: content,
+        child: _hitArea(
+          AnimatedScale(
+            scale: _pressed ? .97 : 1,
+            duration: LB.tap,
+            curve: Curves.easeOut,
+            child: content,
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _hitArea(Widget child) {
+    final min = widget.minHitSize;
+    if (min == null) return child;
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: min, minHeight: min),
+      child: Center(widthFactor: 1, heightFactor: 1, child: child),
     );
   }
 }

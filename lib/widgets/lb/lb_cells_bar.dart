@@ -37,22 +37,21 @@ class LBCellsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.lb;
-    Widget bar(double cellSize) => CustomPaint(
-          size: Size(cellSize * count, cellSize),
-          painter: _CellsBarPainter(
-            count: count,
-            lit: litCount,
-            cell: cellSize,
-            color: color ?? p.lime,
-            off: offColor ?? p.cellOff,
-            colorAt: colorAt,
-          ),
-        );
+    final painter = _CellsBarPainter(
+      count: count,
+      lit: litCount,
+      cell: cell,
+      color: color ?? p.lime,
+      off: offColor ?? p.cellOff,
+      colorAt: colorAt,
+    );
+    // Fill-the-width bars size through AspectRatio, not a LayoutBuilder: a
+    // LayoutBuilder cannot report an intrinsic height, so a bar inside
+    // SliverFillRemaining / IntrinsicHeight threw and blanked the whole
+    // screen (Versus went empty the moment FIND MATCH showed its bar).
     final body = cell != null
-        ? bar(cell!)
-        : LayoutBuilder(
-            builder: (context, c) => bar(c.maxWidth / count),
-          );
+        ? CustomPaint(size: Size(cell! * count, cell!), painter: painter)
+        : AspectRatio(aspectRatio: count.toDouble(), child: CustomPaint(painter: painter));
     return Semantics(
       label: semanticsLabel,
       value: '${(value.clamp(0.0, 1.0) * 100).round()}%',
@@ -73,13 +72,16 @@ class _CellsBarPainter extends CustomPainter {
 
   final int count;
   final int lit;
-  final double cell;
+
+  /// dp per cell; null = the painted width split across [count].
+  final double? cell;
   final Color color;
   final Color off;
   final Color Function(int index)? colorAt;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final cell = this.cell ?? size.width / count;
     final offPath = Path();
     final litPath = Path();
     for (var i = 0; i < count; i++) {

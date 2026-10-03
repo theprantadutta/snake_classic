@@ -78,6 +78,8 @@ class LBGameTopBar extends StatelessWidget {
                     icon: playing ? LBIcon.pause : LBIcon.play,
                     semanticLabel: playing ? l10n.gamePauseGame : l10n.gameResumeGame,
                     size: cell * 2,
+                    // Looks 2 cells; takes taps across the 48 dp minimum.
+                    minHitSize: 48,
                     onTap: onPause,
                   ),
                 ),
