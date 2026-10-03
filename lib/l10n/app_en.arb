@@ -820,34 +820,13 @@
   "ldRetrying": "Retrying initialization...",
   "ldInitFailedUpper": "INITIALIZATION FAILED",
   "ldRetryUpper": "RETRY",
-  "pgArena": "Initializing arena...",
-  "pgControls": "Calibrating controls...",
-  "pgSnake": "Spawning the snake...",
-  "pgFood": "Placing the food...",
-  "pgPowerUps": "Charging power-ups...",
-  "pgAlmost": "Almost there...",
-  "pgGo": "Go!",
-  "pgTip1": "Hold a direction longer to build combo multipliers.",
-  "pgTip2": "Bonus food yields more points but vanishes quickly.",
-  "pgTip3": "Power-ups spawn at random — grab them while you can.",
-  "pgTip4": "Plan two moves ahead, not just one.",
-  "pgTip5": "Long snakes turn slower. Save tight curves for the start.",
-  "pgTip6": "Score Multiplier stacks with combos for monster scores.",
-  "pgTip7": "Special food is rare — when it appears, prioritize it.",
-  "pgTip8": "Time Attack speeds up fast. Pace your turns.",
-  "pgTip9": "In Zen Mode, the walls wrap. Use it to escape tight spots.",
-  "pgTip10": "Perfect Game: never re-enter a cell your body has touched.",
-  "pgTip11": "The D-Pad gives precise turns; swipe is faster.",
-  "pgTip12": "Pause anytime from the HUD — your timer holds with you.",
   "pgPreparing": "PREPARING ARENA",
   "pgTournamentMode": "TOURNAMENT MODE",
-  "pgGameMode": "GAME MODE",
   "pgDPadControls": "D-Pad Controls",
   "pgSwipeControls": "Swipe Controls",
   "pgLevel": "LEVEL",
   "pgBest": "BEST",
   "pgGames": "GAMES",
-  "pgProTip": "PRO TIP",
   "pgTapToStart": "TAP ANYWHERE TO START",
   "wtWelcomeTitle": "Welcome to the Game!",
   "wtWelcomeMsg": "Let's learn how to play Snake Classic. This quick tutorial will show you the basics.",
@@ -2008,15 +1987,6 @@
       "version": {
         "type": "String",
         "example": "6.4.3"
-      }
-    }
-  },
-  "lbHomeGreeting": "Hey, {name}. Apples missed you.",
-  "@lbHomeGreeting": {
-    "description": "Home header greeting",
-    "placeholders": {
-      "name": {
-        "type": "String"
       }
     }
   },

@@ -2535,79 +2535,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get ldRetryUpper => 'PONÓW';
 
   @override
-  String get pgArena => 'Przygotowywanie areny...';
-
-  @override
-  String get pgControls => 'Kalibrowanie sterowania...';
-
-  @override
-  String get pgSnake => 'Przyzywanie węża...';
-
-  @override
-  String get pgFood => 'Rozmieszczanie jedzenia...';
-
-  @override
-  String get pgPowerUps => 'Ładowanie wzmocnień...';
-
-  @override
-  String get pgAlmost => 'Prawie gotowe...';
-
-  @override
-  String get pgGo => 'Start!';
-
-  @override
-  String get pgTip1 => 'Trzymaj kierunek dłużej, aby budować mnożniki combo.';
-
-  @override
-  String get pgTip2 =>
-      'Jedzenie bonusowe daje więcej punktów, ale szybko znika.';
-
-  @override
-  String get pgTip3 =>
-      'Wzmocnienia pojawiają się losowo — łap je, póki możesz.';
-
-  @override
-  String get pgTip4 => 'Planuj dwa ruchy do przodu, nie tylko jeden.';
-
-  @override
-  String get pgTip5 =>
-      'Długie węże skręcają wolniej. Ostre zakręty zostaw na początek.';
-
-  @override
-  String get pgTip6 =>
-      'Mnożnik punktów łączy się z combo — wyniki rosną lawinowo.';
-
-  @override
-  String get pgTip7 =>
-      'Jedzenie specjalne jest rzadkie — gdy się pojawi, bierz je najpierw.';
-
-  @override
-  String get pgTip8 => 'Tryb na czas szybko przyspiesza. Wyważ swoje zakręty.';
-
-  @override
-  String get pgTip9 =>
-      'W trybie Zen ściany przepuszczają. Uciekaj tak z pułapek.';
-
-  @override
-  String get pgTip10 =>
-      'Perfekcyjna gra: nie wracaj na pole, którego dotknęło twoje ciało.';
-
-  @override
-  String get pgTip11 =>
-      'D-Pad daje precyzyjne skręty; przesuwanie jest szybsze.';
-
-  @override
-  String get pgTip12 =>
-      'Pauzuj z HUD w każdej chwili — licznik na ciebie poczeka.';
-
-  @override
   String get pgPreparing => 'PRZYGOTOWYWANIE ARENY';
 
   @override
   String get pgTournamentMode => 'TRYB TURNIEJOWY';
-
-  @override
-  String get pgGameMode => 'TRYB GRY';
 
   @override
   String get pgDPadControls => 'Sterowanie D-Pad';
@@ -2623,9 +2554,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get pgGames => 'GRY';
-
-  @override
-  String get pgProTip => 'PORADA PRO';
 
   @override
   String get pgTapToStart => 'DOTKNIJ GDZIEKOLWIEK, ABY ZACZĄĆ';
@@ -5327,11 +5255,6 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Nie udało się otworzyć App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'Hej, $name. Jabłka tęskniły.';
-  }
 
   @override
   String get lbHomeHint => 'WJEDŹ W BLOK. ALBO GO DOTKNIJ. NIE OCENIAMY.';

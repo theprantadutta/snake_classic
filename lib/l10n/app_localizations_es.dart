@@ -2542,78 +2542,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ldRetryUpper => 'REINTENTAR';
 
   @override
-  String get pgArena => 'Inicializando la arena...';
-
-  @override
-  String get pgControls => 'Calibrando los controles...';
-
-  @override
-  String get pgSnake => 'Invocando la serpiente...';
-
-  @override
-  String get pgFood => 'Colocando la comida...';
-
-  @override
-  String get pgPowerUps => 'Cargando los potenciadores...';
-
-  @override
-  String get pgAlmost => 'Casi listo...';
-
-  @override
-  String get pgGo => '¡Ya!';
-
-  @override
-  String get pgTip1 =>
-      'Mantén una dirección más tiempo para construir multiplicadores de combo.';
-
-  @override
-  String get pgTip2 => 'La comida extra da más puntos pero se esfuma rápido.';
-
-  @override
-  String get pgTip3 =>
-      'Los potenciadores aparecen al azar — cógelos mientras puedas.';
-
-  @override
-  String get pgTip4 => 'Planifica dos movimientos por delante, no solo uno.';
-
-  @override
-  String get pgTip5 =>
-      'Las serpientes largas giran más lento. Guarda las curvas cerradas para el inicio.';
-
-  @override
-  String get pgTip6 =>
-      'El Multiplicador de Puntos se acumula con los combos para puntuaciones monstruosas.';
-
-  @override
-  String get pgTip7 =>
-      'La comida especial es rara — cuando aparezca, dale prioridad.';
-
-  @override
-  String get pgTip8 => 'El Contrarreloj acelera rápido. Dosifica tus giros.';
-
-  @override
-  String get pgTip9 =>
-      'En el Modo Zen las paredes se atraviesan. Úsalo para escapar de apuros.';
-
-  @override
-  String get pgTip10 =>
-      'Partida Perfecta: nunca vuelvas a una celda que tu cuerpo haya tocado.';
-
-  @override
-  String get pgTip11 => 'La cruceta da giros precisos; deslizar es más rápido.';
-
-  @override
-  String get pgTip12 =>
-      'Pausa cuando quieras desde el HUD — el cronómetro te espera.';
-
-  @override
   String get pgPreparing => 'PREPARANDO LA ARENA';
 
   @override
   String get pgTournamentMode => 'MODO TORNEO';
-
-  @override
-  String get pgGameMode => 'MODO DE JUEGO';
 
   @override
   String get pgDPadControls => 'Controles de cruceta';
@@ -2629,9 +2561,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pgGames => 'PARTIDAS';
-
-  @override
-  String get pgProTip => 'CONSEJO PRO';
 
   @override
   String get pgTapToStart => 'TOCA EN CUALQUIER LUGAR PARA EMPEZAR';
@@ -5351,11 +5280,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'No se pudo abrir la App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'Hola, $name. Las manzanas te echaban de menos.';
-  }
 
   @override
   String get lbHomeHint => 'GUÍA HACIA UN BLOQUE. O TÓCALO. NO JUZGAMOS.';

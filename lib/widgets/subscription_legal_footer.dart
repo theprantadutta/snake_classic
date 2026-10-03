@@ -7,6 +7,7 @@ import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/legal_urls.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Required disclosure block for auto-renewable subscriptions.
 ///
@@ -18,6 +19,8 @@ import 'package:snake_classic/utils/logger.dart';
 class SubscriptionLegalFooter extends StatelessWidget {
   const SubscriptionLegalFooter({super.key, required this.theme});
 
+  /// Kept for call-site compatibility; colours come from the Living Board
+  /// palette (`context.lb`), which already follows the theme.
   final GameTheme theme;
 
   Future<void> _open(String url) async {
@@ -36,8 +39,8 @@ class SubscriptionLegalFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final mutedColor = theme.accentColor.withValues(alpha: 0.6);
-    final disclosureStyle = TextStyle(color: mutedColor, fontSize: 11, height: 1.35);
+    final p = context.lb;
+    final disclosureStyle = LBText.body(p, color: p.inkMuted, size: 11).copyWith(height: 1.4);
 
     // The disclosure has to name the store that actually takes the money and
     // where the user cancels — an Android buyer has no App Store account.
@@ -61,10 +64,9 @@ class SubscriptionLegalFooter extends StatelessWidget {
           children: [
             _LegalLink(
               label: l10n.settingsPrivacyPolicyTitle,
-              color: theme.accentColor,
               onTap: () => _open(LegalUrls.privacyPolicy),
             ),
-            Text('  •  ', style: TextStyle(color: mutedColor, fontSize: 11)),
+            Text('  ·  ', style: disclosureStyle),
             _LegalLink(
               // "(EULA)" is Apple's terminology — guideline 3.1.2(c) expects
               // the licence agreement identified as such on the purchase
@@ -73,7 +75,6 @@ class SubscriptionLegalFooter extends StatelessWidget {
               label: isAndroid
                   ? l10n.settingsTermsTitle
                   : l10n.legalTermsEulaLink,
-              color: theme.accentColor,
               onTap: () => _open(LegalUrls.termsOfUse),
             ),
           ],
@@ -84,30 +85,28 @@ class SubscriptionLegalFooter extends StatelessWidget {
 }
 
 class _LegalLink extends StatelessWidget {
-  const _LegalLink({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
+  const _LegalLink({required this.label, required this.onTap});
 
   final String label;
-  final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    final p = context.lb;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        LBFeedback.tap();
+        onTap();
+      },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        // A finger-sized target around a small link.
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         child: Text(
           label,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+          style: LBText.button(p, color: p.lime, size: 11.5).copyWith(
             decoration: TextDecoration.underline,
-            decorationColor: color,
+            decorationColor: p.lime,
           ),
         ),
       ),

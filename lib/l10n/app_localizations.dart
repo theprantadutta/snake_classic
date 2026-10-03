@@ -4450,120 +4450,6 @@ abstract class AppLocalizations {
   /// **'RETRY'**
   String get ldRetryUpper;
 
-  /// No description provided for @pgArena.
-  ///
-  /// In en, this message translates to:
-  /// **'Initializing arena...'**
-  String get pgArena;
-
-  /// No description provided for @pgControls.
-  ///
-  /// In en, this message translates to:
-  /// **'Calibrating controls...'**
-  String get pgControls;
-
-  /// No description provided for @pgSnake.
-  ///
-  /// In en, this message translates to:
-  /// **'Spawning the snake...'**
-  String get pgSnake;
-
-  /// No description provided for @pgFood.
-  ///
-  /// In en, this message translates to:
-  /// **'Placing the food...'**
-  String get pgFood;
-
-  /// No description provided for @pgPowerUps.
-  ///
-  /// In en, this message translates to:
-  /// **'Charging power-ups...'**
-  String get pgPowerUps;
-
-  /// No description provided for @pgAlmost.
-  ///
-  /// In en, this message translates to:
-  /// **'Almost there...'**
-  String get pgAlmost;
-
-  /// No description provided for @pgGo.
-  ///
-  /// In en, this message translates to:
-  /// **'Go!'**
-  String get pgGo;
-
-  /// No description provided for @pgTip1.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold a direction longer to build combo multipliers.'**
-  String get pgTip1;
-
-  /// No description provided for @pgTip2.
-  ///
-  /// In en, this message translates to:
-  /// **'Bonus food yields more points but vanishes quickly.'**
-  String get pgTip2;
-
-  /// No description provided for @pgTip3.
-  ///
-  /// In en, this message translates to:
-  /// **'Power-ups spawn at random — grab them while you can.'**
-  String get pgTip3;
-
-  /// No description provided for @pgTip4.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan two moves ahead, not just one.'**
-  String get pgTip4;
-
-  /// No description provided for @pgTip5.
-  ///
-  /// In en, this message translates to:
-  /// **'Long snakes turn slower. Save tight curves for the start.'**
-  String get pgTip5;
-
-  /// No description provided for @pgTip6.
-  ///
-  /// In en, this message translates to:
-  /// **'Score Multiplier stacks with combos for monster scores.'**
-  String get pgTip6;
-
-  /// No description provided for @pgTip7.
-  ///
-  /// In en, this message translates to:
-  /// **'Special food is rare — when it appears, prioritize it.'**
-  String get pgTip7;
-
-  /// No description provided for @pgTip8.
-  ///
-  /// In en, this message translates to:
-  /// **'Time Attack speeds up fast. Pace your turns.'**
-  String get pgTip8;
-
-  /// No description provided for @pgTip9.
-  ///
-  /// In en, this message translates to:
-  /// **'In Zen Mode, the walls wrap. Use it to escape tight spots.'**
-  String get pgTip9;
-
-  /// No description provided for @pgTip10.
-  ///
-  /// In en, this message translates to:
-  /// **'Perfect Game: never re-enter a cell your body has touched.'**
-  String get pgTip10;
-
-  /// No description provided for @pgTip11.
-  ///
-  /// In en, this message translates to:
-  /// **'The D-Pad gives precise turns; swipe is faster.'**
-  String get pgTip11;
-
-  /// No description provided for @pgTip12.
-  ///
-  /// In en, this message translates to:
-  /// **'Pause anytime from the HUD — your timer holds with you.'**
-  String get pgTip12;
-
   /// No description provided for @pgPreparing.
   ///
   /// In en, this message translates to:
@@ -4575,12 +4461,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'TOURNAMENT MODE'**
   String get pgTournamentMode;
-
-  /// No description provided for @pgGameMode.
-  ///
-  /// In en, this message translates to:
-  /// **'GAME MODE'**
-  String get pgGameMode;
 
   /// No description provided for @pgDPadControls.
   ///
@@ -4611,12 +4491,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GAMES'**
   String get pgGames;
-
-  /// No description provided for @pgProTip.
-  ///
-  /// In en, this message translates to:
-  /// **'PRO TIP'**
-  String get pgProTip;
 
   /// No description provided for @pgTapToStart.
   ///
@@ -9555,12 +9429,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the App Store'**
   String get updateOpenStoreFailed;
-
-  /// Home header greeting
-  ///
-  /// In en, this message translates to:
-  /// **'Hey, {name}. Apples missed you.'**
-  String lbHomeGreeting(String name);
 
   /// Home footer hint: the idle snake can be steered into a menu block, or the block tapped
   ///

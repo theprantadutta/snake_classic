@@ -2548,79 +2548,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ldRetryUpper => 'RÉESSAYER';
 
   @override
-  String get pgArena => 'Initialisation de l\'arène...';
-
-  @override
-  String get pgControls => 'Calibrage des commandes...';
-
-  @override
-  String get pgSnake => 'Apparition du serpent...';
-
-  @override
-  String get pgFood => 'Placement de la nourriture...';
-
-  @override
-  String get pgPowerUps => 'Charge des power-ups...';
-
-  @override
-  String get pgAlmost => 'Presque prêt...';
-
-  @override
-  String get pgGo => 'Go !';
-
-  @override
-  String get pgTip1 =>
-      'Maintenez une direction plus longtemps pour bâtir des multiplicateurs de combo.';
-
-  @override
-  String get pgTip2 => 'La nourriture bonus rapporte plus mais disparaît vite.';
-
-  @override
-  String get pgTip3 =>
-      'Les power-ups apparaissent au hasard — attrapez-les tant que possible.';
-
-  @override
-  String get pgTip4 => 'Prévoyez deux coups d\'avance, pas un seul.';
-
-  @override
-  String get pgTip5 =>
-      'Les longs serpents tournent plus lentement. Gardez les virages serrés pour le début.';
-
-  @override
-  String get pgTip6 =>
-      'Le Multiplicateur de Score se cumule aux combos pour des scores monstrueux.';
-
-  @override
-  String get pgTip7 =>
-      'La nourriture spéciale est rare — quand elle apparaît, priorisez-la.';
-
-  @override
-  String get pgTip8 => 'Le Contre-la-montre accélère vite. Dosez vos virages.';
-
-  @override
-  String get pgTip9 =>
-      'En Mode Zen, les murs se traversent. Servez-vous-en pour fuir les pièges.';
-
-  @override
-  String get pgTip10 =>
-      'Partie Parfaite : ne repassez jamais sur une case déjà touchée.';
-
-  @override
-  String get pgTip11 =>
-      'Le D-Pad offre des virages précis ; le balayage est plus rapide.';
-
-  @override
-  String get pgTip12 =>
-      'Mettez en pause depuis le HUD — le chrono vous attend.';
-
-  @override
   String get pgPreparing => 'PRÉPARATION DE L\'ARÈNE';
 
   @override
   String get pgTournamentMode => 'MODE TOURNOI';
-
-  @override
-  String get pgGameMode => 'MODE DE JEU';
 
   @override
   String get pgDPadControls => 'Commandes D-Pad';
@@ -2636,9 +2567,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pgGames => 'PARTIES';
-
-  @override
-  String get pgProTip => 'ASTUCE PRO';
 
   @override
   String get pgTapToStart => 'TOUCHEZ N\'IMPORTE OÙ POUR COMMENCER';
@@ -5365,11 +5293,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Impossible d’ouvrir l’App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'Salut, $name. Tu manquais aux pommes.';
-  }
 
   @override
   String get lbHomeHint => 'FONCE DANS UN BLOC. OU TOUCHE-LE. ON NE JUGE PAS.';

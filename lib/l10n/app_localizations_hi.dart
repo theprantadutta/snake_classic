@@ -2518,73 +2518,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get ldRetryUpper => 'फिर कोशिश करें';
 
   @override
-  String get pgArena => 'मैदान तैयार हो रहा है...';
-
-  @override
-  String get pgControls => 'नियंत्रण सेट हो रहे हैं...';
-
-  @override
-  String get pgSnake => 'साँप आ रहा है...';
-
-  @override
-  String get pgFood => 'भोजन रखा जा रहा है...';
-
-  @override
-  String get pgPowerUps => 'पावर-अप चार्ज हो रहे हैं...';
-
-  @override
-  String get pgAlmost => 'बस थोड़ा और...';
-
-  @override
-  String get pgGo => 'चलो!';
-
-  @override
-  String get pgTip1 => 'कॉम्बो गुणक बनाने के लिए दिशा को देर तक बनाए रखें।';
-
-  @override
-  String get pgTip2 => 'बोनस भोजन ज़्यादा अंक देता है पर जल्दी गायब होता है।';
-
-  @override
-  String get pgTip3 => 'पावर-अप कहीं भी आ सकते हैं — मौका मिलते ही लें।';
-
-  @override
-  String get pgTip4 => 'सिर्फ़ एक नहीं, दो चालें आगे सोचें।';
-
-  @override
-  String get pgTip5 =>
-      'लंबे साँप धीरे मुड़ते हैं। तीखे मोड़ शुरुआत के लिए बचाएँ।';
-
-  @override
-  String get pgTip6 => 'स्कोर गुणक कॉम्बो के साथ मिलकर विशाल स्कोर देता है।';
-
-  @override
-  String get pgTip7 => 'विशेष भोजन दुर्लभ है — दिखे तो पहले उसे लें।';
-
-  @override
-  String get pgTip8 =>
-      'टाइम अटैक तेज़ी से रफ़्तार पकड़ता है। मोड़ों की गति साधें।';
-
-  @override
-  String get pgTip9 =>
-      'ज़ेन मोड में दीवारें आर-पार हैं। तंग जगह से बचने में इस्तेमाल करें।';
-
-  @override
-  String get pgTip10 => 'परफ़ेक्ट गेम: शरीर से छुई कोठरी में दोबारा न जाएँ।';
-
-  @override
-  String get pgTip11 => 'डी-पैड सटीक मोड़ देता है; स्वाइप तेज़ है।';
-
-  @override
-  String get pgTip12 => 'HUD से कभी भी रोकें — टाइमर आपके साथ रुकता है।';
-
-  @override
   String get pgPreparing => 'मैदान तैयार हो रहा है';
 
   @override
   String get pgTournamentMode => 'टूर्नामेंट मोड';
-
-  @override
-  String get pgGameMode => 'गेम मोड';
 
   @override
   String get pgDPadControls => 'डी-पैड नियंत्रण';
@@ -2600,9 +2537,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pgGames => 'गेम';
-
-  @override
-  String get pgProTip => 'प्रो टिप';
 
   @override
   String get pgTapToStart => 'शुरू करने के लिए कहीं भी टैप करें';
@@ -5279,11 +5213,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'App Store नहीं खुल सका';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'अरे $name, सेब आपको याद कर रहे थे।';
-  }
 
   @override
   String get lbHomeHint =>

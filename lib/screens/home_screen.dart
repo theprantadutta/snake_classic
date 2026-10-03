@@ -692,9 +692,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Positioned.fromRect(
             rect: r(c0, headerRow, contentCols - 2, 2),
             child: _HomeHeader(
-              greeting: l10n.lbHomeGreeting(
-                context.watch<AuthCubit>().state.publicLabel,
-              ),
+              player: context.watch<AuthCubit>().state.publicLabel,
               onMark: () => showCreditsDialog(
                 context,
                 context.read<ThemeCubit>().state.currentTheme,
@@ -1169,9 +1167,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 /// Mark, name and greeting. Tapping the mark opens About.
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.greeting, required this.onMark});
+  const _HomeHeader({required this.player, required this.onMark});
 
-  final String greeting;
+  /// Who is playing — the signed-in name, or the guest label.
+  final String player;
   final VoidCallback onMark;
 
   @override
@@ -1214,14 +1213,14 @@ class _HomeHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  greeting,
-                  maxLines: 2,
+                  player,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LBText.body(
                     p,
-                    color: p.ink.withValues(alpha: .75),
-                    size: 10,
-                  ).copyWith(height: 1.15),
+                    color: p.ink.withValues(alpha: .8),
+                    size: 12,
+                  ).copyWith(height: 1.2),
                 ),
               ],
             ),

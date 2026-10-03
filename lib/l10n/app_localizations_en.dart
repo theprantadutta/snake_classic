@@ -2519,75 +2519,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ldRetryUpper => 'RETRY';
 
   @override
-  String get pgArena => 'Initializing arena...';
-
-  @override
-  String get pgControls => 'Calibrating controls...';
-
-  @override
-  String get pgSnake => 'Spawning the snake...';
-
-  @override
-  String get pgFood => 'Placing the food...';
-
-  @override
-  String get pgPowerUps => 'Charging power-ups...';
-
-  @override
-  String get pgAlmost => 'Almost there...';
-
-  @override
-  String get pgGo => 'Go!';
-
-  @override
-  String get pgTip1 => 'Hold a direction longer to build combo multipliers.';
-
-  @override
-  String get pgTip2 => 'Bonus food yields more points but vanishes quickly.';
-
-  @override
-  String get pgTip3 => 'Power-ups spawn at random — grab them while you can.';
-
-  @override
-  String get pgTip4 => 'Plan two moves ahead, not just one.';
-
-  @override
-  String get pgTip5 =>
-      'Long snakes turn slower. Save tight curves for the start.';
-
-  @override
-  String get pgTip6 =>
-      'Score Multiplier stacks with combos for monster scores.';
-
-  @override
-  String get pgTip7 => 'Special food is rare — when it appears, prioritize it.';
-
-  @override
-  String get pgTip8 => 'Time Attack speeds up fast. Pace your turns.';
-
-  @override
-  String get pgTip9 =>
-      'In Zen Mode, the walls wrap. Use it to escape tight spots.';
-
-  @override
-  String get pgTip10 =>
-      'Perfect Game: never re-enter a cell your body has touched.';
-
-  @override
-  String get pgTip11 => 'The D-Pad gives precise turns; swipe is faster.';
-
-  @override
-  String get pgTip12 =>
-      'Pause anytime from the HUD — your timer holds with you.';
-
-  @override
   String get pgPreparing => 'PREPARING ARENA';
 
   @override
   String get pgTournamentMode => 'TOURNAMENT MODE';
-
-  @override
-  String get pgGameMode => 'GAME MODE';
 
   @override
   String get pgDPadControls => 'D-Pad Controls';
@@ -2603,9 +2538,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pgGames => 'GAMES';
-
-  @override
-  String get pgProTip => 'PRO TIP';
 
   @override
   String get pgTapToStart => 'TAP ANYWHERE TO START';
@@ -5289,11 +5221,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Could not open the App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'Hey, $name. Apples missed you.';
-  }
 
   @override
   String get lbHomeHint => 'STEER INTO A BLOCK. OR TAP. WE DON\'T JUDGE.';

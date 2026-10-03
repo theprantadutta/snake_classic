@@ -2527,76 +2527,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ldRetryUpper => 'ПОВТОРИТЬ';
 
   @override
-  String get pgArena => 'Подготовка арены...';
-
-  @override
-  String get pgControls => 'Калибровка управления...';
-
-  @override
-  String get pgSnake => 'Появление змейки...';
-
-  @override
-  String get pgFood => 'Размещение еды...';
-
-  @override
-  String get pgPowerUps => 'Зарядка усилений...';
-
-  @override
-  String get pgAlmost => 'Почти готово...';
-
-  @override
-  String get pgGo => 'Вперёд!';
-
-  @override
-  String get pgTip1 =>
-      'Держите направление дольше, чтобы копить множители комбо.';
-
-  @override
-  String get pgTip2 => 'Бонусная еда даёт больше очков, но быстро исчезает.';
-
-  @override
-  String get pgTip3 => 'Усиления появляются случайно — берите, пока можно.';
-
-  @override
-  String get pgTip4 => 'Думайте на два хода вперёд, а не на один.';
-
-  @override
-  String get pgTip5 =>
-      'Длинные змейки поворачивают медленнее. Приберегите крутые виражи для старта.';
-
-  @override
-  String get pgTip6 =>
-      'Множитель очков складывается с комбо — получаются гигантские счета.';
-
-  @override
-  String get pgTip7 =>
-      'Особая еда редка — если появилась, берите первым делом.';
-
-  @override
-  String get pgTip8 => '«На время» быстро ускоряется. Рассчитывайте повороты.';
-
-  @override
-  String get pgTip9 =>
-      'В Дзене стены проходимы. Используйте это, чтобы выбираться из ловушек.';
-
-  @override
-  String get pgTip10 =>
-      'Идеальная игра: не заходите повторно на клетку, где было тело.';
-
-  @override
-  String get pgTip11 => 'D-Pad даёт точные повороты; свайп быстрее.';
-
-  @override
-  String get pgTip12 => 'Пауза в любой момент из HUD — таймер подождёт.';
-
-  @override
   String get pgPreparing => 'ПОДГОТОВКА АРЕНЫ';
 
   @override
   String get pgTournamentMode => 'ТУРНИРНЫЙ РЕЖИМ';
-
-  @override
-  String get pgGameMode => 'РЕЖИМ ИГРЫ';
 
   @override
   String get pgDPadControls => 'Управление D-Pad';
@@ -2612,9 +2546,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pgGames => 'ИГРЫ';
-
-  @override
-  String get pgProTip => 'СОВЕТ ПРО';
 
   @override
   String get pgTapToStart => 'КОСНИТЕСЬ ЭКРАНА, ЧТОБЫ НАЧАТЬ';
@@ -5317,11 +5248,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'Не удалось открыть App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'Привет, $name. Яблоки скучали.';
-  }
 
   @override
   String get lbHomeHint => 'ЗАРУЛИ В БЛОК. ИЛИ ТАПНИ. МЫ НЕ СУДИМ.';

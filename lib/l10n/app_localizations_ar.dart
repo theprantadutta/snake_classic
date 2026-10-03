@@ -2501,72 +2501,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ldRetryUpper => 'إعادة المحاولة';
 
   @override
-  String get pgArena => 'تجهيز الساحة...';
-
-  @override
-  String get pgControls => 'معايرة التحكم...';
-
-  @override
-  String get pgSnake => 'استدعاء الثعبان...';
-
-  @override
-  String get pgFood => 'وضع الطعام...';
-
-  @override
-  String get pgPowerUps => 'شحن التعزيزات...';
-
-  @override
-  String get pgAlmost => 'أوشكنا...';
-
-  @override
-  String get pgGo => 'انطلق!';
-
-  @override
-  String get pgTip1 => 'أبقِ اتجاهًا لفترة أطول لبناء مضاعفات السلسلة.';
-
-  @override
-  String get pgTip2 => 'الطعام الإضافي يمنح نقاطًا أكثر لكنه يختفي بسرعة.';
-
-  @override
-  String get pgTip3 => 'تظهر التعزيزات عشوائيًا — التقطها ما دمت تستطيع.';
-
-  @override
-  String get pgTip4 => 'خطط لحركتين مقدمًا لا لواحدة.';
-
-  @override
-  String get pgTip5 =>
-      'الثعابين الطويلة تنعطف أبطأ. وفّر المنعطفات الحادة للبداية.';
-
-  @override
-  String get pgTip6 => 'مضاعف النقاط يتراكم مع السلاسل لنتائج هائلة.';
-
-  @override
-  String get pgTip7 => 'الطعام الخاص نادر — إن ظهر فاجعله أولويتك.';
-
-  @override
-  String get pgTip8 => 'وضع ضد الوقت يتسارع بسرعة. وازن انعطافاتك.';
-
-  @override
-  String get pgTip9 =>
-      'في وضع الاسترخاء تعبر الجدران. استخدم ذلك للهروب من المآزق.';
-
-  @override
-  String get pgTip10 => 'اللعبة المثالية: لا تدخل مجددًا خلية لمسها جسدك.';
-
-  @override
-  String get pgTip11 => 'أزرار الاتجاهات تمنح انعطافات دقيقة؛ السحب أسرع.';
-
-  @override
-  String get pgTip12 => 'أوقف اللعب من الواجهة متى شئت — المؤقت ينتظرك.';
-
-  @override
   String get pgPreparing => 'تجهيز الساحة';
 
   @override
   String get pgTournamentMode => 'وضع البطولة';
-
-  @override
-  String get pgGameMode => 'نمط اللعب';
 
   @override
   String get pgDPadControls => 'أزرار الاتجاهات';
@@ -2582,9 +2520,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pgGames => 'الجولات';
-
-  @override
-  String get pgProTip => 'نصيحة محترف';
 
   @override
   String get pgTapToStart => 'انقر في أي مكان للبدء';
@@ -5277,11 +5212,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get updateOpenStoreFailed => 'تعذّر فتح App Store';
-
-  @override
-  String lbHomeGreeting(String name) {
-    return 'أهلًا $name. التفاح اشتاق إليك.';
-  }
 
   @override
   String get lbHomeHint => 'وجّه الثعبان نحو مربع. أو انقر. لن نحكم عليك.';
