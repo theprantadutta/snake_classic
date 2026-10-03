@@ -419,15 +419,58 @@ class LBQuestSkeleton extends StatelessWidget {
 
 /// A one-line muted block for empty states.
 class LBEmptyBlock extends StatelessWidget {
-  const LBEmptyBlock({super.key, required this.title, this.line, this.icon});
+  const LBEmptyBlock({
+    super.key,
+    required this.title,
+    this.line,
+    this.icon,
+    this.action,
+    this.expanded = false,
+  });
 
   final String title;
   final String? line;
   final LBIcon? icon;
 
+  /// A button under the line (e.g. TRY AGAIN).
+  final Widget? action;
+
+  /// Centred and stacked, for an empty state that fills the space a list
+  /// would have taken instead of leaving a dead band under a short row.
+  final bool expanded;
+
   @override
   Widget build(BuildContext context) {
     final p = context.lb;
+    if (expanded) {
+      return LBBlock(
+        kind: LBBlockKind.muted,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              LBPixelIcon(icon!, cell: 6, color: p.inkDim),
+              const SizedBox(height: 16),
+            ],
+            Text(
+              title.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: LBText.button(p, color: p.inkMuted, size: 14).copyWith(letterSpacing: 2),
+            ),
+            if (line != null) ...[
+              const SizedBox(height: 8),
+              Text(line!, textAlign: TextAlign.center, style: LBText.body(p, size: 12)),
+            ],
+            if (action != null) ...[
+              const SizedBox(height: 20),
+              action!,
+            ],
+          ],
+        ),
+      );
+    }
     return LBBlock(
       kind: LBBlockKind.muted,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),

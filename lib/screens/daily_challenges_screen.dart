@@ -245,7 +245,6 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     context.watch<ThemeCubit>();
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
-    final g = context.lbGutter;
 
     final isRefreshing = challengesState.isLoading;
     final challenges = challengesState.challenges;
@@ -283,86 +282,165 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         onRefresh: _refreshChallenges,
         color: p.lime,
         backgroundColor: p.deep,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * 1.5),
-          children: [
-            LBDailyProgressBlock(
-              done: challengesState.completedCount,
-              total: challengesState.totalCount,
-              subline: streak > 0
-                  ? l10n.lbDailyStreak(streak, resets)
-                  : l10n.lbResetsIn(resets),
-            ),
-            if (isRefreshing && challenges.isEmpty)
-              // Skeleton rows rather than a spinner: the list that arrives is
-              // this tall, so nothing below it moves when it does.
-              ...List.generate(3, (_) => const LBQuestSkeleton())
-            else if (challenges.isEmpty)
-              LBEmptyBlock(
-                icon: LBIcon.calendar,
-                title: l10n.dcNoChallenges,
-                line: l10n.dchCheckBack,
-              )
-            else
-              for (final c in challenges) _challengeBlock(context, l10n, c),
-            if (challengesState.allCompleted) _bonusBlock(context, l10n, challengesState),
-            if (allClaimed)
-              LBEmptyBlock(icon: LBIcon.check, title: l10n.lbDailyAllFed),
-            if (claimable.isNotEmpty && _canDouble)
-              LBRow(
-                kind: LBBlockKind.gold,
-                height: context.lbCell * 3.5,
-                leading: const LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
-                title: l10n.lbClaimAllDouble,
-                subtitle: l10n.lbClaimAllDoubleLine,
-                titleColor: LB.gold,
-                onTap: _claimingAll ? null : () => _claimAllRewards(watchAdToDouble: true),
-                trailing: Text(
-                  l10n.lbCoinsReward(context.formatInt(claimableCoins * 2)),
-                  style: LBText.value(p, color: LB.gold, size: 17),
-                ),
-              ),
-            ListenableBuilder(
-              listenable: _weekly,
-              builder: (context, _) {
-                final quests = _weekly.quests;
-                return LBRow(
-                  height: context.lbCell * 3.5,
-                  leading: LBPixelIcon(LBIcon.calendar, cell: 4, color: p.lime),
-                  title: quests.isEmpty
-                      ? l10n.wqTitle
-                      : l10n.lbWeeklyTeaser(
-                          context.formatInt(_weekly.completedCount),
-                          context.formatInt(quests.length),
-                        ),
-                  titleColor: p.head,
-                  subtitle: l10n.lbWeeklyTeaserLine,
-                  trailing: Text('→', style: LBText.button(p, color: p.lime, size: 14)),
-                  onTap: () => context.push(AppRoutes.weeklyQuests),
-                );
-              },
-            ),
-            SizedBox(height: context.lbCell),
-            LBSectionLabel(l10n.dchAbout),
-            for (final line in [l10n.dchAbout1, l10n.dchAbout2, l10n.dchAbout3, l10n.dchAbout4])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 5),
-                      child: LBCellsBar(count: 1, value: 1, cell: 6, color: p.inkDim),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(line, style: LBText.body(p, size: 11))),
-                  ],
-                ),
-              ),
-          ],
+        child: _body(
+          context,
+          l10n,
+          challengesState: challengesState,
+          streak: streak,
+          resets: resets,
+          claimable: claimable,
+          claimableCoins: claimableCoins,
+          allClaimed: allClaimed,
         ),
       ),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required DailyChallengesState challengesState,
+    required int streak,
+    required String resets,
+    required List<DailyChallenge> claimable,
+    required int claimableCoins,
+    required bool allClaimed,
+  }) {
+    final p = context.lb;
+    final g = context.lbGutter;
+    final challenges = challengesState.challenges;
+    final isRefreshing = challengesState.isLoading;
+    final empty = challenges.isEmpty && !isRefreshing;
+    final subline = streak > 0 ? l10n.lbDailyStreak(streak, resets) : l10n.lbResetsIn(resets);
+
+    final top = <Widget>[
+      // No "0 OF 0 DONE" before today's board exists; the streak and the
+      // reset clock move into the empty state instead.
+      if (!empty)
+        LBDailyProgressBlock(
+          done: challengesState.completedCount,
+          total: challengesState.totalCount,
+          subline: subline,
+        ),
+      if (isRefreshing && challenges.isEmpty)
+        // Skeleton rows rather than a spinner: the list that arrives is
+        // this tall, so nothing below it moves when it does.
+        ...List.generate(3, (_) => const LBQuestSkeleton())
+      else
+        for (final c in challenges) _challengeBlock(context, l10n, c),
+      if (challengesState.allCompleted) _bonusBlock(context, l10n, challengesState),
+      if (allClaimed) LBEmptyBlock(icon: LBIcon.check, title: l10n.lbDailyAllFed),
+      if (claimable.isNotEmpty && _canDouble)
+        LBRow(
+          kind: LBBlockKind.gold,
+          height: context.lbCell * 3.5,
+          leading: const LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
+          title: l10n.lbClaimAllDouble,
+          subtitle: l10n.lbClaimAllDoubleLine,
+          titleColor: LB.gold,
+          onTap: _claimingAll ? null : () => _claimAllRewards(watchAdToDouble: true),
+          trailing: Text(
+            l10n.lbCoinsReward(context.formatInt(claimableCoins * 2)),
+            style: LBText.value(p, color: LB.gold, size: 17),
+          ),
+        ),
+    ];
+
+    final bottom = <Widget>[
+      ListenableBuilder(
+        listenable: _weekly,
+        builder: (context, _) {
+          final quests = _weekly.quests;
+          return LBRow(
+            height: context.lbCell * 3.5,
+            leading: LBPixelIcon(LBIcon.calendar, cell: 4, color: p.lime),
+            title: quests.isEmpty
+                ? l10n.wqTitle
+                : l10n.lbWeeklyTeaser(
+                    context.formatInt(_weekly.completedCount),
+                    context.formatInt(quests.length),
+                  ),
+            titleColor: p.head,
+            subtitle: l10n.lbWeeklyTeaserLine,
+            trailing: Text('→', style: LBText.button(p, color: p.lime, size: 14)),
+            onTap: () => context.push(AppRoutes.weeklyQuests),
+          );
+        },
+      ),
+      SizedBox(height: context.lbCell),
+      LBSectionLabel(l10n.dchAbout),
+      for (final line in [l10n.dchAbout1, l10n.dchAbout2, l10n.dchAbout3, l10n.dchAbout4])
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: LBCellsBar(count: 1, value: 1, cell: 6, color: p.inkDim),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(line, style: LBText.body(p, size: 11))),
+            ],
+          ),
+        ),
+    ];
+
+    final padding = EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * 1.5);
+    if (!empty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        children: [...top, ...bottom],
+      );
+    }
+
+    // Empty: the empty state takes whatever height the list would have, so
+    // the weekly row and the notes sit at the bottom instead of floating
+    // over a dead band.
+    final failed = challengesState.error != null;
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: padding,
+          sliver: SliverFillRemaining(
+            hasScrollBody: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...top,
+                Expanded(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: context.lbCell * 8),
+                    child: LBEmptyBlock(
+                      expanded: true,
+                      icon: LBIcon.calendar,
+                      title: l10n.dcNoChallenges,
+                      line: '${failed ? l10n.lbServerDown : l10n.dchCheckBack}\n$subline',
+                      action: failed
+                          ? LBBlock(
+                              kind: LBBlockKind.outline,
+                              height: context.lbCell * 2.2,
+                              padding: const EdgeInsets.symmetric(horizontal: 22),
+                              alignment: Alignment.center,
+                              onTap: isRefreshing ? null : _refreshChallenges,
+                              child: Text(
+                                l10n.mpLobbyTryAgain,
+                                style: LBText.button(p, color: p.lime, size: 12.5)
+                                    .copyWith(letterSpacing: 1.8),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                ...bottom,
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
