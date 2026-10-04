@@ -534,7 +534,10 @@ void main() {
     test('a later input never overtakes an earlier one still in flight', () {
       final plan = LocalSnakePredictor.planDirections(
         Direction.right,
-        const [PendingInput(Direction.up, 12), PendingInput(Direction.left, 11)],
+        const [
+          PendingInput(Direction.up, 12),
+          PendingInput(Direction.left, 11),
+        ],
         firstTick: 11,
         ticks: 2,
       );
