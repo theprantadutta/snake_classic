@@ -19,6 +19,9 @@ Feature names (CONTINUE, YOUR RUN, UNCOILED, VERSUS, RANKS) use the in-app
 translations from `lib/l10n/app_<locale>.arb`, so the notes match the
 screens. The app has no Turkish UI; `tr` names them in Turkish anyway.
 
+The player-facing text never names the version: the stores already show
+it next to the notes, and a number in the copy only goes stale.
+
 en-GB is not listed separately: it takes the `en` text verbatim.
 
 ---
@@ -27,7 +30,7 @@ en-GB is not listed separately: it takes the `en` text verbatim.
 
 ### What's New
 
-Snake Classic 7.0: a whole new look.
+A whole new look.
 
 • Living Board: every screen redrawn as a glowing pixel grid, with a new icon, new sounds and menu music.
 • Continue: crashed? Take one more go straight from the game over screen.
@@ -38,7 +41,7 @@ Snake Classic 7.0: a whole new look.
 
 ### Promotional Text
 
-A brand-new pixel-grid look, one more go from game over, every run charted, and smoother online duels. Snake Classic 7.0 is here.
+A brand-new pixel-grid look, one more go from game over, every run charted, and smoother online duels.
 
 ---
 
@@ -46,7 +49,7 @@ A brand-new pixel-grid look, one more go from game over, every run charted, and 
 
 ### What's New
 
-Snake Classic 7.0: बिल्कुल नया रूप।
+बिल्कुल नया रूप।
 
 • Living Board: हर स्क्रीन चमकते पिक्सेल ग्रिड पर नए सिरे से बनी, नए आइकन, नई आवाज़ों और मेन्यू संगीत के साथ।
 • जारी रखें: टकरा गए? गेम ओवर स्क्रीन से ही एक और मौक़ा लें।
@@ -57,7 +60,7 @@ Snake Classic 7.0: बिल्कुल नया रूप।
 
 ### Promotional Text
 
-बिल्कुल नया पिक्सेल-ग्रिड रूप, गेम ओवर से एक और मौक़ा, हर रन का चार्ट और ज़्यादा स्मूथ ऑनलाइन मुक़ाबले। Snake Classic 7.0 आ गया है।
+बिल्कुल नया पिक्सेल-ग्रिड रूप, गेम ओवर से एक और मौक़ा, हर रन का चार्ट और ज़्यादा स्मूथ ऑनलाइन मुक़ाबले।
 
 ---
 
@@ -65,7 +68,7 @@ Snake Classic 7.0: बिल्कुल नया रूप।
 
 ### What's New
 
-Snake Classic 7.0: um visual totalmente novo.
+Um visual totalmente novo.
 
 • Living Board: todas as telas redesenhadas como uma grade de pixels brilhante, com novo ícone, novos sons e música no menu.
 • Continuar: bateu? Tente mais uma vez direto da tela de fim de jogo.
@@ -76,7 +79,7 @@ Snake Classic 7.0: um visual totalmente novo.
 
 ### Promotional Text
 
-Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida num gráfico e duelos online mais fluidos. Chegou o Snake Classic 7.0.
+Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida num gráfico e duelos online mais fluidos.
 
 ---
 
@@ -84,7 +87,7 @@ Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida 
 
 ### What's New
 
-Snake Classic 7.0: un aspecto totalmente nuevo.
+Un aspecto totalmente nuevo.
 
 • Living Board: cada pantalla rediseñada como una cuadrícula de píxeles luminosa, con nuevo icono, nuevos sonidos y música en el menú.
 • Continuar: ¿chocaste? Juega otra vez desde el fin de partida.
@@ -95,7 +98,7 @@ Snake Classic 7.0: un aspecto totalmente nuevo.
 
 ### Promotional Text
 
-Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cada partida en un gráfico y duelos online más fluidos. Llega Snake Classic 7.0.
+Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cada partida en un gráfico y duelos online más fluidos.
 
 ---
 
@@ -103,7 +106,7 @@ Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cad
 
 ### What's New
 
-Snake Classic 7.0 : un tout nouveau look.
+Un tout nouveau look.
 
 • Living Board : chaque écran redessiné en grille de pixels lumineuse, avec nouvelle icône, nouveaux sons et musique de menu.
 • Continuer : un crash ? Rejoue une fois de plus depuis la fin de partie.
@@ -114,7 +117,7 @@ Snake Classic 7.0 : un tout nouveau look.
 
 ### Promotional Text
 
-Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, chaque partie en graphique et des duels en ligne plus fluides. Voici Snake Classic 7.0.
+Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, chaque partie en graphique et des duels en ligne plus fluides.
 
 ---
 
@@ -122,7 +125,7 @@ Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, c
 
 ### What's New
 
-Snake Classic 7.0: совершенно новый облик.
+Совершенно новый облик.
 
 • Living Board: каждый экран перерисован в виде светящейся пиксельной сетки, с новой иконкой, новыми звуками и музыкой в меню.
 • Продолжить: врезались? Попробуйте ещё раз прямо с экрана конца игры.
@@ -133,7 +136,7 @@ Snake Classic 7.0: совершенно новый облик.
 
 ### Promotional Text
 
-Новый облик в пиксельной сетке, ещё один шанс после проигрыша, график каждого забега и более плавные онлайн-дуэли. Встречайте Snake Classic 7.0.
+Новый облик в пиксельной сетке, ещё один шанс после проигрыша, график каждого забега и более плавные онлайн-дуэли.
 
 ---
 
@@ -141,7 +144,7 @@ Snake Classic 7.0: совершенно новый облик.
 
 ### What's New
 
-Snake Classic 7.0: zupełnie nowy wygląd.
+Zupełnie nowy wygląd.
 
 • Living Board: każdy ekran narysowany od nowa jako świecąca siatka pikseli, z nową ikoną, nowymi dźwiękami i muzyką w menu.
 • Kontynuuj: rozbiłeś się? Zagraj jeszcze raz prosto z ekranu końca gry.
@@ -152,7 +155,7 @@ Snake Classic 7.0: zupełnie nowy wygląd.
 
 ### Promotional Text
 
-Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na wykresie i płynniejsze pojedynki online. Oto Snake Classic 7.0.
+Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na wykresie i płynniejsze pojedynki online.
 
 ---
 
@@ -160,7 +163,7 @@ Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na
 
 ### What's New
 
-Snake Classic 7.0: مظهر جديد كليًا.
+مظهر جديد كليًا.
 
 • Living Board: كل شاشة أُعيد رسمها كشبكة بكسلات متوهجة، مع أيقونة جديدة وأصوات جديدة وموسيقى في القائمة.
 • متابعة: اصطدمت؟ جرّب مرة أخرى مباشرة من شاشة انتهاء اللعبة.
@@ -171,7 +174,7 @@ Snake Classic 7.0: مظهر جديد كليًا.
 
 ### Promotional Text
 
-مظهر جديد بشبكة البكسلات، وفرصة أخرى عند انتهاء اللعبة، ورسم بياني لكل جولة، ومواجهات أونلاين أكثر سلاسة. Snake Classic 7.0 وصل.
+مظهر جديد بشبكة البكسلات، وفرصة أخرى عند انتهاء اللعبة، ورسم بياني لكل جولة، ومواجهات أونلاين أكثر سلاسة.
 
 ---
 
@@ -179,7 +182,7 @@ Snake Classic 7.0: مظهر جديد كليًا.
 
 ### What's New
 
-Snake Classic 7.0: un aspetto tutto nuovo.
+Un aspetto tutto nuovo.
 
 • Living Board: ogni schermata ridisegnata come una griglia di pixel luminosa, con nuova icona, nuovi suoni e musica nel menu.
 • Continua: schiantato? Gioca ancora una volta dalla fine partita.
@@ -190,7 +193,7 @@ Snake Classic 7.0: un aspetto tutto nuovo.
 
 ### Promotional Text
 
-Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni partita in un grafico e sfide online più fluide. Arriva Snake Classic 7.0.
+Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni partita in un grafico e sfide online più fluide.
 
 ---
 
@@ -198,7 +201,7 @@ Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni 
 
 ### What's New
 
-Snake Classic 7.0: yepyeni bir görünüm.
+Yepyeni bir görünüm.
 
 • Living Board: her ekran parlayan bir piksel ızgarası olarak yeniden çizildi; yeni simge, yeni sesler ve menü müziği.
 • Devam et: çarptın mı? Oyun sonu ekranından bir kez daha dene.
@@ -209,4 +212,4 @@ Snake Classic 7.0: yepyeni bir görünüm.
 
 ### Promotional Text
 
-Yepyeni piksel ızgarası görünümü, oyun sonunda bir şans daha, her oyunun grafiği ve daha akıcı çevrimiçi düellolar. Snake Classic 7.0 geldi.
+Yepyeni piksel ızgarası görünümü, oyun sonunda bir şans daha, her oyunun grafiği ve daha akıcı çevrimiçi düellolar.
