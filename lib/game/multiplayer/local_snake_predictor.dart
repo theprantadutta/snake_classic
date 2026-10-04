@@ -48,8 +48,8 @@ enum SnapshotFit {
   reset,
 }
 
-/// The local snake as the board should draw it: gliding from the latest
-/// authoritative body to where the server will put it at the next tick.
+/// The local snake as the board should draw it: the latest authoritative
+/// body, then where the server will put it over the next tick or two.
 class LocalPrediction {
   const LocalPrediction({
     required this.baseTick,
@@ -58,6 +58,7 @@ class LocalPrediction {
     required this.heading,
     required this.facing,
     required this.stalled,
+    this.steps = const [],
   });
 
   /// Tick of the authoritative snapshot [from] was taken from.
@@ -82,15 +83,28 @@ class LocalPrediction {
   /// rival's body). Death is never predicted — the server decides it — so the
   /// snake holds at [from] until the snapshot says what happened.
   final bool stalled;
+
+  /// The predicted bodies for `baseTick + 1`, `baseTick + 2`, … head first
+  /// — at most [LocalSnakePredictor.lookahead] of them. The first is [to];
+  /// empty when [stalled]. The list stops before any step that would be
+  /// fatal, so a path ending early is the "never predict death" rule.
+  ///
+  /// Only the board's render clock reads past the first step, and only
+  /// while a snapshot is running late: drawing the snake on into the step
+  /// after is what keeps it moving instead of stopping to wait for the
+  /// packet (see `MultiplayerFlameGame`).
+  final List<List<Position>> steps;
 }
 
 /// Client-side prediction for the LOCAL player's snake in an online match.
 ///
 /// Matches are server-authoritative and the server is ~190ms away, so a turn
 /// drawn only from snapshots appears a tick or two after the swipe. This
-/// class predicts the local snake ONE tick ahead of the latest snapshot by
-/// replaying the inputs the server has not yet applied through the server's
-/// own rules (see `MatchRoom.AdvanceTick` / `QueueInput` in the backend):
+/// class predicts the local snake ahead of the latest snapshot — the next
+/// tick, plus the one after for the board to fall back on while a snapshot
+/// is late ([lookahead]) — by replaying the inputs the server has not yet
+/// applied through the server's own rules (see `MatchRoom.AdvanceTick` /
+/// `QueueInput` in the backend):
 ///
 /// * one buffered input is committed per tick; a reversal of the committed
 ///   direction is skipped and draining continues; a repeat of it stops the
@@ -120,6 +134,11 @@ class LocalSnakePredictor {
 
   /// Mirrors `MatchRoom.InputBufferDepth`.
   static const int serverBufferDepth = 2;
+
+  /// How many steps past the latest snapshot [LocalPrediction.steps]
+  /// covers. The second is only ever drawn while a snapshot is late; it is
+  /// never compared with a snapshot and never scored.
+  static const int lookahead = 2;
 
   /// Bound on how many unconfirmed inputs are remembered. Beyond the server's
   /// buffer only to tolerate a tick confirming an input while newer ones are
@@ -307,31 +326,89 @@ class LocalSnakePredictor {
       return;
     }
 
-    final nextTick = base.tick + 1;
-    final arrived = [
-      for (final p in _pending)
-        if (p.etaTick <= nextTick) p.direction,
-    ];
-    final heading = commitDirection(me.direction, arrived);
-    final step = stepBody(
-      body: me.body,
-      direction: heading,
-      food: base.food,
-      boardSize: _boardSize,
-      rivals: [
-        for (final p in base.players)
-          if (p.userId != _userId && p.alive) p.body,
-      ],
+    final directions = planDirections(
+      me.direction,
+      _pending,
+      firstTick: base.tick + 1,
+      ticks: lookahead,
     );
+    final rivals = [
+      for (final p in base.players)
+        if (p.userId != _userId && p.alive) p.body,
+    ];
+    final steps = <List<Position>>[];
+    var body = me.body;
+    var food = base.food;
+    for (final direction in directions) {
+      final next = stepBody(
+        body: body,
+        direction: direction,
+        food: food,
+        boardSize: _boardSize,
+        rivals: rivals,
+      );
+      if (next == null) break;
+      // Eaten: where the server respawns it is unknowable, so no later step
+      // grows.
+      if (next.first == food) food = _noFood;
+      steps.add(next);
+      body = next;
+    }
 
+    final heading = directions.first;
     _prediction = LocalPrediction(
       baseTick: base.tick,
       from: me.body,
-      to: step ?? me.body,
+      to: steps.isEmpty ? me.body : steps.first,
       heading: heading,
       facing: lastPendingDirection ?? heading,
-      stalled: step == null,
+      stalled: steps.isEmpty,
+      steps: List.unmodifiable(steps),
     );
+  }
+
+  /// A cell no head can reach — food that has been eaten and not yet
+  /// respawned as far as the prediction knows.
+  static const Position _noFood = Position(-1000, -1000);
+
+  /// The direction the server commits on each of [ticks] consecutive ticks
+  /// starting at [firstTick], given its committed [current] direction and
+  /// the [pending] inputs, oldest first.
+  ///
+  /// The server's queue is simulated tick by tick: every input whose
+  /// expected tick has come is enqueued in send order (the transport keeps
+  /// it, so a later input never overtakes an earlier one), the oldest is
+  /// dropped beyond [serverBufferDepth], and one drain of
+  /// `MatchRoom.AdvanceTick` runs. What a drain leaves queued waits for the
+  /// next tick, exactly as on the server. The first entry always equals
+  /// [commitDirection] over the inputs that have arrived by [firstTick].
+  static List<Direction> planDirections(
+    Direction current,
+    List<PendingInput> pending, {
+    required int firstTick,
+    required int ticks,
+  }) {
+    final queue = <Direction>[];
+    final out = <Direction>[];
+    var next = 0;
+    for (var tick = firstTick; tick < firstTick + ticks; tick++) {
+      while (next < pending.length && pending[next].etaTick <= tick) {
+        if (queue.length >= serverBufferDepth) queue.removeAt(0);
+        queue.add(pending[next].direction);
+        next++;
+      }
+      while (queue.isNotEmpty) {
+        final input = queue.removeAt(0);
+        if (input != current.opposite && input != current) {
+          current = input;
+          break;
+        }
+        if (input == current) break; // harmless no-op, stop draining
+        // A reversal: skipped, keep draining.
+      }
+      out.add(current);
+    }
+    return out;
   }
 
   /// The direction the server commits at a tick, given its committed

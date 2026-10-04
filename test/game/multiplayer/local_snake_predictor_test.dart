@@ -461,6 +461,87 @@ void main() {
     });
   });
 
+  group('the steps after next (the late-snapshot lookahead)', () {
+    test('with nothing pending the path runs straight on for two steps', () {
+      final pred = started(snap(10, body: start)).prediction!;
+      expect(pred.steps, [
+        const [Position(6, 5), Position(5, 5), Position(4, 5)],
+        const [Position(7, 5), Position(6, 5), Position(5, 5)],
+      ]);
+      expect(pred.steps.first, pred.to);
+    });
+
+    test('an input due the tick after next bends only the second step', () {
+      final p = started(snap(10, body: start));
+      p.recordInput(Direction.up, sentAt: ms(200)); // eta 12
+      final steps = p.prediction!.steps;
+      expect(steps[0].first, const Position(6, 5));
+      expect(steps[1].first, const Position(6, 4));
+    });
+
+    test('a quick corner takes one tick per turn, as the server drains it', () {
+      final p = started(snap(10, body: start));
+      p.recordInput(Direction.up, sentAt: ms(10));
+      p.recordInput(Direction.left, sentAt: ms(20));
+      final steps = p.prediction!.steps;
+      expect(steps[0].first, const Position(5, 4));
+      expect(steps[1].first, const Position(4, 4));
+    });
+
+    test('the path stops before a fatal second step, never into it', () {
+      final nearWall = straight(const Position(18, 5), Direction.right);
+      final pred = started(snap(10, body: nearWall)).prediction!;
+      expect(pred.stalled, isFalse);
+      expect(pred.steps, hasLength(1));
+      expect(pred.steps.single.first, const Position(19, 5));
+    });
+
+    test('food eaten on the first step does not grow the second', () {
+      final s = snap(10, body: start, food: const Position(6, 5));
+      final steps = started(s).prediction!.steps;
+      expect(steps[0], hasLength(4));
+      expect(steps[1], hasLength(4));
+      expect(steps[1].first, const Position(7, 5));
+    });
+
+    test('planDirections agrees with commitDirection on the first tick', () {
+      const all = Direction.values;
+      var checked = 0;
+      for (final current in all) {
+        for (final a in all) {
+          for (final b in all) {
+            for (final c in all) {
+              final queued = [a, b, c];
+              final pending = [for (final d in queued) PendingInput(d, 11)];
+              final plan = LocalSnakePredictor.planDirections(
+                current,
+                pending,
+                firstTick: 11,
+                ticks: 1,
+              );
+              expect(
+                plan.single,
+                LocalSnakePredictor.commitDirection(current, queued),
+              );
+              checked++;
+            }
+          }
+        }
+      }
+      expect(checked, 256);
+    });
+
+    test('a later input never overtakes an earlier one still in flight', () {
+      final plan = LocalSnakePredictor.planDirections(
+        Direction.right,
+        const [PendingInput(Direction.up, 12), PendingInput(Direction.left, 11)],
+        firstTick: 11,
+        ticks: 2,
+      );
+      expect(plan, [Direction.right, Direction.up]);
+    });
+  });
+
   group('arrival estimate', () {
     test('a shorter measured round trip moves the deadline later', () {
       final p = started(snap(10, body: start));
