@@ -1,6 +1,6 @@
 # 🐍 Snake Classic
 
-A modern take on the classic Snake game, built with Flutter and the Flame engine. Ten themes, eight single-player modes, real-time 1v1 multiplayer, tournaments, a battle pass, and a full progression system, all on top of an offline-first local database that syncs to a .NET backend.
+A modern take on the classic Snake game, built with Flutter and the Flame engine and drawn in the **Living Board** design: every screen sits on one glowing pixel grid. Ten themes, eight single-player modes, real-time 1v1 multiplayer, tournaments, a battle pass, and a full progression system, all on top of an offline-first local database that syncs to a .NET backend.
 
 ## 📲 Download
 
@@ -60,38 +60,43 @@ A modern take on the classic Snake game, built with Flutter and the Flame engine
 
 ### 🎮 Gameplay
 - **Eight single-player modes:** Classic, Zen, Speed Challenge, Multi-Food, Survival, Time Attack, Power-Up Madness, and Perfect Game.
-- **Four board sizes** from 15×15 to 30×30, with larger 35×35, 40×40 and 50×50 boards for Pro members.
+- **Nine board sizes** from 15×15 to 50×50, all free.
+- **Run setup** before each game: mode, board and power-up loadout on one screen.
 - **Four power-ups:** Speed Boost, Invincibility, Score Multiplier, and Slow Motion, with HUD timers and a pre-game loadout.
-- **Combo system** with a heat meter and decay bar, level progression, and a snake-compass swipe indicator.
-- **Revive** after a crash by watching a rewarded ad or spending coins. Pro members revive for free.
+- **Combo multiplier** up to ×3 for eating without pause, plus level progression.
+- **Four control schemes:** swipe (with a compass under the board), a four-way pad, a floating joystick, and turn buttons, plus keyboard support.
+- **Second chance** after a crash: revive by watching a rewarded ad or spending coins, then **continue** once more from the game over screen. Both are free for Pro members.
+- **Your run, uncoiled:** the game over screen charts every bite of the run.
 - **Crash feedback** that says exactly why the run ended, with a configurable auto-continue.
 - **Replays** recorded frame by frame, browsable by recent, best, and crashes, with an interactive viewer.
-- **Server-authoritative 1v1 multiplayer** over SignalR: quick match, private rooms with shareable codes, ready checks, reconnect handling, and a house opponent when no human turns up within 30 seconds.
+- **Server-authoritative 1v1 multiplayer** over SignalR: quick match, private rooms with shareable codes, ready checks, reconnect handling, and a house opponent when no human turns up within 30 seconds. The local snake is predicted ahead of the server and both snakes move on render clocks, so matches stay smooth at real-world latency.
 
 ### 🎨 Visuals
-- **Ten themes.** Classic, Modern, Neon and Retro are free; Space, Ocean, Cyberpunk, Forest, Desert and Crystal come with Pro or can be bought individually.
-- **Premium snake skins and trail effects**, unlockable with coins or included with Pro.
-- **Flame-driven rendering** for the board, snakes, food and particles, with interpolated movement in multiplayer.
+- **Living Board design.** Every screen, from Home to the store, is built from the same pixel cells as the game board, set in JetBrains Mono, with the "Cell S" app icon. The design kit lives in [docs/living-board/](docs/living-board/).
+- **Ten themes** that re-skin the whole grid. Classic, Modern, Neon and Retro are free; Space, Ocean, Cyberpunk, Forest, Desert and Crystal come with Pro or can be bought individually.
+- **12 snake skins and 11 trail effects**, unlockable with coins or included with Pro.
+- **Flame-driven rendering** for the board, snakes, food and particles.
+- **Its own sound set and music**, with a menu loop and a separate in-run loop.
+- **Tablets and iPads** get a scaled-up portrait layout, not a stretched phone screen.
 - **120 Hz support** on devices that offer it, opt-in from Settings.
-- **Consistent HUD language:** corner brackets, accent hairlines and themed backdrops shared across every screen.
 
 ### 🏆 Progression
 - **147 achievements** across score, games played, survival, and special feats, with Common, Rare, Epic and Legendary rarities.
 - **Daily challenges** and **weekly quests** with coin and XP rewards.
-- **Battle pass** seasons with free and premium tracks.
+- **Season:** a 100-tier pass with free and premium tracks.
 - **Tournaments** with their own modes, live leaderboards and rewards.
 - **Coins economy** earned from play, challenges, achievements and rewarded ads.
 - **Detailed statistics** covering play time, food eaten, power-ups used, streaks and trends.
 
 ### 🌐 Online & Social
 - **Play first.** A new install goes straight to the game as a local guest. Sign-in with Google, email, or an anonymous account is offered once there is progress worth keeping.
-- **Global, weekly and friends leaderboards.**
+- **Global, weekly and friends leaderboards**, with your rank and the gap to the next spot.
 - **Friends system** with search, requests and online status.
 - **Cloud sync** of scores, statistics, achievements, purchases and settings, with an offline outbox that drains when connectivity returns.
 - **Push notifications** by category: tournaments, social, achievements, daily reminders and special events, each user-controllable.
 
 ### 💎 Pro & Monetisation
-- **Snake Classic Pro** subscription (monthly or yearly): no ads, every premium theme, skin and trail, larger boards, free revives, and coin bonuses.
+- **Snake Classic Pro** subscription (monthly or yearly): no ads, every premium theme, skin and trail, the premium Season track, free revives and continues, 2× coins, 5 of each power-up every month, and tournament entries each billing cycle.
 - **AdMob** for free users: banners, interstitials, rewarded video and app-open ads, with UMP consent and App Tracking Transparency on iOS.
 - **In-app purchases** verified server-side.
 
@@ -112,10 +117,10 @@ lib/
 ├── presentation/   # BLoC / Cubit state: auth, theme, game, multiplayer, premium, coins...
 ├── providers/      # Riverpod providers for feature data
 ├── router/         # go_router routes and pages
-├── screens/        # 30 screens
+├── screens/        # Route-level screens
 ├── services/       # API client, audio, ads, notifications, sync, multiplayer hub...
 ├── utils/          # Constants, animations, responsive helpers, logging
-└── widgets/        # Shared UI: HUD, boards, overlays, buttons, cards
+└── widgets/        # Shared UI; lb/ is the Living Board design system, lb_screens/ its screen parts
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the gameplay architecture, invariants and the reasoning behind them.
@@ -168,17 +173,18 @@ flutter run              # Run on the connected device
 flutter analyze          # Static analysis
 flutter test             # Run the test suite
 flutter gen-l10n         # Regenerate localisations after editing ARB files
-flutter build appbundle  # Android release bundle
-flutter build ipa        # iOS release archive
+./tools/release_android.sh  # Play release bundle + Sentry debug symbols (use this, not a bare build)
+./tools/release_ios.sh      # App Store equivalent (not yet run end to end)
 ```
 
 ## 🎮 How to Play
 
-- **Swipe** in any direction to steer. An optional on-screen **D-pad** can be enabled in Settings.
+- **Swipe** in any direction to steer, or switch to the on-screen **pad**, **joystick** or **turn buttons** in Settings or the pause menu.
 - **Arrow keys or WASD** steer and **Space** pauses when a keyboard is attached.
 - Eat food to grow and score. Bonus and special food are worth more but do not wait around.
 - Avoid the walls and your own tail. Power-ups bend those rules for a few seconds.
 - Speed rises with your level. Chain food quickly to build a combo multiplier.
+- Crashed? Take the second chance, or continue once from the game over screen.
 
 ## 📚 Project Documentation
 
@@ -188,6 +194,9 @@ flutter build ipa        # iOS release archive
 - [PREMIUM_FEATURES_STATUS.md](PREMIUM_FEATURES_STATUS.md) — what Pro includes and where it is gated
 - [NOTIFICATIONS_TESTING.md](NOTIFICATIONS_TESTING.md) — push notification testing
 - [RETENTION_PLAN.md](RETENTION_PLAN.md) — the onboarding and retention rationale
+- [docs/living-board/](docs/living-board/) — the Living Board design kit: spec, copy deck, tokens and reference screens
+- [store_listings/](store_listings/) — store listing copy and release notes in 10 languages
+- Store art: `play_store_screenshots/` and `tablet_play_store_screenshots/` (marketing sets), `screenshots/` and `tablet_screenshots/` (raw captures), `marketing/` (icon and feature graphic)
 
 ## 📄 License
 
