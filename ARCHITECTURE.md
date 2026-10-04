@@ -116,6 +116,29 @@ discipline: the outer `BlocBuilder` rebuilds on STRUCTURAL changes only
 rebuild just the scoped HUD and bottom-bar builders. Don't add per-tick
 fields to the outer `buildWhen`.
 
+### 7. Multiplayer — server-authoritative, local snake predicted
+Online Versus runs on the server (`MatchRoom` in the backend); the phone
+sends direction tokens and renders `Tick` snapshots. The rival is drawn a
+tick behind, exactly as the server says. Your own snake is predicted one
+step ahead so a turn does not wait out the ~190ms round trip:
+- **`lib/game/multiplayer/local_snake_predictor.dart`** — pure. Replays the
+  inputs not yet seen applied through a transcription of `MatchRoom`'s rules
+  (one commit per tick, reversals skipped, repeat stops the drain, 2-deep
+  buffer dropping the oldest; growth on food). Applied inputs are inferred
+  from each snapshot's committed direction — exact because the client only
+  sends real turns relative to the newest pending input. An input is
+  predicted only for the tick it can reach (`etaFor`: send time vs. snapshot
+  arrival + measured round trip). Never predicts death, the rival, score or
+  food; never more than one step ahead. Tested in `test/game/multiplayer/`.
+- **`MultiplayerCubit`** feeds it (accepted inputs, every snapshot) and emits
+  `MultiplayerState.localPrediction`. The repeat/reversal reference for a new
+  input is the predictor's newest pending input (what the server will
+  validate against), not the last snapshot's direction. `SendInput` is an
+  invocation so its completion times the round trip.
+- **`MultiplayerFlameGame`** glides the local snake from the snapshot to the
+  predicted step on the shared interpolation clock and eases any change of
+  path through `CorrectionBlend` (`snake_glide.dart`) instead of snapping.
+
 ## Where does my new feature go?
 
 | You're adding…                       | It goes in…                                                |
@@ -125,6 +148,7 @@ fields to the outer `buildWhen`.
 | A new pickup's particles / popup     | `SnakeFlameGame._emitEventParticles` / `game_screen._checkForGameEvents` |
 | A new end-of-game reward or stat     | `GameEndPipeline` (both game types get it automatically)   |
 | A new HUD element                    | `GameHUD` (its own scoped BlocBuilder)                     |
+| A multiplayer rule change            | Backend `MatchRoom` AND `LocalSnakePredictor` (+ its tests) |
 | A new overlay                        | `game_screen` overlay stack (outside SwipeDetector if it has buttons) |
 | A new cubit dependency               | Constructor-injected + registered in `core/di/injection.dart` — no `getIt` inside methods |
 
