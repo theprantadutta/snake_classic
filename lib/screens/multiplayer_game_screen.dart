@@ -52,7 +52,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   // One-shot guards for listener-driven effects
   bool _resultDialogShown = false;
   bool _exiting = false;
-  int _lastJuiceScore = 0;
   bool _juiceAliveLastTick = true;
 
   /// Match clock at the snapshot where my snake was first seen dead — the
@@ -166,17 +165,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
   }
 
-  /// Snapshot-diff juice: score-up burst and death shake. The cubit owns
-  /// sounds/haptics; this only drives the screen-shake widget.
+  /// Snapshot-diff juice: the death shake. The cubit owns sounds/haptics;
+  /// this only drives the screen-shake widget. The score-up burst is not
+  /// here: it fires when the board shows the bite ([_onLocalFoodShown]).
   void _applySnapshotJuice(MatchSnapshot snapshot) {
     final userId = _currentUserId;
     if (userId == null) return;
     final me = snapshot.playerByUserId(userId);
     if (me == null) return;
 
-    if (me.score > _lastJuiceScore) {
-      _juiceController.foodEaten();
-    }
     if (_juiceAliveLastTick && !me.alive) {
       _mySurvivedMs ??= snapshot.elapsedGameMs;
       if (me.deathReason == 'wall') {
@@ -185,8 +182,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         _juiceController.selfCollision();
       }
     }
-    _lastJuiceScore = me.score;
     _juiceAliveLastTick = me.alive;
+  }
+
+  /// The board has just shown one of my bites — the snake reaching the food
+  /// on screen, which is not when the snapshot saying so arrived. The chirp
+  /// and the burst belong to that moment.
+  void _onLocalFoodShown() {
+    if (!mounted) return;
+    context.read<MultiplayerCubit>().playLocalEatFeedback();
+    _juiceController.foodEaten();
   }
 
   void _showResultDialog(MatchEndResult result) {
@@ -603,6 +608,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     boardSize: multiplayerState.boardSize,
                     currentUserId: currentUserId,
                     prediction: multiplayerState.localPrediction,
+                    onLocalFoodEaten: _onLocalFoodShown,
                   ),
                 ),
               ),

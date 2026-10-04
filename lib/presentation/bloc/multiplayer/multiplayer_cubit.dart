@@ -33,10 +33,11 @@ export 'multiplayer_state.dart';
 /// direction inputs ([changeDirection] → SendInput) and holds the latest
 /// engine snapshot in [MultiplayerState.snapshot] for the board to
 /// render. It detects no collisions and never self-awards score — the
-/// only local judgement calls are cosmetic: eat/crash sounds derived
-/// from snapshot diffs, and [MultiplayerState.localPrediction], which
-/// draws the local snake one predicted step ahead of the snapshot so a
-/// turn shows without waiting a round trip (see [LocalSnakePredictor]).
+/// only local judgement calls are cosmetic: the crash sound derived from
+/// snapshot diffs, the eat chirp when the board shows a bite
+/// ([playLocalEatFeedback]), and [MultiplayerState.localPrediction], which
+/// draws the local snake predicted ahead of the snapshot so a turn shows
+/// without waiting a round trip (see [LocalSnakePredictor]).
 /// The prediction never feeds back into score, food or outcome.
 class MultiplayerCubit extends Cubit<MultiplayerState> {
   final MultiplayerService _multiplayerService;
@@ -151,7 +152,6 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // end event.
   final Stopwatch _matchTimer = Stopwatch();
   bool _matchActive = false;
-  int _lastMyScore = 0;
   bool _myAliveLastTick = true;
 
   MultiplayerCubit({
@@ -1239,7 +1239,6 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   void _handleSnapshot(MatchSnapshot snapshot) {
     if (!_matchActive) {
       _matchActive = true;
-      _lastMyScore = 0;
       _myAliveLastTick = true;
       _predictor.reset();
       _matchTimer
@@ -1261,22 +1260,18 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     );
     if (fit == SnapshotFit.stale) return;
 
-    // Cosmetic snapshot-diff feedback: eat chirp on my score rising,
-    // crash feedback the tick my snake dies. Purely presentational —
-    // the server already settled the outcome.
+    // Cosmetic snapshot-diff feedback: crash feedback the tick my snake
+    // dies. Purely presentational — the server already settled the
+    // outcome. The eat chirp is NOT here: it plays when the board shows the
+    // bite (playLocalEatFeedback), which is not when the snapshot lands.
     final me = currentUserId != null
         ? snapshot.playerByUserId(currentUserId)
         : null;
     if (me != null) {
-      if (me.score > _lastMyScore) {
-        _audioService.playSound('eat');
-        _hapticService.lightImpact();
-      }
       if (_myAliveLastTick && !me.alive) {
         _audioService.playSound('game_over');
         _hapticService.heavyImpact();
       }
-      _lastMyScore = me.score;
       _myAliveLastTick = me.alive;
     }
 
@@ -1292,6 +1287,16 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         localPrediction: _predictor.prediction,
       ),
     );
+  }
+
+  /// The eat chirp for one of my bites, played when the board SHOWS it —
+  /// my snake reaching the food on screen (see
+  /// `MultiplayerFlameGame.onLocalFoodEaten`). Playing it when the snapshot
+  /// arrived put it ahead of or behind the picture by however far the
+  /// render clock was from the arrival.
+  void playLocalEatFeedback() {
+    _audioService.playSound('eat');
+    _hapticService.lightImpact();
   }
 
   /// One line per match on how often the predicted step matched the
