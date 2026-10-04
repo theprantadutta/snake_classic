@@ -1,10 +1,14 @@
 Snake Classic - Google Play tablet screenshots (Living Board, 7.0.0)
 ====================================================================
 
-8 PNG files, 1440 x 2560 px (9:16 portrait), 24-bit (no alpha).
-Play requires 16:9 or 9:16 with each side 1080-7680 px for tablet
-screenshots - these qualify. The app is portrait-only on every device,
-so a portrait tablet set is correct.
+Play asks for tablet screenshots in two slots, one set each:
+
+  7-inch-1080x1920/    -> Store listing > 7-inch tablet screenshots
+  10-inch-1440x2560/   -> Store listing > 10-inch tablet screenshots
+
+8 PNG files per set, 9:16 portrait, 24-bit (no alpha). Both sets show the
+same eight screens; only the resolution differs. The app is portrait-only
+on every device, so portrait tablet sets are correct.
 
 Listing order (filenames are already numbered):
   01  Home        - Eat. Grow.
@@ -15,8 +19,5 @@ Listing order (filenames are already numbered):
   06  Daily       - Daily snacks.
   07  Season      - 100 tiers.
   08  Skins       - Way more drip.
-
-Upload the same set under both 7-inch and 10-inch tablet screenshots
-(Store listing > Main store listing).
 
 Phone set: ../play_store_screenshots/
