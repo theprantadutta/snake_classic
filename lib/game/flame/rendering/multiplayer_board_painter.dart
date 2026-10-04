@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/game/multiplayer/snake_glide.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
-import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -77,11 +77,12 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
 /// Main painter for all game content - snakes, food, name tags.
 ///
-/// Renders the server-authoritative [MatchSnapshot] directly — both
-/// snakes come from the same tick, no local player special-casing beyond
-/// colour. Smooth movement comes from lerping every segment between
-/// [previousSnapshot] and [snapshot] by [moveProgress] (0..1 across the
-/// server's tick_ms window, driven by the Flame game clock).
+/// Renders the server-authoritative [MatchSnapshot]. Smooth movement comes
+/// from lerping every segment between [previousSnapshot] and [snapshot] by
+/// [moveProgress] (0..1 across the server's tick_ms window, driven by the
+/// Flame game clock). The one exception is the local snake while it is
+/// predicted: the game hands its cells in as [localCells] (and its gaze as
+/// [localFacing]) and they are drawn as given.
 ///
 /// Living Board look (render 19): every snake is a run of `cell − 2`
 /// rounded squares with opacity ramping 100% → 45% toward the tail and a
@@ -102,6 +103,15 @@ class MultiplayerBoardPainter extends CustomPainter {
   /// no BuildContext, so the widget layer threads the translation in.
   final String youLabel;
 
+  /// The local snake's cell centres in grid units (cell (3, 4) centres on
+  /// (3.5, 4.5)), already glided and blended by the game. Null to draw the
+  /// local snake from the snapshots like any other.
+  final List<Offset>? localCells;
+
+  /// Where the predicted local head looks. Answers a swipe on the frame it
+  /// lands, even when the server will not turn the body until later.
+  final Direction? localFacing;
+
   MultiplayerBoardPainter({
     required this.snapshot,
     required this.previousSnapshot,
@@ -111,6 +121,8 @@ class MultiplayerBoardPainter extends CustomPainter {
     required this.moveProgress,
     required this.boardSize,
     this.youLabel = 'You',
+    this.localCells,
+    this.localFacing,
   }) : super(repaint: pulseAnimation);
 
   static const Color _rivalInk = Color(0xFF2A0705);
@@ -132,24 +144,38 @@ class MultiplayerBoardPainter extends CustomPainter {
     ];
 
     final drawn = <(MatchPlayerState, List<Offset>)>[];
+    final predicted = localCells;
     for (final player in ordered) {
       if (player.body.isEmpty) continue;
+      final isPredictedLocal =
+          predicted != null &&
+          predicted.isNotEmpty &&
+          player.alive &&
+          player.userId == currentUserId;
       drawn.add((
         player,
-        _interpolatedCenters(
-          player,
-          previousSnapshot?.playerByIndex(player.playerIndex),
-          cellWidth,
-          cellHeight,
-        ),
+        isPredictedLocal
+            ? [
+                for (final c in predicted)
+                  Offset(c.dx * cellWidth, c.dy * cellHeight),
+              ]
+            : _interpolatedCenters(
+                player,
+                previousSnapshot?.playerByIndex(player.playerIndex),
+                cellWidth,
+                cellHeight,
+              ),
       ));
     }
 
     for (final (player, centers) in drawn) {
+      final isLocal = player.userId == currentUserId;
       _drawSnake(
         canvas,
         centers,
-        player.direction,
+        isLocal && predicted != null
+            ? (localFacing ?? player.direction)
+            : player.direction,
         player.alive,
         palette,
         cellWidth,
@@ -180,36 +206,24 @@ class MultiplayerBoardPainter extends CustomPainter {
   }
 
   /// Per-segment cell centers lerped between the previous and current
-  /// tick. Segment i slides from its old cell to its new one (the body
-  /// list shifts one cell forward per tick, so index-wise lerp is the
-  /// slide). A brand-new tail segment (growth) and any teleport-sized
-  /// jump (reconnect resync) snap to the current cell; dead snakes are
-  /// frozen at their final cells.
+  /// tick (see [glideBody]: index-wise slide, growth and teleport-sized
+  /// jumps snap to the current cell). Dead snakes are frozen at their
+  /// final cells.
   List<Offset> _interpolatedCenters(
     MatchPlayerState player,
     MatchPlayerState? previous,
     double cellWidth,
     double cellHeight,
   ) {
-    Offset center(Position p) => Offset(
-      p.x * cellWidth + cellWidth / 2,
-      p.y * cellHeight + cellHeight / 2,
-    );
-
     final body = player.body;
     final prevBody = previous?.body;
-    final t = moveProgress.clamp(0.0, 1.0);
-    if (!player.alive || prevBody == null || prevBody.isEmpty || t >= 1.0) {
-      return body.map(center).toList();
-    }
-
-    return List<Offset>.generate(body.length, (i) {
-      final to = body[i];
-      final from = i < prevBody.length ? prevBody[i] : to;
-      final jump = (to.x - from.x).abs() + (to.y - from.y).abs();
-      if (jump == 0 || jump > 2) return center(to);
-      return Offset.lerp(center(from), center(to), t)!;
-    });
+    final from = (!player.alive || prevBody == null || prevBody.isEmpty)
+        ? body
+        : prevBody;
+    return [
+      for (final c in glideBody(from, body, moveProgress))
+        Offset(c.dx * cellWidth, c.dy * cellHeight),
+    ];
   }
 
   void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
@@ -387,6 +401,8 @@ class MultiplayerBoardPainter extends CustomPainter {
     return oldDelegate.snapshot != snapshot ||
         oldDelegate.previousSnapshot != previousSnapshot ||
         oldDelegate.moveProgress != moveProgress ||
+        oldDelegate.localCells != localCells ||
+        oldDelegate.localFacing != localFacing ||
         oldDelegate.theme != theme ||
         oldDelegate.currentUserId != currentUserId;
   }

@@ -33,7 +33,7 @@ List<Offset> glideBody(List<Position> from, List<Position> to, double t) {
 /// smoothed: sliding across the board would be worse than appearing.
 class CorrectionBlend {
   CorrectionBlend({
-    this.duration = const Duration(milliseconds: 100),
+    this.duration = const Duration(milliseconds: 120),
     this.snapDistance = 3.0,
     this.threshold = 0.02,
   });
@@ -81,8 +81,10 @@ class CorrectionBlend {
       _from = null;
       return target;
     }
-    // Ease-out: most of the correction happens at once, the tail settles.
-    final k = 1 - math.pow(1 - linear, 3).toDouble();
+    // Smoothstep: no single frame carries a visible share of the jump. An
+    // ease-out moved a whole-cell correction more than half a cell on its
+    // first frame, which reads as the snap it is meant to hide.
+    final k = linear * linear * (3 - 2 * linear);
     return List<Offset>.generate(target.length, (i) {
       if (i >= from.length) return target[i];
       return Offset.lerp(from[i], target[i], k)!;

@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/game/flame/multiplayer_flame_game.dart';
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
@@ -12,19 +13,23 @@ import 'package:snake_classic/widgets/board_frame.dart';
 /// shared [BoardFrame] (the Living Board wall hairline) and hosts a
 /// [MultiplayerFlameGame] (board + grid + both snakes as Living Board cells
 /// + food + particles) inside it. Everything on the board comes
-/// from the server's [MatchSnapshot] stream — the widget just relays the
-/// latest snapshot into the running game for interpolation.
+/// from the server's [MatchSnapshot] stream, plus the cubit's prediction
+/// of the local snake — the widget just relays both into the running game.
 class MultiplayerFlameBoard extends StatefulWidget {
   const MultiplayerFlameBoard({
     super.key,
     required this.snapshot,
     required this.boardSize,
     required this.currentUserId,
+    this.prediction,
   });
 
   final MatchSnapshot snapshot;
   final int boardSize;
   final String currentUserId;
+
+  /// The local snake one step ahead of [snapshot] (purely visual).
+  final LocalPrediction? prediction;
 
   @override
   State<MultiplayerFlameBoard> createState() => _MultiplayerFlameBoardState();
@@ -44,6 +49,7 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
         currentUserId: widget.currentUserId,
         boardSize: widget.boardSize,
         theme: theme,
+        prediction: widget.prediction,
       );
 
   @override
@@ -57,7 +63,11 @@ class _MultiplayerFlameBoardState extends State<MultiplayerFlameBoard> {
         // Thread the localized "You" label into the (context-less) Flame
         // painter layer. Cheap plain-field write, safe to do every build.
         _game.youLabel = AppLocalizations.of(context)!.lbYou;
-        _game.syncState(snapshot: widget.snapshot, theme: theme);
+        _game.syncState(
+          snapshot: widget.snapshot,
+          theme: theme,
+          prediction: widget.prediction,
+        );
 
         // Same frame as the single-player board. The screen hands us a
         // square (see the LayoutBuilder in MultiplayerGameScreen), so the

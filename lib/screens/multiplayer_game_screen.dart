@@ -602,6 +602,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     snapshot: snapshot,
                     boardSize: multiplayerState.boardSize,
                     currentUserId: currentUserId,
+                    prediction: multiplayerState.localPrediction,
                   ),
                 ),
               ),

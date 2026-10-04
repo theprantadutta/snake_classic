@@ -5,8 +5,11 @@ import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
+import 'package:snake_classic/game/multiplayer/snake_glide.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/particles.dart'
     show ParticleConfig;
 import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dart'
@@ -19,18 +22,41 @@ import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dar
 /// one and interpolates between them with a dt-driven clock over the
 /// server's `tick_ms` window (same approach as the single-player
 /// `SnakeFlameGame`), so both snakes glide even though positions only
-/// arrive a few times per second. Nothing is simulated here — the board
-/// painter draws the snapshots verbatim. Food-burst particles fire when
-/// the local player's score rises between ticks.
+/// arrive a few times per second. Nothing is simulated here. Food-burst
+/// particles fire wherever the food was eaten.
+///
+/// The rival is drawn exactly as the server says, a tick behind (previous
+/// snapshot → current). The LOCAL snake is drawn from [prediction] instead:
+/// current snapshot → one predicted step, on the same clock. That puts your
+/// own snake where the server has it now rather than where it was a tick
+/// ago, and lets a swipe show without waiting for the round trip. Whenever
+/// the predicted path changes under the snake — a swipe re-aiming the glide,
+/// or a snapshot correcting a misprediction — [CorrectionBlend] eases what
+/// was on screen into the new path rather than teleporting it.
 class MultiplayerFlameGame extends FlameGame {
   MultiplayerFlameGame({
     required this.snapshot,
     required this.currentUserId,
     required this.boardSize,
     required this.theme,
+    this.prediction,
   }) : _lastMyScore = snapshot.playerByUserId(currentUserId)?.score ?? 0;
 
   MatchSnapshot snapshot;
+
+  /// The predicted local snake for [snapshot]'s tick, or null to draw the
+  /// local snake from the snapshots like the rival (dead, absent, or no
+  /// prediction yet).
+  LocalPrediction? prediction;
+
+  /// What the local snake looks like this frame, in grid units (cell centres
+  /// at +0.5), and where its head looks. Null when [prediction] is not in
+  /// use and the painter draws the snapshot.
+  List<Offset>? localCells;
+  Direction? localFacing;
+
+  final CorrectionBlend _localBlend = CorrectionBlend();
+  LocalPrediction? _localPath;
 
   /// The tick before [snapshot] — the interpolation origin. Null until
   /// the second tick arrives (first frame renders statically).
@@ -104,11 +130,16 @@ class MultiplayerFlameGame extends FlameGame {
     await world.addAll([_MultiplayerBoardComponent(), _particles!]);
   }
 
-  /// Push the latest server snapshot + theme into the game. A new tick
-  /// shifts the current snapshot into [previousSnapshot] and restarts
-  /// the inter-tick interpolation clock.
-  void syncState({required MatchSnapshot snapshot, required GameTheme theme}) {
+  /// Push the latest server snapshot, local prediction and theme into the
+  /// game. A new tick shifts the current snapshot into [previousSnapshot]
+  /// and restarts the inter-tick interpolation clock.
+  void syncState({
+    required MatchSnapshot snapshot,
+    required GameTheme theme,
+    LocalPrediction? prediction,
+  }) {
     this.theme = theme;
+    this.prediction = prediction;
     if (identical(snapshot, this.snapshot)) return;
 
     final previous = this.snapshot;
@@ -174,6 +205,34 @@ class MultiplayerFlameGame extends FlameGame {
     moveProgress = windowMs <= 0
         ? 1.0
         : (_elapsedSinceTick * 1000 / windowMs).clamp(0.0, 1.0);
+
+    _updateLocalSnake(dt);
+  }
+
+  /// Glide the local snake from the confirmed body to the predicted step,
+  /// easing over any change of path.
+  void _updateLocalSnake(double dt) {
+    final path = prediction;
+    final me = snapshot.playerByUserId(currentUserId);
+    if (path == null ||
+        me == null ||
+        !me.alive ||
+        path.baseTick != snapshot.tick) {
+      localCells = null;
+      localFacing = null;
+      _localPath = null;
+      _localBlend.cancel();
+      return;
+    }
+
+    final target = glideBody(path.from, path.to, moveProgress);
+    final shown = localCells;
+    if (!identical(path, _localPath) && shown != null) {
+      _localBlend.begin(shown, target);
+    }
+    _localPath = path;
+    localCells = _localBlend.apply(target, dt);
+    localFacing = path.facing;
   }
 }
 
@@ -207,6 +266,8 @@ class _MultiplayerBoardComponent extends Component
       moveProgress: game.moveProgress,
       boardSize: game.boardSize,
       youLabel: game.youLabel,
+      localCells: game.localCells,
+      localFacing: game.localFacing,
     ).paint(canvas, size);
   }
 }
