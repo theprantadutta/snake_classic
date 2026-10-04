@@ -671,9 +671,14 @@ class _GameOverActionsState extends State<_GameOverActions> {
   @override
   void initState() {
     super.initState();
-    // Repaint the continue countdown each second while the offer is open.
-    _continueTicker = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      if (mounted) setState(() {});
+    // Repaint the continue countdown while the offer is open, then stop.
+    // It used to run for as long as game over stayed up — profiled on the
+    // A24, the screen redrew four times a second indefinitely after an
+    // 8-second offer. One last repaint draws the closed state.
+    _continueTicker = Timer.periodic(const Duration(milliseconds: 250), (t) {
+      if (!mounted) return t.cancel();
+      if (!context.read<GameCubit>().canContinueFromGameOver) t.cancel();
+      setState(() {});
     });
   }
 
