@@ -24,6 +24,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/walkthrough_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/debug/dev_data_seeder.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
@@ -100,6 +101,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       unawaited(_checkIosAppRelease());
       unawaited(_loadHomeReadouts());
       _maybeOpenDebugRoute();
+      // Debug builds launched with --dart-define=LB_SEED=true only.
+      unawaited(DevDataSeeder.runIfRequested(context.read<AuthCubit>()));
     });
   }
 

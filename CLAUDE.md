@@ -94,6 +94,21 @@ The rule, applied to every new code path:
 - `flutter analyze` - Static analysis (run regularly during development)
 - `flutter clean` - Clean build cache
 
+### Seeding Test Data (store screenshots, empty-screen testing)
+A fresh install has empty stats, trophies, Season and ranks. To give a **test account** a believable history, run a DEBUG build with:
+
+```
+flutter run -d <device> --dart-define=LB_SEED=true
+```
+
+- `lib/debug/dev_data_seeder.dart` (`DevDataSeeder`, hooked from Home) plays synthetic finished runs through `GameEndPipeline`, the same path real games use, so stats, coins, XP, achievements, daily/weekly progress, Season XP and scores all agree and sync to the backend. It sets the high score at the end (never lowers it).
+- **Sign in first.** It waits for a signed-in, non-guest account and does nothing for a guest. If it gave up, sign in and relaunch with the define.
+- Runs **once per install**. `--dart-define=LB_SEED_FORCE=true` runs it again (adds another batch). `LB_SEED_RUNS` (default 40) and `LB_SEED_BEST` (default 3840) tune it.
+- Debug-only by construction (`kDebugMode` + the define), so it is compiled out of release builds; nothing to remove before shipping.
+- **Only seed test accounts** — kdstabsystem@gmail.com (tablet) and realjohndoe276@gmail.com (A24) were used for the 7.0.0 store shots. For screenshots without ads, give the account Pro: `dotnet run grant-pro-to-user.cs -- grant <email>` in `snake-classic-backend`.
+- Works on any platform the app runs on (Android, iOS, macOS). Replays only come from real games, so play a couple by hand if a shot needs them.
+- The Android test devices are shared with other agents: check the foreground app (`adb -s <id> shell dumpsys window | grep mCurrentFocus`) and do not launch over another app.
+
 ### Regenerating Icons and Splash (LOAD-BEARING)
 - `dart run flutter_native_splash:create` **rewrites `android:windowDrawsSystemBarBackgrounds` to `false`** in all four `values*/styles.xml` variants. It must be `true` (Android 15 edge-to-edge — see the comment in `values/styles.xml`). **Restore it after every run.** The generator also reformats `Info.plist`, `LaunchScreen.storyboard`, `web/index.html` and the imageset manifests without changing their meaning — revert that churn so the diff is only real changes.
 - `@mipmap/launcher_icon` is the app icon; **`@mipmap/ic_launcher` is not an icon at all any more** — the status-bar icon is `drawable/ic_notification`, a white-on-transparent glyph, because Android renders a small icon from its alpha alone and a colour icon arrives as a white blob.
