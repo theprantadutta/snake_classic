@@ -24,29 +24,35 @@ A modern take on the classic Snake game, built with Flutter and the Flame engine
 <div align="center">
 
 ### 🏠 Home & Gameplay
-<img src="screenshots/01_home.jpg" width="240" alt="Home screen with the animated logo, quick-play board and navigation rail">
-<img src="screenshots/02_gameplay.jpg" width="240" alt="Classic mode gameplay with the score HUD, level progress and board">
-<img src="screenshots/03_gameplay_late_run.jpg" width="240" alt="A longer run, snake filling the board">
+<img src="screenshots/01-home.png" width="240" alt="Home board with the best score, the PLAY tile and the mode tiles">
+<img src="screenshots/14-gameplay.png" width="240" alt="Classic mode gameplay mid-combo with a score popup">
+<img src="screenshots/14b-gameplay-alt.png" width="240" alt="A longer run, snake filling the board">
 
 ### 🏆 Game Over & Progression
-<img src="screenshots/04_game_over.jpg" width="240" alt="Game over screen with final score, coins earned and daily rewards to claim">
-<img src="screenshots/13_daily_challenges.jpg" width="240" alt="Daily challenges with progress bars and claimable rewards">
-<img src="screenshots/14_achievements.jpg" width="240" alt="Achievements browser with rarity tiers and claim state">
+<img src="screenshots/15b-revive.png" width="240" alt="The second-chance revive prompt after a crash">
+<img src="screenshots/15-game-over.png" width="240" alt="Game over with the score, the best and the run charted food by food">
+<img src="screenshots/02-daily.png" width="240" alt="Daily challenges with progress bars and claimable rewards">
 
-### 🎟️ Battle Pass, Store & Settings
-<img src="screenshots/15_battle_pass.jpg" width="240" alt="Battle pass season with tier progress and rewards">
-<img src="screenshots/05_store.jpg" width="240" alt="Snake store showing the Pro subscription and its benefits">
-<img src="screenshots/06_settings.jpg" width="240" alt="Settings with controls, gameplay mode picker and audio tabs">
+### 🎟️ Season, Store & Settings
+<img src="screenshots/03-season.png" width="240" alt="Season track with tier progress and rewards">
+<img src="screenshots/05-store-pro.png" width="240" alt="Store showing the Pro subscription and its benefits">
+<img src="screenshots/10-store-skins.png" width="240" alt="Store skins tab">
 
-### 👤 Profile & Leaderboards
-<img src="screenshots/07_profile.jpg" width="240" alt="Profile with statistics summary and achievements">
-<img src="screenshots/08_leaderboards.jpg" width="240" alt="Global leaderboard with ranked players">
+### 👤 Profile, Ranks & Trophies
+<img src="screenshots/07-profile.png" width="240" alt="Profile with level and statistics summary">
+<img src="screenshots/04-ranks.png" width="240" alt="Global leaderboard with the podium and ranked players">
+<img src="screenshots/09-trophies.png" width="240" alt="Achievements browser with rarity tiers">
 
 ### ⚔️ Real-time Multiplayer
-<img src="screenshots/09_multiplayer_lobby.jpg" width="240" alt="Multiplayer lobby with quick match, join room and create room">
-<img src="screenshots/10_multiplayer_room.jpg" width="240" alt="A 1v1 room with both players and the ready check">
-<img src="screenshots/11_multiplayer_match.jpg" width="240" alt="A live match with the versus header, momentum bar and clock">
-<img src="screenshots/12_multiplayer_result.jpg" width="240" alt="Match result card after both snakes crashed">
+<img src="screenshots/06-versus.png" width="240" alt="Versus lobby with quick match, join room and create room">
+<img src="screenshots/16-versus-room.png" width="240" alt="A 1v1 room with both players and the ready check">
+<img src="screenshots/18-versus-live.png" width="240" alt="A live match, both snakes chasing the same food">
+<img src="screenshots/17-versus-result.png" width="240" alt="Match result card after both snakes crashed">
+
+### 📱 Tablet
+<img src="tablet_screenshots/01-home.png" width="240" alt="Home board on a tablet">
+<img src="tablet_screenshots/14-gameplay.png" width="240" alt="Gameplay on a tablet">
+<img src="tablet_screenshots/15-game-over.png" width="240" alt="Game over on a tablet">
 
 </div>
 
