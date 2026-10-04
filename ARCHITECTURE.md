@@ -118,9 +118,9 @@ fields to the outer `buildWhen`.
 
 ### 7. Multiplayer — server-authoritative, local snake predicted
 Online Versus runs on the server (`MatchRoom` in the backend); the phone
-sends direction tokens and renders `Tick` snapshots. The rival is drawn a
-tick behind, exactly as the server says. Your own snake is predicted one
-step ahead so a turn does not wait out the ~190ms round trip:
+sends direction tokens and renders `Tick` snapshots. The rival is played
+back a little over a tick behind, exactly as the server says. Your own snake
+is predicted ahead so a turn does not wait out the ~190ms round trip:
 - **`lib/game/multiplayer/local_snake_predictor.dart`** — pure. Replays the
   inputs not yet seen applied through a transcription of `MatchRoom`'s rules
   (one commit per tick, reversals skipped, repeat stops the drain, 2-deep
@@ -129,15 +129,32 @@ step ahead so a turn does not wait out the ~190ms round trip:
   sends real turns relative to the newest pending input. An input is
   predicted only for the tick it can reach (`etaFor`: send time vs. snapshot
   arrival + measured round trip). Never predicts death, the rival, score or
-  food; never more than one step ahead. Tested in `test/game/multiplayer/`.
+  food. `steps` carries the next two ticks (the second only ever drawn while
+  a snapshot is late); the path stops before any fatal step. Tested in
+  `test/game/multiplayer/`.
 - **`MultiplayerCubit`** feeds it (accepted inputs, every snapshot) and emits
   `MultiplayerState.localPrediction`. The repeat/reversal reference for a new
   input is the predictor's newest pending input (what the server will
   validate against), not the last snapshot's direction. `SendInput` is an
   invocation so its completion times the round trip.
-- **`MultiplayerFlameGame`** glides the local snake from the snapshot to the
-  predicted step on the shared interpolation clock and eases any change of
-  path through `CorrectionBlend` (`snake_glide.dart`) instead of snapping.
+- **`MultiplayerFlameGame`** draws motion from render clocks, never from
+  packet arrival (restarting the glide on each arrival turned Wi-Fi jitter
+  into skips and stop-and-go). `TickClock` (`tick_clock.dart`, pure) runs at
+  `tick_ms` on its own and is only steered by arrivals: ±12% rate to stay
+  phase-locked, slows into its limit rather than stopping, hard-resyncs only
+  past a large divergence. Your snake walks confirmed-then-predicted bodies
+  on a clock that reads N when snapshot N lands, at most
+  `maxLocalLead` (1.35) ticks past the newest snapshot; any change of path is
+  eased by `CorrectionBlend` (an offset riding the moving path). The rival is
+  played back by `SnapshotPlayout` (`snapshot_playout.dart`) from a buffer,
+  ~1 tick + measured jitter behind (1.15–2.0), only ever between two
+  snapshots that have arrived. A bite (particles, food moving, and your eat
+  chirp/juice via `onLocalFoodEaten`) fires when the eater's clock reaches
+  the snapshot that holds it, not on arrival. The board widget relays EVERY
+  snapshot through a `BlocListener` — a rebuild coalesces two that land in
+  one frame. Jitter/burst/gap/ramp/reconnect tests:
+  `test/game/multiplayer/smooth_motion_test.dart` (harness in
+  `jitter_harness.dart`).
 
 ## Where does my new feature go?
 
