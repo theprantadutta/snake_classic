@@ -1372,9 +1372,29 @@ class ApiService {
   }
 
   /// SignalR hub endpoint (no /api/v1 prefix — hubs are mapped at root).
-  String getSignalRHubUrl() {
-    final hubUrl = baseUrl.replaceFirst('/api/v1', '');
-    return '$hubUrl/hubs/game';
+  String getSignalRHubUrl() => getSignalRHubUrls().first;
+
+  /// Match hub URLs in the order to try them. Live matches go to a direct,
+  /// DNS-only host first: through the Cloudflare proxy the socket picked up
+  /// 0.3-2 s spikes on top of the ~190 ms trip to the server, which made
+  /// Versus unplayable. The API host stays as the fallback, so a problem
+  /// with the direct host can never take Versus down. `MP_HUB_BASE_URL` in
+  /// .env overrides the direct host (e.g. empty for local development).
+  List<String> getSignalRHubUrls() {
+    final apiHost = baseUrl.replaceFirst('/api/v1', '');
+    final direct = _directMatchHost(apiHost);
+    return [
+      if (direct != null && direct != apiHost) '$direct/hubs/game',
+      '$apiHost/hubs/game',
+    ];
+  }
+
+  static String? _directMatchHost(String apiHost) {
+    final configured = dotenv.isInitialized ? dotenv.env['MP_HUB_BASE_URL'] : null;
+    if (configured != null) return configured.isEmpty ? null : configured;
+    final uri = Uri.tryParse(apiHost);
+    if (uri == null || uri.host != 'snakeclassic.pranta.dev') return null;
+    return '${uri.scheme}://mp.${uri.host}';
   }
 
   // ==================== Leaderboards ====================

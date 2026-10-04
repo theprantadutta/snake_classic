@@ -126,8 +126,8 @@ class MultiplayerService {
   /// have no ready state on the server at all.
   HubConnection? get _liveHub =>
       _isConnected && _hubConnection?.state == HubConnectionState.Connected
-          ? _hubConnection
-          : null;
+      ? _hubConnection
+      : null;
 
   // Current game getters
   MultiplayerGame? get currentGame => _currentGame;
@@ -396,7 +396,8 @@ class MultiplayerService {
     // that never got an answer must not block recovery forever.
     if (_isReconnecting) {
       final startedAt = _reconnectStartedAt;
-      final stale = startedAt == null ||
+      final stale =
+          startedAt == null ||
           DateTime.now().difference(startedAt) > _reconnectAttemptStaleAfter;
       if (!stale) return true;
       _isReconnecting = false;
@@ -477,95 +478,114 @@ class MultiplayerService {
         return true;
       }
 
-      final hubUrl = _apiService.getSignalRHubUrl();
-
-      _hubConnection = HubConnectionBuilder()
-          .withUrl(
-            hubUrl,
-            options: HttpConnectionOptions(
-              accessTokenFactory: () async => _apiService.accessToken ?? '',
-              // The same install/build headers as every REST request, so the
-              // hub's negotiate call is attributable like the rest.
-              headers: _clientHeaders(),
-              // signalr_netcore defaults this to TWO SECONDS, which is the
-              // budget for the whole negotiate round-trip. A warm connection
-              // fits; a cold one — the first search after a match ended and
-              // stopped the hub — does not, and the throw surfaced to the
-              // player as "Matchmaking failed. Please try again." about a
-              // matchmaker that had not been asked anything yet.
-              //
-              // Matched to ApiService's REST timeout, because it is the same
-              // server over the same connection and there is no reason for
-              // the socket handshake to be held to a stricter deadline than
-              // an ordinary request.
-              requestTimeout: 15000,
-            ),
-          )
-          .withAutomaticReconnect()
-          .build();
-
-      _registerEventHandlers();
-
-      // Transport-level auto-reconnect gives us a fresh connection id, so
-      // the server no longer has us in the room's SignalR group. Invoke
-      // Reconnect to rejoin + cancel the engine's disconnect grace — the
-      // MatchResumed reply re-syncs the snapshot mid-match.
-      _hubConnection!.onreconnected(({connectionId}) {
-        _isConnected = true;
-        final roomCode = _currentRoomCode;
-        final queuedMode = _matchmakingMode;
-        if (roomCode != null) {
-          _hubConnection?.invoke('Reconnect', args: [roomCode]).catchError((
-            Object e,
-          ) {
-            AppLogger.error('Error re-joining room after reconnect', e);
-            return null;
-          });
-        } else if (_isInMatchmaking && queuedMode != null) {
-          // Mid-search the server deleted our queue row the moment the old
-          // socket closed (OnDisconnected → LeaveQueue). A fresh connection
-          // id on its own puts nothing back, so ask again. The cubit's poll
-          // would notice and re-queue too; doing it here closes the gap
-          // without waiting for a poll.
-          AppLogger.info('Hub reconnected mid-search — re-entering queue');
-          _hubConnection
-              ?.invoke(
-                'JoinMatchmaking',
-                args: [queuedMode.name, _matchmakingPlayerCount],
+      // The direct match host first, the API host as the fallback (see
+      // ApiService.getSignalRHubUrls).
+      final hubUrls = _apiService.getSignalRHubUrls();
+      for (var attempt = 0; attempt < hubUrls.length; attempt++) {
+        final hubUrl = hubUrls[attempt];
+        try {
+          _hubConnection = HubConnectionBuilder()
+              .withUrl(
+                hubUrl,
+                options: HttpConnectionOptions(
+                  accessTokenFactory: () async => _apiService.accessToken ?? '',
+                  // The same install/build headers as every REST request, so the
+                  // hub's negotiate call is attributable like the rest.
+                  headers: _clientHeaders(),
+                  // signalr_netcore defaults this to TWO SECONDS, which is the
+                  // budget for the whole negotiate round-trip. A warm connection
+                  // fits; a cold one — the first search after a match ended and
+                  // stopped the hub — does not, and the throw surfaced to the
+                  // player as "Matchmaking failed. Please try again." about a
+                  // matchmaker that had not been asked anything yet.
+                  //
+                  // Matched to ApiService's REST timeout, because it is the same
+                  // server over the same connection and there is no reason for
+                  // the socket handshake to be held to a stricter deadline than
+                  // an ordinary request.
+                  requestTimeout: 15000,
+                ),
               )
-              .catchError((Object e) {
-                AppLogger.error('Error re-entering queue after reconnect', e);
+              .withAutomaticReconnect()
+              .build();
+
+          _registerEventHandlers();
+
+          // Transport-level auto-reconnect gives us a fresh connection id, so
+          // the server no longer has us in the room's SignalR group. Invoke
+          // Reconnect to rejoin + cancel the engine's disconnect grace — the
+          // MatchResumed reply re-syncs the snapshot mid-match.
+          _hubConnection!.onreconnected(({connectionId}) {
+            _isConnected = true;
+            final roomCode = _currentRoomCode;
+            final queuedMode = _matchmakingMode;
+            if (roomCode != null) {
+              _hubConnection?.invoke('Reconnect', args: [roomCode]).catchError((
+                Object e,
+              ) {
+                AppLogger.error('Error re-joining room after reconnect', e);
                 return null;
               });
+            } else if (_isInMatchmaking && queuedMode != null) {
+              // Mid-search the server deleted our queue row the moment the old
+              // socket closed (OnDisconnected → LeaveQueue). A fresh connection
+              // id on its own puts nothing back, so ask again. The cubit's poll
+              // would notice and re-queue too; doing it here closes the gap
+              // without waiting for a poll.
+              AppLogger.info('Hub reconnected mid-search — re-entering queue');
+              _hubConnection
+                  ?.invoke(
+                    'JoinMatchmaking',
+                    args: [queuedMode.name, _matchmakingPlayerCount],
+                  )
+                  .catchError((Object e) {
+                    AppLogger.error(
+                      'Error re-entering queue after reconnect',
+                      e,
+                    );
+                    return null;
+                  });
+            }
+          });
+
+          _hubConnection!.onreconnecting(({error}) {
+            _isConnected = false;
+          });
+
+          _hubConnection!.onclose(({error}) {
+            _isConnected = false;
+            // A dead socket can't answer an in-flight Reconnect invoke —
+            // release the guard so the next attempt isn't blocked.
+            _isReconnecting = false;
+            if (_intentionalDisconnect) return;
+            _gameActionsController.add(
+              MultiplayerGameAction(
+                actionType: 'connection_lost',
+                playerId: '',
+                timestamp: DateTime.now(),
+                data: const {},
+              ),
+            );
+          });
+
+          await _hubConnection!.start();
+          _isConnected = true;
+          _startHeartbeat();
+
+          AppLogger.network('Connected to SignalR hub: $hubUrl');
+          return true;
+        } catch (e) {
+          if (attempt == hubUrls.length - 1) rethrow;
+          AppLogger.warning(
+            'Match host $hubUrl unreachable, trying ${hubUrls[attempt + 1]}: $e',
+          );
+          try {
+            await _hubConnection?.stop();
+          } catch (_) {}
+          _hubConnection = null;
         }
-      });
-
-      _hubConnection!.onreconnecting(({error}) {
-        _isConnected = false;
-      });
-
-      _hubConnection!.onclose(({error}) {
-        _isConnected = false;
-        // A dead socket can't answer an in-flight Reconnect invoke —
-        // release the guard so the next attempt isn't blocked.
-        _isReconnecting = false;
-        if (_intentionalDisconnect) return;
-        _gameActionsController.add(
-          MultiplayerGameAction(
-            actionType: 'connection_lost',
-            playerId: '',
-            timestamp: DateTime.now(),
-            data: const {},
-          ),
-        );
-      });
-
-      await _hubConnection!.start();
-      _isConnected = true;
-      _startHeartbeat();
-
-      AppLogger.network('Connected to SignalR hub: $hubUrl');
-      return true;
+      }
+      return false;
     } catch (e) {
       AppLogger.error('Error connecting to SignalR', e);
       _isConnected = false;
@@ -911,10 +931,7 @@ class MultiplayerService {
 
     _currentGame = _currentGame?.copyWith(
       status: MultiplayerGameStatus.playing,
-      gameSettings: {
-        ...?_currentGame?.gameSettings,
-        'boardSize': _boardSize,
-      },
+      gameSettings: {...?_currentGame?.gameSettings, 'boardSize': _boardSize},
     );
     _gameStreamController.add(_currentGame);
     _emitSnapshot(data['snapshot']);
