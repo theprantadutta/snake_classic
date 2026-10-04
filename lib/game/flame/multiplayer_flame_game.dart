@@ -7,7 +7,10 @@ import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
 import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/game/multiplayer/snake_glide.dart';
+import 'package:snake_classic/game/multiplayer/snapshot_playout.dart';
+import 'package:snake_classic/game/multiplayer/tick_clock.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
+import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/game/flame/rendering/particles.dart'
@@ -17,37 +20,57 @@ import 'package:snake_classic/game/flame/rendering/multiplayer_board_painter.dar
 
 /// Flame engine root for multiplayer gameplay (server-authoritative 1v1).
 ///
-/// The screen pushes each authoritative [MatchSnapshot] in via
-/// [syncState]; this game keeps the previous tick alongside the current
-/// one and interpolates between them with a dt-driven clock over the
-/// server's `tick_ms` window (same approach as the single-player
-/// `SnakeFlameGame`), so both snakes glide even though positions only
-/// arrive a few times per second. Nothing is simulated here. Food-burst
-/// particles fire wherever the food was eaten.
+/// The board receives every authoritative [MatchSnapshot] through
+/// [syncState] and draws it smoothly even though positions arrive only a few
+/// times a second, and never at a steady rhythm. Nothing is simulated here.
 ///
-/// The rival is drawn exactly as the server says, a tick behind (previous
-/// snapshot → current). The LOCAL snake is drawn from [prediction] instead:
-/// current snapshot → one predicted step, on the same clock. That puts your
-/// own snake where the server has it now rather than where it was a tick
-/// ago, and lets a swipe show without waiting for the round trip. Whenever
-/// the predicted path changes under the snake — a swipe re-aiming the glide,
-/// or a snapshot correcting a misprediction — [CorrectionBlend] eases what
-/// was on screen into the new path rather than teleporting it.
+/// Motion is driven by render clocks that advance on their own at the
+/// server's tick rate ([TickClock]) — never by when packets land. Restarting
+/// the glide on every arrival, as this used to, turned network jitter
+/// straight into motion: an early snapshot cut the glide short (a skip), a
+/// late one let it finish and sit (stop-and-go).
+///
+/// * Your own snake is drawn from the [prediction] at [localRenderTick]: a
+///   clock phase-locked to the arrivals (the snapshot for tick N lands about
+///   when the clock reads N), walking the confirmed-then-predicted path at
+///   most [maxLocalLead] ticks past the newest snapshot. While a snapshot is
+///   late it carries on into the predicted step after next rather than
+///   stopping, and it slows into the end of the path instead of hitting it.
+///   Whenever the path changes under the snake — a swipe re-aiming it, a
+///   snapshot correcting a misprediction — [CorrectionBlend] eases the
+///   difference out on top of the moving path.
+/// * Every other snake (the rival) is played back from a [SnapshotPlayout]
+///   buffer a little over a tick behind the newest snapshot, so it always
+///   glides between two snapshots that have both arrived.
+/// * The food and its burst follow the snake that ate it: a bite is shown,
+///   and the food moves, when the eater's clock reaches the tick of the
+///   snapshot that contains it — not when that snapshot arrives, which for
+///   the rival is a tick before it gets there. Your own bites also call
+///   [onLocalFoodEaten] at that moment, for the chirp and the screen juice.
 class MultiplayerFlameGame extends FlameGame {
   MultiplayerFlameGame({
-    required this.snapshot,
+    required MatchSnapshot snapshot,
     required this.currentUserId,
     required this.boardSize,
     required this.theme,
     this.prediction,
-  }) : _lastMyScore = snapshot.playerByUserId(currentUserId)?.score ?? 0;
+    this.onLocalFoodEaten,
+  }) : snapshot = snapshot,
+       displayedFood = snapshot.food {
+    _startMatch(snapshot);
+    _rebuildLocalPath();
+  }
 
+  /// The newest snapshot received.
   MatchSnapshot snapshot;
 
   /// The predicted local snake for [snapshot]'s tick, or null to draw the
-  /// local snake from the snapshots like the rival (dead, absent, or no
+  /// local snake exactly as the snapshot has it (dead, absent, or no
   /// prediction yet).
   LocalPrediction? prediction;
+
+  /// Called when one of your own bites is shown (see the class notes).
+  VoidCallback? onLocalFoodEaten;
 
   /// What the local snake looks like this frame, in grid units (cell centres
   /// at +0.5), and where its head looks. Null when [prediction] is not in
@@ -55,12 +78,12 @@ class MultiplayerFlameGame extends FlameGame {
   List<Offset>? localCells;
   Direction? localFacing;
 
-  final CorrectionBlend _localBlend = CorrectionBlend();
-  LocalPrediction? _localPath;
+  /// How every other snake is drawn this frame, by player index.
+  Map<int, SnakePose> remotePoses = const {};
 
-  /// The tick before [snapshot] — the interpolation origin. Null until
-  /// the second tick arrives (first frame renders statically).
-  MatchSnapshot? previousSnapshot;
+  /// Where the food is drawn. Trails [snapshot] while the bite that moved
+  /// it has not been shown yet.
+  Position displayedFood;
 
   final String currentUserId;
   final int boardSize;
@@ -71,34 +94,44 @@ class MultiplayerFlameGame extends FlameGame {
   /// every build (see MultiplayerFlameBoard).
   String youLabel = 'You';
 
-  int _lastMyScore;
+  /// The furthest the local snake is ever drawn past the newest snapshot,
+  /// in ticks. It nominally peaks at one, just before the next snapshot
+  /// lands; the rest is room for a late snapshot before the snake has to
+  /// slow down for it.
+  static const double maxLocalLead = 1.35;
+
+  /// How many confirmed local bodies are kept, to draw from when the clock
+  /// is a little behind the newest snapshot (after a burst).
+  static const int _localHistoryTicks = 4;
+
+  /// A snapshot tick this far below the newest one is a new match.
+  static const int _resetTickGap = 20;
+
+  /// Phase-locked to the arrivals with no lag: the snapshot for tick N
+  /// lands about when it reads N. Up to two ticks behind (a long silence,
+  /// then a burst) it catches up by running faster rather than jumping;
+  /// the confirmed history covers that far back.
+  final TickClock _localClock = TickClock(softZone: .3, resyncThreshold: 2);
+  final SnapshotPlayout _playout = SnapshotPlayout();
+  final Map<int, List<Position>> _localHistory = {};
+  _LocalPath? _localPath;
+  _LocalPath? _drawnLocalPath;
+  int _seenResyncs = 0;
+  final CorrectionBlend _localBlend = CorrectionBlend();
+  final List<_FoodEvent> _foodEvents = [];
 
   double _elapsed = 0;
 
-  /// Smooth 0..1 progress between [previousSnapshot] and [snapshot] for
-  /// the current server tick.
-  double moveProgress = 0;
-  double _elapsedSinceTick = 0;
-
-  /// Smoothed measurement of how far apart snapshots ACTUALLY arrive, in
-  /// milliseconds. Zero until two have been seen.
-  ///
-  /// Interpolating over the server's nominal `tick_ms` assumes snapshots
-  /// arrive exactly that far apart. They do not: the engine can only fire on
-  /// its own loop boundary, and the network adds its own jitter on top. Every
-  /// millisecond of the difference is time both snakes spend frozen at the
-  /// end of the glide, having already arrived — the stutter reads as lag even
-  /// though nothing is late. Interpolating over the observed gap instead
-  /// leaves the board a few milliseconds behind the server and perfectly
-  /// smooth, which is the trade every netcode makes.
-  double _observedTickMs = 0;
-
-  /// Never stretch beyond this multiple of the nominal tick. Past it the
-  /// snapshots really are late, and drifting further behind the server is
-  /// worse than showing the hitch.
-  static const double _maxStretch = 1.6;
-
   GameParticlesComponent? _particles;
+
+  /// Where your own snake is drawn on the server's tick axis.
+  double get localRenderTick => _localClock.position;
+
+  /// Where every other snake is drawn on the server's tick axis.
+  double get remoteRenderTick => _playout.renderTick;
+
+  /// How far behind the newest snapshot the rival is played back, in ticks.
+  double get remoteDelay => _playout.delay;
 
   double get worldSize => boardSize * GameConstants.cellSize;
 
@@ -130,60 +163,130 @@ class MultiplayerFlameGame extends FlameGame {
     await world.addAll([_MultiplayerBoardComponent(), _particles!]);
   }
 
-  /// Push the latest server snapshot, local prediction and theme into the
-  /// game. A new tick shifts the current snapshot into [previousSnapshot]
-  /// and restarts the inter-tick interpolation clock.
+  /// Push a snapshot, the local prediction and the theme into the game.
+  ///
+  /// Call it for EVERY snapshot as it arrives — the render clocks are
+  /// steered by arrival times and the rival is played back from the
+  /// sequence, so a snapshot coalesced into the next rebuild is a hole in
+  /// both. Repeating the current snapshot (a rebuild) is harmless.
   void syncState({
     required MatchSnapshot snapshot,
     required GameTheme theme,
     LocalPrediction? prediction,
   }) {
     this.theme = theme;
+    final fresh = !identical(snapshot, this.snapshot);
+    // A stale snapshot comes with a stale prediction: ignore both.
+    if (fresh && !_ingest(snapshot)) return;
+    // So does a prediction for a tick already superseded.
+    if (prediction != null && prediction.baseTick < this.snapshot.tick) {
+      prediction = this.prediction;
+    }
+    final predictionChanged = !identical(prediction, this.prediction);
     this.prediction = prediction;
-    if (identical(snapshot, this.snapshot)) return;
+    if (fresh || predictionChanged) _rebuildLocalPath();
+  }
 
-    final previous = this.snapshot;
-    final isNewTick = snapshot.tick != previous.tick;
-
-    if (isNewTick) {
-      // How long this tick actually took to arrive, smoothed so one late
-      // packet does not stretch the whole match.
-      final observed = _elapsedSinceTick * 1000;
-      if (observed > 0) {
-        _observedTickMs = _observedTickMs <= 0
-            ? observed
-            : _observedTickMs * 0.7 + observed * 0.3;
-      }
-      previousSnapshot = previous;
-      _elapsedSinceTick = 0;
+  /// Fold a newly received snapshot in. False when it was ignored.
+  bool _ingest(MatchSnapshot next) {
+    final newest = snapshot;
+    if (next.tick == newest.tick) {
+      // The same tick again (a resume reply racing the broadcast): same
+      // picture, no new timing information.
+      snapshot = next;
+      _playout.push(next);
+      _recordLocalBody(next);
+      return true;
     }
+    if (next.tick < newest.tick - _resetTickGap) {
+      _startMatch(next); // the tick counter restarted: a new match
+      return true;
+    }
+    if (next.tick < newest.tick) return false; // stale; shown past it already
 
-    // Burst wherever the food was eaten, WHOEVER ate it.
-    //
-    // This used to fire only when the local score rose, so an opponent
-    // eating was completely silent: the apple simply vanished from one place
-    // and reappeared somewhere else, which reads as the game losing track of
-    // it rather than as losing the race to it. Against a bot that eats often,
-    // that is most of the match.
+    if (next.tick == newest.tick + 1) {
+      _localClock.onArrival(next.tick, tickMs: next.tickMs);
+      _noteFood(newest, next);
+    } else {
+      // A reconnect skipped ticks: what happened in between is not worth
+      // animating. Take the server's word as it stands.
+      _localClock.onArrival(next.tick, tickMs: next.tickMs, resync: true);
+      _localHistory.clear();
+      _foodEvents.clear();
+      displayedFood = next.food;
+      _localBlend.cancel();
+    }
+    snapshot = next;
+    _playout.push(next);
+    _recordLocalBody(next);
+    return true;
+  }
+
+  void _startMatch(MatchSnapshot first) {
+    snapshot = first;
+    _localClock
+      ..reset()
+      ..onArrival(first.tick, tickMs: first.tickMs);
+    _playout
+      ..reset()
+      ..push(first);
+    _localHistory.clear();
+    _foodEvents.clear();
+    displayedFood = first.food;
+    _localBlend.cancel();
+    _drawnLocalPath = null;
+    _seenResyncs = 0;
+    _recordLocalBody(first);
+  }
+
+  void _recordLocalBody(MatchSnapshot s) {
+    final me = s.playerByUserId(currentUserId);
+    if (me == null || me.body.isEmpty) return;
+    _localHistory[s.tick] = me.body;
+    _localHistory.removeWhere((t, _) => t <= s.tick - _localHistoryTicks);
+  }
+
+  /// The food moved between two consecutive snapshots: someone ate it.
+  void _noteFood(MatchSnapshot before, MatchSnapshot after) {
+    if (before.food == after.food) return;
+    final was = before.playerByUserId(currentUserId)?.score ?? 0;
+    final now = after.playerByUserId(currentUserId)?.score ?? 0;
+    _foodEvents.add(
+      _FoodEvent(
+        tick: after.tick,
+        eatenAt: before.food,
+        food: after.food,
+        mine: now > was,
+      ),
+    );
+  }
+
+  /// The path the local clock walks: confirmed bodies up to the newest
+  /// snapshot, then the predicted steps.
+  void _rebuildLocalPath() {
+    final path = prediction;
     final me = snapshot.playerByUserId(currentUserId);
-    if (isNewTick && previous.food != snapshot.food) {
-      final eatenAt = previous.food;
-      final mine = (me?.score ?? 0) > _lastMyScore;
-      _particles?.emitAt(
-        Offset(
-          eatenAt.x * GameConstants.cellSize + GameConstants.cellSize / 2,
-          eatenAt.y * GameConstants.cellSize + GameConstants.cellSize / 2,
-        ),
-        // The opponent's is smaller and shorter: legible, but never louder
-        // than the player's own pickup.
-        mine
-            ? ParticleConfig.appleFoodExplosion
-            : ParticleConfig.snakeTrail,
-      );
+    if (path == null ||
+        me == null ||
+        !me.alive ||
+        path.baseTick != snapshot.tick) {
+      _localPath = null;
+      return;
     }
-    _lastMyScore = me?.score ?? _lastMyScore;
-
-    this.snapshot = snapshot;
+    final bodies = <int, List<Position>>{snapshot.tick: path.from};
+    var first = snapshot.tick;
+    while (_localHistory.containsKey(first - 1)) {
+      first--;
+      bodies[first] = _localHistory[first]!;
+    }
+    for (var i = 0; i < path.steps.length; i++) {
+      bodies[snapshot.tick + 1 + i] = path.steps[i];
+    }
+    _localPath = _LocalPath(
+      bodies,
+      first: first,
+      last: snapshot.tick + path.steps.length,
+    );
   }
 
   @override
@@ -191,49 +294,157 @@ class MultiplayerFlameGame extends FlameGame {
     super.update(dt);
     _elapsed += dt;
 
-    _elapsedSinceTick += dt;
-
-    // Glide over how long snapshots really take to arrive, floored at the
-    // server's nominal tick so a fast burst cannot make the snakes crawl.
-    final nominalMs = snapshot.tickMs.toDouble();
-    final windowMs = nominalMs <= 0
-        ? 0.0
-        : (_observedTickMs <= 0
-              ? nominalMs
-              : _observedTickMs.clamp(nominalMs, nominalMs * _maxStretch));
-
-    moveProgress = windowMs <= 0
-        ? 1.0
-        : (_elapsedSinceTick * 1000 / windowMs).clamp(0.0, 1.0);
-
+    _playout.advance(dt);
     _updateLocalSnake(dt);
+    _updateRemoteSnakes();
+    _releaseFoodEvents();
   }
 
-  /// Glide the local snake from the confirmed body to the predicted step,
-  /// easing over any change of path.
+  /// Walk the local snake along its path on the local clock, easing over
+  /// any change of path.
   void _updateLocalSnake(double dt) {
-    final path = prediction;
-    final me = snapshot.playerByUserId(currentUserId);
-    if (path == null ||
-        me == null ||
-        !me.alive ||
-        path.baseTick != snapshot.tick) {
+    final path = _localPath;
+    final lead = snapshot.tick + maxLocalLead;
+    final limit = path == null ? lead : math.min(lead, path.last.toDouble());
+
+    // The clock runs even while nothing is predicted, so it is still in
+    // phase with the server when a prediction comes back.
+    final before = _localClock.position;
+    _localClock
+      ..advance(dt, limit: limit)
+      ..clampTo(limit);
+    // The clock moved other than by running: it was pulled back to a path
+    // that got shorter, or an arrival jumped it (a resync).
+    final jumped =
+        _localClock.position < before || _localClock.resyncs != _seenResyncs;
+    _seenResyncs = _localClock.resyncs;
+
+    if (path == null) {
       localCells = null;
       localFacing = null;
-      _localPath = null;
+      _drawnLocalPath = null;
       _localBlend.cancel();
       return;
     }
 
-    final target = glideBody(path.from, path.to, moveProgress);
+    final tick = _localClock.position;
+    final target = path.cellsAt(tick);
+    final drawn = _drawnLocalPath;
     final shown = localCells;
-    if (!identical(path, _localPath) && shown != null) {
-      _localBlend.begin(shown, target);
+    if (drawn != null && shown != null && !identical(drawn, path)) {
+      // Ease from what the old path would have shown right now — or, when
+      // the clock itself jumped, from the last frame.
+      _localBlend.begin(
+        jumped ? shown : _localBlend.apply(drawn.cellsAt(tick), 0),
+        target,
+      );
     }
-    _localPath = path;
+    _drawnLocalPath = path;
     localCells = _localBlend.apply(target, dt);
-    localFacing = path.facing;
+    localFacing = prediction?.facing;
   }
+
+  void _updateRemoteSnakes() {
+    final poses = <int, SnakePose>{};
+    for (final player in snapshot.players) {
+      if (player.userId == currentUserId) continue;
+      final pose = _playout.poseOf(player.playerIndex);
+      if (pose != null) poses[player.playerIndex] = pose;
+    }
+    remotePoses = poses;
+  }
+
+  /// Show every bite whose snapshot the eater's clock has reached.
+  void _releaseFoodEvents() {
+    if (_foodEvents.isEmpty) return;
+    var last = -1;
+    for (var i = 0; i < _foodEvents.length; i++) {
+      if (_isShown(_foodEvents[i])) last = i;
+    }
+    // Bites are shown in order: showing one releases any still waiting
+    // before it.
+    for (var i = 0; i <= last; i++) {
+      _showBite(_foodEvents[i]);
+    }
+    if (last >= 0) _foodEvents.removeRange(0, last + 1);
+  }
+
+  bool _isShown(_FoodEvent bite) {
+    const eps = 1e-6;
+    // Never let a bite wait on a clock that has stopped for good.
+    if (bite.tick <= snapshot.tick - 3) return true;
+    if (bite.mine) {
+      return localCells == null || _localClock.position + eps >= bite.tick;
+    }
+    return _playout.renderTick + eps >= bite.tick;
+  }
+
+  void _showBite(_FoodEvent bite) {
+    displayedFood = bite.food;
+    // Burst wherever the food was eaten, WHOEVER ate it. An opponent eating
+    // silently reads as the game losing track of the apple rather than as
+    // losing the race to it.
+    _particles?.emitAt(
+      Offset(
+        bite.eatenAt.x * GameConstants.cellSize + GameConstants.cellSize / 2,
+        bite.eatenAt.y * GameConstants.cellSize + GameConstants.cellSize / 2,
+      ),
+      // The opponent's is smaller and shorter: legible, but never louder
+      // than the player's own pickup.
+      bite.mine ? ParticleConfig.appleFoodExplosion : ParticleConfig.snakeTrail,
+    );
+    if (bite.mine) onLocalFoodEaten?.call();
+  }
+
+  /// Every snake's pose for the painter, by player index. A player without
+  /// one is drawn exactly as [snapshot] has it.
+  Map<int, SnakePose> get poses {
+    final cells = localCells;
+    final me = snapshot.playerByUserId(currentUserId);
+    if (cells == null || cells.isEmpty || me == null) return remotePoses;
+    return {
+      ...remotePoses,
+      me.playerIndex: SnakePose(
+        cells: cells,
+        facing: localFacing ?? me.direction,
+        alive: true,
+      ),
+    };
+  }
+}
+
+/// The local snake's bodies by tick: confirmed up to the newest snapshot,
+/// predicted after it. Contiguous from [first] to [last].
+class _LocalPath {
+  _LocalPath(this._bodies, {required this.first, required this.last});
+
+  final Map<int, List<Position>> _bodies;
+  final int first;
+  final int last;
+
+  /// The body at a point on the tick axis, glided between whole ticks and
+  /// held at either end.
+  List<Offset> cellsAt(double tick) {
+    if (tick <= first) return glideBody(_bodies[first]!, _bodies[first]!, 0);
+    if (tick >= last) return glideBody(_bodies[last]!, _bodies[last]!, 0);
+    final i = tick.floor();
+    return glideBody(_bodies[i]!, _bodies[i + 1]!, tick - i);
+  }
+}
+
+/// Someone ate the food in the snapshot for [tick].
+class _FoodEvent {
+  const _FoodEvent({
+    required this.tick,
+    required this.eatenAt,
+    required this.food,
+    required this.mine,
+  });
+
+  final int tick;
+  final Position eatenAt;
+  final Position food;
+  final bool mine;
 }
 
 /// Renders the Living Board grid + both snakes + food by driving the
@@ -259,15 +470,13 @@ class _MultiplayerBoardComponent extends Component
     ).paint(canvas, size);
     MultiplayerBoardPainter(
       snapshot: game.snapshot,
-      previousSnapshot: game.previousSnapshot,
       currentUserId: game.currentUserId,
       theme: game.theme,
       pulseAnimation: AlwaysStoppedAnimation<double>(game.pulse),
-      moveProgress: game.moveProgress,
       boardSize: game.boardSize,
       youLabel: game.youLabel,
-      localCells: game.localCells,
-      localFacing: game.localFacing,
+      poses: game.poses,
+      food: game.displayedFood,
     ).paint(canvas, size);
   }
 }

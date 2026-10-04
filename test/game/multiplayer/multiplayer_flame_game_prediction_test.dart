@@ -114,9 +114,12 @@ void main() {
       // ...but eased, not teleported onto the new path.
       expect((after - before).distance, lessThan(.2));
 
+      // With no snapshot coming, it carries on up the predicted path (into
+      // the step after next) rather than stopping on the turned cell.
       run(game, .3);
       expect(game.localCells!.first.dx, closeTo(5.5, 1e-6));
-      expect(game.localCells!.first.dy, closeTo(4.5, 1e-6));
+      expect(game.localCells!.first.dy, lessThan(4.5));
+      expect(game.localCells!.first.dy, greaterThan(3.5));
     },
   );
 
@@ -211,12 +214,13 @@ void main() {
     final firstFrame = game.localCells!.first;
     expect((firstFrame - before).distance, lessThan(.15));
 
-    // The glide window stretches to the observed snapshot spacing (350ms
-    // here), so give it the whole of that to land.
+    // Once the correction has settled the snake is on the server's path:
+    // straight to (6, 5), then up column 6 with the input it still has
+    // pending.
     run(game, .5);
     expect(predictor.mispredictions, 1);
     expect(game.localCells!.first.dx, closeTo(6.5, 1e-6));
-    expect(game.localCells!.first.dy, closeTo(4.5, 1e-6));
+    expect(game.localCells!.first.dy, lessThan(5.5));
   });
 
   test('without a prediction the painter draws the snapshot', () {

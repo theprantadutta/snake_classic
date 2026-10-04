@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/multiplayer/snake_glide.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
+import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -77,12 +79,13 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 
 /// Main painter for all game content - snakes, food, name tags.
 ///
-/// Renders the server-authoritative [MatchSnapshot]. Smooth movement comes
-/// from lerping every segment between [previousSnapshot] and [snapshot] by
-/// [moveProgress] (0..1 across the server's tick_ms window, driven by the
-/// Flame game clock). The one exception is the local snake while it is
-/// predicted: the game hands its cells in as [localCells] (and its gaze as
-/// [localFacing]) and they are drawn as given.
+/// Renders the server-authoritative [MatchSnapshot], but WHERE each snake
+/// is drawn comes from the game's render clocks, handed in as [poses] (cell
+/// centres in grid units, facing, alive), keyed by player index: your own
+/// snake from the prediction, the rival from the playout buffer (see
+/// `MultiplayerFlameGame`). A player without a pose is drawn exactly as the
+/// snapshot has it. [food] is where the food is shown, which trails the
+/// snapshot while the rival's playback has not yet reached the bite.
 ///
 /// Living Board look (render 19): every snake is a run of `cell − 2`
 /// rounded squares with opacity ramping 100% → 45% toward the tail and a
@@ -92,37 +95,30 @@ class MultiplayerGridBackgroundPainter extends CustomPainter {
 /// single-player. Food sits in the gold reward glow.
 class MultiplayerBoardPainter extends CustomPainter {
   final MatchSnapshot snapshot;
-  final MatchSnapshot? previousSnapshot;
   final String currentUserId;
   final GameTheme theme;
   final Animation<double> pulseAnimation;
-  final double moveProgress;
   final int boardSize;
 
   /// Localized label drawn above the local player's snake. The painter has
   /// no BuildContext, so the widget layer threads the translation in.
   final String youLabel;
 
-  /// The local snake's cell centres in grid units (cell (3, 4) centres on
-  /// (3.5, 4.5)), already glided and blended by the game. Null to draw the
-  /// local snake from the snapshots like any other.
-  final List<Offset>? localCells;
+  /// How each snake is drawn this frame, by player index.
+  final Map<int, SnakePose> poses;
 
-  /// Where the predicted local head looks. Answers a swipe on the frame it
-  /// lands, even when the server will not turn the body until later.
-  final Direction? localFacing;
+  /// Where the food is drawn; the snapshot's when null.
+  final Position? food;
 
   MultiplayerBoardPainter({
     required this.snapshot,
-    required this.previousSnapshot,
     required this.currentUserId,
     required this.theme,
     required this.pulseAnimation,
-    required this.moveProgress,
     required this.boardSize,
     this.youLabel = 'You',
-    this.localCells,
-    this.localFacing,
+    this.poses = const {},
+    this.food,
   }) : super(repaint: pulseAnimation);
 
   static const Color _rivalInk = Color(0xFF2A0705);
@@ -143,40 +139,39 @@ class MultiplayerBoardPainter extends CustomPainter {
       ...snapshot.players.where((p) => p.userId == currentUserId),
     ];
 
-    final drawn = <(MatchPlayerState, List<Offset>)>[];
-    final predicted = localCells;
+    final drawn = <(MatchPlayerState, SnakePose)>[];
     for (final player in ordered) {
+      final pose = poses[player.playerIndex];
+      if (pose != null && pose.cells.isNotEmpty) {
+        drawn.add((player, pose));
+        continue;
+      }
       if (player.body.isEmpty) continue;
-      final isPredictedLocal =
-          predicted != null &&
-          predicted.isNotEmpty &&
-          player.alive &&
-          player.userId == currentUserId;
       drawn.add((
         player,
-        isPredictedLocal
-            ? [
-                for (final c in predicted)
-                  Offset(c.dx * cellWidth, c.dy * cellHeight),
-              ]
-            : _interpolatedCenters(
-                player,
-                previousSnapshot?.playerByIndex(player.playerIndex),
-                cellWidth,
-                cellHeight,
-              ),
+        SnakePose(
+          cells: glideBody(player.body, player.body, 0),
+          facing: player.direction,
+          alive: player.alive,
+        ),
       ));
     }
 
-    for (final (player, centers) in drawn) {
-      final isLocal = player.userId == currentUserId;
+    final pixels = [
+      for (final (_, pose) in drawn)
+        [
+          for (final c in pose.cells)
+            Offset(c.dx * cellWidth, c.dy * cellHeight),
+        ],
+    ];
+
+    for (var i = 0; i < drawn.length; i++) {
+      final (player, pose) = drawn[i];
       _drawSnake(
         canvas,
-        centers,
-        isLocal && predicted != null
-            ? (localFacing ?? player.direction)
-            : player.direction,
-        player.alive,
+        pixels[i],
+        pose.facing,
+        pose.alive,
         palette,
         cellWidth,
         cellHeight,
@@ -187,15 +182,16 @@ class MultiplayerBoardPainter extends CustomPainter {
     // Name tags last, placed where no snake is: a tag painted over a body
     // hides the very cells the player is reading.
     final occupied = <Rect>[
-      for (final (_, centers) in drawn)
+      for (final centers in pixels)
         for (final c in centers)
           Rect.fromCenter(center: c, width: cellWidth, height: cellHeight),
     ];
-    for (final (player, centers) in drawn) {
+    for (var i = 0; i < drawn.length; i++) {
+      final (player, _) = drawn[i];
       final isCurrentPlayer = player.userId == currentUserId;
       _drawNameTag(
         canvas,
-        centers.first,
+        pixels[i].first,
         isCurrentPlayer ? youLabel : player.username,
         isCurrentPlayer ? palette.lime : LB.rival,
         cellWidth,
@@ -205,29 +201,8 @@ class MultiplayerBoardPainter extends CustomPainter {
     }
   }
 
-  /// Per-segment cell centers lerped between the previous and current
-  /// tick (see [glideBody]: index-wise slide, growth and teleport-sized
-  /// jumps snap to the current cell). Dead snakes are frozen at their
-  /// final cells.
-  List<Offset> _interpolatedCenters(
-    MatchPlayerState player,
-    MatchPlayerState? previous,
-    double cellWidth,
-    double cellHeight,
-  ) {
-    final body = player.body;
-    final prevBody = previous?.body;
-    final from = (!player.alive || prevBody == null || prevBody.isEmpty)
-        ? body
-        : prevBody;
-    return [
-      for (final c in glideBody(from, body, moveProgress))
-        Offset(c.dx * cellWidth, c.dy * cellHeight),
-    ];
-  }
-
   void _drawFood(Canvas canvas, double cellWidth, double cellHeight) {
-    final foodPos = snapshot.food;
+    final foodPos = food ?? snapshot.food;
     final c = Offset(
       foodPos.x * cellWidth + cellWidth / 2,
       foodPos.y * cellHeight + cellHeight / 2,
@@ -253,7 +228,11 @@ class MultiplayerBoardPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           center: const Alignment(-.35, -.35),
-          colors: [LB.appleHighlight, LB.apple, Color.lerp(LB.apple, Colors.black, .25)!],
+          colors: [
+            LB.appleHighlight,
+            LB.apple,
+            Color.lerp(LB.apple, Colors.black, .25)!,
+          ],
           stops: const [0.0, .45, 1.0],
         ).createShader(Rect.fromCircle(center: c, radius: radius)),
     );
@@ -276,7 +255,8 @@ class MultiplayerBoardPainter extends CustomPainter {
     // cell − 2 at the 20-unit reference cell, same as the single-player
     // Living Board snake.
     final side = cell * .9;
-    Rect rectAt(Offset c) => Rect.fromCenter(center: c, width: side, height: side);
+    Rect rectAt(Offset c) =>
+        Rect.fromCenter(center: c, width: side, height: side);
 
     var bodyColor = isCurrentPlayer ? palette.lime : LB.rival;
     var headColor = isCurrentPlayer ? palette.head : LB.rivalHead;
@@ -291,13 +271,19 @@ class MultiplayerBoardPainter extends CustomPainter {
     for (var i = n - 1; i >= 1; i--) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
       bodyPaint.color = bodyColor.withValues(alpha: 1 - .55 * t);
-      canvas.drawRRect(RRect.fromRectAndRadius(rectAt(centers[i]), bodyRadius), bodyPaint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rectAt(centers[i]), bodyRadius),
+        bodyPaint,
+      );
     }
 
     final head = rectAt(centers.first);
     if (isAlive) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(head.inflate(cell * .12), Radius.circular(cell * .3)),
+        RRect.fromRectAndRadius(
+          head.inflate(cell * .12),
+          Radius.circular(cell * .3),
+        ),
         Paint()
           ..color = headColor.withValues(alpha: .45)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, cell * .3),
@@ -332,7 +318,6 @@ class MultiplayerBoardPainter extends CustomPainter {
       canvas.drawCircle(a, eyeR, ink);
       canvas.drawCircle(b, eyeR, ink);
     }
-
   }
 
   /// The snake's name: small uppercase mono in the snake's colour, no
@@ -374,9 +359,9 @@ class MultiplayerBoardPainter extends CustomPainter {
 
     // Clamped inside the board so edge/corner snakes keep readable labels.
     Offset clampIn(Offset o) => Offset(
-          o.dx.clamp(2.0, math.max(2.0, board - w - 2.0)).toDouble(),
-          o.dy.clamp(2.0, math.max(2.0, board - h - 2.0)).toDouble(),
-        );
+      o.dx.clamp(2.0, math.max(2.0, board - w - 2.0)).toDouble(),
+      o.dy.clamp(2.0, math.max(2.0, board - h - 2.0)).toDouble(),
+    );
 
     final candidates = [
       Offset(head.dx - w / 2, head.dy - cellHeight / 2 - gap - h),
@@ -399,10 +384,8 @@ class MultiplayerBoardPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant MultiplayerBoardPainter oldDelegate) {
     return oldDelegate.snapshot != snapshot ||
-        oldDelegate.previousSnapshot != previousSnapshot ||
-        oldDelegate.moveProgress != moveProgress ||
-        oldDelegate.localCells != localCells ||
-        oldDelegate.localFacing != localFacing ||
+        oldDelegate.poses != poses ||
+        oldDelegate.food != food ||
         oldDelegate.theme != theme ||
         oldDelegate.currentUserId != currentUserId;
   }
