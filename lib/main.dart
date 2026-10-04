@@ -75,6 +75,25 @@ bool _dependenciesReady = false;
 /// genuinely stuck, not merely slow.
 const Duration _bootstrapBudget = Duration(seconds: 25);
 
+/// The bootstrap that is running, or that already succeeded.
+///
+/// [_bootstrapBudget]'s timeout abandons the wait, not the work: a run that
+/// blew the budget keeps going in the background. The recovery screen's Try
+/// again used to start a SECOND run alongside it, and the two raced into
+/// configureDependencies — get_it threw "already registered" and the retry
+/// could never succeed (Sentry SNAKE-CLASSIC-FLUTTER-H, behind the 25 s
+/// startup timeouts in SNAKE-CLASSIC-FLUTTER-B). So every caller goes through
+/// [_bootstrapOnce]: a retry joins the run still in flight, reuses one that
+/// finished, and only starts over after a run actually failed.
+Future<void>? _bootstrapRun;
+
+Future<void> _bootstrapOnce() {
+  return _bootstrapRun ??= _bootstrap().catchError((Object e, StackTrace s) {
+    _bootstrapRun = null;
+    Error.throwWithStackTrace(e, s);
+  });
+}
+
 void main() async {
   // Ensure Flutter is initialized and preserve splash screen
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +143,7 @@ Future<void> _startApp() async {
   // Hence: the bootstrap is bounded by a timeout, every failure is caught,
   // and the app starts regardless of which of those happened.
   try {
-    await _bootstrap().timeout(_bootstrapBudget);
+    await _bootstrapOnce().timeout(_bootstrapBudget);
     _initSucceeded = true;
     AppLogger.success('Snake Classic ready to launch!');
   } on TimeoutException catch (error, stackTrace) {
@@ -268,7 +287,15 @@ Future<void> _bootstrap() async {
     // get_it throws on re-registering an existing singleton.
     if (!_dependenciesReady) {
       AppLogger.info('Configuring dependencies...');
-      await configureDependencies();
+      try {
+        await configureDependencies();
+      } catch (_) {
+        // A half-finished registration would make the retry's
+        // configureDependencies throw "already registered" before it got
+        // as far as the step that actually failed. Start it from empty.
+        await _resetDependencies();
+        rethrow;
+      }
       _dependenciesReady = true;
       AppLogger.success('Dependencies configured');
     } else {
@@ -428,6 +455,17 @@ Future<void> _bootstrap() async {
   }
 }
 
+/// Undoes a [configureDependencies] that threw partway, so the next attempt
+/// can register everything again. The database is closed first: get_it has
+/// no dispose hook for it, and the retry opens a fresh connection to the
+/// same file.
+Future<void> _resetDependencies() async {
+  try {
+    if (getIt.isRegistered<AppDatabase>()) await getIt<AppDatabase>().close();
+  } catch (_) {}
+  await getIt.reset();
+}
+
 /// Local, console-side presentation of framework errors.
 ///
 /// This is NOT the reporting path any more. Sentry's FlutterErrorIntegration
@@ -481,7 +519,7 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
   Future<void> _retry() async {
     setState(() => _retrying = true);
     try {
-      await _bootstrap().timeout(_bootstrapBudget);
+      await _bootstrapOnce().timeout(_bootstrapBudget);
       _initSucceeded = true;
       AppLogger.success('Startup retry succeeded — starting the app');
       // Swap the whole tree for the real app. runApp on an already-running

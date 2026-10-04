@@ -161,7 +161,21 @@ void configureSentryOptions(SentryFlutterOptions options) {
   //
   // Set sessionSampleRate back above zero if the plan changes, or
   // temporarily when chasing something that only reproduces mid-session.
-  options.replay.onErrorSampleRate = 1.0;
+  //
+  // OFF on Android. With replay enabled, sentry_flutter registers JNI
+  // callbacks (ReplayRecorderCallbacks) that the Android SDK fires from its
+  // SentryExecutorServiceThreadFactory thread. After the activity is
+  // destroyed that thread still calls into a Dart isolate that is gone, and
+  // the VM aborts in DLRT_GetFfiCallbackMetadata — SNAKE-CLASSIC-FLUTTER-3
+  // and -4, the top native crashes since Sentry went in (2026-09-19), ~25
+  // users in two weeks, all on that thread, all just after backgrounding.
+  // Releasing SoLoud in the background (6.7.0) did not move them. The
+  // callbacks are only registered when replay is enabled, so with both
+  // rates at zero none exist. Stack traces, breadcrumbs, screenshots and the
+  // view hierarchy are unaffected; Android loses the error-session video.
+  // Revisit when a sentry_flutter release fixes callback teardown.
+  final replayOn = defaultTargetPlatform != TargetPlatform.android;
+  options.replay.onErrorSampleRate = replayOn ? 1.0 : 0.0;
   options.replay.sessionSampleRate = 0.0;
 
   // Mask everything by default: usernames, friend lists, leaderboard entries
