@@ -52,13 +52,36 @@ CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
         scale: Tween<double>(begin: 0.92, end: 1.0).animate(
           CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
         ),
+        // The page fades over a few frames at the start of the zoom (and the
+        // end of the zoom out) instead of all 300 ms. While its opacity is
+        // below 1 the whole page — glows and all — is rendered offscreen
+        // every frame, and on the A24's GPU (already drawing two full
+        // screens during a transition) that pushed half of all screen-open
+        // frames past the 11 ms budget at 90 Hz (Ranks: 85%). Profiled with
+        // the fades interleaved in one build: 51% of opening frames over
+        // budget with the long fade, 18% with this one, 19% with no fade.
         child: FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: const _QuickFade(),
+            reverseCurve: const _QuickFade(),
+          ),
           child: child,
         ),
       );
     },
   );
+}
+
+/// Opacity for [_zoomPage]: the old ease-out, finished at 30% of it. The
+/// same curve runs backwards on close, so the page stays opaque until the
+/// last few frames.
+class _QuickFade extends Curve {
+  const _QuickFade();
+
+  @override
+  double transformInternal(double t) => const Interval(0, .3, curve: Curves.easeOut)
+      .transform(Curves.easeOut.transform(t));
 }
 
 /// Scale page transition (dramatic reveal for game screen)

@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 
 /// A grid cell on the home board, in whole cells from the board origin.
@@ -24,9 +25,13 @@ class HomeSnakeTarget {
 /// id. Tapping the blocks is unaffected — this is a second way in, never the
 /// only one.
 ///
-/// Driven by a [Ticker], so it stops whenever Home is covered by another
-/// route (TickerMode) and costs nothing off-screen. With "reduce motion" on,
-/// the snake rests on the loop without moving.
+/// Stepped by a timer, not a per-frame ticker: the snake only changes every
+/// [_idleStep], and a [Ticker] asked for a frame on every vsync regardless —
+/// profiled on the A24, Home rendered (and the GPU redrew the whole screen)
+/// 90 times a second to show 7 moves. Now a frame is only produced when the
+/// snake moves. It still follows [TickerMode], so it stops whenever Home is
+/// covered by another route and costs nothing off-screen. With "reduce
+/// motion" on, the snake rests on the loop without moving.
 class LBHomeSnake extends StatefulWidget {
   const LBHomeSnake({
     super.key,
@@ -53,12 +58,15 @@ class LBHomeSnake extends StatefulWidget {
   LBHomeSnakeState createState() => LBHomeSnakeState();
 }
 
-class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderStateMixin {
+class LBHomeSnakeState extends State<LBHomeSnake> {
   static const int _length = 11;
   static const Duration _idleStep = Duration(milliseconds: 150);
   static const Duration _steerStep = Duration(milliseconds: 55);
 
-  late final Ticker _ticker = createTicker(_onTick);
+  /// The next step, while Home is visible and animations are allowed.
+  Timer? _timer;
+  ValueListenable<TickerModeData>? _tickerMode;
+  final _clock = Stopwatch()..start();
   final _repaint = ValueNotifier<int>(0);
   final _rng = math.Random();
 
@@ -72,15 +80,46 @@ class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderState
   AxisDirection? _steer;
   int _freeSteps = 0;
   AxisDirection _heading = AxisDirection.right;
-  Duration _last = Duration.zero;
   Duration _eatFlashUntil = Duration.zero;
-  Duration _now = Duration.zero;
+  Duration get _now => _clock.elapsed;
 
   @override
   void initState() {
     super.initState();
     _resetToLoop();
-    _ticker.start();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final mode = TickerMode.getValuesNotifier(context);
+    if (!identical(mode, _tickerMode)) {
+      _tickerMode?.removeListener(_syncTimer);
+      _tickerMode = mode..addListener(_syncTimer);
+    }
+    // Also re-runs when "reduce motion" changes (a MediaQuery dependency).
+    _syncTimer();
+  }
+
+  bool get _shouldRun =>
+      _body.isNotEmpty &&
+      (_tickerMode?.value.enabled ?? true) &&
+      !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+
+  /// Starts stepping when Home is visible, stops when it is not.
+  void _syncTimer() {
+    if (!mounted) return;
+    if (!_shouldRun) {
+      _timer?.cancel();
+      _timer = null;
+    } else if (_timer == null) {
+      _schedule();
+    }
+  }
+
+  void _schedule() {
+    _timer?.cancel();
+    _timer = Timer(_steer != null ? _steerStep : _idleStep, _step);
   }
 
   @override
@@ -96,7 +135,8 @@ class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderState
 
   @override
   void dispose() {
-    _ticker.dispose();
+    _timer?.cancel();
+    _tickerMode?.removeListener(_syncTimer);
     _repaint.dispose();
     super.dispose();
   }
@@ -114,6 +154,7 @@ class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderState
     _body = [for (var i = 0; i < _length; i++) loop[(_loopIndex - i) % loop.length]];
     _placeApple();
     _repaint.value++;
+    if (mounted) _syncTimer();
   }
 
   void _placeApple() {
@@ -129,7 +170,8 @@ class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderState
     if (_isOpposite(d, _heading)) return;
     _steer = d;
     _freeSteps = 0;
-    _last = Duration.zero; // move on the very next frame
+    // Move right away, then at the steering pace.
+    if (_shouldRun) _step();
   }
 
   static bool _isOpposite(AxisDirection a, AxisDirection b) =>
@@ -138,20 +180,16 @@ class LBHomeSnakeState extends State<LBHomeSnake> with SingleTickerProviderState
       (a == AxisDirection.up && b == AxisDirection.down) ||
       (a == AxisDirection.down && b == AxisDirection.up);
 
-  void _onTick(Duration elapsed) {
-    _now = elapsed;
-    if (_body.isEmpty) return;
-    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return;
-    final step = _steer != null ? _steerStep : _idleStep;
-    if (_last != Duration.zero && elapsed - _last < step) return;
-    _last = elapsed;
-
+  void _step() {
+    _timer = null;
+    if (!mounted || !_shouldRun) return;
     if (_steer != null) {
       _stepFree();
     } else {
       _stepLoop();
     }
     _repaint.value++;
+    if (_timer == null && _shouldRun) _schedule();
   }
 
   void _stepLoop() {
