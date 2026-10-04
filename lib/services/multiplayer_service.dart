@@ -301,17 +301,27 @@ class MultiplayerService {
     }
   }
 
-  /// Per-turn hot path: queue a direction on the server engine. Fire and
-  /// forget — the server never replies on success and silently drops
-  /// invalid inputs, so there is nothing to await for the UI.
-  Future<void> sendInput(Direction direction) async {
+  /// Per-turn hot path: queue a direction on the server engine. Nothing in
+  /// the UI waits on this — the server silently drops invalid inputs and the
+  /// snapshot stream is the only thing that says what happened.
+  ///
+  /// It is an invocation rather than a one-way send so the hub's completion
+  /// times the round trip, which the client needs to know which server tick
+  /// an input can still reach (see LocalSnakePredictor.etaFor). The server
+  /// method is unchanged and returns at once, so the completion costs one
+  /// tiny frame and works against every server version. Resolves to the
+  /// measured round trip, or null when nothing was measured.
+  Future<Duration?> sendInput(Direction direction) async {
     final roomCode = _currentRoomCode;
     final hub = _liveHub;
-    if (roomCode == null || hub == null) return;
+    if (roomCode == null || hub == null) return null;
+    final clock = Stopwatch()..start();
     try {
-      await hub.send('SendInput', args: [roomCode, direction.name]);
+      await hub.invoke('SendInput', args: [roomCode, direction.name]);
+      return clock.elapsed;
     } catch (e) {
       AppLogger.error('Error sending input', e);
+      return null;
     }
   }
 

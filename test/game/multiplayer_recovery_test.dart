@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/models/position.dart';
@@ -107,10 +108,12 @@ void main() {
       }
     });
 
-    test('a snapshot also expires the local input echo and the refusal cue', () {
-      // Both are per-tick truths. The committed direction in the snapshot is
-      // the new reversal reference, and a refusal from before the blip has
-      // nothing left to say.
+    test('a snapshot replaces the input echo with what is still in flight, '
+        'and clears the refusal cue', () {
+      // The echo is the predictor's newest unapplied input after reconciling
+      // this snapshot: null once everything has applied, the pending turn
+      // while it is still on its way. A refusal from before the tick has
+      // nothing left to say either way.
       final stale = MultiplayerState(
         status: MultiplayerStatus.playing,
         snapshot: snapshotAt(10),
@@ -120,15 +123,44 @@ void main() {
         lastRejectedDirection: Direction.left,
       );
 
-      final recovered = MultiplayerRecovery.afterSnapshot(
+      final applied = MultiplayerRecovery.afterSnapshot(
         stale,
         snapshot: snapshotAt(11),
         boardSize: 20,
       );
+      expect(applied.intentDirection, isNull);
+      expect(applied.localPrediction, isNull);
+      expect(applied.lastRejectedInputAt, isNull);
+      expect(applied.lastRejectedDirection, isNull);
 
-      expect(recovered.intentDirection, isNull);
-      expect(recovered.lastRejectedInputAt, isNull);
-      expect(recovered.lastRejectedDirection, isNull);
+      final inFlight = MultiplayerRecovery.afterSnapshot(
+        stale,
+        snapshot: snapshotAt(11),
+        boardSize: 20,
+        intentDirection: Direction.up,
+      );
+      expect(inFlight.intentDirection, Direction.up);
+      expect(inFlight.lastRejectedInputAt, isNull);
+    });
+
+    test('the predicted local snake rides along with the snapshot', () {
+      final predictor = LocalSnakePredictor();
+      final snapshot = snapshotAt(11);
+      predictor.onSnapshot(
+        snapshot,
+        userId: me,
+        boardSize: 20,
+        receivedAt: Duration.zero,
+      );
+
+      final recovered = MultiplayerRecovery.afterSnapshot(
+        afterBlip(),
+        snapshot: snapshot,
+        boardSize: 20,
+        localPrediction: predictor.prediction,
+      );
+      expect(recovered.localPrediction, same(predictor.prediction));
+      expect(recovered.localPrediction!.baseTick, 11);
     });
   });
 

@@ -1,6 +1,8 @@
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_state.dart';
+import 'package:snake_classic/utils/direction.dart';
 
 /// What the server telling us the match is alive does to a stale error.
 ///
@@ -26,21 +28,34 @@ class MultiplayerRecovery {
   ///
   /// A snapshot is the strongest proof there is — the server is simulating
   /// this match and just sent us a frame of it. Alongside clearing the stale
-  /// error it expires the local input echo: each tick commits at most one
-  /// input, so the committed direction in the snapshot is now the reversal
-  /// reference, and a dropped input must not leave an intent behind that
-  /// blocks its opposite forever.
+  /// error it replaces the local input echo with [intentDirection]: the
+  /// newest input the predictor still has in flight after reconciling this
+  /// snapshot, or null when every input has applied.
+  ///
+  /// The echo used to be cleared outright on every snapshot. At a ~190ms
+  /// round trip an input is usually still in flight when the next snapshot
+  /// lands, so the reversal reference fell back to a heading the snake was
+  /// about to leave: the second half of a quick corner was refused, while a
+  /// reversal of the pending turn was sent and silently dropped. The
+  /// predictor keeps the guarantee that motivated the reset — an input the
+  /// server never applies expires after a few ticks, so it cannot block its
+  /// opposite forever.
   static MultiplayerState afterSnapshot(
     MultiplayerState current, {
     required MatchSnapshot snapshot,
     required int boardSize,
+    Direction? intentDirection,
+    LocalPrediction? localPrediction,
   }) {
     return current.copyWith(
       status: MultiplayerStatus.playing,
       snapshot: snapshot,
       boardSize: boardSize,
       isLoading: false,
-      clearIntentDirection: true,
+      intentDirection: intentDirection,
+      clearIntentDirection: intentDirection == null,
+      localPrediction: localPrediction,
+      clearLocalPrediction: localPrediction == null,
       clearRejectedInput: true,
       clearError: true,
     );

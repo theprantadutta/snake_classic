@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
@@ -20,6 +21,7 @@ import 'multiplayer_input_feedback.dart';
 import 'multiplayer_recovery.dart';
 import 'multiplayer_steering.dart';
 import 'multiplayer_state.dart';
+
 import 'package:snake_classic/services/connectivity_service.dart';
 import 'package:snake_classic/services/multiplayer/matchmaking_watch.dart';
 
@@ -30,9 +32,12 @@ export 'multiplayer_state.dart';
 /// The match itself is server-authoritative: this cubit forwards
 /// direction inputs ([changeDirection] → SendInput) and holds the latest
 /// engine snapshot in [MultiplayerState.snapshot] for the board to
-/// render. It runs no simulation, detects no collisions, and never
-/// self-awards score — the only local judgement calls are cosmetic
-/// (eat/crash sounds derived from snapshot diffs).
+/// render. It detects no collisions and never self-awards score — the
+/// only local judgement calls are cosmetic: eat/crash sounds derived
+/// from snapshot diffs, and [MultiplayerState.localPrediction], which
+/// draws the local snake one predicted step ahead of the snapshot so a
+/// turn shows without waiting a round trip (see [LocalSnakePredictor]).
+/// The prediction never feeds back into score, food or outcome.
 class MultiplayerCubit extends Cubit<MultiplayerState> {
   final MultiplayerService _multiplayerService;
   final UnifiedUserService _userService;
@@ -71,6 +76,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Clears the refused-input cue. Restarted by each refusal.
   Timer? _rejectedInputClearTimer;
+
+  /// Draws the local snake one step ahead of the server. Reset whenever a
+  /// match starts or ends.
+  final LocalSnakePredictor _predictor = LocalSnakePredictor();
+
+  /// Monotonic time base for the predictor: when snapshots arrived and when
+  /// inputs left. Only differences are ever used.
+  final Stopwatch _predictionClock = Stopwatch()..start();
 
   /// The only place a steering input produces a haptic.
   late final MultiplayerInputFeedback _feedback = MultiplayerInputFeedback(
@@ -432,6 +445,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       await _multiplayerService.leaveGame();
       _stopListening();
       _matchActive = false;
+      _predictor.reset();
       _matchTimer.stop();
       emit(
         state.copyWith(
@@ -505,10 +519,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Accepted means accepted LOCALLY. The input passed the client's rules and
   /// went to the server; waiting for acknowledgement before acknowledging the
   /// player would make the controls feel broken on any real connection.
-  /// Where a relative turn would send my snake. Measured from the intent
-  /// already sent this tick when there is one, else from the heading the
+  /// Where a relative turn would send my snake. Measured from the newest
+  /// input still in flight when there is one, else from the heading the
   /// server last showed — so two quick presses compose into a corner
-  ///here too. Null when there is nothing to steer.
+  /// here too. Null when there is nothing to steer.
   Direction? relativeTarget(RelativeTurn turn) {
     final snapshot = state.snapshot;
     if (snapshot == null) return null;
@@ -528,7 +542,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     final result = MultiplayerSteering.resolve(
       canSteerNow: steerable,
       requested: direction,
-      intent: state.intentDirection,
+      intent: _predictor.lastPendingDirection,
       committed: me?.direction ?? Direction.right,
     );
     switch (result) {
@@ -541,9 +555,22 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         return result;
       case InputResult.accepted:
         _feedback.play(result);
-        unawaited(_multiplayerService.sendInput(direction));
+        _predictor.recordInput(direction, sentAt: _predictionClock.elapsed);
+        unawaited(
+          _multiplayerService.sendInput(direction).then((roundTrip) {
+            if (roundTrip != null) _predictor.recordRoundTrip(roundTrip);
+          }),
+        );
+        // The predicted snake answers on this frame: its head looks the new
+        // way at once, and the body bends now if the input can reach the
+        // server's next tick, or from the next snapshot if it cannot.
         emit(
-          state.copyWith(intentDirection: direction, clearRejectedInput: true),
+          state.copyWith(
+            intentDirection: direction,
+            localPrediction: _predictor.prediction,
+            clearLocalPrediction: _predictor.prediction == null,
+            clearRejectedInput: true,
+          ),
         );
         return result;
     }
@@ -914,6 +941,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   void _giveUpOnMatch(MultiplayerError code) {
     _cancelReconnectTimeout();
     _matchActive = false;
+    _predictor.reset();
     if (_matchTimer.isRunning) _matchTimer.stop();
     emit(
       state.copyWith(
@@ -1213,15 +1241,29 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _matchActive = true;
       _lastMyScore = 0;
       _myAliveLastTick = true;
+      _predictor.reset();
       _matchTimer
         ..reset()
         ..start();
     }
 
+    final currentUserId = _userService.currentUser?.uid;
+
+    // Reconcile the local prediction first. An OLDER tick than the one
+    // already shown (a reply racing the broadcast) is dropped outright:
+    // drawing it would run both snakes backwards for a frame, and folding
+    // its lower score in would replay the eat chirp on the next tick.
+    final fit = _predictor.onSnapshot(
+      snapshot,
+      userId: currentUserId ?? '',
+      boardSize: _multiplayerService.boardSize,
+      receivedAt: _predictionClock.elapsed,
+    );
+    if (fit == SnapshotFit.stale) return;
+
     // Cosmetic snapshot-diff feedback: eat chirp on my score rising,
     // crash feedback the tick my snake dies. Purely presentational —
     // the server already settled the outcome.
-    final currentUserId = _userService.currentUser?.uid;
     final me = currentUserId != null
         ? snapshot.playerByUserId(currentUserId)
         : null;
@@ -1238,18 +1280,30 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _myAliveLastTick = me.alive;
     }
 
-    // A snapshot settles any pending reconnect and expires the local
-    // input echo: each tick commits at most one input, so the committed
-    // direction is the fresh reversal reference. Without this, an input
-    // the server dropped left a stale intent that blocked its opposite
-    // forever.
+    // A snapshot settles any pending reconnect and swaps the local input
+    // echo for whatever the predictor still has in flight after this tick.
     _cancelReconnectTimeout();
     emit(
       MultiplayerRecovery.afterSnapshot(
         state,
         snapshot: snapshot,
         boardSize: _multiplayerService.boardSize,
+        intentDirection: _predictor.lastPendingDirection,
+        localPrediction: _predictor.prediction,
       ),
+    );
+  }
+
+  /// One line per match on how often the predicted step matched the
+  /// server's. Mispredictions are expected now and then (an input that
+  /// reached the server a tick later or earlier than estimated); a high
+  /// rate means the arrival estimate is off for this connection.
+  void _logPredictionAccuracy() {
+    final checked = _predictor.predictionsChecked;
+    if (checked == 0) return;
+    AppLogger.game(
+      'Local prediction: ${_predictor.mispredictions}/$checked steps '
+      'corrected, round trip ~${_predictor.roundTrip.inMilliseconds}ms',
     );
   }
 
@@ -1291,7 +1345,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // here is a delay rather than a loss.
     unawaited(_settlementService.syncPending());
 
+    _logPredictionAccuracy();
     _matchActive = false;
+    _predictor.reset();
     _settlingGameId = _multiplayerService.currentGameId;
     emit(
       state.copyWith(

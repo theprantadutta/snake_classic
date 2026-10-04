@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/models/multiplayer_error.dart';
@@ -65,9 +66,16 @@ class MultiplayerState extends Equatable {
   /// What the server actually awarded, once applied.
   final MultiplayerSettlement? settlement;
 
-  /// Local input echo: the direction we last sent to the server, shown
-  /// on the swipe indicator until a snapshot confirms (or overrides) it.
+  /// Local input echo: the newest direction sent to the server and not yet
+  /// seen applied in a snapshot. Null once every sent input has applied (or
+  /// been given up on). This is the heading a new input's repeat/reversal
+  /// check is measured against.
   final Direction? intentDirection;
+
+  /// The local snake as the board should draw it — the authoritative body
+  /// plus one predicted step (see LocalSnakePredictor). Purely visual; null
+  /// when there is nothing to predict, and the board then draws the snapshot.
+  final LocalPrediction? localPrediction;
 
   /// When the last locally refused input happened, and which way it went.
   ///
@@ -143,6 +151,7 @@ class MultiplayerState extends Equatable {
     this.matchEnd,
     this.boardSize = 20,
     this.intentDirection,
+    this.localPrediction,
     this.lastRejectedInputAt,
     this.lastRejectedDirection,
     this.countdownSeconds = 3,
@@ -179,6 +188,8 @@ class MultiplayerState extends Equatable {
     MultiplayerSettlement? settlement,
     Direction? intentDirection,
     bool clearIntentDirection = false,
+    LocalPrediction? localPrediction,
+    bool clearLocalPrediction = false,
     DateTime? lastRejectedInputAt,
     Direction? lastRejectedDirection,
     bool clearRejectedInput = false,
@@ -212,6 +223,9 @@ class MultiplayerState extends Equatable {
       intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
+      localPrediction: (clearMatch || clearGame || clearLocalPrediction)
+          ? null
+          : (localPrediction ?? this.localPrediction),
       lastRejectedInputAt: (clearMatch || clearGame || clearRejectedInput)
           ? null
           : (lastRejectedInputAt ?? this.lastRejectedInputAt),
@@ -304,6 +318,7 @@ class MultiplayerState extends Equatable {
     settlement,
     boardSize,
     intentDirection,
+    localPrediction,
     lastRejectedInputAt,
     lastRejectedDirection,
     countdownSeconds,

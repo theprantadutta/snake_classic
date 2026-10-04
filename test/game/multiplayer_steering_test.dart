@@ -147,6 +147,13 @@ void main() {
       );
     });
 
+    test('a repeat of the committed heading is rejected when nothing is '
+        'pending', () {
+      // The server stops draining its queue at a repeat, so sending one ahead
+      // of a real turn would delay that turn by a tick.
+      expect(resolve(Direction.right), InputResult.rejected);
+    });
+
     test('a reversal into your own neck is rejected', () {
       expect(resolve(Direction.left), InputResult.rejected);
     });
