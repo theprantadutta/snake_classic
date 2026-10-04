@@ -6,7 +6,8 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.0.0+60**, the Living Board redesign.
+Connect. Written for **7.1.0+61**, the Living Board redesign (7.0.0+60 was built but
+superseded before release, so these notes carry over unchanged).
 
 Scope: what a player notices against 6.7.0. Deliberately absent: the
 design-metrics telemetry, the "How's the game feeling?" prompt (it explains
