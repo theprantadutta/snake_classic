@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/lb/lb_glow_cache.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_feedback.dart';
 
@@ -218,11 +219,14 @@ class _BlockPainter extends CustomPainter {
       case LBBlockKind.fill:
       case LBBlockKind.goldFill:
         final base = kind == LBBlockKind.fill ? (accent ?? p.lime) : LB.gold;
-        canvas.drawRRect(
-          rr,
-          Paint()
-            ..color = base.withValues(alpha: .38)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 15),
+        // Cached: a fresh 15-sigma blur every frame was one of the largest
+        // raster costs on Living Board screens (see LBGlowCache).
+        LBGlowCache.drawRRectGlow(
+          canvas,
+          rrect: rr,
+          color: base.withValues(alpha: .38),
+          sigma: 15,
+          style: BlurStyle.outer,
         );
         canvas.drawRRect(rr, Paint()..color = base);
         _gridLines(canvas, rr, const Color(0x21000000));

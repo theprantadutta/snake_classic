@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/lb/lb_glow_cache.dart';
 import 'package:snake_classic/design/lb_glyphs.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 
@@ -175,12 +176,28 @@ class _CellTextPainter extends CustomPainter {
       canvas.drawPath(dim, Paint()..color = color.withValues(alpha: .18));
     }
     if (glow) {
-      canvas.drawPath(
-        lit,
-        Paint()
-          ..color = color.withValues(alpha: .5)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, (cell * .9).clamp(2, 14)),
-      );
+      final glowColor = color.withValues(alpha: .5);
+      final sigma = (cell * .9).clamp(2, 14).toDouble();
+      if (litCols >= layout.columns) {
+        // Fully lit (the resting state): the glow never changes, so it is
+        // drawn from a cached image instead of a fresh blur every frame.
+        LBGlowCache.drawPathGlow(
+          canvas,
+          key: (layout, cell, glowColor, sigma),
+          path: lit,
+          color: glowColor,
+          sigma: sigma,
+        );
+      } else {
+        // Mid re-light animation: a new shape every frame, so caching it
+        // would only fill the cache.
+        canvas.drawPath(
+          lit,
+          Paint()
+            ..color = glowColor
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, sigma),
+        );
+      }
     }
     canvas.drawPath(lit, Paint()..color = color);
   }

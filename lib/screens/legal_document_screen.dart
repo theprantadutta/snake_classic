@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:snake_classic/widgets/lb/lb_markdown.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
@@ -70,7 +71,6 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final p = context.lb;
     final l10n = AppLocalizations.of(context)!;
     final g = context.lbGutter;
     final content = _loadFailed
@@ -101,13 +101,7 @@ class _LegalDocumentScreenState extends State<LegalDocumentScreen> with SingleTi
                     ),
                   ),
                 )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    content,
-                    style: LBText.body(p, color: p.ink.withValues(alpha: .88), size: 12.5).copyWith(height: 1.5),
-                  ),
-                ),
+              : LBMarkdown(data: content, size: 12.5, padding: const EdgeInsets.all(16)),
         ),
       ),
     );

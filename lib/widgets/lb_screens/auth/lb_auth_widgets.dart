@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snake_classic/widgets/lb/lb_markdown.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Living Board pieces shared by the account screens (first-time sign-in,
@@ -374,13 +375,7 @@ class _LBLegalTabsState extends State<LBLegalTabs> with SingleTickerProviderStat
     super.dispose();
   }
 
-  Widget _doc(String content) {
-    final p = context.lb;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
-      child: Text(content, style: LBText.body(p, color: p.ink.withValues(alpha: .85), size: 12)),
-    );
-  }
+  Widget _doc(String content) => LBMarkdown(data: content);
 
   @override
   Widget build(BuildContext context) {

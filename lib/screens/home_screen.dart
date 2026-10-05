@@ -1468,12 +1468,19 @@ class _HomeAvatar extends StatelessWidget {
                   ),
                   // The level tab hangs off the bottom edge, like the old
                   // avatar's badge.
+                  //
+                  // Allowed to overhang the avatar's sides, and never wraps:
+                  // boxed to the avatar it wrapped "LV 11" at the space on a
+                  // ~40 dp avatar (Realme RMX3771), so every player from level
+                  // 10 up saw a bare "LV". Scales down past the overhang.
                   Positioned(
-                    left: 0,
-                    right: 0,
+                    left: -10,
+                    right: -10,
                     bottom: -7,
                     child: Center(
-                      child: DecoratedBox(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: LB.gold,
                           borderRadius: BorderRadius.circular(4),
@@ -1484,6 +1491,7 @@ class _HomeAvatar extends StatelessWidget {
                             child: Text(
                               level,
                               maxLines: 1,
+                              softWrap: false,
                               style: LBText.label(p, color: p.board).copyWith(
                                 fontSize: 8.5,
                                 letterSpacing: 1,
@@ -1491,6 +1499,7 @@ class _HomeAvatar extends StatelessWidget {
                               ),
                             ),
                           ),
+                        ),
                         ),
                       ),
                     ),
