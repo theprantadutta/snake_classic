@@ -693,13 +693,21 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.show(
-      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      title: title,
-      body: body,
-      notificationDetails: details,
-      payload: payload,
-    );
+    try {
+      await _localNotifications.show(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload,
+      );
+    } on PlatformException catch (e) {
+      // iOS refuses to post when the player has turned notifications off
+      // (UNErrorDomain 2003, "Source is not authorized"). That is their
+      // choice, not a failure: skip the banner quietly instead of throwing
+      // out of whatever triggered it (Sentry SNAKE-CLASSIC-FLUTTER-P).
+      AppLogger.warning('Local notification not shown: ${e.message}');
+    }
   }
 
   // Topic subscription methods

@@ -154,7 +154,11 @@ class LBHomeSnakeState extends State<LBHomeSnake> {
     _body = [for (var i = 0; i < _length; i++) loop[(_loopIndex - i) % loop.length]];
     _placeApple();
     _repaint.value++;
-    if (mounted) _syncTimer();
+    // Not from initState: _syncTimer reads MediaQuery, which is only
+    // allowed once didChangeDependencies has run — and that call starts
+    // the timer anyway. (Debug builds threw here and left Home's GlobalKey
+    // element half-mounted, SNAKE-CLASSIC-FLUTTER-S / -R.)
+    if (_tickerMode != null) _syncTimer();
   }
 
   void _placeApple() {

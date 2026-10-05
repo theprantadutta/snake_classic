@@ -1511,7 +1511,24 @@ class AppDatabase extends _$AppDatabase {
     'coins',
     'premium_status',
     'player_progress_table',
+    // Created lazily on first write rather than seeded below, and missed
+    // when the others were pinned: after a sign-out a claim landed at
+    // id 2+, the claim gate read "never claimed", and the daily-coins
+    // popup — and its grant — came back on every launch (2026-10-05).
+    'daily_bonus_state',
+    'power_up_inventory_state',
   ];
+
+  /// Outbox entries to re-send when a lazily created singleton is repaired.
+  /// While its row sat at id 2+ the sync push (which reads id 1) sent
+  /// nothing, so the server is behind by however long that lasted.
+  static const _repushOnRepair = <String, (String, String)>{
+    'daily_bonus_state': (SyncDataType.dailyBonusClaim, 'daily_bonus_claim:1'),
+    'power_up_inventory_state': (
+      SyncDataType.powerUpInventory,
+      'power_up_inventory:1',
+    ),
+  };
 
   /// Collapse a singleton table to exactly one row, pinned at `id = 1`.
   ///
@@ -1538,7 +1555,12 @@ class AppDatabase extends _$AppDatabase {
   /// id-1 row holds the freshly restored cloud data and the id-2 row holds bare
   /// defaults, so "highest id wins" would discard exactly the data worth
   /// keeping.
-  Future<void> _pinSingletonToId1(String table) async {
+  ///
+  /// Returns whether anything had to be repaired.
+  Future<bool> _pinSingletonToId1(String table) async {
+    final strays = await customSelect(
+      'SELECT COUNT(*) AS n FROM $table WHERE id <> 1',
+    ).getSingle();
     // Empty table: the subquery is NULL, `id <> NULL` is NULL, nothing is
     // deleted. Single correct row: it is its own winner and the UPDATE is a
     // no-op.
@@ -1547,6 +1569,7 @@ class AppDatabase extends _$AppDatabase {
       'SELECT id FROM $table ORDER BY updated_at DESC, id DESC LIMIT 1)',
     );
     await customStatement('UPDATE $table SET id = 1 WHERE id <> 1');
+    return strays.read<int>('n') > 0;
   }
 
   /// Repair the singleton tables, then seed any that are empty.
@@ -1555,7 +1578,11 @@ class AppDatabase extends _$AppDatabase {
   /// choose — see [_pinSingletonToId1] for what letting it choose cost.
   Future<void> initializeDefaults() async {
     for (final table in _singletonTables) {
-      await _pinSingletonToId1(table);
+      final repaired = await _pinSingletonToId1(table);
+      final repush = _repushOnRepair[table];
+      if (repaired && repush != null) {
+        await enqueueSyncOutbox(dataType: repush.$1, entityKey: repush.$2);
+      }
     }
 
     // Initialize game settings if not exists
