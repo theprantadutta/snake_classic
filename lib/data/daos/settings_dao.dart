@@ -157,7 +157,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// Defaults to true when the row has not been seeded yet.
   Future<bool> isHighRefreshRateEnabled() async {
     final prefs = await getDevicePreferences();
-    return prefs?.highRefreshRateEnabled ?? true;
+    return prefs?.highRefreshRateEnabled ?? false;
   }
 
   /// Persist the high-refresh-rate choice for this device only.

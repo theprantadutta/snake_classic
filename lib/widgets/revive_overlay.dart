@@ -145,7 +145,14 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: context.lbGutter + cell, vertical: 20),
+              // One gutter, not gutter + a cell, on narrow phones: at 360 dp
+              // the extra cell each side left the card too little room and
+              // the coin price read "PAY 1…" (Realme RMX3771). Wider phones
+              // and tablets keep the original margin.
+              padding: EdgeInsets.symmetric(
+                horizontal: context.lbGutter + (MediaQuery.sizeOf(context).width < 380 ? 0 : cell),
+                vertical: 20,
+              ),
               // The offer lands while the player may still be mid-swipe; a
               // tap meant for the board must not be taken as "watch an ad".
               child: TapArmGuard(
@@ -184,9 +191,16 @@ class _ReviveOverlayState extends State<ReviveOverlay> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    l10n.lbReviveTitle,
-                                    style: LBText.button(p, color: LB.gold, size: 15).copyWith(letterSpacing: 2.4),
+                                  // One line, shrinking if it must, rather
+                                  // than wrapping beside the countdown.
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: Text(
+                                      l10n.lbReviveTitle,
+                                      maxLines: 1,
+                                      style: LBText.button(p, color: LB.gold, size: 15).copyWith(letterSpacing: 2.4),
+                                    ),
                                   ),
                                 ),
                                 SizedBox(
@@ -338,18 +352,36 @@ class _OfferButton extends StatelessWidget {
         children: [
           LBPixelIcon(icon, cell: 3.6, color: fg),
           const SizedBox(width: 12),
+          // The label is what the player is agreeing to — "PAY 1,500¢" —
+          // so it is never cut; it shrinks if it must. [aside] (the balance)
+          // sits under it instead of beside it, where it used to take the
+          // label's room and ellipsize the price.
           Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LBText.button(p, color: fg, size: 15).copyWith(letterSpacing: 2.4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: LBText.button(p, color: fg, size: 15).copyWith(letterSpacing: 2.4),
+                  ),
+                ),
+                if (aside != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    aside!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11).copyWith(height: 1.2),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (aside != null) ...[
-            const SizedBox(width: 12),
-            Text(aside!, style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11)),
-          ],
         ],
       ),
     );

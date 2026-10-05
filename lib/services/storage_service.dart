@@ -136,7 +136,7 @@ class StorageService {
   /// smooth motion is worth the battery depends on the hardware in your hand,
   /// so a phone and a tablet on the same account should be able to disagree.
   Future<bool> isHighRefreshRateEnabled() async {
-    return await _settingsDao?.isHighRefreshRateEnabled() ?? true;
+    return await _settingsDao?.isHighRefreshRateEnabled() ?? false;
   }
 
   Future<void> setHighRefreshRateEnabled(bool enabled) async {

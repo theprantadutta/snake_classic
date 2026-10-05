@@ -656,10 +656,12 @@ class DevicePreferences extends Table {
 
   /// Whether the game asks the display for its highest refresh rate.
   ///
-  /// On by default — someone who paid for a high-refresh screen should see the
-  /// snake move at 120 Hz without hunting through settings first.
+  /// Off by default (an opt-in in Settings): at 120 Hz a frame has 8.3 ms,
+  /// and forcing that on every capable phone cost smoothness on mid-range
+  /// GPUs. See DisplayCubit.initialize for the one-time switch-off of
+  /// installs that had it from the old default.
   BoolColumn get highRefreshRateEnabled =>
-      boolean().withDefault(const Constant(true))();
+      boolean().withDefault(const Constant(false))();
 
   /// Render the snake cell-by-cell, like the original, instead of gliding
   /// between cells. Off by default: the glide is the app's look. It exists

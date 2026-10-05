@@ -6,7 +6,7 @@ import 'package:refresh_rate/refresh_rate.dart';
 class DisplayState extends Equatable {
   const DisplayState({
     this.loaded = false,
-    this.highRefreshRateEnabled = true,
+    this.highRefreshRateEnabled = false,
     this.info,
   });
 

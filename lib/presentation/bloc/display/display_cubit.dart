@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:refresh_rate/refresh_rate.dart';
 import 'package:snake_classic/services/storage_service.dart';
@@ -29,15 +30,29 @@ class DisplayCubit extends Cubit<DisplayState> {
   /// throttling kicking in, an external display attached.
   StreamSubscription<DisplayInfo>? _infoSubscription;
 
+  static const String _optInMigratedKey = 'high_refresh_opt_in_v1';
+
   /// Read the stored preference and push it to the platform.
   ///
   /// Safe to call more than once; the second call is a no-op.
   Future<void> initialize() async {
     if (state.loaded) return;
 
-    bool enabled = true;
+    bool enabled = false;
     try {
       enabled = await _storageService.isHighRefreshRateEnabled();
+      // 120 Hz used to be ON by default, so every high-refresh phone was
+      // pushed to its top rate — on a Realme RMX3771 that halved the frame
+      // budget to 8.3 ms and Living Board screens missed it. It is now an
+      // opt-in, and installs that only had it because of the old default
+      // are switched off once. Nobody could have chosen it deliberately:
+      // it was already on. Turning it back on afterwards sticks.
+      final prefs = await SharedPreferences.getInstance();
+      if (!(prefs.getBool(_optInMigratedKey) ?? false)) {
+        if (enabled) await _storageService.setHighRefreshRateEnabled(false);
+        enabled = false;
+        await prefs.setBool(_optInMigratedKey, true);
+      }
     } catch (e, s) {
       AppLogger.error('Could not read the refresh-rate preference', e, s);
     }

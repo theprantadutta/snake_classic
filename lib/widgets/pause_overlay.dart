@@ -104,7 +104,13 @@ class _PauseOverlayState extends State<PauseOverlay> {
     } else {
       content = Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: context.lbGutter + cell * 2, vertical: 24),
+          // Two extra cells each side cost a 360 dp phone ~72 dp and cut
+          // "QUIT TO MENU" to "QUIT TO M…" (Realme RMX3771). One extra on
+          // narrow phones; wider phones and tablets keep two.
+          padding: EdgeInsets.symmetric(
+            horizontal: context.lbGutter + cell * (MediaQuery.sizeOf(context).width < 380 ? 1 : 2),
+            vertical: 24,
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
@@ -169,14 +175,19 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 ),
                 if (gs != null) ...[
                   SizedBox(height: cell),
-                  Text(
-                    l10n.lbPauseSoFar(
-                      context.formatInt(gs.score),
-                      '${gs.snake.length}',
-                      _elapsed(gs),
+                  // One line: wrapped, it split "· 0:57" off on its own.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l10n.lbPauseSoFar(
+                        context.formatInt(gs.score),
+                        '${gs.snake.length}',
+                        _elapsed(gs),
+                      ),
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10),
                     ),
-                    textAlign: TextAlign.center,
-                    style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10),
                   ),
                 ],
                 SizedBox(height: cell * .8),
@@ -336,18 +347,37 @@ class _PauseRow extends StatelessWidget {
       height: context.lbCell * 3,
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 18),
+      // The title is the action; the aside is a hint. So the title keeps
+      // its width and the aside gives way (it ellipsizes first), the
+      // opposite of before, when "QUIT TO MENU" was the one cut.
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2.4),
+          Flexible(
+            flex: 3,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                title,
+                maxLines: 1,
+                style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2.4),
+              ),
             ),
           ),
-          if (aside != null)
-            Text(aside!, style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11)),
+          if (aside != null) ...[
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: Text(
+                aside!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11),
+              ),
+            ),
+          ] else
+            const Spacer(),
         ],
       ),
     );

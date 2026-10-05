@@ -64,6 +64,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
   // many rows. Measured, not intrinsic — the chart sizes itself with a
   // LayoutBuilder, which cannot report an intrinsic height.
   static const int _baseChartRows = 9;
+
+  /// The chart also gives height back. On a short viewport — a 360x804 dp
+  /// phone with the banner under it (Realme RMX3771) — the 9-row base layout
+  /// alone was taller than the screen, so WATCH REPLAY sat under the banner
+  /// and HOME below the fold. It shrinks to this before anything scrolls.
+  static const int _minChartRows = 5;
   static const int _maxChartRows = 18;
   final GlobalKey _contentKey = GlobalKey();
   final GlobalKey _chartKey = GlobalKey();
@@ -80,11 +86,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     final cellH = chart.height / _baseChartRows;
     if (cellH <= 0) return;
     final spare = _viewportHeight - content.height;
-    final extra = (spare / cellH).floor().clamp(
-      0,
-      _maxChartRows - _baseChartRows,
-    );
-    if (extra > 0) setState(() => _extraChartRows = extra);
+    // Negative spare = the layout overflows: take rows away (rounding up so
+    // the last block clears the banner), down to the minimum.
+    final extra = (spare >= 0 ? (spare / cellH).floor() : -((-spare) / cellH).ceil())
+        .clamp(_minChartRows - _baseChartRows, _maxChartRows - _baseChartRows);
+    if (extra != 0) setState(() => _extraChartRows = extra);
   }
 
   List<Achievement> _recentAchievements = [];
