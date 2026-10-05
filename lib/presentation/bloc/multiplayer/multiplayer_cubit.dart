@@ -1236,6 +1236,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Fold an authoritative snapshot into the state. The first snapshot
   /// of a match resets the per-match bookkeeping and starts the
   /// fallback duration stopwatch.
+  /// Snapshot arrival stats for the per-match summary: a snake that sits
+  /// still for seconds is the stream stalling, not the board.
+  Duration? _lastSnapshotAt;
+  int _snapshotCount = 0;
+  int _lateSnapshots = 0;
+  Duration _maxSnapshotGap = Duration.zero;
+
   void _handleSnapshot(MatchSnapshot snapshot) {
     if (!_matchActive) {
       _matchActive = true;
@@ -1244,7 +1251,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _matchTimer
         ..reset()
         ..start();
+      _lastSnapshotAt = null;
+      _snapshotCount = 0;
+      _lateSnapshots = 0;
+      _maxSnapshotGap = Duration.zero;
     }
+    final arrived = _predictionClock.elapsed;
+    final last = _lastSnapshotAt;
+    if (last != null) {
+      final gap = arrived - last;
+      if (gap > _maxSnapshotGap) _maxSnapshotGap = gap;
+      if (gap > const Duration(milliseconds: 400)) _lateSnapshots++;
+    }
+    _lastSnapshotAt = arrived;
+    _snapshotCount++;
 
     final currentUserId = _userService.currentUser?.uid;
 
@@ -1308,7 +1328,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     if (checked == 0) return;
     AppLogger.game(
       'Local prediction: ${_predictor.mispredictions}/$checked steps '
-      'corrected, round trip ~${_predictor.roundTrip.inMilliseconds}ms',
+      'corrected, round trip ~${_predictor.roundTrip.inMilliseconds}ms; '
+      'snapshots $_snapshotCount, longest gap '
+      '${_maxSnapshotGap.inMilliseconds}ms, $_lateSnapshots gaps over 400ms',
     );
   }
 
