@@ -18,13 +18,13 @@ dependencies:
   # Pinned by flutter_localizations — 'any' defers to the SDK's version.
   intl: any
 
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
   
   # State management
   provider: ^6.1.2
   flutter_bloc: ^9.0.0
   bloc: ^9.0.0
-  equatable: ^2.0.5
+  equatable: ^3.0.0
   flutter_riverpod: ^3.2.0
 
   # Dependency injection
@@ -34,7 +34,7 @@ dependencies:
   dartz: ^0.10.1
   
   # Audio system
-  flutter_soloud: ^4.0.6
+  flutter_soloud: ^5.1.6
   
   # Persistent storage
   shared_preferences: ^2.2.3
@@ -76,7 +76,7 @@ dependencies:
   
   # Push notifications
   firebase_messaging: ^16.0.1
-  flutter_local_notifications: ^22.0.0-dev.3
+  flutter_local_notifications: ^22.3.1
   # `timezone` is a transitive of flutter_local_notifications but we
   # reference it directly (for zonedSchedule's TZDateTime), so the
   # depend_on_referenced_packages lint requires an explicit entry.
@@ -107,7 +107,7 @@ dependencies:
   # Opts the app into the display's high refresh rate. Flutter's engine never
   # calls the platform's rate-setting APIs, so a 120 Hz phone renders the game
   # at 60 Hz unless we ask for more.
-  refresh_rate: ^1.0.2
+  refresh_rate: ^2.0.1
 
   # Declarative routing
   go_router: ^18.0.0

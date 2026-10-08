@@ -87,11 +87,13 @@ class DisplayCubit extends Cubit<DisplayState> {
   /// falls back to 60 Hz after a task switch.
   Future<void> apply() async {
     try {
+      // Awaited: since refresh_rate 2.0 these return futures, and a
+      // failure left unawaited would escape this try as an uncaught error.
       if (state.highRefreshRateEnabled) {
-        RefreshRate.enable();
-        RefreshRate.preferMax();
+        await RefreshRate.enable();
+        await RefreshRate.preferMax();
       } else {
-        RefreshRate.disable();
+        await RefreshRate.disable();
       }
     } catch (e, s) {
       // An unsupported device is not a failure worth bothering anyone about.

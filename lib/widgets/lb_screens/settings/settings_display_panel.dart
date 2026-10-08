@@ -5,7 +5,13 @@ import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// `59.94` and `120` should both read like a refresh rate, not like a
 /// float — panels report awkward real numbers and `120.0 Hz` looks broken.
-String settingsFormatHz(double hz) => hz % 1 == 0 ? '${hz.toInt()}' : hz.toStringAsFixed(1);
+/// Since refresh_rate 2.0 an unknown rate reads 0 rather than a made-up 60,
+/// so anything not positive shows as a dash.
+String settingsFormatHz(double hz) => hz <= 0
+    ? '—'
+    : hz % 1 == 0
+    ? '${hz.toInt()}'
+    : hz.toStringAsFixed(1);
 
 /// The DISPLAY section body: what the panel is refreshing at right now, the
 /// explanation of the 120 Hz opt-in, and every mode the panel offers.
@@ -44,7 +50,7 @@ class SettingsDisplayPanel extends StatelessWidget {
                 child: Text(l10n.settingsDisplayHz, style: LBText.button(p, color: p.inkMuted, size: 13)),
               ),
               const Spacer(),
-              if (info != null)
+              if (info != null && info.maxRate > 0)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(

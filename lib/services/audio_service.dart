@@ -163,6 +163,11 @@ class AudioService {
   Future<void> _startEngine() async {
     try {
       await _soloud.init();
+      // flutter_soloud 5 stops the output device after 500 ms of silence,
+      // so the next sound (a bite after a quiet stretch) would wait for the
+      // device to start again. Keep it running while the engine is up, as 4.x
+      // did; _suspend() still releases it whenever the app is backgrounded.
+      _soloud.setAudioDeviceIdleTimeout(null);
       debugPrint('SoLoud engine initialized');
 
       // Pre-load all sounds
