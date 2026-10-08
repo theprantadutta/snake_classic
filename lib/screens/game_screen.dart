@@ -653,23 +653,37 @@ class _GameScreenState extends State<GameScreen>
                             bottom: false,
                             child: Column(
                               children: [
-                                // The banner lives at the BOTTOM of this screen —
-                                // see the note next to it below the play area.
+                                // Revenue-bearing banner, kept by explicit
+                                // product decision. It sits at the TOP, with
+                                // the HUD, keeping the bottom of the screen
+                                // free for the board and controls.
+                                //
+                                // OUTSIDE the shake and the SwipeDetector, so
+                                // it never moves with a crash and never eats a
+                                // swipe. Its 12 dp gap and hairline keep it
+                                // clear of the HUD's pause button below.
+                                //
+                                // Shown for every control layout: on-screen
+                                // controls live at the bottom now, the whole
+                                // screen height away from it. (When it sat at
+                                // the bottom it was hidden for d-pad players,
+                                // because Google names ads next to game
+                                // controls as an accidental-click placement.)
+                                const LBBannerSlot(topGap: 12, atTop: true),
                                 Expanded(
                                   // Shake scoped to the play area (HUD + board +
                                   // controls) — wrapping the whole Scaffold
                                   // dragged the banner ad along with the shake.
                                   child: Stack(
                                     children: [
-                                      // The play area respects the top inset
-                                      // itself. The bottom one belongs to the
-                                      // banner row when a banner is reserved
+                                      // The play area always owns the bottom
+                                      // inset. The top one belongs to the
+                                      // banner when a banner is reserved
                                       // (SnakeBannerAd wraps its own SafeArea);
                                       // with no banner (Pro) the play area
-                                      // takes it, so nothing ever sits under
-                                      // the nav gesture bar.
+                                      // takes it.
                                       SafeArea(
-                                        bottom: !bannerReserved,
+                                        top: !bannerReserved,
                                         child: GameJuiceWidget(
                                           controller: _juiceController,
                                           applyShake: settingsState.screenShakeEnabled,
@@ -788,19 +802,32 @@ class _GameScreenState extends State<GameScreen>
                                                                   final aspect =
                                                                       gameState.boardWidth /
                                                                       gameState.boardHeight;
+                                                                  // Side margin. Edge to edge,
+                                                                  // the 1 px side walls sat on
+                                                                  // the screen's own edge,
+                                                                  // where rounded corners and
+                                                                  // curved glass hide them, so
+                                                                  // the board read as cut off
+                                                                  // with no left/right border.
+                                                                  final sideMargin =
+                                                                      context.lbCell * .5;
                                                                   final maxW = math.min(
                                                                     boardConstraints
-                                                                        .maxWidth,
+                                                                            .maxWidth -
+                                                                        sideMargin * 2,
                                                                     boardCap,
                                                                   );
-                                                                  // Leave room for the
-                                                                  // level-cell wall above.
+                                                                  // Room under the board, so
+                                                                  // its bottom row is not
+                                                                  // pressed against the
+                                                                  // system gesture bar.
+                                                                  final bottomGap =
+                                                                      context.lbCell * .5;
+                                                                  // Leave room for the info
+                                                                  // row and the level-cell
+                                                                  // wall above the board.
                                                                   final wallH =
-                                                                      math.min(
-                                                                            boardConstraints
-                                                                                .maxWidth,
-                                                                            boardCap,
-                                                                          ) /
+                                                                      maxW /
                                                                           math.min(
                                                                             gameState
                                                                                 .boardWidth,
@@ -812,7 +839,8 @@ class _GameScreenState extends State<GameScreen>
                                                                   final maxH = math.min(
                                                                     boardConstraints
                                                                             .maxHeight -
-                                                                        wallH,
+                                                                        wallH -
+                                                                        bottomGap,
                                                                     boardCap,
                                                                   );
                                                                   // Start from the full width, fall
@@ -842,16 +870,30 @@ class _GameScreenState extends State<GameScreen>
                                                                   // drag because of gesture
                                                                   // arena ordering rather
                                                                   // than any real boundary.
-                                                                  // Centred: a width-bound board on a
-                                                                  // tall phone gets even margins rather
-                                                                  // than one dead band underneath.
-                                                                  return Align(
-                                                                    alignment: Alignment
-                                                                        .center,
-                                                                    child: Column(
-                                                                      mainAxisSize:
-                                                                          MainAxisSize.min,
+                                                                  // Swipe compass, then the board
+                                                                  // close under it, with its info
+                                                                  // row right below. Any spare
+                                                                  // height on a tall phone goes
+                                                                  // under the board, never in a
+                                                                  // band around the compass.
+                                                                  return Column(
                                                                       children: [
+                                                                        // Swipe compass, in the band a
+                                                                        // width-bound board leaves on a
+                                                                        // tall phone — only when it fits
+                                                                        // and only for swipe players.
+                                                                        _swipeCompassSlot(
+                                                                          boardConstraints.maxHeight -
+                                                                              wallH -
+                                                                              boardH -
+                                                                              bottomGap -
+                                                                              context.lbCell * 2,
+                                                                        ),
+                                                                        // A little air between the
+                                                                        // compass and the board.
+                                                                        SizedBox(
+                                                                          height: context.lbCell,
+                                                                        ),
                                                                         BlocBuilder<
                                                                           GameCubit,
                                                                           GameCubitState
@@ -889,18 +931,11 @@ class _GameScreenState extends State<GameScreen>
                                                                           gameState,
                                                                           boardW,
                                                                         ),
-                                                                        // Swipe compass, in the band a
-                                                                        // width-bound board leaves on a
-                                                                        // tall phone — only when it fits
-                                                                        // and only for swipe players.
-                                                                        _swipeCompassSlot(
-                                                                          boardConstraints.maxHeight -
-                                                                              wallH -
-                                                                              boardH -
-                                                                              context.lbCell * 2,
+                                                                        const Spacer(),
+                                                                        SizedBox(
+                                                                          height: bottomGap,
                                                                         ),
                                                                       ],
-                                                                    ),
                                                                   );
                                                                 },
                                                               ),
@@ -1200,38 +1235,6 @@ class _GameScreenState extends State<GameScreen>
                                         ),
                                     ],
                                   ),
-                                ),
-
-                                // Revenue-bearing banner, kept by explicit
-                                // product decision — moved, not removed.
-                                //
-                                // It used to sit at the very TOP, above the HUD.
-                                // That put the loudest thing on screen (a white
-                                // box with blue text over a dark playfield) at the
-                                // start of the reading order, ahead of the game
-                                // itself. At the bottom it costs the same height
-                                // but sits below the board, out of the sightline
-                                // the player actually holds while steering.
-                                //
-                                // Still OUTSIDE the SwipeDetector — which wraps
-                                // only the play area above — so it can never eat a
-                                // swipe or take a stray tap meant for the board.
-                                //
-                                // NOT shown while on-screen controls are on. The
-                                // bar above is then a live touch zone — d-pad,
-                                // turn buttons, or a joystick that starts wherever
-                                // the thumb lands in it — and a 6px spacer was all
-                                // that separated it from the ad. Google's policy
-                                // names ads next to game controls as an
-                                // accidental-click placement. Swipe players steer
-                                // on the board, and their bar is a read-only stats
-                                // strip, so they keep the banner with a clear gap.
-                                BlocBuilder<GameSettingsCubit, GameSettingsState>(
-                                  buildWhen: (previous, current) =>
-                                      previous.dPadEnabled != current.dPadEnabled,
-                                  builder: (context, controls) => controls.dPadEnabled
-                                      ? const SizedBox.shrink()
-                                      : const LBBannerSlot(topGap: 12),
                                 ),
                               ],
                             ),

@@ -37,14 +37,19 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 ///   [AdService.rearmListenable] when the device regains internet (or consent
 ///   changes), and this widget starts over.
 class SnakeBannerAd extends StatefulWidget {
-  const SnakeBannerAd({super.key, this.topGap = 0});
+  const SnakeBannerAd({super.key, this.topGap = 0, this.atTop = false});
 
-  /// Clear space (with a hairline at its foot) between the banner and whatever
-  /// sits above it. Use it where the banner would otherwise touch a button or
-  /// a game control. Google's placement policy forbids ads laid out so that
-  /// taps meant for the app land on them. Part of the reserved footprint, so a
-  /// Pro user, who gets no banner, gets no gap either.
+  /// Clear space (with a hairline) between the banner and the screen's
+  /// content: above a bottom banner, below a top one ([atTop]). Use it where
+  /// the banner would otherwise touch a button or a game control. Google's
+  /// placement policy forbids ads laid out so that taps meant for the app
+  /// land on them. Part of the reserved footprint, so a Pro user, who gets no
+  /// banner, gets no gap either.
   final double topGap;
+
+  /// Pinned to the top of the screen: the banner takes the top safe-area
+  /// inset instead of the bottom one, and the gap goes underneath it.
+  final bool atTop;
 
   @override
   State<SnakeBannerAd> createState() => _SnakeBannerAdState();
@@ -258,8 +263,11 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         final ad = _ad;
         final reservedHeight =
             (_adaptiveSize?.height ?? AdSize.banner.height).toDouble();
+        // A banner pinned to the top of a screen owns the top inset; one at
+        // the bottom owns the bottom inset.
         final banner = SafeArea(
-          top: false,
+          top: widget.atTop,
+          bottom: !widget.atTop,
           child: SizedBox(
             width: double.infinity,
             height: reservedHeight,
@@ -275,19 +283,20 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           ),
         );
         if (widget.topGap <= 0) return banner;
+        // The gap (and its hairline) always sits between the banner and the
+        // screen's content: above a bottom banner, below a top one.
+        final gap = Container(
+          height: widget.topGap,
+          alignment:
+              widget.atTop ? Alignment.topCenter : Alignment.bottomCenter,
+          child: Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+        );
         return Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: widget.topGap,
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: 1,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-            banner,
-          ],
+          children: widget.atTop ? [banner, gap] : [gap, banner],
         );
       },
     );

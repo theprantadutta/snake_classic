@@ -559,7 +559,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         // The split row is one cell per column (18), plus its 3 dp gap and
         // 1 dp wall, plus 4 dp before the board.
         const splitCells = 18;
-        var side = math.min(c.maxWidth, cap);
+        // Half a cell of margin per side: edge to edge, the 1 px side walls
+        // sat on the screen's own edge, where rounded corners and curved
+        // glass hide them (same fix as the single-player board).
+        var side = math.min(c.maxWidth - context.lbCell, cap);
         final maxH = c.maxHeight - gapLineH - 8;
         if (side + side / splitCells > maxH) {
           side = math.max(0.0, maxH / (1 + 1 / splitCells));
