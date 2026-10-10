@@ -23,6 +23,7 @@ import 'package:snake_classic/services/review_service.dart';
 import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/control_layout_preview.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
@@ -180,7 +181,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// SWIPE turns the on-screen control off; D-PAD / TURN / STICK turn it on
   /// with that layout. Same cubit calls and analytics events as the old
   /// switch + layout picker.
-  Future<void> _chooseControl({required bool dPad, ControlLayout? layout}) async {
+  Future<void> _chooseControl({
+    required bool dPad,
+    ControlLayout? layout,
+  }) async {
     final cubit = context.read<GameSettingsCubit>();
     final before = cubit.state;
     if (before.dPadEnabled != dPad) {
@@ -208,30 +212,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: l10n.lbCtrlSwipeSub,
                 selected: !s.dPadEnabled,
                 onTap: () => _chooseControl(dPad: false),
+                preview: ControlLayoutPreview(
+                  dPadEnabled: false,
+                  layout: ControlLayout.dPad,
+                  dPadPosition: s.dPadPosition,
+                  theme: context.read<ThemeCubit>().state.currentTheme,
+                ),
               ),
             ),
+            const SizedBox(width: 6),
             Expanded(
               child: LBControlChoice(
                 title: l10n.lbCtrlDpad,
                 subtitle: l10n.lbCtrlDpadSub,
                 selected: on(ControlLayout.dPad),
-                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.dPad),
+                onTap: () =>
+                    _chooseControl(dPad: true, layout: ControlLayout.dPad),
+                preview: ControlLayoutPreview(
+                  dPadEnabled: true,
+                  layout: ControlLayout.dPad,
+                  dPadPosition: s.dPadPosition,
+                  theme: context.read<ThemeCubit>().state.currentTheme,
+                ),
               ),
             ),
+            const SizedBox(width: 6),
             Expanded(
               child: LBControlChoice(
                 title: l10n.lbCtrlTurn,
                 subtitle: l10n.lbCtrlTurnSub,
                 selected: on(ControlLayout.turnButtons),
-                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.turnButtons),
+                onTap: () => _chooseControl(
+                  dPad: true,
+                  layout: ControlLayout.turnButtons,
+                ),
+                preview: ControlLayoutPreview(
+                  dPadEnabled: true,
+                  layout: ControlLayout.turnButtons,
+                  dPadPosition: s.dPadPosition,
+                  theme: context.read<ThemeCubit>().state.currentTheme,
+                ),
               ),
             ),
+            const SizedBox(width: 6),
             Expanded(
               child: LBControlChoice(
                 title: l10n.lbCtrlStick,
                 subtitle: l10n.lbCtrlStickSub,
                 selected: on(ControlLayout.joystick),
-                onTap: () => _chooseControl(dPad: true, layout: ControlLayout.joystick),
+                onTap: () =>
+                    _chooseControl(dPad: true, layout: ControlLayout.joystick),
+                preview: ControlLayoutPreview(
+                  dPadEnabled: true,
+                  layout: ControlLayout.joystick,
+                  dPadPosition: s.dPadPosition,
+                  theme: context.read<ThemeCubit>().state.currentTheme,
+                ),
               ),
             ),
           ],
@@ -247,7 +283,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             options: DPadPosition.values,
             selected: s.dPadPosition,
             labelOf: (pos) => pos.localizedName(l10n),
-            onSelect: (pos) => context.read<GameSettingsCubit>().updateDPadPosition(pos),
+            onSelect: (pos) =>
+                context.read<GameSettingsCubit>().updateDPadPosition(pos),
           ),
           const SizedBox(height: 4),
         ],
@@ -257,7 +294,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle: l10n.settingsSnapMovementSubtitle,
           value: s.snapMovementEnabled,
           onChanged: (value) async {
-            await context.read<GameSettingsCubit>().setSnapMovementEnabled(value);
+            await context.read<GameSettingsCubit>().setSnapMovementEnabled(
+              value,
+            );
             _track('snap_movement_enabled', value);
           },
         ),
@@ -304,7 +343,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // grind a personal best and only then discover it never counted.
           subtitle: isPlaying
               ? l10n.settingsDifficultyLocked
-              : (s.difficulty.postsToLeaderboard ? null : l10n.settingsEasyNote),
+              : (s.difficulty.postsToLeaderboard
+                    ? null
+                    : l10n.settingsEasyNote),
           value: s.difficulty.localizedLabel(l10n),
           onTap: isPlaying ? null : openSetup,
         ),
@@ -324,31 +365,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       title: l10n.lbCrashReplay,
       subtitle: l10n.settingsCrashFeedbackSubtitle,
-      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
-        buildWhen: (a, b) => a.crashFeedbackDuration != b.crashFeedbackDuration,
-        builder: (context, s) => SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final duration in GameConstants.availableCrashFeedbackDurations)
-                SettingsSheetOption(
-                  title: _crashLabel(l10n, duration),
-                  selected: s.crashFeedbackDuration == duration,
-                  onTap: () async {
-                    await context.read<GameSettingsCubit>().updateCrashFeedbackDuration(duration);
-                    _track('crash_feedback_duration', duration.inSeconds);
-                  },
-                ),
-            ],
+      builder: (sheetContext) =>
+          BlocBuilder<GameSettingsCubit, GameSettingsState>(
+            buildWhen: (a, b) =>
+                a.crashFeedbackDuration != b.crashFeedbackDuration,
+            builder: (context, s) => SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final duration
+                      in GameConstants.availableCrashFeedbackDurations)
+                    SettingsSheetOption(
+                      title: _crashLabel(l10n, duration),
+                      selected: s.crashFeedbackDuration == duration,
+                      onTap: () async {
+                        await context
+                            .read<GameSettingsCubit>()
+                            .updateCrashFeedbackDuration(duration);
+                        _track('crash_feedback_duration', duration.inSeconds);
+                      },
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
   // ==================== THEME ====================
 
-  Widget _theme(AppLocalizations l10n, ThemeState themeState, PremiumState premium) {
+  Widget _theme(
+    AppLocalizations l10n,
+    ThemeState themeState,
+    PremiumState premium,
+  ) {
     final premiumCount = PremiumContent.premiumThemes.length;
     final freeCount = GameTheme.values.length - premiumCount;
     return SettingsSection(
@@ -380,7 +430,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ==================== SOUND & FEEL ====================
 
-  Widget _soundAndFeel(AppLocalizations l10n, GameSettingsState s, DisplayState display) {
+  Widget _soundAndFeel(
+    AppLocalizations l10n,
+    GameSettingsState s,
+    DisplayState display,
+  ) {
     final cubit = context.read<GameSettingsCubit>();
     return SettingsSection(
       label: l10n.lbSoundFeel,
@@ -421,18 +475,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: display.highRefreshRateEnabled,
           onChanged: display.deviceSupportsHighRate
               ? (value) async {
-                  await context.read<DisplayCubit>().setHighRefreshRateEnabled(value);
+                  await context.read<DisplayCubit>().setHighRefreshRateEnabled(
+                    value,
+                  );
                   _track('high_refresh_rate_enabled', value);
                 }
               : null,
         ),
         // The platform overrides us in both of these cases whatever the
         // toggle says. Saying so beats looking broken.
-        if (display.throttledByBattery) SettingsNote(text: l10n.settingsDisplayBatteryNote, icon: LBIcon.bolt),
-        if (display.throttledByHeat) SettingsNote(text: l10n.settingsDisplayThermalNote, icon: LBIcon.flame),
+        if (display.throttledByBattery)
+          SettingsNote(
+            text: l10n.settingsDisplayBatteryNote,
+            icon: LBIcon.bolt,
+          ),
+        if (display.throttledByHeat)
+          SettingsNote(
+            text: l10n.settingsDisplayThermalNote,
+            icon: LBIcon.flame,
+          ),
         // Only once we have actually read the panel — before that we would be
         // telling a 120 Hz phone it is single-rate.
-        if (display.loaded && display.info != null && !display.deviceSupportsHighRate)
+        if (display.loaded &&
+            display.info != null &&
+            !display.deviceSupportsHighRate)
           SettingsNote(text: l10n.settingsDisplaySingleRateNote),
       ],
     );
@@ -440,7 +506,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ==================== VISUAL ====================
 
-  Widget _visual(AppLocalizations l10n, GameSettingsState s, ThemeState themeState) {
+  Widget _visual(
+    AppLocalizations l10n,
+    GameSettingsState s,
+    ThemeState themeState,
+  ) {
     return SettingsSection(
       label: l10n.settingsSectionVisual,
       children: [
@@ -449,7 +519,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle: l10n.settingsScreenShakeSubtitle,
           value: s.screenShakeEnabled,
           onChanged: (value) async {
-            await context.read<GameSettingsCubit>().setScreenShakeEnabled(value);
+            await context.read<GameSettingsCubit>().setScreenShakeEnabled(
+              value,
+            );
             _track('screen_shake', value);
           },
         ),
@@ -457,7 +529,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: l10n.settingsSnakeTrail,
           subtitle: l10n.settingsSnakeTrailSubtitle,
           value: themeState.isTrailSystemEnabled,
-          onChanged: (value) => context.read<ThemeCubit>().setTrailSystemEnabled(value),
+          onChanged: (value) =>
+              context.read<ThemeCubit>().setTrailSystemEnabled(value),
         ),
         SettingsValueRow(
           title: l10n.settingsBrowseThemes,
@@ -495,41 +568,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showLBSheet<void>(
       context: context,
       title: l10n.settingsSectionLanguage,
-      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
-        buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
-        builder: (context, settingsState) {
-          // Re-read: the sheet itself switches language when you pick one.
-          final l = AppLocalizations.of(context)!;
-          final current = settingsState.localeCode;
-          void pick(String? code) {
-            context.read<GameSettingsCubit>().setLocaleCode(code);
-            _analytics.trackSettingChanged(
-              settingName: 'app_language',
-              value: code ?? 'system',
-            );
-          }
+      builder: (sheetContext) =>
+          BlocBuilder<GameSettingsCubit, GameSettingsState>(
+            buildWhen: (prev, curr) => prev.localeCode != curr.localeCode,
+            builder: (context, settingsState) {
+              // Re-read: the sheet itself switches language when you pick one.
+              final l = AppLocalizations.of(context)!;
+              final current = settingsState.localeCode;
+              void pick(String? code) {
+                context.read<GameSettingsCubit>().setLocaleCode(code);
+                _analytics.trackSettingChanged(
+                  settingName: 'app_language',
+                  value: code ?? 'system',
+                );
+              }
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SettingsSheetOption(
-                  title: l.languageSystemDefault,
-                  subtitle: l.languageSystemDefaultSubtitle,
-                  selected: current == null,
-                  onTap: () => pick(null),
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SettingsSheetOption(
+                      title: l.languageSystemDefault,
+                      subtitle: l.languageSystemDefaultSubtitle,
+                      selected: current == null,
+                      onTap: () => pick(null),
+                    ),
+                    for (final locale in SupportedLocales.locales)
+                      SettingsSheetOption(
+                        title:
+                            SupportedLocales.endonyms[locale.languageCode] ??
+                            locale.languageCode,
+                        selected: current == locale.languageCode,
+                        onTap: () => pick(locale.languageCode),
+                      ),
+                  ],
                 ),
-                for (final locale in SupportedLocales.locales)
-                  SettingsSheetOption(
-                    title: SupportedLocales.endonyms[locale.languageCode] ?? locale.languageCode,
-                    selected: current == locale.languageCode,
-                    onTap: () => pick(locale.languageCode),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
     );
   }
 
@@ -600,8 +676,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final usernameLabel = hasRealUsername
         ? username
         : (authState.user?.displayName.isNotEmpty == true
-            ? authState.user!.displayName
-            : l10n.settingsNotSet);
+              ? authState.user!.displayName
+              : l10n.settingsNotSet);
     // hasNoCredential, not isGuestUser: a silently-created Firebase
     // anonymous account is still an account nobody chose and nobody can
     // recover. Calling it "signed in" is the lie that made this confusing.
@@ -614,13 +690,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              LBPixelIcon(guest ? LBIcon.user : LBIcon.shield, cell: 4, color: guest ? p.inkMuted : p.lime),
+              LBPixelIcon(
+                guest ? LBIcon.user : LBIcon.shield,
+                cell: 4,
+                color: guest ? p.inkMuted : p.lime,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.settingsUsername.toUpperCase(), style: LBText.label(p)),
+                    Text(
+                      l10n.settingsUsername.toUpperCase(),
+                      style: LBText.label(p),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '@$usernameLabel',
@@ -630,7 +713,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      guest ? l10n.settingsGuestAccount : l10n.settingsAuthenticatedAccount,
+                      guest
+                          ? l10n.settingsGuestAccount
+                          : l10n.settingsAuthenticatedAccount,
                       style: LBText.body(p, size: 11),
                     ),
                   ],
@@ -663,7 +748,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: LBText.button(p, color: LB.bonk, size: 12.5),
                       ),
                       const SizedBox(height: 4),
-                      Text(l10n.accountNotBackedUpBody, style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 11)),
+                      Text(
+                        l10n.accountNotBackedUpBody,
+                        style: LBText.body(
+                          p,
+                          color: p.ink.withValues(alpha: .8),
+                          size: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -729,7 +821,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Without the form check this opened nothing (and logged a "no form(s)
     // configured" UMP error) when no consent form exists for the app ID or
     // consent isn't required in the user's region.
-    final showAdPrivacy = ads != null && ads.adsEnabled && ads.privacyOptionsRequired;
+    final showAdPrivacy =
+        ads != null && ads.adsEnabled && ads.privacyOptionsRequired;
     return SettingsSection(
       label: l10n.settingsSectionHelp,
       children: [
@@ -776,7 +869,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final shown = await ads.showPrivacyOptions();
               if (!shown) {
                 messenger.showSnackBar(
-                  arcadeSnackBarFor(snackTheme, message: l10n.settingsAdPrivacyUnavailable),
+                  arcadeSnackBarFor(
+                    snackTheme,
+                    message: l10n.settingsAdPrivacyUnavailable,
+                  ),
                 );
               }
             },
@@ -802,7 +898,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(sheetContext).pop();
               final walkthroughService = WalkthroughService();
               await walkthroughService.initialize();
-              await walkthroughService.reset(WalkthroughService.homeWalkthroughId);
+              await walkthroughService.reset(
+                WalkthroughService.homeWalkthroughId,
+              );
               if (mounted) {
                 context.go(AppRoutes.home);
               }
@@ -832,7 +930,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => Navigator.of(sheetContext).pop(),
             child: Text(
               l10n.commonCancel.toUpperCase(),
-              style: LBText.button(sheetContext.lb, color: sheetContext.lb.inkMuted, size: 12),
+              style: LBText.button(
+                sheetContext.lb,
+                color: sheetContext.lb.inkMuted,
+                size: 12,
+              ),
             ),
           ),
         ],
@@ -844,7 +946,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// not a menu — two columns, no chevrons.
   void _showControlReferenceSheet() {
     final l10n = AppLocalizations.of(context)!;
-    final desktop = kIsWeb ||
+    final desktop =
+        kIsWeb ||
         (!defaultTargetPlatform.toString().contains('android') &&
             !defaultTargetPlatform.toString().contains('ios'));
     final rows = <Widget>[
@@ -868,7 +971,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _refRow(l10n.settingsSwipeDown, l10n.settingsMoveSnakeDown),
         _refRow(l10n.settingsSwipeLeft, l10n.settingsMoveSnakeLeft),
         _refRow(l10n.settingsSwipeRight, l10n.settingsMoveSnakeRight),
-        _refRow(l10n.settingsOnScreenControls, l10n.settingsOnScreenControlsDesc),
+        _refRow(
+          l10n.settingsOnScreenControls,
+          l10n.settingsOnScreenControlsDesc,
+        ),
         _refRow(l10n.settingsTapScreen, l10n.settingsPauseResume),
       ],
     ];
@@ -878,16 +984,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (_) => SingleChildScrollView(
         child: LBBlock(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: rows,
+          ),
         ),
       ),
     );
   }
 
   Widget _refLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(text.toUpperCase(), style: LBText.label(context.lb)),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(text.toUpperCase(), style: LBText.label(context.lb)),
+  );
 
   Widget _refRow(String control, String action) {
     final p = context.lb;
@@ -898,12 +1007,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Expanded(
             flex: 4,
-            child: Text(control, style: LBText.body(p, color: p.ink, size: 12.5).copyWith(fontWeight: FontWeight.w700)),
+            child: Text(
+              control,
+              style: LBText.body(
+                p,
+                color: p.ink,
+                size: 12.5,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             flex: 5,
-            child: Text(action, textAlign: TextAlign.end, style: LBText.body(p, size: 11.5)),
+            child: Text(
+              action,
+              textAlign: TextAlign.end,
+              style: LBText.body(p, size: 11.5),
+            ),
           ),
         ],
       ),
@@ -977,30 +1097,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              LBPixelIcon(pro ? LBIcon.crown : LBIcon.lock, cell: 4, color: pro ? LB.gold : p.lime),
+              LBPixelIcon(
+                pro ? LBIcon.crown : LBIcon.lock,
+                cell: 4,
+                color: pro ? LB.gold : p.lime,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (pro ? l10n.settingsProTitle : l10n.settingsPremiumStatus).toUpperCase(),
-                      style: LBText.button(p, color: pro ? LB.gold : p.head, size: 13),
+                      (pro ? l10n.settingsProTitle : l10n.settingsPremiumStatus)
+                          .toUpperCase(),
+                      style: LBText.button(
+                        p,
+                        color: pro ? LB.gold : p.head,
+                        size: 13,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      pro ? l10n.settingsActiveSubscription : l10n.settingsUnlockPremium,
+                      pro
+                          ? l10n.settingsActiveSubscription
+                          : l10n.settingsUnlockPremium,
                       style: LBText.body(p, size: 11),
                     ),
                     if (pro && premiumState.subscriptionExpiry != null)
                       Text(
-                        l10n.settingsRenews(context.formatMonthDay(premiumState.subscriptionExpiry!)),
+                        l10n.settingsRenews(
+                          context.formatMonthDay(
+                            premiumState.subscriptionExpiry!,
+                          ),
+                        ),
                         style: LBText.body(p, color: p.inkDim, size: 11),
                       ),
                   ],
                 ),
               ),
-              if (pro) LBChip(label: l10n.settingsProBadge, kind: LBChipKind.gold),
+              if (pro)
+                LBChip(label: l10n.settingsProBadge, kind: LBChipKind.gold),
             ],
           ),
         ),
@@ -1017,13 +1153,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  LBPixelIcon(LBIcon.crown, cell: 3, color: LBBlock.foregroundOf(LBBlockKind.goldFill, p)),
+                  LBPixelIcon(
+                    LBIcon.crown,
+                    cell: 3,
+                    color: LBBlock.foregroundOf(LBBlockKind.goldFill, p),
+                  ),
                   const SizedBox(width: 10),
                   Flexible(
                     child: Text(
                       l10n.settingsUpgradeToPro.toUpperCase(),
                       textAlign: TextAlign.center,
-                      style: LBText.button(p, color: LBBlock.foregroundOf(LBBlockKind.goldFill, p), size: 13),
+                      style: LBText.button(
+                        p,
+                        color: LBBlock.foregroundOf(LBBlockKind.goldFill, p),
+                        size: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -1044,7 +1188,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SettingsValueRow(
             title: l10n.settingsSnakeCosmetics,
             leading: const LBPixelIcon(LBIcon.star, cell: 3.4),
-            value: premiumState.ownedSkins.isNotEmpty ? context.formatInt(premiumState.ownedSkins.length) : null,
+            value: premiumState.ownedSkins.isNotEmpty
+                ? context.formatInt(premiumState.ownedSkins.length)
+                : null,
             onTap: () => context.push(AppRoutes.cosmetics),
           ),
         if (premiumState.hasBattlePass)
@@ -1061,7 +1207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _restorePurchases() async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      ScaffoldMessenger.of(context).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
 
       final purchaseService = PurchaseService();
       await purchaseService.restorePurchases();
@@ -1109,45 +1257,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 46,
                 alignment: Alignment.center,
                 onTap: () => Navigator.of(dialogContext).pop(),
-                child: Text(l10n.settingsClose.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+                child: Text(
+                  l10n.settingsClose.toUpperCase(),
+                  style: LBText.button(p, color: p.inkMuted, size: 12),
+                ),
               ),
             ],
             child: SizedBox(
               height: 300,
               child: history.isEmpty
-                  ? Center(child: Text(l10n.settingsNoPurchases, style: LBText.body(p, size: 12)))
+                  ? Center(
+                      child: Text(
+                        l10n.settingsNoPurchases,
+                        style: LBText.body(p, size: 12),
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: history.length,
                       itemBuilder: (context, index) {
                         final purchase = history[index];
                         // Purchase is already a Map<String, dynamic>
                         try {
-                          final productId = purchase['productId']?.toString() ?? l10n.settingsUnknown;
-                          final transactionDate = purchase['transactionDate']?.toString() ?? '';
-                          final status = purchase['status']?.toString() ?? l10n.settingsUnknown;
+                          final productId =
+                              purchase['productId']?.toString() ??
+                              l10n.settingsUnknown;
+                          final transactionDate =
+                              purchase['transactionDate']?.toString() ?? '';
+                          final status =
+                              purchase['status']?.toString() ??
+                              l10n.settingsUnknown;
 
                           return LBBlock(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(top: 2),
-                                  child: LBPixelIcon(_getPurchaseIcon(_getTypeFromProductId(productId)), cell: 3),
+                                  child: LBPixelIcon(
+                                    _getPurchaseIcon(
+                                      _getTypeFromProductId(productId),
+                                    ),
+                                    cell: 3,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         _formatProductName(productId),
-                                        style: LBText.button(p, size: 12).copyWith(letterSpacing: .6),
+                                        style: LBText.button(
+                                          p,
+                                          size: 12,
+                                        ).copyWith(letterSpacing: .6),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(l10n.settingsStatusLine(status), style: LBText.body(p, size: 11)),
                                       Text(
-                                        l10n.settingsDateLine(_formatDate(transactionDate)),
+                                        l10n.settingsStatusLine(status),
+                                        style: LBText.body(p, size: 11),
+                                      ),
+                                      Text(
+                                        l10n.settingsDateLine(
+                                          _formatDate(transactionDate),
+                                        ),
                                         style: LBText.body(p, size: 11),
                                       ),
                                     ],
@@ -1159,12 +1337,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         } catch (e) {
                           return LBBlock(
                             kind: LBBlockKind.muted,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(l10n.settingsPurchaseNumber(index + 1), style: LBText.button(p, size: 12)),
-                                Text(l10n.settingsDataParseError, style: LBText.body(p, size: 11)),
+                                Text(
+                                  l10n.settingsPurchaseNumber(index + 1),
+                                  style: LBText.button(p, size: 12),
+                                ),
+                                Text(
+                                  l10n.settingsDataParseError,
+                                  style: LBText.body(p, size: 11),
+                                ),
                               ],
                             ),
                           );
@@ -1229,7 +1416,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return 'skin';
     } else if (bare.contains('trail')) {
       return 'trail';
-    } else if (bare.contains('bundle') || bare.contains('pack') || bare.contains('collection')) {
+    } else if (bare.contains('bundle') ||
+        bare.contains('pack') ||
+        bare.contains('collection')) {
       return 'bundle';
     } else if (bare.contains('battle_pass')) {
       return 'battlepass';
@@ -1246,7 +1435,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         .replaceAll('skin_', '')
         .replaceAll('_', ' ')
         .split(' ')
-        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : '',
+        )
         .join(' ');
   }
 
@@ -1278,7 +1471,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Pre-fill with the current username so the user can see what it is
     // before editing, rather than retyping it for a small tweak.
     final currentUsername = authState.user?.username ?? '';
-    final TextEditingController usernameController = TextEditingController(text: currentUsername);
+    final TextEditingController usernameController = TextEditingController(
+      text: currentUsername,
+    );
     final UsernameService usernameService = UsernameService();
     String? errorMessage;
     bool isLoading = false;
@@ -1307,7 +1502,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (authState.isGuestUser) {
                 success = await authCubit.updateGuestUsername(newUsername);
                 if (!success) {
-                  final validation = usernameService.validateUsername(newUsername);
+                  final validation = usernameService.validateUsername(
+                    newUsername,
+                  );
                   setState(() {
                     errorMessage = validation.errorCode != null
                         ? _usernameErrorText(validation.errorCode!, l10n)
@@ -1316,9 +1513,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               } else {
                 // For authenticated users
-                success = await authCubit.updateAuthenticatedUsername(newUsername);
+                success = await authCubit.updateAuthenticatedUsername(
+                  newUsername,
+                );
                 if (!success) {
-                  final validation = await UsernameService().validateUsernameComplete(newUsername);
+                  final validation = await UsernameService()
+                      .validateUsernameComplete(newUsername);
                   setState(() {
                     errorMessage = validation.errorCode != null
                         ? _usernameErrorText(validation.errorCode!, l10n)
@@ -1344,9 +1544,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             }
 
             OutlineInputBorder border(Color c) => OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(LB.blockRadius),
-                  borderSide: BorderSide(color: c),
-                );
+              borderRadius: BorderRadius.circular(LB.blockRadius),
+              borderSide: BorderSide(color: c),
+            );
 
             return _LBDialogFrame(
               title: l10n.settingsChangeUsernameTitle,
@@ -1359,7 +1559,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: isLoading
                       ? SizedBox(
                           width: 42,
-                          child: LBCellsBar(count: 3, value: 1, cell: 14, semanticsLabel: l10n.settingsUpdate),
+                          child: LBCellsBar(
+                            count: 3,
+                            value: 1,
+                            cell: 14,
+                            semanticsLabel: l10n.settingsUpdate,
+                          ),
                         )
                       : Text(
                           l10n.settingsUpdate.toUpperCase(),
@@ -1370,8 +1575,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   kind: LBBlockKind.muted,
                   height: 46,
                   alignment: Alignment.center,
-                  onTap: isLoading ? null : () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.commonCancel.toUpperCase(), style: LBText.button(p, color: p.inkMuted, size: 12)),
+                  onTap: isLoading
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: Text(
+                    l10n.commonCancel.toUpperCase(),
+                    style: LBText.button(p, color: p.inkMuted, size: 12),
+                  ),
                 ),
               ],
               child: SingleChildScrollView(
@@ -1383,13 +1593,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: LBChip(
-                          label: '${l10n.settingsCurrentLabel} $currentUsername',
+                          label:
+                              '${l10n.settingsCurrentLabel} $currentUsername',
                           icon: LBIcon.user,
                         ),
                       ),
                       const SizedBox(height: 12),
                     ],
-                    Text(l10n.settingsUsernameDialogBody, style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12)),
+                    Text(
+                      l10n.settingsUsernameDialogBody,
+                      style: LBText.body(
+                        p,
+                        color: p.ink.withValues(alpha: .8),
+                        size: 12,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     TextField(
                       controller: usernameController,
@@ -1410,11 +1628,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         errorStyle: LBText.body(p, color: LB.bonk, size: 11),
                         counterStyle: LBText.body(p, color: p.inkDim, size: 10),
                       ),
-                      style: LBText.body(p, color: p.ink, size: 14).copyWith(fontWeight: FontWeight.w700),
+                      style: LBText.body(
+                        p,
+                        color: p.ink,
+                        size: 14,
+                      ).copyWith(fontWeight: FontWeight.w700),
                       maxLength: 20,
                     ),
                     const SizedBox(height: 6),
-                    Text(l10n.settingsUsernameRules, style: LBText.body(p, color: p.inkDim, size: 11)),
+                    Text(
+                      l10n.settingsUsernameRules,
+                      style: LBText.body(p, color: p.inkDim, size: 11),
+                    ),
                   ],
                 ),
               ),
@@ -1444,7 +1669,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         SettingsValueRow(
           title: 'SEND LOCAL TEST',
-          subtitle: 'Fires immediately. If you don\'t see it, OS permission is denied '
+          subtitle:
+              'Fires immediately. If you don\'t see it, OS permission is denied '
               'or the channel is blocked in system settings.',
           onTap: _sendTestLocalNotification,
         ),
@@ -1452,20 +1678,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: hasFcmToken ? 'SEND PUSH VIA BACKEND' : 'NO FCM TOKEN',
           subtitle: hasFcmToken
               ? 'Backend sends a push to your device via FCM. Should arrive '
-                  'within ~5 seconds if token + backend + delivery all work.'
+                    'within ~5 seconds if token + backend + delivery all work.'
               : 'FCM token not yet registered. Sign in or restart the app, '
-                  'then return to retry.',
+                    'then return to retry.',
           onTap: hasFcmToken ? _sendTestPushViaBackend : null,
         ),
         SettingsValueRow(
           title: 'COPY FCM TOKEN',
-          subtitle: 'Debug only. Paste into Firebase Console → Cloud Messaging → '
+          subtitle:
+              'Debug only. Paste into Firebase Console → Cloud Messaging → '
               'Send test message to bypass the backend entirely.',
           onTap: hasFcmToken ? _copyFcmTokenToClipboard : null,
         ),
         SettingsValueRow(
           title: 'SCHEDULE TEST AT TIME',
-          subtitle: 'Pick date + time. Backend schedules a one-off Hangfire job to '
+          subtitle:
+              'Pick date + time. Backend schedules a one-off Hangfire job to '
               'fire an FCM push at that instant — fires even if the app is '
               'killed and even if the device clock drifts. Cancel via the '
               'next button.',
@@ -1477,7 +1705,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         SettingsValueRow(
           title: 'PREVIEW DAILY REMINDER',
-          subtitle: 'Backend fires the exact daily reminder variant this user '
+          subtitle:
+              'Backend fires the exact daily reminder variant this user '
               'would receive at the next 20:00-local tick — streak / '
               'challenge / high-score branches all evaluated server-side '
               'from your real DB state. Bypasses the timing gate for '
@@ -1625,7 +1854,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 /// actions — for the dialogs [showLBDialog] cannot express (a text field
 /// with live validation, a scrolling list).
 class _LBDialogFrame extends StatelessWidget {
-  const _LBDialogFrame({required this.title, required this.child, required this.actions});
+  const _LBDialogFrame({
+    required this.title,
+    required this.child,
+    required this.actions,
+  });
 
   final String title;
   final Widget child;
@@ -1636,7 +1869,10 @@ class _LBDialogFrame extends StatelessWidget {
     final p = context.lb;
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: LB.margin * 1.5,
+        vertical: 24,
+      ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: LBBlock(
@@ -1646,7 +1882,10 @@ class _LBDialogFrame extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(title.toUpperCase(), style: LBText.button(p, color: p.head, size: 14)),
+              Text(
+                title.toUpperCase(),
+                style: LBText.button(p, color: p.head, size: 14),
+              ),
               const SizedBox(height: 12),
               Flexible(child: child),
               const SizedBox(height: 16),

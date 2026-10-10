@@ -323,11 +323,15 @@ class _LBGameInfoRowState extends State<LBGameInfoRow> with SingleTickerProvider
             }
             final active = gs.activePowerUps.where((x) => !x.isExpired).toList();
             if (callout != null) {
+              // Two lines: callouts ("COMBO MISSED · IT HAPPENS") are short
+              // jokes that lose the punchline to an ellipsis on one line.
+              // The row is two cells tall, so the second line costs no
+              // height and the board does not move.
               left.add(Text(
                 callout,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: LBText.button(p, color: p.lime, size: 12.5).copyWith(letterSpacing: 1.6),
+                style: LBText.button(p, color: p.lime, size: 12.5).copyWith(letterSpacing: 1.6, height: 1.2),
               ));
             } else if (active.isNotEmpty) {
               left.add(_PowerUpReadout(powerUp: active.last, showJoke: widget.showJoke && left.isEmpty));
@@ -414,9 +418,9 @@ class _PowerUpReadout extends StatelessWidget {
           flex: 3,
           child: Text(
             label,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: LBText.button(p, color: color, size: 12.5).copyWith(letterSpacing: 1.6),
+            style: LBText.button(p, color: color, size: 12.5).copyWith(letterSpacing: 1.6, height: 1.2),
           ),
         ),
         if (showJoke && joke.isNotEmpty && !ending) ...[

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,13 +15,10 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/game_animations.dart';
-import 'package:snake_classic/widgets/dpad_row_layout.dart';
+import 'package:snake_classic/widgets/game_bottom_bar.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb_screens/versus/versus_match_widgets.dart';
 import 'package:snake_classic/widgets/lb_screens/versus/versus_widgets.dart';
-import 'package:snake_classic/widgets/steerable_dpad.dart';
-import 'package:snake_classic/widgets/turn_buttons.dart';
-import 'package:snake_classic/widgets/joystick_controls.dart';
 import 'package:snake_classic/widgets/multiplayer_flame_board.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 import 'package:snake_classic/widgets/screen_shake.dart';
@@ -48,6 +46,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   // Animation controllers for UI polish
   late AnimationController _gestureIndicatorController;
   Direction? _lastSwipeDirection;
+
+  /// What the swipe pad's compass shows: the last turn, accepted or refused.
+  final ValueNotifier<LBSwipeCue?> _swipeCue = ValueNotifier(null);
 
   // One-shot guards for listener-driven effects
   bool _resultDialogShown = false;
@@ -89,6 +90,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _keyboardFocusNode.dispose();
     _juiceController.dispose();
     _gestureIndicatorController.dispose();
+    _swipeCue.dispose();
     super.dispose();
   }
 
@@ -125,6 +127,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     // a positive click and the accepted cue, which is the game telling the
     // player it did something it did not do.
     final result = context.read<MultiplayerCubit>().changeDirection(direction);
+    if (result.isAccepted || result.isRejected) {
+      _swipeCue.value = LBSwipeCue(direction, rejected: result.isRejected);
+    }
     if (!result.isAccepted) return;
 
     _lastSwipeDirection = direction;
@@ -227,7 +232,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       outcome = VersusOutcome.defeat;
       line = result.reason == 'mutual_crash'
           ? l10n.lbDefeatBothCrashed
-          : (_isUnexplainedLoss(result, me) ? l10n.lbDefeatLine(rival) : summary);
+          : (_isUnexplainedLoss(result, me)
+                ? l10n.lbDefeatLine(rival)
+                : summary);
       line2 = aborted ? null : l10n.lbDefeatLine2(rival);
     }
 
@@ -491,6 +498,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                         onLeave: _showExitDialog,
                                       ),
 
+                                      // Board, status row and the control
+                                      // zone, laid out together so the zone
+                                      // gets every spare dp.
                                       Expanded(
                                         child: _buildBoardArea(
                                           multiplayerState,
@@ -498,14 +508,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                           currentUserId,
                                           me,
                                           opponent,
+                                          theme,
                                         ),
-                                      ),
-
-                                      // Bottom control strip
-                                      _buildControlStrip(
-                                        theme,
-                                        snapshot,
-                                        currentUserId,
                                       ),
                                     ],
                                   ),
@@ -536,19 +540,23 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  /// The split cell row, the board and the gap line (render 19).
+  /// The split cell row, the board, the status row and the control zone.
+  ///
+  /// Same frame as single-player: the board sits at the top, and the zone
+  /// under it is the same size for every control layout (at least
+  /// [_zoneMin], plus any spare height on a tall phone), so switching
+  /// controls never moves the board.
   Widget _buildBoardArea(
     MultiplayerState multiplayerState,
     MatchSnapshot snapshot,
     String currentUserId,
     MatchPlayerState? me,
     MatchPlayerState? opponent,
+    GameTheme theme,
   ) {
-    final l10n = AppLocalizations.of(context)!;
-    final p = context.lb;
-    final gapLineH = context.lbCell * 1.6;
     return LayoutBuilder(
       builder: (context, c) {
+        final cell = context.lbCell;
         // The board uses every column on phones (DESIGN_SPEC §2), capped on
         // tablets so it doesn't dwarf the uiScale-sized HUD and controls.
         final cap = context.responsive<double>(
@@ -559,86 +567,65 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         // The split row is one cell per column (18), plus its 3 dp gap and
         // 1 dp wall, plus 4 dp before the board.
         const splitCells = 18;
+        final topGap = cell * .5;
+        final statusH = cell * 3.2;
+        final zoneMin = _zoneMin(context);
         // Half a cell of margin per side: edge to edge, the 1 px side walls
         // sat on the screen's own edge, where rounded corners and curved
         // glass hide them (same fix as the single-player board).
-        var side = math.min(c.maxWidth - context.lbCell, cap);
-        final maxH = c.maxHeight - gapLineH - 8;
+        var side = math.min(c.maxWidth - cell, cap);
+        final maxH = c.maxHeight - topGap - statusH - zoneMin - 8;
         if (side + side / splitCells > maxH) {
           side = math.max(0.0, maxH / (1 + 1 / splitCells));
         }
 
         final myScore = me?.score ?? 0;
         final rivalScore = opponent?.score ?? 0;
-        final gap = (rivalScore - myScore).abs();
-        final String? gapLine = opponent == null
-            ? null
-            : rivalScore > myScore
-            ? l10n.lbMatchBehind(opponent.username, context.formatInt(gap))
-            : myScore > rivalScore
-            ? l10n.lbMatchAhead(context.formatInt(gap))
-            : l10n.lbMatchTied;
 
-        // The board is square (the server's grid), so on a tall phone
-        // there is height to spare: centre the board group in it rather
-        // than leaving one empty band under the board.
-        return Align(
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: side,
-                child: VersusSplitBar(
-                  myScore: myScore,
-                  rivalScore: rivalScore,
-                  count: splitCells,
+        return Column(
+          children: [
+            SizedBox(height: topGap),
+            SizedBox(
+              width: side,
+              child: VersusSplitBar(
+                myScore: myScore,
+                rivalScore: rivalScore,
+                count: splitCells,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Swipe recognition is scoped to the board rectangle (and the
+            // swipe pad below). It used to wrap the whole column, so a drag
+            // starting on the versus header could steer. The board is square;
+            // size it HERE, so the frame wraps the playfield exactly.
+            SizedBox(
+              width: side,
+              height: side,
+              child: SwipeDetector(
+                onSwipe: _handleSwipe,
+                child: MultiplayerFlameBoard(
+                  snapshot: snapshot,
+                  boardSize: multiplayerState.boardSize,
+                  currentUserId: currentUserId,
+                  prediction: multiplayerState.localPrediction,
+                  onLocalFoodEaten: _onLocalFoodShown,
                 ),
               ),
-              const SizedBox(height: 4),
-              // Swipe recognition is scoped to the board rectangle. It used
-              // to wrap the whole column, so a drag starting on the versus
-              // header or the control strip could steer. The board is
-              // square; size it HERE, so the frame wraps the playfield
-              // exactly.
-              SizedBox(
-                width: side,
-                height: side,
-                child: SwipeDetector(
-                  onSwipe: _handleSwipe,
-                  child: MultiplayerFlameBoard(
-                    snapshot: snapshot,
-                    boardSize: multiplayerState.boardSize,
-                    currentUserId: currentUserId,
-                    prediction: multiplayerState.localPrediction,
-                    onLocalFoodEaten: _onLocalFoodShown,
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: gapLineH,
-                width: side,
-                child: gapLine == null
-                    ? null
-                    : Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
-                          child: Text(
-                            gapLine,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: LBText.body(p, size: 11.5),
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
+            ),
+            SizedBox(
+              width: side,
+              height: statusH,
+              child: _statusRow(snapshot, currentUserId, me, opponent),
+            ),
+            Expanded(child: _controlZone(theme)),
+          ],
         );
       },
     );
   }
+
+  /// The control zone's floor, shared with single-player's.
+  static double _zoneMin(BuildContext context) => 150 * context.uiScale;
 
   /// Dim the frozen board and say what's happening while the cubit
   /// retries the connection. The match keeps running server-side.
@@ -657,7 +644,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               const SizedBox(height: 22),
               Text(
                 l10n.mpReconnecting.toUpperCase(),
-                style: LBText.button(p, color: p.lime, size: 16).copyWith(letterSpacing: 3),
+                style: LBText.button(
+                  p,
+                  color: p.lime,
+                  size: 16,
+                ).copyWith(letterSpacing: 3),
               ),
               const SizedBox(height: 8),
               Padding(
@@ -684,11 +675,19 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          LBCellText(l10n.lbVs, cell: 14 * context.uiScale, glow: true).gameBreathe(intensity: 1.08),
+          LBCellText(
+            l10n.lbVs,
+            cell: 14 * context.uiScale,
+            glow: true,
+          ).gameBreathe(intensity: 1.08),
           const SizedBox(height: 30),
           Text(
             l10n.mpGetReady.toUpperCase(),
-            style: LBText.button(p, color: p.lime, size: 18).copyWith(letterSpacing: 4),
+            style: LBText.button(
+              p,
+              color: p.lime,
+              size: 18,
+            ).copyWith(letterSpacing: 4),
           ),
           const SizedBox(height: 8),
           Text(l10n.mpDroppingIntoArena, style: LBText.body(p, size: 12)),
@@ -714,128 +713,117 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
   }
 
-  /// Bottom strip: your length on the left, the steering echo on the right
-  /// (render 19). For rare >2-player matches a compact scoreboard fills the
-  /// middle (the header only frames you vs your primary rival). On-screen
-  /// control layouts keep their own widgets, flanked by the same two blocks.
-  Widget _buildControlStrip(
-    GameTheme theme,
+  /// Under the board: your length, who is ahead (or a mini scoreboard in a
+  /// rare >2-player match), and the steering echo. Swipe players see the
+  /// echo in their swipe pad instead, so it is not repeated here.
+  Widget _statusRow(
     MatchSnapshot snapshot,
     String currentUserId,
+    MatchPlayerState? me,
+    MatchPlayerState? opponent,
   ) {
-    final mySnake = snapshot.playerByUserId(currentUserId);
-    final manyPlayers = snapshot.players.length > 2;
-    final length = mySnake?.body.length ?? 0;
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
     final cell = context.lbCell;
+    final length = snapshot.playerByUserId(currentUserId)?.body.length ?? 0;
+    final manyPlayers = snapshot.players.length > 2;
+    final swipe = !context.select<GameSettingsCubit, bool>(
+      (c) => c.state.dPadEnabled,
+    );
 
-    // Same dpad_enabled setting as single-player — D-pad users get their
-    // D-pad in VS matches too. watch: the pause-less match screen still
-    // reflects a toggle made before entering.
-    final settings = context.watch<GameSettingsCubit>().state;
-    final dPadEnabled = settings.dPadEnabled;
-    final dPadPosition = settings.dPadPosition;
-    final turnButtons = settings.controlLayout == ControlLayout.turnButtons;
-    final joystick = settings.controlLayout == ControlLayout.joystick;
-    final dpadSize = 120.0 * context.uiScale;
-
-    // Whether this player can steer AT ALL right now — dead, ended, or
-    // reconnecting all mean no. The cubit already refused those inputs; the
-    // control carried on looking pressable, which is the game inviting an
-    // action it will silently discard.
-    final canSteer = context.watch<MultiplayerCubit>().canSteer;
+    final myScore = me?.score ?? 0;
+    final rivalScore = opponent?.score ?? 0;
+    final gap = (rivalScore - myScore).abs();
+    final String? gapLine = opponent == null
+        ? null
+        : rivalScore > myScore
+        ? l10n.lbMatchBehind(opponent.username, context.formatInt(gap))
+        : myScore > rivalScore
+        ? l10n.lbMatchAhead(context.formatInt(gap))
+        : l10n.lbMatchTied;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.lbGutter,
-        cell * .2,
-        context.lbGutter,
-        cell * .5,
-      ),
-      child: dPadEnabled
-          ? (turnButtons
-                ? SteerableTurnButtons(
-                    onTurn: _handleRelativeTurn,
-                    theme: theme,
-                    height: dpadSize,
-                    canSteer: canSteer,
-                    centre: _lenBlock(length, width: cell * 4),
-                  )
-                : joystick
-                ? Row(
-                    children: [
-                      _lenBlock(length, width: cell * 4),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SteerableJoystick(
-                          onDirection: _handleSwipe,
-                          theme: theme,
-                          height: dpadSize,
-                          canSteer: canSteer,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _swipeIndicator(maxWidth: cell * 5),
-                    ],
-                  )
-                : _buildDPadRow(
-                    theme: theme,
-                    dpadSize: dpadSize,
-                    dPadPosition: dPadPosition,
-                    canSteer: canSteer,
-                    snakeLength: length,
-                  ))
-          : Row(
-              children: [
-                Expanded(flex: 5, child: _lenBlock(length)),
-                if (manyPlayers) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 6,
-                    child: _miniLeaderboard(snapshot, currentUserId),
+      padding: EdgeInsets.symmetric(vertical: cell * .4),
+      child: Row(
+        children: [
+          _lenBlock(length, width: cell * 4),
+          const SizedBox(width: 8),
+          Expanded(
+            child: manyPlayers
+                ? _miniLeaderboard(snapshot, currentUserId)
+                : gapLine == null
+                ? const SizedBox.shrink()
+                : Text(
+                    gapLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: LBText.body(p, size: 11.5),
                   ),
-                  const SizedBox(width: 8),
-                ] else
-                  const Spacer(flex: 3),
-                Expanded(flex: 5, child: _swipeIndicator()),
-              ],
-            ),
+          ),
+          const SizedBox(width: 8),
+          if (swipe)
+            SizedBox(width: cell * 4)
+          else
+            _swipeIndicator(maxWidth: cell * 5),
+        ],
+      ),
     );
   }
 
-  /// The lower control row, honouring the player's saved d-pad position.
-  ///
-  /// Same treatment as single-player: the setting was stored, synced and
-  /// offered in Settings, and then ignored here. Placement is a reorder inside
-  /// the existing strip, so the board's geometry does not move with it.
-  Widget _buildDPadRow({
-    required GameTheme theme,
-    required double dpadSize,
-    required DPadPosition dPadPosition,
-    required bool canSteer,
-    required int snakeLength,
-  }) {
-    final cell = context.lbCell;
-    final dPad = SteerableDPad(
-      onDirection: _handleSwipe,
-      theme: theme,
-      size: dpadSize,
-      canSteer: canSteer,
+  /// The control zone: the same widget and the same rules as single-player
+  /// (see GameBottomBar), driven by the same settings. Live only while this
+  /// player can steer at all; dead, ended or reconnecting all mean no, and
+  /// the control dims rather than inviting an input the cubit would discard.
+  Widget _controlZone(GameTheme theme) {
+    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.dPadEnabled != current.dPadEnabled ||
+          previous.dPadPosition != current.dPadPosition ||
+          previous.controlLayout != current.controlLayout,
+      builder: (context, controls) =>
+          BlocSelector<MultiplayerCubit, MultiplayerState, bool>(
+            selector: (_) => context.read<MultiplayerCubit>().canSteer,
+            builder: (context, canSteer) => LayoutBuilder(
+              builder: (context, zone) => GameBottomBar(
+                theme: theme,
+                isSmallScreen: false,
+                height: zone.maxHeight,
+                dPadEnabled: controls.dPadEnabled,
+                dPadPosition: controls.dPadPosition,
+                controlLayout: controls.controlLayout,
+                onRelativeTurn: _handleRelativeTurn,
+                onDirection: _handleSwipe,
+                canSteerOverride: canSteer,
+                swipeZone: _swipePad(zone.maxHeight),
+              ),
+            ),
+          ),
     );
+  }
 
-    Widget lengthBlock(Alignment alignment) => Align(
-      alignment: alignment,
-      child: _lenBlock(snakeLength, width: cell * 4),
-    );
-    Widget indicator(Alignment alignment) => Align(
-      alignment: alignment,
-      child: _swipeIndicator(maxWidth: cell * 5),
-    );
-
-    return DPadRowLayout.build(
-      position: dPadPosition,
-      dPad: dPad,
-      leading: lengthBlock,
-      trailing: indicator,
+  /// A swipe player's half of the zone: a second swipe surface with the
+  /// compass, exactly as in single-player.
+  Widget _swipePad(double height) {
+    final p = context.lb;
+    final scale = context.uiScale;
+    final size = math.min((height - 20 * scale) * .8, 150 * scale);
+    return SwipeDetector(
+      onSwipe: _handleSwipe,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: p.lime.withValues(alpha: .03),
+          borderRadius: BorderRadius.circular(12 * scale),
+          border: Border.all(color: p.lime.withValues(alpha: .14)),
+        ),
+        child: Center(
+          child: size < 54
+              ? const SizedBox.shrink()
+              : IgnorePointer(
+                  child: LBSwipeCompass(cue: _swipeCue, size: size),
+                ),
+        ),
+      ),
     );
   }
 
@@ -855,8 +843,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           child: Text(
             l10n.lbHudLen('$length'),
             maxLines: 1,
-            style: LBText.button(p, color: p.ink.withValues(alpha: .8), size: 13)
-                .copyWith(letterSpacing: 2.4),
+            style: LBText.button(
+              p,
+              color: p.ink.withValues(alpha: .8),
+              size: 13,
+            ).copyWith(letterSpacing: 2.4),
           ),
         ),
       ),
@@ -935,8 +926,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                             ? l10n.mpTurnBlocked.toUpperCase()
                             : l10n.lbSwipeToSteer,
                         maxLines: 1,
-                        style: LBText.button(p, color: color, size: 11.5)
-                            .copyWith(letterSpacing: 2),
+                        style: LBText.button(
+                          p,
+                          color: color,
+                          size: 11.5,
+                        ).copyWith(letterSpacing: 2),
                       ),
                     ),
                   ),
@@ -955,10 +949,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
   }
 
-  Widget _miniLeaderboard(
-    MatchSnapshot snapshot,
-    String currentUserId,
-  ) {
+  Widget _miniLeaderboard(MatchSnapshot snapshot, String currentUserId) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
     final sortedPlayers = List<MatchPlayerState>.from(snapshot.players)
@@ -972,9 +963,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         itemBuilder: (context, index) {
           final player = sortedPlayers[index];
           final isMe = player.userId == currentUserId;
-          final color = !player.alive
-              ? p.inkDim
-              : (isMe ? p.lime : LB.rival);
+          final color = !player.alive ? p.inkDim : (isMe ? p.lime : LB.rival);
 
           return LBBlock(
             kind: isMe ? LBBlockKind.outline : LBBlockKind.muted,
@@ -986,7 +975,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
               children: [
                 Text(
                   '${index + 1}',
-                  style: LBText.button(p, color: index == 0 ? LB.gold : p.inkDim, size: 12),
+                  style: LBText.button(
+                    p,
+                    color: index == 0 ? LB.gold : p.inkDim,
+                    size: 12,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Column(
@@ -1001,7 +994,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                         overflow: TextOverflow.ellipsis,
                         style: LBText.label(p, color: color).copyWith(
                           letterSpacing: 1,
-                          decoration: player.alive ? null : TextDecoration.lineThrough,
+                          decoration: player.alive
+                              ? null
+                              : TextDecoration.lineThrough,
                         ),
                       ),
                     ),

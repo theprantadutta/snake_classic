@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 7.2.1+64
+version: 7.2.2+65
 
 environment:
   # Tracks the Dart SDK this project is developed/built with (Flutter

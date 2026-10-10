@@ -12,6 +12,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/widgets/control_layout_preview.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Pause (Living Board screen 06): PAUSED in snake cells over the dimmed
@@ -108,7 +109,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
           // "QUIT TO MENU" to "QUIT TO M…" (Realme RMX3771). One extra on
           // narrow phones; wider phones and tablets keep two.
           padding: EdgeInsets.symmetric(
-            horizontal: context.lbGutter + cell * (MediaQuery.sizeOf(context).width < 380 ? 1 : 2),
+            horizontal:
+                context.lbGutter +
+                cell * (MediaQuery.sizeOf(context).width < 380 ? 1 : 2),
             vertical: 24,
           ),
           child: ConstrainedBox(
@@ -120,14 +123,22 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 Center(
                   child: Semantics(
                     header: true,
-                    child: LBCellText(l10n.lbPauseTitle, cell: 11 * context.uiScale, glow: true),
+                    child: LBCellText(
+                      l10n.lbPauseTitle,
+                      cell: 11 * context.uiScale,
+                      glow: true,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   l10n.lbPauseLine,
                   textAlign: TextAlign.center,
-                  style: LBText.body(p, color: p.ink.withValues(alpha: .7), size: 13),
+                  style: LBText.body(
+                    p,
+                    color: p.ink.withValues(alpha: .7),
+                    size: 13,
+                  ),
                 ),
                 SizedBox(height: cell * 1.6),
                 LBBlock(
@@ -139,9 +150,22 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(l10n.lbResume, style: LBText.button(p, color: p.onLime, size: 17).copyWith(letterSpacing: 4)),
+                      Text(
+                        l10n.lbResume,
+                        style: LBText.button(
+                          p,
+                          color: p.onLime,
+                          size: 17,
+                        ).copyWith(letterSpacing: 4),
+                      ),
                       const SizedBox(height: 6),
-                      Text(l10n.lbResumeSub, style: LBText.label(p, color: p.onLime.withValues(alpha: .65))),
+                      Text(
+                        l10n.lbResumeSub,
+                        style: LBText.label(
+                          p,
+                          color: p.onLime.withValues(alpha: .65),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -186,7 +210,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       ),
                       maxLines: 1,
                       textAlign: TextAlign.center,
-                      style: LBText.label(p, color: p.inkDim).copyWith(fontSize: 10),
+                      style: LBText.label(
+                        p,
+                        color: p.inkDim,
+                      ).copyWith(fontSize: 10),
                     ),
                   ),
                 ],
@@ -194,7 +221,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _TextLink(label: l10n.poStore, onTap: () => context.push(AppRoutes.store)),
+                    _TextLink(
+                      label: l10n.poStore,
+                      onTap: () => context.push(AppRoutes.store),
+                    ),
                     Text('  ·  ', style: LBText.label(p, color: p.inkDim)),
                     _TextLink(
                       label: l10n.lbGoPro,
@@ -212,11 +242,16 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
     // Blur the board behind the overlay so the pause visibly disengages the
     // world while it stays faintly readable underneath.
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-      child: ColoredBox(
-        color: p.board.withValues(alpha: .78),
-        child: SafeArea(child: content),
+    // Clipped: a BackdropFilter blurs everything painted behind it up to
+    // its nearest clip, which without one is the whole screen. That is
+    // what blurred the banner above the play area along with the board.
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: ColoredBox(
+          color: p.board.withValues(alpha: .78),
+          child: SafeArea(child: content),
+        ),
       ),
     );
   }
@@ -234,93 +269,122 @@ class _PauseOverlayState extends State<PauseOverlay> {
     showLBSheet<void>(
       context: context,
       title: l10n.lbPauseSettings,
-      builder: (sheetContext) => BlocBuilder<GameSettingsCubit, GameSettingsState>(
-        builder: (context, settings) {
-          final cubit = context.read<GameSettingsCubit>();
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LBSectionLabel(l10n.lbControls),
-                Row(
+      builder: (sheetContext) =>
+          BlocBuilder<GameSettingsCubit, GameSettingsState>(
+            builder: (context, settings) {
+              final cubit = context.read<GameSettingsCubit>();
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final (label, sub, on, apply) in [
-                      (l10n.lbCtrlSwipe, l10n.lbCtrlSwipeSub, !settings.dPadEnabled, () => cubit.setDPadEnabled(false)),
-                      (
-                        l10n.lbCtrlDpad,
-                        l10n.lbCtrlDpadSub,
-                        settings.dPadEnabled && settings.controlLayout == ControlLayout.dPad,
-                        () {
-                          cubit.setDPadEnabled(true);
-                          cubit.setControlLayout(ControlLayout.dPad);
+                    LBSectionLabel(l10n.lbControls),
+                    Row(
+                      children: [
+                        for (final (label, sub, dPad, layout) in [
+                          (
+                            l10n.lbCtrlSwipe,
+                            l10n.lbCtrlSwipeSub,
+                            false,
+                            ControlLayout.dPad,
+                          ),
+                          (
+                            l10n.lbCtrlDpad,
+                            l10n.lbCtrlDpadSub,
+                            true,
+                            ControlLayout.dPad,
+                          ),
+                          (
+                            l10n.lbCtrlTurn,
+                            l10n.lbCtrlTurnSub,
+                            true,
+                            ControlLayout.turnButtons,
+                          ),
+                          (
+                            l10n.lbCtrlStick,
+                            l10n.lbCtrlStickSub,
+                            true,
+                            ControlLayout.joystick,
+                          ),
+                        ]) ...[
+                          Expanded(
+                            child: LBControlChoice(
+                              title: label,
+                              subtitle: sub,
+                              selected: dPad
+                                  ? settings.dPadEnabled &&
+                                        settings.controlLayout == layout
+                                  : !settings.dPadEnabled,
+                              onTap: () {
+                                cubit.setDPadEnabled(dPad);
+                                if (dPad) cubit.setControlLayout(layout);
+                              },
+                              preview: ControlLayoutPreview(
+                                dPadEnabled: dPad,
+                                layout: layout,
+                                dPadPosition: settings.dPadPosition,
+                                theme: widget.theme,
+                              ),
+                            ),
+                          ),
+                          if (layout != ControlLayout.joystick)
+                            const SizedBox(width: 6),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    LBRow(
+                      title: settings.snapMovementEnabled
+                          ? l10n.poSnapOn
+                          : l10n.poSnapOff,
+                      trailing: LBToggle(
+                        value: settings.snapMovementEnabled,
+                        onChanged: cubit.setSnapMovementEnabled,
+                      ),
+                      onTap: () => cubit.setSnapMovementEnabled(
+                        !settings.snapMovementEnabled,
+                      ),
+                    ),
+                    LBRow(
+                      title: l10n.lbSoundFx,
+                      subtitle: l10n.lbSoundFxSub,
+                      trailing: LBToggle(
+                        value: settings.soundEnabled,
+                        onChanged: cubit.setSoundEnabled,
+                      ),
+                      onTap: () =>
+                          cubit.setSoundEnabled(!settings.soundEnabled),
+                    ),
+                    LBRow(
+                      title: l10n.lbMusic,
+                      trailing: LBToggle(
+                        value: settings.musicEnabled,
+                        onChanged: cubit.setMusicEnabled,
+                      ),
+                      onTap: () =>
+                          cubit.setMusicEnabled(!settings.musicEnabled),
+                    ),
+                    if (widget.onShowTutorial != null)
+                      LBRow(
+                        title: l10n.poHowToPlay,
+                        leading: const LBPixelIcon(LBIcon.eye, cell: 3.6),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          widget.onShowTutorial!();
                         },
                       ),
-                      (
-                        l10n.lbCtrlTurn,
-                        l10n.lbCtrlTurnSub,
-                        settings.dPadEnabled && settings.controlLayout == ControlLayout.turnButtons,
-                        () {
-                          cubit.setDPadEnabled(true);
-                          cubit.setControlLayout(ControlLayout.turnButtons);
-                        },
-                      ),
-                      (
-                        l10n.lbCtrlStick,
-                        l10n.lbCtrlStickSub,
-                        settings.dPadEnabled && settings.controlLayout == ControlLayout.joystick,
-                        () {
-                          cubit.setDPadEnabled(true);
-                          cubit.setControlLayout(ControlLayout.joystick);
-                        },
-                      ),
-                    ])
-                      Expanded(
-                        child: LBControlChoice(title: label, subtitle: sub, selected: on, onTap: apply),
-                      ),
+                    LBRow(
+                      title: l10n.poGameGuide,
+                      leading: const LBPixelIcon(LBIcon.grid, cell: 3.6),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        context.push(AppRoutes.instructions);
+                      },
+                    ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                LBRow(
-                  title: settings.snapMovementEnabled ? l10n.poSnapOn : l10n.poSnapOff,
-                  trailing: LBToggle(
-                    value: settings.snapMovementEnabled,
-                    onChanged: cubit.setSnapMovementEnabled,
-                  ),
-                  onTap: () => cubit.setSnapMovementEnabled(!settings.snapMovementEnabled),
-                ),
-                LBRow(
-                  title: l10n.lbSoundFx,
-                  subtitle: l10n.lbSoundFxSub,
-                  trailing: LBToggle(value: settings.soundEnabled, onChanged: cubit.setSoundEnabled),
-                  onTap: () => cubit.setSoundEnabled(!settings.soundEnabled),
-                ),
-                LBRow(
-                  title: l10n.lbMusic,
-                  trailing: LBToggle(value: settings.musicEnabled, onChanged: cubit.setMusicEnabled),
-                  onTap: () => cubit.setMusicEnabled(!settings.musicEnabled),
-                ),
-                if (widget.onShowTutorial != null)
-                  LBRow(
-                    title: l10n.poHowToPlay,
-                    leading: const LBPixelIcon(LBIcon.eye, cell: 3.6),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      widget.onShowTutorial!();
-                    },
-                  ),
-                LBRow(
-                  title: l10n.poGameGuide,
-                  leading: const LBPixelIcon(LBIcon.grid, cell: 3.6),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    context.push(AppRoutes.instructions);
-                  },
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
     );
   }
 }
@@ -360,7 +424,11 @@ class _PauseRow extends StatelessWidget {
               child: Text(
                 title,
                 maxLines: 1,
-                style: LBText.button(p, color: fg, size: 14).copyWith(letterSpacing: 2.4),
+                style: LBText.button(
+                  p,
+                  color: fg,
+                  size: 14,
+                ).copyWith(letterSpacing: 2.4),
               ),
             ),
           ),
@@ -373,7 +441,11 @@ class _PauseRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
-                style: LBText.body(p, color: fg.withValues(alpha: .7), size: 11),
+                style: LBText.body(
+                  p,
+                  color: fg.withValues(alpha: .7),
+                  size: 11,
+                ),
               ),
             ),
           ] else
@@ -393,26 +465,29 @@ class _TextLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        button: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            LBFeedback.tap();
-            onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-            child: Text(
-              label.toUpperCase(),
-              style: LBText.label(context.lb, color: color ?? context.lb.inkMuted).copyWith(
+    button: true,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        LBFeedback.tap();
+        onTap();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: Text(
+          label.toUpperCase(),
+          style: LBText.label(context.lb, color: color ?? context.lb.inkMuted)
+              .copyWith(
                 fontSize: 10,
                 decoration: TextDecoration.underline,
-                decorationColor: (color ?? context.lb.inkMuted).withValues(alpha: .5),
+                decorationColor: (color ?? context.lb.inkMuted).withValues(
+                  alpha: .5,
+                ),
               ),
-            ),
-          ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// A control-layout choice block (SWIPE / D-PAD / TURN / STICK). Shared by
@@ -424,12 +499,17 @@ class LBControlChoice extends StatelessWidget {
     required this.subtitle,
     required this.selected,
     required this.onTap,
+    this.preview,
   });
 
   final String title;
   final String subtitle;
   final bool selected;
   final VoidCallback onTap;
+
+  /// What the gameplay screen looks like with this control, shown above the
+  /// title so nobody has to pick blind. See ControlLayoutPreview.
+  final Widget? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -440,21 +520,38 @@ class LBControlChoice extends StatelessWidget {
       selected: selected,
       child: LBBlock(
         kind: kind,
-        height: context.lbCell * 3.5,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        height: preview == null ? context.lbCell * 3.5 : null,
+        padding: preview == null
+            ? const EdgeInsets.symmetric(horizontal: 4)
+            : const EdgeInsets.fromLTRB(5, 5, 5, 9),
         alignment: Alignment.center,
         onTap: onTap,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (preview != null) ...[preview!, const SizedBox(height: 8)],
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(title, style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: 1.6)),
+              child: Text(
+                title,
+                style: LBText.button(
+                  p,
+                  color: fg,
+                  size: 13,
+                ).copyWith(letterSpacing: 1.6),
+              ),
             ),
             const SizedBox(height: 4),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(subtitle, style: LBText.body(p, color: fg.withValues(alpha: .7), size: 10.5)),
+              child: Text(
+                subtitle,
+                style: LBText.body(
+                  p,
+                  color: fg.withValues(alpha: .7),
+                  size: 10.5,
+                ),
+              ),
             ),
           ],
         ),

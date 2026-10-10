@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +20,7 @@ import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
+import 'package:snake_classic/utils/constants.dart' show GameTheme;
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/flame_game_board.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart';
@@ -316,25 +318,66 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  /// The swipe compass, sized to [spare] (the height left under the info
-  /// row), or nothing when there is no room or the player uses a D-pad.
-  Widget _swipeCompassSlot(double spare) {
-    final cell = context.lbCell;
-    // Reserve exactly the gap above it; below ~54 dp the cross stops
-    // reading as one (an absolute floor: on tablets a 3-scaled-cell
-    // minimum hid it by 2 dp).
-    final size = math.min(spare - cell * .75, cell * 5.4);
-    if (size < 54) return const SizedBox.shrink();
-    return BlocSelector<GameSettingsCubit, GameSettingsState, bool>(
-      selector: (s) => s.dPadEnabled,
-      builder: (context, dPad) => dPad
-          ? const SizedBox.shrink()
-          : Padding(
-              padding: EdgeInsets.only(top: cell * .75),
-              child: IgnorePointer(
-                child: LBSwipeCompass(cue: _swipeCue, size: size),
-              ),
-            ),
+  /// The control zone under the board. Its size comes from the layout
+  /// above, the same for every control layout; what fills it follows the
+  /// settings live, so a change made from the Pause sheet shows at once.
+  /// Scoped rebuild: the settings it draws, and the game status that decides
+  /// whether the control is live.
+  Widget _controlZone(GameState fallback, GameTheme theme, bool isSmallScreen) {
+    return BlocBuilder<GameSettingsCubit, GameSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.dPadEnabled != current.dPadEnabled ||
+          previous.dPadPosition != current.dPadPosition ||
+          previous.controlLayout != current.controlLayout,
+      builder: (context, controls) => BlocBuilder<GameCubit, GameCubitState>(
+        buildWhen: (previous, current) =>
+            previous.gameState?.status != current.gameState?.status,
+        builder: (context, zoneState) => LayoutBuilder(
+          builder: (context, zone) => GameBottomBar(
+            gameState: zoneState.gameState ?? fallback,
+            theme: theme,
+            isSmallScreen: isSmallScreen,
+            height: zone.maxHeight,
+            dPadEnabled: controls.dPadEnabled,
+            dPadPosition: controls.dPadPosition,
+            controlLayout: controls.controlLayout,
+            onRelativeTurn: _handleRelativeTurn,
+            onDirection: _handleSwipe,
+            swipeZone: _swipeZone(zone.maxHeight),
+            // The tutorial pauses the game and then asks for a turn.
+            // Without this the control it is teaching would be dimmed
+            // and inert, and the player could not finish the practice.
+            canSteerOverride: _tutorialActive ? true : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A swipe player's half of the control zone: a second swipe surface, so
+  /// a thumb can steer from the bottom of the screen instead of reaching
+  /// over the board, with the compass showing what each swipe did.
+  Widget _swipeZone(double height) {
+    final p = context.lb;
+    final scale = context.uiScale;
+    final inner = height - 20 * scale;
+    final size = math.min(inner * .8, 150 * scale);
+    return SwipeDetector(
+      onSwipe: _handleSwipe,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: p.lime.withValues(alpha: .03),
+          borderRadius: BorderRadius.circular(12 * scale),
+          border: Border.all(color: p.lime.withValues(alpha: .14)),
+        ),
+        child: Center(
+          child: size < 54
+              ? const SizedBox.shrink()
+              : IgnorePointer(
+                  child: LBSwipeCompass(cue: _swipeCue, size: size),
+                ),
+        ),
+      ),
     );
   }
 
@@ -674,566 +717,464 @@ class _GameScreenState extends State<GameScreen>
                                   // Shake scoped to the play area (HUD + board +
                                   // controls) — wrapping the whole Scaffold
                                   // dragged the banner ad along with the shake.
-                                  child: Stack(
-                                    children: [
-                                      // The play area always owns the bottom
-                                      // inset. The top one belongs to the
-                                      // banner when a banner is reserved
-                                      // (SnakeBannerAd wraps its own SafeArea);
-                                      // with no banner (Pro) the play area
-                                      // takes it.
-                                      SafeArea(
-                                        top: !bannerReserved,
-                                        child: GameJuiceWidget(
-                                          controller: _juiceController,
-                                          applyShake: settingsState.screenShakeEnabled,
-                                          child: Stack(
-                                            children: [
-                                              // SwipeDetector only wraps the game content, not overlays.
-                                              // No onTap handler — pause is reserved for the HUD's
-                                              // pause button (and spacebar on keyboard). Previously
-                                              // this called togglePause() on any tap, which made
-                                              // accidental finger-rests near the d-pad or HUD edges
-                                              // pause the game with no obvious cause.
-                                              Stack(
-                                                children: [
-                                                  // Main game content
-                                                  LayoutBuilder(
-                                                    builder: (context, constraints) {
-                                                      final screenHeight =
-                                                          constraints.maxHeight;
-                                                      final isSmallScreen =
-                                                          screenHeight < 700;
+                                  //
+                                  // With a banner, it already took the top
+                                  // inset, so the overlays below (pause,
+                                  // revive) must not add it a second time.
+                                  child: MediaQuery.removePadding(
+                                    context: context,
+                                    removeTop: bannerReserved,
+                                    child: Stack(
+                                      children: [
+                                        // The play area always owns the bottom
+                                        // inset. The top one belongs to the
+                                        // banner when a banner is reserved
+                                        // (SnakeBannerAd wraps its own SafeArea);
+                                        // with no banner (Pro) the play area
+                                        // takes it.
+                                        SafeArea(
+                                          top: !bannerReserved,
+                                          child: GameJuiceWidget(
+                                            controller: _juiceController,
+                                            applyShake: settingsState
+                                                .screenShakeEnabled,
+                                            child: Stack(
+                                              children: [
+                                                // SwipeDetector only wraps the game content, not overlays.
+                                                // No onTap handler — pause is reserved for the HUD's
+                                                // pause button (and spacebar on keyboard). Previously
+                                                // this called togglePause() on any tap, which made
+                                                // accidental finger-rests near the d-pad or HUD edges
+                                                // pause the game with no obvious cause.
+                                                Stack(
+                                                  children: [
+                                                    // Main game content
+                                                    LayoutBuilder(
+                                                      builder: (context, constraints) {
+                                                        final screenHeight =
+                                                            constraints
+                                                                .maxHeight;
+                                                        final isSmallScreen =
+                                                            screenHeight < 700;
 
-                                                      return Column(
-                                                        children: [
-                                                          // HUD — its own scoped rebuild on
-                                                          // score/level/combo/power-up changes
-                                                          // so a bite repaints just this strip,
-                                                          // not the whole gameplay tree.
-                                                          BlocBuilder<
-                                                            GameCubit,
-                                                            GameCubitState
-                                                          >(
-                                                            buildWhen: (previous, current) {
-                                                              final prev =
-                                                                  previous.gameState;
-                                                              final curr =
-                                                                  current.gameState;
-                                                              if (prev == null ||
-                                                                  curr == null) {
-                                                                return true;
-                                                              }
-                                                              return prev.score !=
-                                                                      curr.score ||
-                                                                  prev.level !=
-                                                                      curr.level ||
-                                                                  prev.currentCombo !=
-                                                                      curr.currentCombo ||
-                                                                  prev
-                                                                          .activePowerUps
-                                                                          .length !=
-                                                                      curr
-                                                                          .activePowerUps
-                                                                          .length ||
-                                                                  prev.status !=
-                                                                      curr.status ||
-                                                                  previous.tournamentId !=
-                                                                      current.tournamentId;
-                                                            },
-                                                            builder: (context, hudState) {
-                                                              return LBGameTopBar(
-                                                                gameState:
-                                                                    hudState.gameState ??
-                                                                    gameState,
-                                                                onPause: () => context
-                                                                    .read<GameCubit>()
-                                                                    .togglePause(),
-                                                                tournamentMode:
-                                                                    hudState.tournamentId !=
-                                                                            null
-                                                                        ? hudState
+                                                        return Column(
+                                                          children: [
+                                                            // HUD — its own scoped rebuild on
+                                                            // score/level/combo/power-up changes
+                                                            // so a bite repaints just this strip,
+                                                            // not the whole gameplay tree.
+                                                            BlocBuilder<
+                                                              GameCubit,
+                                                              GameCubitState
+                                                            >(
+                                                              buildWhen: (previous, current) {
+                                                                final prev =
+                                                                    previous
+                                                                        .gameState;
+                                                                final curr =
+                                                                    current
+                                                                        .gameState;
+                                                                if (prev ==
+                                                                        null ||
+                                                                    curr ==
+                                                                        null) {
+                                                                  return true;
+                                                                }
+                                                                return prev.score !=
+                                                                        curr.score ||
+                                                                    prev.level !=
+                                                                        curr.level ||
+                                                                    prev.currentCombo !=
+                                                                        curr.currentCombo ||
+                                                                    prev.activePowerUps.length !=
+                                                                        curr
+                                                                            .activePowerUps
+                                                                            .length ||
+                                                                    prev.status !=
+                                                                        curr.status ||
+                                                                    previous.tournamentId !=
+                                                                        current
+                                                                            .tournamentId;
+                                                              },
+                                                              builder: (context, hudState) {
+                                                                return LBGameTopBar(
+                                                                  gameState:
+                                                                      hudState
+                                                                          .gameState ??
+                                                                      gameState,
+                                                                  onPause: () => context
+                                                                      .read<
+                                                                        GameCubit
+                                                                      >()
+                                                                      .togglePause(),
+                                                                  tournamentMode:
+                                                                      hudState.tournamentId !=
+                                                                          null
+                                                                      ? hudState
                                                                             .tournamentMode
-                                                                        : null,
-                                                                pauseButtonKey:
-                                                                    GameTutorialKeys
-                                                                        .pauseButtonKey,
-                                                              );
-                                                            },
-                                                          ),
+                                                                      : null,
+                                                                  pauseButtonKey:
+                                                                      GameTutorialKeys
+                                                                          .pauseButtonKey,
+                                                                );
+                                                              },
+                                                            ),
 
-                                                          // Game Board - always clean, no overlays
-                                                          Expanded(
-                                                            child: Container(
-                                                              // Full width on phones: the
-                                                              // board uses every column
-                                                              // (DESIGN_SPEC §2).
-                                                              padding: EdgeInsets.only(
-                                                                top: context.scaled(4),
-                                                              ),
-                                                              child: LayoutBuilder(
-                                                                builder: (context, boardConstraints) {
-                                                                  // Fit the board to ITS OWN aspect
-                                                                  // ratio, largest that still fits.
-                                                                  //
-                                                                  // This used to force a square box.
-                                                                  // That was fine while every board
-                                                                  // was square, but the painter derives
-                                                                  // cells as width/boardWidth and
-                                                                  // height/boardHeight independently —
-                                                                  // so a non-square board in a square
-                                                                  // box renders stretched cells and a
-                                                                  // visibly distorted snake. A square
-                                                                  // board still resolves to exactly
-                                                                  // min(w,h), so nothing changes for
-                                                                  // the existing sizes.
-                                                                  //
-                                                                  // On tablets the board is capped so
-                                                                  // it doesn't swell edge-to-edge and
-                                                                  // dwarf the uiScale-sized HUD and
-                                                                  // controls.
-                                                                  final boardCap = context
-                                                                      .responsive<double>(
-                                                                        phone:
-                                                                            double.infinity,
-                                                                        tablet: 640,
-                                                                        largeTablet: 820,
-                                                                      );
-                                                                  final aspect =
-                                                                      gameState.boardWidth /
-                                                                      gameState.boardHeight;
-                                                                  // Side margin. Edge to edge,
-                                                                  // the 1 px side walls sat on
-                                                                  // the screen's own edge,
-                                                                  // where rounded corners and
-                                                                  // curved glass hide them, so
-                                                                  // the board read as cut off
-                                                                  // with no left/right border.
-                                                                  final sideMargin =
-                                                                      context.lbCell * .5;
-                                                                  final maxW = math.min(
-                                                                    boardConstraints
-                                                                            .maxWidth -
-                                                                        sideMargin * 2,
-                                                                    boardCap,
-                                                                  );
-                                                                  // Room under the board, so
-                                                                  // its bottom row is not
-                                                                  // pressed against the
-                                                                  // system gesture bar.
-                                                                  final bottomGap =
-                                                                      context.lbCell * .5;
-                                                                  // Leave room for the info
-                                                                  // row and the level-cell
-                                                                  // wall above the board.
-                                                                  final wallH =
-                                                                      maxW /
-                                                                          math.min(
-                                                                            gameState
-                                                                                .boardWidth,
-                                                                            20,
-                                                                          ) +
-                                                                      3 +
-                                                                      4 +
-                                                                      context.lbCell * 2;
-                                                                  final maxH = math.min(
-                                                                    boardConstraints
-                                                                            .maxHeight -
-                                                                        wallH -
-                                                                        bottomGap,
-                                                                    boardCap,
-                                                                  );
-                                                                  // Start from the full width, fall
-                                                                  // back to height-driven when that
-                                                                  // would overflow vertically.
-                                                                  var boardW = maxW;
-                                                                  var boardH =
-                                                                      boardW / aspect;
-                                                                  if (boardH > maxH) {
-                                                                    boardH = maxH;
-                                                                    boardW =
-                                                                        boardH * aspect;
-                                                                  }
+                                                            // Game Board - always clean, no overlays
+                                                            Expanded(
+                                                              child: Container(
+                                                                // Full width on phones: the
+                                                                // board uses every column
+                                                                // (DESIGN_SPEC §2).
+                                                                padding:
+                                                                    EdgeInsets.only(
+                                                                      top: context
+                                                                          .scaled(
+                                                                            4,
+                                                                          ),
+                                                                    ),
+                                                                child: LayoutBuilder(
+                                                                  builder: (context, boardConstraints) {
+                                                                    // Fit the board to ITS OWN aspect
+                                                                    // ratio, largest that still fits.
+                                                                    //
+                                                                    // This used to force a square box.
+                                                                    // That was fine while every board
+                                                                    // was square, but the painter derives
+                                                                    // cells as width/boardWidth and
+                                                                    // height/boardHeight independently —
+                                                                    // so a non-square board in a square
+                                                                    // box renders stretched cells and a
+                                                                    // visibly distorted snake. A square
+                                                                    // board still resolves to exactly
+                                                                    // min(w,h), so nothing changes for
+                                                                    // the existing sizes.
+                                                                    //
+                                                                    // On tablets the board is capped so
+                                                                    // it doesn't swell edge-to-edge and
+                                                                    // dwarf the uiScale-sized HUD and
+                                                                    // controls.
+                                                                    final boardCap =
+                                                                        context.responsive<
+                                                                          double
+                                                                        >(
+                                                                          phone:
+                                                                              double.infinity,
+                                                                          tablet:
+                                                                              640,
+                                                                          largeTablet:
+                                                                              820,
+                                                                        );
+                                                                    final aspect =
+                                                                        gameState
+                                                                            .boardWidth /
+                                                                        gameState
+                                                                            .boardHeight;
+                                                                    // Side margin. Edge to edge,
+                                                                    // the 1 px side walls sat on
+                                                                    // the screen's own edge,
+                                                                    // where rounded corners and
+                                                                    // curved glass hide them, so
+                                                                    // the board read as cut off
+                                                                    // with no left/right border.
+                                                                    final sideMargin =
+                                                                        context
+                                                                            .lbCell *
+                                                                        .5;
+                                                                    final maxW = math.min(
+                                                                      boardConstraints
+                                                                              .maxWidth -
+                                                                          sideMargin *
+                                                                              2,
+                                                                      boardCap,
+                                                                    );
+                                                                    // The control zone under the board is the same size
+                                                                    // for every control layout, so the board never moves
+                                                                    // when the player switches controls. It gets at least
+                                                                    // this much, and any spare height on a tall phone goes
+                                                                    // to it too rather than to a dead band.
+                                                                    final zoneMin =
+                                                                        150 *
+                                                                        context
+                                                                            .uiScale;
+                                                                    final topGap =
+                                                                        context
+                                                                            .lbCell *
+                                                                        .5;
+                                                                    // Leave room for the level-cell wall above the board
+                                                                    // and the info row under it.
+                                                                    final wallH =
+                                                                        maxW /
+                                                                            math.min(
+                                                                              gameState.boardWidth,
+                                                                              20,
+                                                                            ) +
+                                                                        3 +
+                                                                        4 +
+                                                                        context.lbCell *
+                                                                            2;
+                                                                    final maxH = math.min(
+                                                                      boardConstraints
+                                                                              .maxHeight -
+                                                                          topGap -
+                                                                          wallH -
+                                                                          zoneMin,
+                                                                      boardCap,
+                                                                    );
+                                                                    // Start from the full width, fall back to height-driven
+                                                                    // when that would overflow vertically.
+                                                                    var boardW =
+                                                                        maxW;
+                                                                    var boardH =
+                                                                        boardW /
+                                                                        aspect;
+                                                                    if (boardH >
+                                                                        maxH) {
+                                                                      boardH =
+                                                                          maxH;
+                                                                      boardW =
+                                                                          boardH *
+                                                                          aspect;
+                                                                    }
 
-                                                                  // Swipe recognition lives
-                                                                  // HERE, on the board's
-                                                                  // exact rectangle — not on
-                                                                  // the column above it.
-                                                                  //
-                                                                  // It used to wrap the whole
-                                                                  // stack, so a drag that
-                                                                  // began on the HUD, the
-                                                                  // gesture chip or the
-                                                                  // control bar could steer
-                                                                  // the snake, and the d-pad
-                                                                  // only won an identical
-                                                                  // drag because of gesture
-                                                                  // arena ordering rather
-                                                                  // than any real boundary.
-                                                                  // Swipe compass, then the board
-                                                                  // close under it, with its info
-                                                                  // row right below. Any spare
-                                                                  // height on a tall phone goes
-                                                                  // under the board, never in a
-                                                                  // band around the compass.
-                                                                  return Column(
+                                                                    // Swipe recognition lives on the board's exact rectangle
+                                                                    // (and on the swipe pad in the zone), not on the column
+                                                                    // around them, so a drag that starts on the HUD can never
+                                                                    // steer the snake.
+                                                                    return Column(
                                                                       children: [
-                                                                        // Swipe compass, in the band a
-                                                                        // width-bound board leaves on a
-                                                                        // tall phone — only when it fits
-                                                                        // and only for swipe players.
-                                                                        _swipeCompassSlot(
-                                                                          boardConstraints.maxHeight -
-                                                                              wallH -
-                                                                              boardH -
-                                                                              bottomGap -
-                                                                              context.lbCell * 2,
-                                                                        ),
-                                                                        // A little air between the
-                                                                        // compass and the board.
                                                                         SizedBox(
-                                                                          height: context.lbCell,
+                                                                          height:
+                                                                              topGap,
                                                                         ),
                                                                         BlocBuilder<
                                                                           GameCubit,
                                                                           GameCubitState
                                                                         >(
                                                                           buildWhen: (a, b) =>
-                                                                              a.gameState?.level !=
-                                                                                  b.gameState?.level ||
-                                                                              a.gameState?.score !=
-                                                                                  b.gameState?.score,
-                                                                          builder: (context, wallState) =>
-                                                                              LBLevelWall(
-                                                                                gameState:
-                                                                                    wallState.gameState ??
-                                                                                    gameState,
-                                                                                width: boardW,
-                                                                              ),
+                                                                              a.gameState?.level != b.gameState?.level ||
+                                                                              a.gameState?.score != b.gameState?.score,
+                                                                          builder: (
+                                                                            context,
+                                                                            wallState,
+                                                                          ) => LBLevelWall(gameState: wallState.gameState ?? gameState, width: boardW),
                                                                         ),
-                                                                        const SizedBox(height: 4),
-                                                                    SizedBox(
-                                                                      width: boardW,
-                                                                      height: boardH,
-                                                                      child: SwipeDetector(
-                                                                        onSwipe:
-                                                                            _handleSwipe,
-                                                                        child: FlameGameBoard(
-                                                                          gameState:
-                                                                              gameState,
-                                                                          isTournamentMode:
-                                                                              gameCubitState
-                                                                                  .isTournamentMode,
+                                                                        const SizedBox(
+                                                                          height:
+                                                                              4,
                                                                         ),
-                                                                      ),
-                                                                    ),
+                                                                        SizedBox(
+                                                                          width:
+                                                                              boardW,
+                                                                          height:
+                                                                              boardH,
+                                                                          child: SwipeDetector(
+                                                                            onSwipe:
+                                                                                _handleSwipe,
+                                                                            child: FlameGameBoard(
+                                                                              gameState: gameState,
+                                                                              isTournamentMode: gameCubitState.isTournamentMode,
+                                                                            ),
+                                                                          ),
+                                                                        ),
                                                                         _boardInfoRow(
                                                                           gameState,
                                                                           boardW,
                                                                         ),
-                                                                        const Spacer(),
-                                                                        SizedBox(
-                                                                          height: bottomGap,
+                                                                        Expanded(
+                                                                          child: _controlZone(
+                                                                            gameState,
+                                                                            theme,
+                                                                            isSmallScreen,
+                                                                          ),
                                                                         ),
                                                                       ],
-                                                                  );
-                                                                },
+                                                                    );
+                                                                  },
+                                                                ),
                                                               ),
                                                             ),
-                                                          ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
 
-                                                          // Unified bottom bar — same fixed
-                                                          // height in every state (d-pad on,
-                                                          // d-pad off, paused, crashed,
-                                                          // game over) so the board never
-                                                          // shifts. Center swaps between
-                                                          // DPadControls and a Level card.
-                                                          // Scoped rebuild: it displays snake
-                                                          // length / level / speed, which
-                                                          // change on eats and power-ups.
-                                                          // The control bar is the one
-                                                          // part of the screen that has to
-                                                          // observe settings rather than
-                                                          // read them once: toggling the
-                                                          // D-pad or moving it from the
-                                                          // Pause sheet has to be visible
-                                                          // immediately, and the outer
-                                                          // builder only reruns on
-                                                          // game-state changes that a
-                                                          // paused game never produces.
-                                                          // Scoped to the two fields it
-                                                          // draws, so nothing else on the
-                                                          // screen rebuilds.
-                                                          BlocBuilder<
-                                                            GameSettingsCubit,
-                                                            GameSettingsState
-                                                          >(
-                                                            buildWhen:
-                                                                (previous, current) =>
-                                                                    previous.dPadEnabled !=
-                                                                        current
-                                                                            .dPadEnabled ||
-                                                                    previous.dPadPosition !=
-                                                                        current
-                                                                            .dPadPosition ||
-                                                                    previous.controlLayout !=
-                                                                        current
-                                                                            .controlLayout,
-                                                            builder: (context, controlSettings) {
-                                                              return BlocBuilder<
-                                                                GameCubit,
-                                                                GameCubitState
-                                                              >(
-                                                                buildWhen:
-                                                                    (previous, current) {
-                                                                      final prev = previous
-                                                                          .gameState;
-                                                                      final curr =
-                                                                          current.gameState;
-                                                                      if (prev == null ||
-                                                                          curr == null) {
-                                                                        return true;
-                                                                      }
-                                                                      return prev
-                                                                                  .snake
-                                                                                  .length !=
-                                                                              curr
-                                                                                  .snake
-                                                                                  .length ||
-                                                                          prev.level !=
-                                                                              curr.level ||
-                                                                          prev.gameSpeed !=
-                                                                              curr.gameSpeed ||
-                                                                          prev.activePowerUps
-                                                                                  .length !=
-                                                                              curr.activePowerUps
-                                                                                  .length ||
-                                                                          prev.livesRemaining !=
-                                                                              curr.livesRemaining ||
-                                                                          prev.status !=
-                                                                              curr.status;
-                                                                    },
-                                                                builder: (context, barState) {
-                                                                  if (!controlSettings
-                                                                      .dPadEnabled) {
-                                                                    return const SizedBox.shrink();
-                                                                  }
-                                                                  return Column(
-                                                                    mainAxisSize:
-                                                                        MainAxisSize.min,
-                                                                    children: [
-                                                                      GameBottomBar(
-                                                                    gameState:
-                                                                        barState
-                                                                            .gameState ??
-                                                                        gameState,
-                                                                    theme: theme,
-                                                                    isSmallScreen:
-                                                                        isSmallScreen,
-                                                                    dPadEnabled:
-                                                                        controlSettings
-                                                                            .dPadEnabled,
-                                                                    dPadPosition:
-                                                                        controlSettings
-                                                                            .dPadPosition,
-                                                                    controlLayout:
-                                                                        controlSettings
-                                                                            .controlLayout,
-                                                                    onRelativeTurn:
-                                                                        _handleRelativeTurn,
-                                                                    // The tutorial pauses
-                                                                    // the game and then
-                                                                    // asks for a turn.
-                                                                    // Without this the
-                                                                    // d-pad it is
-                                                                    // teaching would be
-                                                                    // dimmed and inert,
-                                                                    // and a d-pad player
-                                                                    // could not finish
-                                                                    // the practice steps
-                                                                    // at all.
-                                                                    canSteerOverride:
-                                                                        _tutorialActive
-                                                                        ? true
-                                                                        : null,
-                                                                    onDirection:
-                                                                        _handleSwipe,
-                                                                  ),
-                                                                    ],
-                                                                  );
-                                                                },
-                                                              );
-                                                            },
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
+                                                    // Score Popups Layer - isolated StatefulWidget
+                                                    // to avoid full game screen rebuilds on popup add/remove
+                                                    ScorePopupLayer(
+                                                      key: _scorePopupLayerKey,
+                                                    ),
+
+                                                    // Level-Up Corner Popup
+                                                  ],
+                                                ),
+
+                                                // Crash Feedback Overlay - OUTSIDE SwipeDetector so taps work
+                                                if (gameState.status ==
+                                                        GameStatus.crashed &&
+                                                    gameState.crashReason !=
+                                                        null &&
+                                                    gameState.showCrashModal)
+                                                  CrashFeedbackOverlay(
+                                                    crashReason:
+                                                        gameState.crashReason!,
+                                                    gameState: gameState,
+                                                    theme: theme,
+                                                    onSkip: () => context
+                                                        .read<GameCubit>()
+                                                        .skipCrashFeedback(),
+                                                    duration: settingsState
+                                                        .crashFeedbackDuration,
                                                   ),
 
-
-                                                  // Score Popups Layer - isolated StatefulWidget
-                                                  // to avoid full game screen rebuilds on popup add/remove
-                                                  ScorePopupLayer(key: _scorePopupLayerKey),
-
-                                                  // Level-Up Corner Popup
-                                                ],
-                                              ),
-
-                                              // Crash Feedback Overlay - OUTSIDE SwipeDetector so taps work
-                                              if (gameState.status == GameStatus.crashed &&
-                                                  gameState.crashReason != null &&
-                                                  gameState.showCrashModal)
-                                                CrashFeedbackOverlay(
-                                                  crashReason: gameState.crashReason!,
-                                                  gameState: gameState,
-                                                  theme: theme,
-                                                  onSkip: () => context
-                                                      .read<GameCubit>()
-                                                      .skipCrashFeedback(),
-                                                  duration:
-                                                      settingsState.crashFeedbackDuration,
-                                                ),
-
-
-
-                                              // Game Tutorial Overlay
-                                              if (_tutorialActive &&
-                                                  _tutorialController != null)
-                                                GameTutorialOverlay(
-                                                  controller: _tutorialController!,
-                                                  theme: theme,
-                                                ),
-                                              // Rejected-input flash. Paints a brief centered
-                                              // red ring whenever the cubit denies a direction
-                                              // change (reverse-into-self or already-queued).
-                                              // Independent BlocSelector keeps it isolated from
-                                              // the main rebuild path.
-                                              //
-                                              // Accepted-input edge bloom lives INSIDE the
-                                              // board painter (game_board.dart) so it scopes
-                                              // to the play area and rides the existing 60fps
-                                              // repaint cycle — no extra full-screen paints.
-                                              const RejectedInputFlash(),
-                                            ],
+                                                // Game Tutorial Overlay
+                                                if (_tutorialActive &&
+                                                    _tutorialController != null)
+                                                  GameTutorialOverlay(
+                                                    controller:
+                                                        _tutorialController!,
+                                                    theme: theme,
+                                                  ),
+                                                // Rejected-input flash. Paints a brief centered
+                                                // red ring whenever the cubit denies a direction
+                                                // change (reverse-into-self or already-queued).
+                                                // Independent BlocSelector keeps it isolated from
+                                                // the main rebuild path.
+                                                //
+                                                // Accepted-input edge bloom lives INSIDE the
+                                                // board painter (game_board.dart) so it scopes
+                                                // to the play area and rides the existing 60fps
+                                                // repaint cycle — no extra full-screen paints.
+                                                const RejectedInputFlash(),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
 
-                                      // Modal overlays — pause, revive, +30s —
-                                      // sit OUTSIDE the inner SafeArea so their
-                                      // scrim/blur covers the inset strips too.
-                                      // Still outside SwipeDetector, still above
-                                      // the board, still below the banner.
-                                      // Pause Overlay (don't show during tutorial,
-                                      // or while the Time-Attack bonus offer — which
-                                      // freezes the run via the same paused status —
-                                      // is on screen).
-                                      if (gameState.status ==
-                                              GameStatus.paused &&
-                                          !_tutorialActive &&
-                                          !gameCubitState.offeringTimeBonus)
-                                        PauseOverlay(
-                                          theme: theme,
-                                          gameState: gameState,
-                                          onResume: () => context
-                                              .read<GameCubit>()
-                                              .resumeGame(),
-                                          onRestart: () {
-                                            context
+                                        // Modal overlays — pause, revive, +30s —
+                                        // sit OUTSIDE the inner SafeArea so their
+                                        // scrim/blur covers the inset strips too.
+                                        // Still outside SwipeDetector, still above
+                                        // the board, still below the banner.
+                                        // Pause Overlay (don't show during tutorial,
+                                        // or while the Time-Attack bonus offer — which
+                                        // freezes the run via the same paused status —
+                                        // is on screen).
+                                        if (gameState.status ==
+                                                GameStatus.paused &&
+                                            !_tutorialActive &&
+                                            !gameCubitState.offeringTimeBonus)
+                                          PauseOverlay(
+                                            theme: theme,
+                                            gameState: gameState,
+                                            onResume: () => context
                                                 .read<GameCubit>()
-                                                .startGame();
-                                          },
-                                          onHome: () =>
-                                              _showExitConfirmation(context),
-                                          onShowTutorial: () => _startTutorial(
-                                            entryPoint:
-                                                TutorialEntryPoint.pause,
-                                          ),
-                                        ),
-
-                                      // Revive offer — shown instead of the crash modal
-                                      // while the cubit is awaiting a revive decision.
-                                      // Outside SwipeDetector so the buttons receive taps.
-                                      if (gameCubitState.offeringRevive)
-                                        // The price rises with each revive in the
-                                        // run, so read it from the cubit rather
-                                        // than the base constant.
-                                        ReviveOverlay(
-                                          theme: theme,
-                                          gameState: gameState,
-                                          coinBalance: context
-                                              .read<CoinsCubit>()
-                                              .state
-                                              .balance
-                                              .total,
-                                          seconds: 10,
-                                          coinCost: context
-                                              .read<GameCubit>()
-                                              .currentReviveCoinCost,
-                                          isPro: context
-                                              .read<GameCubit>()
-                                              .isProSession,
-                                          onProRevive: () =>
-                                              context.read<GameCubit>().revive(),
-                                          canAffordCoins:
-                                              context
-                                                  .read<CoinsCubit>()
-                                                  .state
-                                                  .balance
-                                                  .total >=
+                                                .resumeGame(),
+                                            onRestart: () {
                                               context
                                                   .read<GameCubit>()
-                                                  .currentReviveCoinCost,
-                                          onWatchAd: () async {
-                                            final gc = context.read<GameCubit>();
-                                            final outcome =
-                                                await getIt<AdService>()
-                                                    .showRewardedOrWait(
-                                              onReward: gc.revive,
-                                              placement: 'revive',
-                                            );
-                                            return outcome !=
-                                                RewardedOutcome.unavailable;
-                                          },
-                                          onUseCoins: () async {
-                                            final gc = context.read<GameCubit>();
-                                            final ok = await context
-                                                .read<CoinsCubit>()
-                                                .spendCoins(
-                                                  gc.currentReviveCoinCost,
-                                                  CoinSpendingCategory.extraLives,
-                                                  itemName: 'Revive',
-                                                );
-                                            if (ok) gc.revive();
-                                          },
-                                          onDecline: () => context
-                                              .read<GameCubit>()
-                                              .declineRevive(),
-                                        ),
+                                                  .startGame();
+                                            },
+                                            onHome: () =>
+                                                _showExitConfirmation(context),
+                                            onShowTutorial: () =>
+                                                _startTutorial(
+                                                  entryPoint:
+                                                      TutorialEntryPoint.pause,
+                                                ),
+                                          ),
 
-                                      // Time-Attack "+30s" offer — shown when the clock
-                                      // hits zero with an extension still available.
-                                      // Outside SwipeDetector so the buttons receive taps.
-                                      if (gameCubitState.offeringTimeBonus)
-                                        TimeBonusOverlay(
-                                          theme: theme,
-                                          bonusSeconds: GameCubit.timeBonusSeconds,
-                                          onWatchAd: () async {
-                                            final gc = context.read<GameCubit>();
-                                            final outcome =
-                                                await getIt<AdService>()
-                                                    .showRewardedOrWait(
-                                              onReward: gc.grantTimeBonus,
-                                              placement: 'time_bonus',
-                                            );
-                                            return outcome !=
-                                                RewardedOutcome.unavailable;
-                                          },
-                                          onDecline: () => context
-                                              .read<GameCubit>()
-                                              .declineTimeBonus(),
-                                        ),
-                                    ],
+                                        // Revive offer — shown instead of the crash modal
+                                        // while the cubit is awaiting a revive decision.
+                                        // Outside SwipeDetector so the buttons receive taps.
+                                        if (gameCubitState.offeringRevive)
+                                          // The price rises with each revive in the
+                                          // run, so read it from the cubit rather
+                                          // than the base constant.
+                                          ReviveOverlay(
+                                            theme: theme,
+                                            gameState: gameState,
+                                            coinBalance: context
+                                                .read<CoinsCubit>()
+                                                .state
+                                                .balance
+                                                .total,
+                                            seconds: 10,
+                                            coinCost: context
+                                                .read<GameCubit>()
+                                                .currentReviveCoinCost,
+                                            isPro: context
+                                                .read<GameCubit>()
+                                                .isProSession,
+                                            onProRevive: () => context
+                                                .read<GameCubit>()
+                                                .revive(),
+                                            canAffordCoins:
+                                                context
+                                                    .read<CoinsCubit>()
+                                                    .state
+                                                    .balance
+                                                    .total >=
+                                                context
+                                                    .read<GameCubit>()
+                                                    .currentReviveCoinCost,
+                                            onWatchAd: () async {
+                                              final gc = context
+                                                  .read<GameCubit>();
+                                              final outcome =
+                                                  await getIt<AdService>()
+                                                      .showRewardedOrWait(
+                                                        onReward: gc.revive,
+                                                        placement: 'revive',
+                                                      );
+                                              return outcome !=
+                                                  RewardedOutcome.unavailable;
+                                            },
+                                            onUseCoins: () async {
+                                              final gc = context
+                                                  .read<GameCubit>();
+                                              final ok = await context
+                                                  .read<CoinsCubit>()
+                                                  .spendCoins(
+                                                    gc.currentReviveCoinCost,
+                                                    CoinSpendingCategory
+                                                        .extraLives,
+                                                    itemName: 'Revive',
+                                                  );
+                                              if (ok) gc.revive();
+                                            },
+                                            onDecline: () => context
+                                                .read<GameCubit>()
+                                                .declineRevive(),
+                                          ),
+
+                                        // Time-Attack "+30s" offer — shown when the clock
+                                        // hits zero with an extension still available.
+                                        // Outside SwipeDetector so the buttons receive taps.
+                                        if (gameCubitState.offeringTimeBonus)
+                                          TimeBonusOverlay(
+                                            theme: theme,
+                                            bonusSeconds:
+                                                GameCubit.timeBonusSeconds,
+                                            onWatchAd: () async {
+                                              final gc = context
+                                                  .read<GameCubit>();
+                                              final outcome =
+                                                  await getIt<AdService>()
+                                                      .showRewardedOrWait(
+                                                        onReward:
+                                                            gc.grantTimeBonus,
+                                                        placement: 'time_bonus',
+                                                      );
+                                              return outcome !=
+                                                  RewardedOutcome.unavailable;
+                                            },
+                                            onDecline: () => context
+                                                .read<GameCubit>()
+                                                .declineTimeBonus(),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1251,5 +1192,4 @@ class _GameScreenState extends State<GameScreen>
       ),
     );
   }
-
 }
