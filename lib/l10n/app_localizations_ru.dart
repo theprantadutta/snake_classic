@@ -6387,15 +6387,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'Короткая реклама. Твоя награда: $coins¢.';
+    return 'Сейчас будет реклама. Досмотри до конца — награда: $coins¢.';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Честный обмен? Решать в любом случае тебе.';
+  String get lbAdBreakLine2 => 'Или выбери короткую, без монет.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'СТАРТ ЧЕРЕЗ $secs · ИЛИ ПРОПУСТИ, БЕЗ ОБИД';
+    return 'СТАРТ ЧЕРЕЗ $secs · ИЛИ ВЫБЕРИ КОРОТКУЮ';
   }
 
   @override
@@ -6407,10 +6407,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbWatchNow => 'СМОТРЕТЬ';
 
   @override
-  String get lbNoThanks => 'НЕТ, СПАСИБО';
+  String get lbShortAd => 'КОРОТКАЯ РЕКЛАМА';
 
   @override
-  String get lbAdBackHint => 'Жест «назад» тоже значит «нет, спасибо».';
+  String get lbAdBackHint => 'Жест «назад» тоже выбирает короткую рекламу.';
 
   @override
   String get lbAdStarting => 'ЗАПУСК РЕКЛАМЫ…';

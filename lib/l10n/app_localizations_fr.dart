@@ -6426,15 +6426,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'Une courte pub. $coins pièces pour toi.';
+    return 'Une pub arrive. Regarde-la en entier pour $coins pièces ?';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Ça te va ? C\'est toi qui décides.';
+  String get lbAdBreakLine2 => 'Ou prends-en une courte, sans pièces.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'DÉBUT DANS $secs · OU PASSE, SANS RANCUNE';
+    return 'DÉBUT DANS $secs · OU CHOISIS LA COURTE';
   }
 
   @override
@@ -6446,10 +6446,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbWatchNow => 'REGARDER';
 
   @override
-  String get lbNoThanks => 'NON MERCI';
+  String get lbShortAd => 'PUB COURTE';
 
   @override
-  String get lbAdBackHint => 'Le geste retour compte aussi comme non merci.';
+  String get lbAdBackHint => 'Le geste retour choisit aussi la pub courte.';
 
   @override
   String get lbAdStarting => 'LA PUB DÉMARRE…';

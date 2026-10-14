@@ -3723,7 +3723,7 @@
   "@lbAdBreak": {
     "description": "Rewarded interstitial intro title"
   },
-  "lbAdBreakLine": "A short ad. {coins} coins for you.",
+  "lbAdBreakLine": "An ad plays next. Watch it all for {coins} coins?",
   "@lbAdBreakLine": {
     "description": "Intro: states the reward plainly",
     "placeholders": {
@@ -3732,11 +3732,11 @@
       }
     }
   },
-  "lbAdBreakLine2": "Fair trade? Your call either way.",
+  "lbAdBreakLine2": "Or take a short one with no coins.",
   "@lbAdBreakLine2": {
     "description": "Intro: secondary line"
   },
-  "lbAdStartsIn": "STARTS IN {secs} · OR SKIP, NO HARD FEELINGS",
+  "lbAdStartsIn": "STARTS IN {secs} · OR PICK THE SHORT AD",
   "@lbAdStartsIn": {
     "description": "Intro countdown with skip notice",
     "placeholders": {
@@ -3758,13 +3758,13 @@
   "@lbWatchNow": {
     "description": "Start the ad now"
   },
-  "lbNoThanks": "NO THANKS",
-  "@lbNoThanks": {
-    "description": "Skip the ad"
+  "lbShortAd": "SHORT AD",
+  "@lbShortAd": {
+    "description": "Decline the rewarded ad; a short plain interstitial plays instead, with no coins"
   },
-  "lbAdBackHint": "The back gesture counts as no thanks, too.",
+  "lbAdBackHint": "The back gesture picks the short ad, too.",
   "@lbAdBackHint": {
-    "description": "Back gesture skips"
+    "description": "Back gesture picks the short ad"
   },
   "lbAdStarting": "AD STARTING…",
   "@lbAdStarting": {

@@ -6402,15 +6402,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'Un breve annuncio. $coins monete per te.';
+    return 'Ora c\'è un annuncio. Lo guardi tutto per $coins monete?';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Scambio equo? Decidi tu, in ogni caso.';
+  String get lbAdBreakLine2 => 'Oppure scegline uno breve, senza monete.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'INIZIA TRA $secs · O SALTA, SENZA RANCORE';
+    return 'INIZIA TRA $secs · O SCEGLI QUELLO BREVE';
   }
 
   @override
@@ -6422,10 +6422,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get lbWatchNow => 'GUARDA ORA';
 
   @override
-  String get lbNoThanks => 'NO GRAZIE';
+  String get lbShortAd => 'ANNUNCIO BREVE';
 
   @override
-  String get lbAdBackHint => 'Anche il gesto indietro vale come no grazie.';
+  String get lbAdBackHint =>
+      'Anche il gesto indietro sceglie l\'annuncio breve.';
 
   @override
   String get lbAdStarting => 'ANNUNCIO IN ARRIVO…';

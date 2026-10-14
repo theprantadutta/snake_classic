@@ -6337,15 +6337,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'एक छोटा विज्ञापन। आपके लिए $coins सिक्के।';
+    return 'अब एक विज्ञापन चलेगा। पूरा देखें और $coins सिक्के पाएँ?';
   }
 
   @override
-  String get lbAdBreakLine2 => 'सौदा ठीक है? फ़ैसला आपका, जो भी हो।';
+  String get lbAdBreakLine2 => 'या बिना सिक्कों वाला छोटा विज्ञापन चुनें।';
 
   @override
   String lbAdStartsIn(String secs) {
-    return '$secs में शुरू · या छोड़ दें, कोई बात नहीं';
+    return '$secs में शुरू · या छोटा विज्ञापन चुनें';
   }
 
   @override
@@ -6357,10 +6357,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get lbWatchNow => 'अभी देखें';
 
   @override
-  String get lbNoThanks => 'नहीं, शुक्रिया';
+  String get lbShortAd => 'छोटा विज्ञापन';
 
   @override
-  String get lbAdBackHint => 'बैक जेस्चर को भी \'नहीं, शुक्रिया\' माना जाएगा।';
+  String get lbAdBackHint => 'बैक जेस्चर भी छोटा विज्ञापन चुनता है।';
 
   @override
   String get lbAdStarting => 'विज्ञापन शुरू हो रहा है…';

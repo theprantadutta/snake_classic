@@ -655,11 +655,28 @@ class AdService {
   /// Loading both every game meant the plain one almost never showed —
   /// September 2026: 19.7K requests for 155 impressions, a 1% show rate —
   /// so nearly every request was a player's data spent on nothing.
+  ///
+  /// The one exception is a game whose game over will open the slot: then
+  /// the plain one is warmed too, because it is what plays when the player
+  /// picks SHORT AD on the rewarded intro. Without it that choice played
+  /// nothing — October 2026, 7.x showed ~7% of the rewarded interstitials it
+  /// loaded against ~24% on 6.7, and the slot's revenue fell ~75% per player.
   void preloadGameOverAd() {
     _loadRewardedInterstitial();
-    if (_rewardedInterstitial == null && !_rewardedInterstitialLoading) {
+    if ((_rewardedInterstitial == null && !_rewardedInterstitialLoading) ||
+        _gameOverSlotOpensNext) {
       _loadInterstitial();
     }
+  }
+
+  /// The next game over reaches the slot's cadence (the time gaps are
+  /// checked when it actually happens).
+  bool get _gameOverSlotOpensNext {
+    final prefs = _prefs;
+    if (prefs == null) return false;
+    if (!(prefs.getBool(_kFirstGameOverDone) ?? false)) return false;
+    final games = prefs.getInt(_kGamesSinceInterstitial) ?? 0;
+    return games + 1 >= _interstitialEveryNGames;
   }
 
   /// What the game-over slot would do RIGHT NOW, without changing anything.
@@ -712,8 +729,10 @@ class AdService {
   /// The screen uses it for the two things the ad must never skip:
   ///  * the rewarded interstitial's intro screen — Google requires one that
   ///    states the reward, gives the player time to read it, and offers a
-  ///    clear way to skip. Returning `false` is that skip: nothing plays, and
-  ///    the slot counts as used so the offer isn't repeated next game over;
+  ///    clear way to skip. Returning `false` is that skip (SHORT AD): the
+  ///    plain interstitial plays instead when loaded, with no coins, and the
+  ///    slot counts as used either way so the offer isn't repeated next game
+  ///    over;
   ///  * a short tap-absorbing "ad starting" beat before a plain interstitial,
   ///    so the second half of a double-tap on PLAY AGAIN can't land on the ad.
   ///
@@ -755,37 +774,45 @@ class AdService {
     // format filled it.
     if (format == GameOverAdFormat.rewarded) {
       if (confirm != null && !await confirm(format)) {
-        // The player opted out on the intro screen. Honour it completely: no
-        // ad, no substitute, and the slot counts as used — otherwise the very
-        // next game over would ask again.
+        // The player picked SHORT AD on the intro: they turned down the
+        // reward, not the break, and the intro said a short ad plays
+        // instead. The plain interstitial takes the slot when it is loaded.
+        // When it isn't, nothing plays and the slot still counts as used —
+        // otherwise the very next game over would ask again.
         _analytics?.trackRewardedAbandoned('game_over_intro_skipped');
-        await prefs.setInt(_kGamesSinceInterstitial, 0);
-        await prefs.setInt(
-            _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
-        return false;
-      }
-      final shown = await _showRewardedInterstitial(
-        placement: 'game_over',
-        onReward: onReward ?? () {},
-        onAdShowing: onAdShowing,
-      );
-      if (shown) {
-        await prefs.setInt(_kGamesSinceInterstitial, 0);
-        await prefs.setInt(
-            _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
-        return true;
-      }
-      // Failed to show. Fall through to the plain interstitial only if the
-      // player was not promised coins.
-      if (_interstitial == null || announced == GameOverAdFormat.rewarded) {
-        await prefs.setInt(_kGamesSinceInterstitial, games);
-        return false;
+        if (_interstitial == null) {
+          await prefs.setInt(_kGamesSinceInterstitial, 0);
+          await prefs.setInt(
+              _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
+          preloadGameOverAd();
+          return false;
+        }
+        format = GameOverAdFormat.interstitial;
+      } else {
+        final shown = await _showRewardedInterstitial(
+          placement: 'game_over',
+          onReward: onReward ?? () {},
+          onAdShowing: onAdShowing,
+        );
+        if (shown) {
+          await prefs.setInt(_kGamesSinceInterstitial, 0);
+          await prefs.setInt(
+              _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
+          return true;
+        }
+        // Failed to show. Fall through to the plain interstitial only if
+        // the player was not promised coins.
+        if (_interstitial == null || announced == GameOverAdFormat.rewarded) {
+          await prefs.setInt(_kGamesSinceInterstitial, games);
+          return false;
+        }
       }
     }
 
-    // Only reached straight from the decision (not after a failed rewarded
-    // show) when the plain interstitial was the decided format, which is the
-    // one case its confirm step hasn't run yet.
+    // Reached with the plain interstitial as the format either straight from
+    // the decision or from SHORT AD on the rewarded intro; both still need
+    // its "ad starting" beat. After a failed rewarded show the format is
+    // still `rewarded` and that beat is already up.
     if (format == GameOverAdFormat.interstitial &&
         confirm != null &&
         !await confirm(format)) {

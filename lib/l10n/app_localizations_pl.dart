@@ -6395,15 +6395,15 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'Krótka reklama. Monety dla ciebie: $coins.';
+    return 'Teraz reklama. Obejrzyj ją całą, a dostaniesz monety: $coins.';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Uczciwa wymiana? Decyzja należy do ciebie.';
+  String get lbAdBreakLine2 => 'Albo wybierz krótką, bez monet.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'START ZA $secs · ALBO POMIŃ, BEZ URAZY';
+    return 'START ZA $secs · ALBO WYBIERZ KRÓTKĄ';
   }
 
   @override
@@ -6415,10 +6415,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lbWatchNow => 'OBEJRZYJ TERAZ';
 
   @override
-  String get lbNoThanks => 'NIE, DZIĘKI';
+  String get lbShortAd => 'KRÓTKA REKLAMA';
 
   @override
-  String get lbAdBackHint => 'Gest wstecz też oznacza „nie, dzięki”.';
+  String get lbAdBackHint => 'Gest wstecz też wybiera krótką reklamę.';
 
   @override
   String get lbAdStarting => 'REKLAMA SIĘ ZACZYNA…';

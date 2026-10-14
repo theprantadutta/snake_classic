@@ -6341,15 +6341,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'A short ad. $coins coins for you.';
+    return 'An ad plays next. Watch it all for $coins coins?';
   }
 
   @override
-  String get lbAdBreakLine2 => 'Fair trade? Your call either way.';
+  String get lbAdBreakLine2 => 'Or take a short one with no coins.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'STARTS IN $secs · OR SKIP, NO HARD FEELINGS';
+    return 'STARTS IN $secs · OR PICK THE SHORT AD';
   }
 
   @override
@@ -6361,10 +6361,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lbWatchNow => 'WATCH NOW';
 
   @override
-  String get lbNoThanks => 'NO THANKS';
+  String get lbShortAd => 'SHORT AD';
 
   @override
-  String get lbAdBackHint => 'The back gesture counts as no thanks, too.';
+  String get lbAdBackHint => 'The back gesture picks the short ad, too.';
 
   @override
   String get lbAdStarting => 'AD STARTING…';

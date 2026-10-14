@@ -6363,15 +6363,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String lbAdBreakLine(String coins) {
-    return 'إعلان قصير. $coins عملة لك.';
+    return 'سيُعرض إعلان الآن. شاهده كاملًا مقابل $coins عملة؟';
   }
 
   @override
-  String get lbAdBreakLine2 => 'صفقة عادلة؟ القرار لك في الحالتين.';
+  String get lbAdBreakLine2 => 'أو اختر إعلانًا قصيرًا بلا عملات.';
 
   @override
   String lbAdStartsIn(String secs) {
-    return 'يبدأ خلال $secs · أو تخطَّه، بلا زعل';
+    return 'يبدأ خلال $secs · أو اختر الإعلان القصير';
   }
 
   @override
@@ -6383,10 +6383,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbWatchNow => 'شاهد الآن';
 
   @override
-  String get lbNoThanks => 'لا شكرًا';
+  String get lbShortAd => 'إعلان قصير';
 
   @override
-  String get lbAdBackHint => 'إيماءة الرجوع تُعدّ «لا شكرًا» أيضًا.';
+  String get lbAdBackHint => 'إيماءة الرجوع تختار الإعلان القصير أيضًا.';
 
   @override
   String get lbAdStarting => 'الإعلان يبدأ…';

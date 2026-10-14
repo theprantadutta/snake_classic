@@ -11257,19 +11257,19 @@ abstract class AppLocalizations {
   /// Intro: states the reward plainly
   ///
   /// In en, this message translates to:
-  /// **'A short ad. {coins} coins for you.'**
+  /// **'An ad plays next. Watch it all for {coins} coins?'**
   String lbAdBreakLine(String coins);
 
   /// Intro: secondary line
   ///
   /// In en, this message translates to:
-  /// **'Fair trade? Your call either way.'**
+  /// **'Or take a short one with no coins.'**
   String get lbAdBreakLine2;
 
   /// Intro countdown with skip notice
   ///
   /// In en, this message translates to:
-  /// **'STARTS IN {secs} · OR SKIP, NO HARD FEELINGS'**
+  /// **'STARTS IN {secs} · OR PICK THE SHORT AD'**
   String lbAdStartsIn(String secs);
 
   /// Reward chip
@@ -11284,16 +11284,16 @@ abstract class AppLocalizations {
   /// **'WATCH NOW'**
   String get lbWatchNow;
 
-  /// Skip the ad
+  /// Decline the rewarded ad; a short plain interstitial plays instead, with no coins
   ///
   /// In en, this message translates to:
-  /// **'NO THANKS'**
-  String get lbNoThanks;
+  /// **'SHORT AD'**
+  String get lbShortAd;
 
-  /// Back gesture skips
+  /// Back gesture picks the short ad
   ///
   /// In en, this message translates to:
-  /// **'The back gesture counts as no thanks, too.'**
+  /// **'The back gesture picks the short ad, too.'**
   String get lbAdBackHint;
 
   /// Tap-absorbing curtain before a full-screen ad

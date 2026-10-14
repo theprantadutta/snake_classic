@@ -15,8 +15,9 @@ import 'package:snake_classic/widgets/tap_arm_guard.dart';
 /// the ad, so there was no way to decline at all.
 ///
 /// Resolves `true` to play the ad (WATCH NOW, or the countdown ran out) and
-/// `false` to skip it (NO THANKS, or the system back gesture). Skipping is a
-/// first-class answer: the caller plays nothing in its place.
+/// `false` to skip it (SHORT AD, or the system back gesture). Skipping turns
+/// down the reward, not the break: the caller plays the plain interstitial in
+/// its place when one is loaded, and the copy says so before the choice.
 Future<bool> showRewardedInterstitialIntro(
   BuildContext context, {
   required GameTheme theme,
@@ -228,8 +229,8 @@ class _RewardedInterstitialIntroState extends State<_RewardedInterstitialIntro>
                       // keeps the two equally prominent.
                       Expanded(
                         child: _IntroButton(
-                          label: l10n.lbNoThanks,
-                          icon: LBIcon.x,
+                          label: l10n.lbShortAd,
+                          icon: LBIcon.next,
                           filled: false,
                           height: buttonHeight,
                           onTap: () => _resolve(false),
@@ -275,7 +276,7 @@ class _RewardedInterstitialIntroState extends State<_RewardedInterstitialIntro>
 }
 
 /// One of the two equal choices. Both are the same size with the same icon
-/// and text size; WATCH NOW is the lime fill, NO THANKS a high-contrast ink
+/// and text size; WATCH NOW is the lime fill, SHORT AD a high-contrast ink
 /// outline with full-ink text.
 class _IntroButton extends StatefulWidget {
   const _IntroButton({
