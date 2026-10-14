@@ -157,7 +157,7 @@ assets/
 - Params: `format`, `requests`, `filled`, `failed`, `refresh_ok`, `refresh_failed` (auto-refreshes of a banner already on screen, which keeps its old creative when one fails), `codes` (`code:count`, most frequent first: `3` no fill = demand, `2` network, `1` invalid request / `0` internal = our request), `last_error`.
 - Every new ad load path must report `requested` / `filled` / `failed` to it, or the numbers stop adding up to AdMob's request count.
 - Aggregated on purpose: an event per failure would be ~200K events a month from banners alone.
-- To read it in the Firebase console the params must be registered as custom definitions (dimensions: `format`, `codes`, `last_error`; metrics: the counts). DebugView shows them without registering.
+- Registered 2026-10-14 as GA4 custom definitions (property `snake-classic-2a376`, Admin → Data display → Custom definitions; Firebase's own page no longer hosts them). Dimensions: `app_ad_format` (param `format`, shared with `ad_revenue`), `ad_failure_codes` (`codes`), `ad_last_error` (`last_error`). Metrics: `ad_requests`, `ad_filled`, `ad_failed`, `ad_refresh_ok`, `ad_refresh_failed`. A new param needs its own definition before it shows in reports, and only from that day on.
 
 ## In-App Purchase Setup (RTDN)
 
