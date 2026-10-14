@@ -385,4 +385,22 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       'currency=$currencyCode, precision=$precision',
     );
   }
+
+  @override
+  Future<void> trackAdLoadStats({
+    required String format,
+    required int requests,
+    required int filled,
+    required int failed,
+    required int refreshOk,
+    required int refreshFailed,
+    required String codes,
+    String? lastError,
+  }) async {
+    AppLogger.info(
+      '$_tag ad_load_stats: format=$format, requests=$requests, '
+      'filled=$filled, failed=$failed, refreshOk=$refreshOk, '
+      'refreshFailed=$refreshFailed, codes=$codes, lastError=$lastError',
+    );
+  }
 }

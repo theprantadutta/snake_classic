@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/ads/ad_config.dart';
+import 'package:snake_classic/services/ads/ad_load_stats.dart';
 import 'package:snake_classic/services/ads/game_over_ad_gate.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
@@ -565,6 +566,7 @@ class AdService {
     if (!adsEnabled || _interstitial != null || _interstitialLoading) return;
     if (!_hasInternet) return;
     _interstitialLoading = true;
+    loadStats.requested('interstitial');
     InterstitialAd.load(
       adUnitId: AdConfig.interstitialUnitId,
       request: const AdRequest(),
@@ -580,9 +582,11 @@ class AdService {
           };
           _interstitial = ad;
           _interstitialLoading = false;
+          loadStats.filled('interstitial');
           _clearRetry(_kLoadInterstitial);
         },
         onAdFailedToLoad: (error) {
+          loadStats.failed('interstitial', error.code, error.message);
           _interstitial = null;
           _interstitialLoading = false;
           AppLogger.warning('Interstitial failed to load: ${error.message}');
@@ -602,6 +606,7 @@ class AdService {
     if (!adsEnabled || !_hasInternet) return;
     if (_rewardedInterstitial != null || _rewardedInterstitialLoading) return;
     _rewardedInterstitialLoading = true;
+    loadStats.requested('rewarded_interstitial');
     RewardedInterstitialAd.load(
       adUnitId: AdConfig.rewardedInterstitialUnitId,
       request: const AdRequest(),
@@ -617,9 +622,11 @@ class AdService {
           };
           _rewardedInterstitial = ad;
           _rewardedInterstitialLoading = false;
+          loadStats.filled('rewarded_interstitial');
           _clearRetry(_kLoadRewardedInterstitial);
         },
         onAdFailedToLoad: (error) {
+          loadStats.failed('rewarded_interstitial', error.code, error.message);
           _rewardedInterstitial = null;
           _rewardedInterstitialLoading = false;
           AppLogger.warning(
@@ -922,6 +929,7 @@ class AdService {
     if (!adsEnabled || !_hasInternet) return;
     while (_rewardedPool.length + _rewardedLoading < _rewardedBufferTarget) {
       _rewardedLoading++;
+      loadStats.requested('rewarded');
       RewardedAd.load(
         adUnitId: AdConfig.rewardedUnitId,
         request: const AdRequest(),
@@ -937,10 +945,12 @@ class AdService {
             };
             _rewardedLoading--;
             _rewardedPool.add(ad);
+            loadStats.filled('rewarded');
             _clearRetry(_kLoadRewarded);
             _notifyRewardedReady();
           },
           onAdFailedToLoad: (error) {
+            loadStats.failed('rewarded', error.code, error.message);
             _rewardedLoading--;
             AppLogger.warning('Rewarded failed to load: ${error.message}');
             _scheduleRetry(_kLoadRewarded, _loadRewarded);
@@ -1158,6 +1168,7 @@ class AdService {
   /// (those don't represent the user actually leaving the app).
   void markBackgrounded() {
     if (_fullScreenAdShowing) return;
+    loadStats.flush(_analytics);
     // Idempotent: while a background trip is already in progress, do NOT
     // restart the clock. The trip ends when maybeShowAppOpenOnResume consumes
     // the flag, so a second lifecycle event before that is the same trip.
@@ -1188,6 +1199,7 @@ class AdService {
     if (!adsEnabled || _appOpenAd != null || _appOpenLoading) return;
     if (!_hasInternet) return;
     _appOpenLoading = true;
+    loadStats.requested('app_open');
     AppOpenAd.load(
       adUnitId: AdConfig.appOpenUnitId,
       request: const AdRequest(),
@@ -1204,9 +1216,11 @@ class AdService {
           _appOpenAd = ad;
           _appOpenLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
           _appOpenLoading = false;
+          loadStats.filled('app_open');
           _clearRetry(_kLoadAppOpen);
         },
         onAdFailedToLoad: (error) {
+          loadStats.failed('app_open', error.code, error.message);
           _appOpenAd = null;
           _appOpenLoading = false;
           AppLogger.warning('App Open failed to load: ${error.message}');
@@ -1327,6 +1341,10 @@ class AdService {
   /// memory for the rest of the session.
   final Expando<void Function()> _bannerOwners = Expando<void Function()>();
 
+  /// Session tally of every ad request and its outcome, flushed to Analytics
+  /// on backgrounding. Banner widgets that load their own ad report here too.
+  final AdLoadStats loadStats = AdLoadStats();
+
   /// Register the anchored adaptive size once the banner widget has resolved
   /// it for this device. The app is portrait-locked, so it is stable for the
   /// session — and the warm banner must be the same size as the placement it
@@ -1395,9 +1413,11 @@ class AdService {
           // genuinely in-flight request.
           final owner = _bannerOwners[banner];
           if (owner != null) {
+            loadStats.refreshed();
             owner();
             return;
           }
+          loadStats.filled('banner');
 
           // A load that finished after setBannerSize moved on. Its size no
           // longer matches the placements it would fill, and takeWarmBanner
@@ -1421,7 +1441,11 @@ class AdService {
           // again by itself. Disposing it blanked that placement for good,
           // and clearing _warmBannerLoading lost track of the spare that is
           // genuinely in flight.
-          if (_bannerOwners[ad as BannerAd] != null) return;
+          if (_bannerOwners[ad as BannerAd] != null) {
+            loadStats.refreshFailed(error.code, error.message);
+            return;
+          }
+          loadStats.failed('banner', error.code, error.message);
           ad.dispose();
           _warmBannerLoading = false;
           AppLogger.warning('Warm banner failed to load: ${error.message}');
@@ -1441,6 +1465,7 @@ class AdService {
         },
       ),
     );
+    loadStats.requested('banner');
     ad.load();
   }
 

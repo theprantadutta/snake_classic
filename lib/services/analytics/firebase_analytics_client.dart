@@ -520,4 +520,32 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       },
     );
   }
+
+  @override
+  Future<void> trackAdLoadStats({
+    required String format,
+    required int requests,
+    required int filled,
+    required int failed,
+    required int refreshOk,
+    required int refreshFailed,
+    required String codes,
+    String? lastError,
+  }) {
+    // Firebase caps string parameter values at 100 characters.
+    String cap(String s) => s.length <= 100 ? s : s.substring(0, 100);
+    return _analytics.logEvent(
+      name: 'ad_load_stats',
+      parameters: {
+        'format': format,
+        'requests': requests,
+        'filled': filled,
+        'failed': failed,
+        'refresh_ok': refreshOk,
+        'refresh_failed': refreshFailed,
+        'codes': cap(codes),
+        if (lastError != null) 'last_error': cap(lastError),
+      },
+    );
+  }
 }

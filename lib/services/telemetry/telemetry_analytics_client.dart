@@ -112,6 +112,19 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
   }) async =>
       _tracker.adRevenue(valueMicros);
 
+  // Diagnostics for the ad stack, not design telemetry.
+  @override
+  Future<void> trackAdLoadStats({
+    required String format,
+    required int requests,
+    required int filled,
+    required int failed,
+    required int refreshOk,
+    required int refreshFailed,
+    required String codes,
+    String? lastError,
+  }) async {}
+
   @override
   Future<void> trackPurchaseInitiated({
     required String productId,

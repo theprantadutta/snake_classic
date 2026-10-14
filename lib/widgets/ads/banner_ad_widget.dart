@@ -166,6 +166,11 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
+          if (identical(ad, _ad)) {
+            _ads?.loadStats.refreshed();
+          } else {
+            _ads?.loadStats.filled('banner');
+          }
           if (!mounted) {
             ad.dispose();
             return;
@@ -184,7 +189,11 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           // creative and refreshes again on its own; disposing it left the
           // strip blank for the rest of the screen's life, because _ad still
           // pointed at the dead ad and _maybeLoad bails while it is set.
-          if (identical(ad, _ad)) return;
+          if (identical(ad, _ad)) {
+            _ads?.loadStats.refreshFailed(error.code, error.message);
+            return;
+          }
+          _ads?.loadStats.failed('banner', error.code, error.message);
           ad.dispose();
           _loading = false;
           _scheduleRetry();
@@ -201,6 +210,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         },
       ),
     );
+    ads.loadStats.requested('banner');
     ad.load();
   }
 

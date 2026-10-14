@@ -217,4 +217,20 @@ abstract class AnalyticsClient {
     required String currencyCode,
     required String precision,
   });
+
+  /// One session's ad load outcomes for [format], sent on backgrounding by
+  /// `AdLoadStats`. [codes] is `code:count` pairs, most frequent first
+  /// (`3` no fill, `2` network, `1` invalid request, `0` internal);
+  /// [refreshOk] / [refreshFailed] are banner auto-refreshes of an ad
+  /// already on screen; [lastError] is the most recent failure message.
+  Future<void> trackAdLoadStats({
+    required String format,
+    required int requests,
+    required int filled,
+    required int failed,
+    required int refreshOk,
+    required int refreshFailed,
+    required String codes,
+    String? lastError,
+  });
 }

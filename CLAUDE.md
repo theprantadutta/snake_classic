@@ -152,6 +152,13 @@ assets/
 - Fast game state updates
 - Efficient memory usage
 
+### Ad Load Diagnostics (`ad_load_stats`)
+`lib/services/ads/ad_load_stats.dart` (`AdLoadStats`, held as `AdService.loadStats`) counts every ad request and its outcome for the session, per format, and sends ONE Firebase Analytics event per format, `ad_load_stats`, when the app is backgrounded (`AdService.markBackgrounded`). It exists because AdMob reports only a match rate, never the reason (banners filled ~21% of requests in Oct 2026), and the app's logs do not reach Sentry.
+- Params: `format`, `requests`, `filled`, `failed`, `refresh_ok`, `refresh_failed` (auto-refreshes of a banner already on screen, which keeps its old creative when one fails), `codes` (`code:count`, most frequent first: `3` no fill = demand, `2` network, `1` invalid request / `0` internal = our request), `last_error`.
+- Every new ad load path must report `requested` / `filled` / `failed` to it, or the numbers stop adding up to AdMob's request count.
+- Aggregated on purpose: an event per failure would be ~200K events a month from banners alone.
+- To read it in the Firebase console the params must be registered as custom definitions (dimensions: `format`, `codes`, `last_error`; metrics: the counts). DebugView shows them without registering.
+
 ## In-App Purchase Setup (RTDN)
 
 ### Google Play RTDN Setup

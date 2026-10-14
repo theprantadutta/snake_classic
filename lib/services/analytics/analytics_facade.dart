@@ -377,6 +377,30 @@ class AnalyticsFacade implements AnalyticsClient {
       _fire((c) => c.trackAdImpression(format: format, placement: placement));
 
   @override
+  Future<void> trackAdLoadStats({
+    required String format,
+    required int requests,
+    required int filled,
+    required int failed,
+    required int refreshOk,
+    required int refreshFailed,
+    required String codes,
+    String? lastError,
+  }) async =>
+      _fire(
+        (c) => c.trackAdLoadStats(
+          format: format,
+          requests: requests,
+          filled: filled,
+          failed: failed,
+          refreshOk: refreshOk,
+          refreshFailed: refreshFailed,
+          codes: codes,
+          lastError: lastError,
+        ),
+      );
+
+  @override
   Future<void> trackRewardedCompleted(String placement) async =>
       _fire((c) => c.trackRewardedCompleted(placement));
 
