@@ -1327,6 +1327,12 @@ class AdService {
           _clearRetry(_kLoadBanner);
         },
         onAdFailedToLoad: (ad, error) {
+          // A failed auto-refresh of a banner a placement owns: it is on
+          // screen, still showing its previous creative, and will refresh
+          // again by itself. Disposing it blanked that placement for good,
+          // and clearing _warmBannerLoading lost track of the spare that is
+          // genuinely in flight.
+          if (_bannerOwners[ad as BannerAd] != null) return;
           ad.dispose();
           _warmBannerLoading = false;
           AppLogger.warning('Warm banner failed to load: ${error.message}');

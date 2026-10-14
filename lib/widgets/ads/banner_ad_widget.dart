@@ -179,6 +179,12 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           });
         },
         onAdFailedToLoad: (ad, error) {
+          // A failed AUTO-REFRESH of the banner already on screen arrives
+          // here too, with that same ad. The SDK keeps showing the previous
+          // creative and refreshes again on its own; disposing it left the
+          // strip blank for the rest of the screen's life, because _ad still
+          // pointed at the dead ad and _maybeLoad bails while it is set.
+          if (identical(ad, _ad)) return;
           ad.dispose();
           _loading = false;
           _scheduleRetry();
