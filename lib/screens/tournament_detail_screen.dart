@@ -848,25 +848,30 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                     const SizedBox(height: 18),
                     // Free Bronze entry via rewarded ad (free users only,
                     // bronze tier only — never devalue the paid Silver/Gold
-                    // entries). Opt-in and uncapped — gated only on a loaded
-                    // rewarded ad.
+                    // entries). Opt-in and uncapped. Not gated on a loaded
+                    // ad: showRewardedOrWait loads one on demand when tapped.
                     if (tier == 'bronze' &&
                         getIt.isRegistered<AdService>() &&
-                        getIt<AdService>().adsEnabled &&
-                        getIt<AdService>().isRewardedReady)
+                        getIt<AdService>().adsEnabled)
                       LBBlock(
                         kind: LBBlockKind.fill,
                         height: 50,
                         feedback: false,
                         alignment: Alignment.center,
                         semanticLabel: l10n.tnFreeEntryAd,
-                        onTap: () {
+                        onTap: () async {
                           // Capture before the pop + ad — onReward fires after the
                           // ad is dismissed, when this dialog's context is gone.
                           final messenger = ScaffoldMessenger.of(context);
+                          final loading =
+                              arcadeSnackBar(context, message: l10n.rvoLoadingAd);
+                          final noAd =
+                              arcadeSnackBar(context, message: l10n.goNoAdAvailable);
                           Navigator.of(context).pop();
-                          getIt<AdService>().showRewardedFor(
+                          final outcome =
+                              await getIt<AdService>().showRewardedOrWait(
                             placement: AdService.placementTournamentEntry,
+                            onWaitStart: () => messenger.showSnackBar(loading),
                             onReward: () {
                               premiumCubit.addTournamentEntry('bronze');
                               showRewardToast(
@@ -876,6 +881,11 @@ class _TournamentDetailScreenState extends State<TournamentDetailScreen>
                               );
                             },
                           );
+                          if (outcome == RewardedOutcome.unavailable) {
+                            messenger
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(noAd);
+                          }
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

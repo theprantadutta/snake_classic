@@ -514,17 +514,17 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     return () async {
       final l10n = AppLocalizations.of(context)!;
       final ads = getIt<AdService>();
-      if (!ads.isRewardedReady) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(arcadeSnackBar(context, message: l10n.goNoAdAvailable));
-        return;
-      }
       final coinsCubit = context.read<CoinsCubit>();
       // Capture before the ad — onReward fires after dismissal, an async gap
       // where reading context is unsafe.
       final messenger = ScaffoldMessenger.of(context);
-      await ads.showRewarded(
+      final noAd = arcadeSnackBar(context, message: l10n.goNoAdAvailable);
+      final loading = arcadeSnackBar(context, message: l10n.rvoLoadingAd);
+      // Not gated on a loaded ad: a revive or CONTINUE just before this
+      // screen usually took the only pooled one, so the button used to say
+      // "no ad" exactly when the player wanted it. This loads on demand.
+      final outcome = await ads.showRewardedOrWait(
+        onWaitStart: () => messenger.showSnackBar(loading),
         placement: 'double_coins',
         onReward: () {
           coinsCubit.earnCoins(
@@ -541,6 +541,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
           );
         },
       );
+      if (outcome == RewardedOutcome.unavailable) {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(noAd);
+      }
     };
   }
 }

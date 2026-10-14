@@ -379,10 +379,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       final theme = context.read<ThemeCubit>().state.currentTheme;
 
-      // Offer a "claim 2×" via rewarded ad when one is available (free users).
+      // Offer a "claim 2×" via rewarded ad to free users. Not gated on a
+      // loaded ad: the popup opens at launch, often before the pool has
+      // filled, and showRewardedOrWait loads on demand when tapped.
       final bonusCoins = status.todayReward?.coins ?? 0;
       final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
-      final canDouble = ads != null && ads.adsEnabled && ads.isRewardedReady;
+      final canDouble = ads != null && ads.adsEnabled;
 
       await DailyBonusPopup.show(
         context: context,
@@ -425,7 +427,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 if (!ok) return;
                 getIt<AnalyticsFacade>().trackDailyBonusCollected();
                 // Grant the same amount again on ad completion → 2× total.
-                await ads.showRewarded(
+                final outcome = await ads.showRewardedOrWait(
                   placement: 'daily_bonus_2x',
                   onReward: () {
                     coins.earnCoins(
@@ -438,7 +440,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       l10n.homeBonusDoubled(bonusCoins),
                     );
                   },
+                  onWaitStart: () => messenger.showSnackBar(
+                    arcadeSnackBarFor(theme, message: l10n.rvoLoadingAd),
+                  ),
                 );
+                if (outcome == RewardedOutcome.unavailable) {
+                  messenger.hideCurrentSnackBar();
+                  messenger.showSnackBar(
+                    arcadeSnackBarFor(theme, message: l10n.homeNoAdReady),
+                  );
+                }
               }
             : null,
       );
@@ -978,24 +989,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       default:
         // Power-ups: the free (rewarded) one for players who see ads, the
         // owned stock for Pro; the armed one, if any, in the subtitle.
-        final adsOn = getIt.isRegistered<AdService>() && getIt<AdService>().adsEnabled;
-        return BlocBuilder<PowerUpCubit, PowerUpState>(
-          builder: (context, state) {
-            final armed = state.armed;
-            final owned = state.inventory.values.fold<int>(0, (a, b) => a + b);
-            return _HomeTile(
-              tall: tall,
-              icon: adsOn ? LBIcon.tv : LBIcon.bolt,
-              title: adsOn ? l10n.lbHomeFreePowerUp : l10n.lbHomePowerUps,
-              subtitle: armed != null
-                  ? l10n.lbArmedChip(loadoutLabelFor(l10n, armed).toUpperCase())
-                  : adsOn
-                      ? l10n.lbHomeFreePowerUpSub
-                      : l10n.lbHomePowerUpsSub(context.formatInt(owned)),
-              kind: adsOn ? LBBlockKind.gold : LBBlockKind.outline,
-              onTap: go,
-            );
-          },
+        // Listens for ads coming online: on a cold start Home builds before
+        // consent and SDK init finish, and a one-off read showed free players
+        // the Pro tile (no offer) until something else rebuilt Home.
+        final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+        return ValueListenableBuilder<bool>(
+          valueListenable: ads?.adsEnabledListenable ?? ValueNotifier(false),
+          builder: (context, _, _) => BlocBuilder<PowerUpCubit, PowerUpState>(
+            builder: (context, state) {
+              final adsOn = ads?.adsEnabled ?? false;
+              final armed = state.armed;
+              final owned = state.inventory.values.fold<int>(0, (a, b) => a + b);
+              return _HomeTile(
+                tall: tall,
+                icon: adsOn ? LBIcon.tv : LBIcon.bolt,
+                title: adsOn ? l10n.lbHomeFreePowerUp : l10n.lbHomePowerUps,
+                subtitle: armed != null
+                    ? l10n.lbArmedChip(loadoutLabelFor(l10n, armed).toUpperCase())
+                    : adsOn
+                        ? l10n.lbHomeFreePowerUpSub
+                        : l10n.lbHomePowerUpsSub(context.formatInt(owned)),
+                kind: adsOn ? LBBlockKind.gold : LBBlockKind.outline,
+                onTap: go,
+              );
+            },
+          ),
         );
     }
   }

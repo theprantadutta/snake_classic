@@ -1700,63 +1700,65 @@ class _StoreScreenState extends State<StoreScreen>
   // can see their count).
 
   /// Rewarded-ad block granting one free Speed Boost. Self-hides for Pro /
-  /// web / when the SDK isn't ready; disables when no ad is loaded.
+  /// web / when the SDK isn't ready. Always tappable: nothing rebuilt this
+  /// card when an ad finished loading, so a player who opened the store
+  /// before the pool filled saw it greyed out for the whole visit.
   Widget _buildFreePowerUpAdCard(BuildContext context, GameTheme theme) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
     final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
     if (ads == null || !ads.adsEnabled) return const SizedBox.shrink();
-    // Opt-in placement, uncapped by design (the daily caps were removed) —
-    // the only gate is whether a rewarded ad is loaded.
-    final ready = ads.isRewardedReady;
-    return Opacity(
-      opacity: ready ? 1 : 0.5,
-      child: LBBlock(
-        feedback: false,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        onTap: ready
-            ? () {
-                final powerUps = context.read<PowerUpCubit>();
-                // Capture before the ad — onReward fires after dismissal,
-                // an async gap where reading context is unsafe.
-                final messenger = ScaffoldMessenger.of(context);
-                ads.showRewardedFor(
-                  placement: AdService.placementFreePowerUp,
-                  onReward: () {
-                    powerUps.grantFreePowerUp();
-                    showRewardToast(
-                      messenger,
-                      l10n.storeFreeSpeedBoostInventory,
-                      icon: Icons.flash_on,
-                    );
-                  },
-                );
-              }
-            : null,
-        child: Row(
-          children: [
-            LBPixelIcon(LBIcon.tv, cell: 4, color: p.lime),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.storeWatchAdTitle.toUpperCase(),
-                    style: LBText.button(p, size: 12.5),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    ready ? l10n.storeWatchAdReady : l10n.storeWatchAdNotReady,
-                    style: LBText.body(p, size: 11),
-                  ),
-                ],
-              ),
+    return LBBlock(
+      feedback: false,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      onTap: () async {
+        final powerUps = context.read<PowerUpCubit>();
+        // Capture before the ad — onReward fires after dismissal, an async
+        // gap where reading context is unsafe.
+        final messenger = ScaffoldMessenger.of(context);
+        final loading = arcadeSnackBar(context, message: l10n.rvoLoadingAd);
+        final noAd = arcadeSnackBar(context, message: l10n.goNoAdAvailable);
+        final outcome = await ads.showRewardedOrWait(
+          placement: AdService.placementFreePowerUp,
+          onWaitStart: () => messenger.showSnackBar(loading),
+          onReward: () {
+            powerUps.grantFreePowerUp();
+            showRewardToast(
+              messenger,
+              l10n.storeFreeSpeedBoostInventory,
+              icon: Icons.flash_on,
+            );
+          },
+        );
+        if (outcome == RewardedOutcome.unavailable) {
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(noAd);
+        }
+      },
+      child: Row(
+        children: [
+          LBPixelIcon(LBIcon.tv, cell: 4, color: p.lime),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.storeWatchAdTitle.toUpperCase(),
+                  style: LBText.button(p, size: 12.5),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  l10n.storeWatchAdReady,
+                  style: LBText.body(p, size: 11),
+                ),
+              ],
             ),
-            LBPixelIcon(LBIcon.bolt, cell: 3.6, color: p.lime),
-          ],
-        ),
+          ),
+          LBPixelIcon(LBIcon.bolt, cell: 3.6, color: p.lime),
+        ],
       ),
     );
   }
