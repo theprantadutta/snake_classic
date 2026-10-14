@@ -126,6 +126,12 @@ class AdService {
   bool _initFinished = false;
   bool _sdkReady = false;
   bool _consentGathered = false;
+  // UMP actually answered this session (as opposed to failing or timing out,
+  // when canRequestAds() falls back to the status cached from earlier runs,
+  // which on a first launch means no ads). Retried when the network returns.
+  bool _consentUpdated = false;
+  bool _consentRetrying = false;
+  static const Duration _consentUpdateTimeout = Duration(seconds: 10);
   // UMP's verdict on whether ad requests are allowed at all (e.g. an EEA user
   // who fully declined consent). Fail-open: a failed query never disables ads.
   bool _canRequestAds = true;
@@ -305,8 +311,26 @@ class AdService {
     if (hasInternet && !_lastHadInternet) {
       AppLogger.info('Network returned — re-arming ad preloads');
       _rearmAll();
+      unawaited(_retryConsentUpdate());
     }
     _lastHadInternet = hasInternet;
+  }
+
+  /// A launch without network never gets a consent answer, and on a first
+  /// launch that leaves ads off (canRequestAds has nothing cached) until the
+  /// next cold start. Ask again once the network is back. Never during a run:
+  /// the answer may come with the consent form, so a run in progress defers
+  /// it to [setGameActive] going false.
+  Future<void> _retryConsentUpdate() async {
+    if (!_initFinished || _consentUpdated || _consentRetrying) return;
+    if (_gameInProgress || !_hasInternet) return;
+    _consentRetrying = true;
+    try {
+      await _updateConsent();
+      if (_consentUpdated) await _onConsentResolved();
+    } finally {
+      _consentRetrying = false;
+    }
   }
 
   /// Call when premium status changes. A lapsed subscription turns ads back
@@ -428,22 +452,56 @@ class AdService {
 
   /// UMP (GDPR) consent + iOS ATT. Never throws — ads just stay off on failure.
   Future<void> _gatherConsentAndAtt() async {
+    await _updateConsent();
+
+    // iOS App Tracking Transparency — request once if undetermined.
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final status =
+            await AppTrackingTransparency.trackingAuthorizationStatus;
+        if (status == TrackingStatus.notDetermined) {
+          await AppTrackingTransparency.requestTrackingAuthorization();
+        }
+      }
+    } catch (_) {/* ATT optional — ignore */}
+  }
+
+  /// Fetch the consent status from UMP, showing the form when one is
+  /// required. Never throws.
+  ///
+  /// Only the status fetch is time-limited, never the form: a player reading
+  /// the form is not a hang. UMP's update had no deadline at all, so a stalled
+  /// request kept init from finishing and ads were off for that session. If
+  /// the answer arrives after the deadline it still applies, through
+  /// [_onConsentResolved].
+  Future<void> _updateConsent() async {
     try {
       final params = ConsentRequestParameters();
+      final answered = Completer<void>();
       final completer = Completer<void>();
+      var timedOut = false;
       ConsentInformation.instance.requestConsentInfoUpdate(
         params,
         () async {
+          if (!answered.isCompleted) answered.complete();
           try {
             await ConsentForm.loadAndShowConsentFormIfRequired((_) {});
           } catch (_) {}
+          _consentUpdated = true;
           if (!completer.isCompleted) completer.complete();
+          if (timedOut) unawaited(_onConsentResolved());
         },
         (FormError error) {
           AppLogger.warning('UMP consent update failed: ${error.message}');
+          if (!answered.isCompleted) answered.complete();
           if (!completer.isCompleted) completer.complete();
         },
       );
+      await answered.future.timeout(_consentUpdateTimeout, onTimeout: () {
+        timedOut = true;
+        AppLogger.warning('UMP consent update timed out; using cached status');
+        if (!completer.isCompleted) completer.complete();
+      });
       await completer.future;
       _consentGathered = true;
       // Cache whether a privacy-options form should be offered, so the
@@ -459,17 +517,16 @@ class AdService {
     } catch (e) {
       AppLogger.warning('Consent gathering errored: $e');
     }
+  }
 
-    // iOS App Tracking Transparency — request once if undetermined.
-    try {
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final status =
-            await AppTrackingTransparency.trackingAuthorizationStatus;
-        if (status == TrackingStatus.notDetermined) {
-          await AppTrackingTransparency.requestTrackingAuthorization();
-        }
-      }
-    } catch (_) {/* ATT optional — ignore */}
+  /// Consent was settled after init had already moved on: re-derive whether
+  /// ads may be requested and start loading if they just came on.
+  Future<void> _onConsentResolved() async {
+    // Safe mid-init too: _rearmAll is a no-op until the SDK is ready, and
+    // init loads everything itself once it is.
+    await _refreshCanRequestAds();
+    _notifyAdsEnabled();
+    _rearmAll();
   }
 
   /// Whether a "Privacy & ad choices" entry point should be shown. False when
@@ -635,11 +692,15 @@ class AdService {
     _fullScreenAdShowing = true;
     _analytics?.trackAdImpression(
         format: 'rewarded_interstitial', placement: placement);
-    await ad.show(
-      onUserEarnedReward: (_, _) {
-        earned = true;
-        if (dismissed) grantOnce();
-      },
+    await _showGuarded(
+      ad,
+      ad.fullScreenContentCallback,
+      () => ad.show(
+        onUserEarnedReward: (_, _) {
+          earned = true;
+          if (dismissed) grantOnce();
+        },
+      ),
     );
     return done.future;
   }
@@ -845,7 +906,7 @@ class AdService {
     );
     _fullScreenAdShowing = true;
     _analytics?.trackAdImpression(format: 'interstitial', placement: 'game_over');
-    await ad.show();
+    await _showGuarded(ad, ad.fullScreenContentCallback, ad.show);
     await prefs.setInt(_kGamesSinceInterstitial, 0);
     await prefs.setInt(
         _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
@@ -1020,15 +1081,19 @@ class AdService {
     );
     _fullScreenAdShowing = true;
     _analytics?.trackAdImpression(format: 'rewarded', placement: placement);
-    await ad.show(
-      onUserEarnedReward: (_, _) {
-        earned = true;
-        if (dismissed) {
-          // The race case: reward event arrived after the dismiss event.
-          AppLogger.info('Rewarded earn event arrived post-dismiss — granting');
-          grantOnce();
-        }
-      },
+    await _showGuarded(
+      ad,
+      ad.fullScreenContentCallback,
+      () => ad.show(
+        onUserEarnedReward: (_, _) {
+          earned = true;
+          if (dismissed) {
+            // The race case: reward event arrived after the dismiss event.
+            AppLogger.info('Rewarded earn event arrived post-dismiss — granting');
+            grantOnce();
+          }
+        },
+      ),
     );
     return done.future;
   }
@@ -1079,7 +1144,10 @@ class AdService {
   // ==================== App Open ====================
 
   /// The game screen calls this so App Open never covers a live/paused game.
-  void setGameActive(bool active) => _gameInProgress = active;
+  void setGameActive(bool active) {
+    _gameInProgress = active;
+    if (!active) unawaited(_retryConsentUpdate());
+  }
 
   /// Call before launching a purchase / consent flow so the resume it causes
   /// doesn't pop an App Open ad on return.
@@ -1203,7 +1271,28 @@ class AdService {
     );
     _fullScreenAdShowing = true;
     _analytics?.trackAdImpression(format: 'app_open');
-    await ad.show();
+    await _showGuarded(ad, ad.fullScreenContentCallback, ad.show);
+  }
+
+  /// Run a full-screen ad's `show()`. It is a platform call and can throw
+  /// (the activity going away mid-call, say), and then neither callback ever
+  /// arrives: _fullScreenAdShowing stayed true, blocking App Open for the rest
+  /// of the session, and a caller awaiting the ad's result waited forever,
+  /// which hung the game-over buttons. A throw is routed through the ad's own
+  /// failed-to-show handler, so its cleanup runs exactly as for a real
+  /// failure.
+  Future<void> _showGuarded<T extends Ad>(
+    T ad,
+    FullScreenContentCallback<T>? callback,
+    Future<void> Function() show,
+  ) async {
+    try {
+      await show();
+    } catch (e) {
+      AppLogger.error('Full-screen ad show() threw', e);
+      callback?.onAdFailedToShowFullScreenContent
+          ?.call(ad, AdError(-1, 'snake_classic', 'show() threw: $e'));
+    }
   }
 
   // ==================== Banner warm-up ====================
