@@ -6,21 +6,28 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.2.1+64**.
+Connect. Written for **7.3.0+66**.
 
-Scope: what a player notices against 7.2.0, which is live on the App Store
-with the notes archived in release_notes_7.2.0.md. Two changes: the game
-screen layout (board clear of the screen edges, controls at the bottom) and
-the audio-route crash fix from flutter_soloud 5. Deliberately absent: the
-banner ad moving to the top (not a selling point) and the package upgrades.
+Scope: what a player notices against 7.2.1, which is live on the App Store
+with the notes archived in release_notes_7.2.1.md. 7.2.2+65 was bumped but
+never released, so its control-zone work is folded in here: the live
+preview of each control layout in Settings and Pause, the board no longer
+moving when the layout changes, rewarded offers that load on tap instead of
+sitting greyed out, and the pause-blur and wrapping fixes.
 
-Promotional Text is unchanged from 7.2.0 — it still describes the app
-accurately, and App Store Connect does not carry it over to a new version on
-its own, so it is repeated here to be pasted again.
+Deliberately absent: the ad plumbing — banner auto-refresh, the consent
+deadline, ad_load_stats, and the short ad after a declined rewarded intro,
+which is not something to advertise.
 
-Every What's New block fits Play's 500-character limit, so the same text goes
-to both stores. App Store limits: What's New 4000, Promotional Text 170.
-Versus uses each locale's in-app name, matching release_notes_7.2.0.md.
+Control-layout and feature names (SWIPE, D-PAD, TURN, STICK, Daily Bonus)
+use the in-app translations from lib/l10n/app_<locale>.arb, so the notes
+match the screens. The app has no Turkish UI; tr names them in Turkish.
+
+Promotional Text is unchanged from 7.2.1 — still accurate, and App Store
+Connect does not carry it over to a new version on its own.
+
+Every What's New block fits Play's 500-character limit, so the same text
+goes to both stores. App Store limits: What's New 4000, Promotional Text 170.
 
 en-GB is not listed separately: it takes the `en` text verbatim.
 
@@ -32,71 +39,93 @@ Release → Release notes → paste this whole block. es-419 and es-ES share
 the `es` text.
 
 ```
-<ar>
-إصلاحات وتحسينات.
-
-• شاشة لعب أنظف: لم تعد اللوحة تلامس حواف الشاشة في اللعب الفردي والمواجهة، وأزرار التحكم على الشاشة صارت في الأسفل.
-• إصلاح تعطّل عند تغيير مخرج الصوت، مثل توصيل سماعات الرأس أو البلوتوث.
-</ar>
 <en-US>
-Fixes and polish.
+Better controls, rewards on tap.
 
-• Cleaner game screen: the board keeps clear of the screen edges in solo and Versus, and the on-screen controls sit at the bottom.
-• Fixed a crash when the audio output changed, like plugging in headphones or connecting Bluetooth.
+• Preview before you pick: Settings and the pause menu show a live miniature of every control layout.
+• Swipe, D-Pad, Turn or Stick: switching controls no longer moves the board.
+• Free rewards are ready when you tap them: the Daily Bonus 2×, game over 2× coins, free tournament entry and the store's free power-up.
+• Polish: a cleaner pause screen, and tips under the board no longer get cut off.
 </en-US>
-<es-419>
-Correcciones y mejoras.
+<ar>
+تحكم أفضل ومكافآت فورية.
 
-• Pantalla de juego más limpia: el tablero ya no toca los bordes de la pantalla en solitario ni en Versus, y los controles en pantalla quedan abajo.
-• Se corrigió un cierre inesperado al cambiar la salida de audio, como al conectar audífonos o Bluetooth.
+• شاهد قبل أن تختار: الإعدادات وقائمة الإيقاف المؤقت تعرض معاينة حية لكل نمط تحكم.
+• سحب أو اتجاهات أو انعطاف أو عصا: تغيير التحكم لم يعد يحرّك اللوحة.
+• المكافآت المجانية جاهزة عند النقر: المكافأة اليومية ×2، وضعف العملات عند انتهاء اللعبة، ودخول البطولة المجاني، والتعزيز المجاني في المتجر.
+• لمسات أخيرة: شاشة إيقاف مؤقت أنظف، ولم تعد النصائح أسفل اللوحة تُقتطع.
+</ar>
+<es-419>
+Mejores controles, recompensas al instante.
+
+• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
+• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
+• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
+• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
 </es-419>
 <es-ES>
-Correcciones y mejoras.
+Mejores controles, recompensas al instante.
 
-• Pantalla de juego más limpia: el tablero ya no toca los bordes de la pantalla en solitario ni en Versus, y los controles en pantalla quedan abajo.
-• Se corrigió un cierre inesperado al cambiar la salida de audio, como al conectar audífonos o Bluetooth.
+• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
+• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
+• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
+• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
 </es-ES>
 <fr-FR>
-Corrections et finitions.
+Meilleures commandes, récompenses sans attente.
 
-• Écran de jeu plus net : le plateau ne touche plus les bords de l'écran, en solo comme en Versus, et les commandes à l'écran sont en bas.
-• Correction d'un plantage lors d'un changement de sortie audio, par exemple en branchant un casque ou en connectant le Bluetooth.
+• Voyez avant de choisir : Réglages et menu pause montrent un aperçu en direct de chaque commande.
+• Balayage, D-Pad, Virage ou Joystick : changer de commande ne déplace plus le plateau.
+• Récompenses gratuites prêtes dès le toucher : Bonus Quotidien 2×, pièces 2× en fin de partie, entrée de tournoi et power-up gratuit de la boutique.
+• Finitions : pause plus nette, et les conseils sous le plateau ne sont plus coupés.
 </fr-FR>
 <hi-IN>
-सुधार और निखार।
+बेहतर कंट्रोल, टैप करते ही इनाम।
 
-• साफ़-सुथरी गेम स्क्रीन: सोलो और मुक़ाबले में बोर्ड अब स्क्रीन के किनारों से दूर रहता है, और ऑन-स्क्रीन कंट्रोल नीचे रहते हैं।
-• ऑडियो आउटपुट बदलने पर होने वाला क्रैश ठीक किया, जैसे हेडफ़ोन लगाने या ब्लूटूथ जोड़ने पर।
+• चुनने से पहले देखें: सेटिंग्स और पॉज़ मेन्यू हर कंट्रोल लेआउट की लाइव झलक दिखाते हैं।
+• स्वाइप, डी-पैड, मोड़ या स्टिक: कंट्रोल बदलने पर बोर्ड अब अपनी जगह से नहीं हिलता।
+• मुफ़्त इनाम टैप करते ही तैयार: दैनिक बोनस 2×, गेम ओवर पर 2× सिक्के, मुफ़्त टूर्नामेंट एंट्री और स्टोर का मुफ़्त पावर-अप।
+• निखार: साफ़ पॉज़ स्क्रीन, और बोर्ड के नीचे के टिप्स अब कटते नहीं।
 </hi-IN>
 <it-IT>
-Correzioni e rifiniture.
+Comandi migliori, ricompense subito.
 
-• Schermata di gioco più pulita: il tabellone non tocca più i bordi dello schermo in singolo e nel Versus, e i comandi a schermo stanno in basso.
-• Corretto un crash al cambio dell'uscita audio, ad esempio collegando le cuffie o il Bluetooth.
+• Guarda prima di scegliere: Impostazioni e menu di pausa mostrano un'anteprima dal vivo di ogni schema di comandi.
+• Scorri, D-Pad, Gira o Stick: cambiare comandi non sposta più il tabellone.
+• Ricompense gratis pronte al tocco: il Bonus Giornaliero 2×, monete 2× a fine partita, l'ingresso gratis al torneo e il power-up gratis del negozio.
+• Rifiniture: una schermata di pausa più pulita, e i consigli sotto il tabellone non vengono più tagliati.
 </it-IT>
 <pl-PL>
-Poprawki i dopracowanie.
+Lepsze sterowanie, nagrody od ręki.
 
-• Czystszy ekran gry: plansza nie dotyka już krawędzi ekranu w grze solo i w Versus, a przyciski ekranowe są na dole.
-• Naprawiono awarię przy zmianie wyjścia audio, np. po podłączeniu słuchawek lub Bluetooth.
+• Zobacz, zanim wybierzesz: Ustawienia i menu pauzy pokazują podgląd na żywo każdego układu sterowania.
+• Gesty, D-Pad, Skręt czy Gałka: zmiana sterowania nie przesuwa już planszy.
+• Darmowe nagrody gotowe po dotknięciu: Dzienny Bonus 2×, 2× monet po grze, darmowe wejście do turnieju i darmowe wzmocnienie w sklepie.
+• Szlify: czystszy ekran pauzy, a wskazówki pod planszą nie są już ucinane.
 </pl-PL>
 <pt-BR>
-Correções e ajustes.
+Controles melhores, recompensas na hora.
 
-• Tela de jogo mais limpa: o tabuleiro fica longe das bordas da tela no modo solo e no Versus, e os controles na tela ficam na parte de baixo.
-• Corrigimos uma falha ao trocar a saída de áudio, como ao conectar fones de ouvido ou Bluetooth.
+• Veja antes de escolher: os Ajustes e o menu de pausa mostram uma prévia ao vivo de cada layout de controle.
+• Deslizar, D-Pad, Virar ou Joystick: trocar de controle não move mais o tabuleiro.
+• Recompensas grátis prontas ao tocar: o Bônus Diário 2×, 2× moedas no fim de jogo, a entrada grátis no torneio e o power-up grátis da loja.
+• Ajustes: tela de pausa mais limpa, e as dicas abaixo do tabuleiro não são mais cortadas.
 </pt-BR>
 <ru-RU>
-Исправления и доработки.
+Удобнее управление, награды без ожидания.
 
-• Аккуратнее игровой экран: поле больше не упирается в края экрана в одиночной игре и в Версусе, а экранные кнопки находятся внизу.
-• Исправлен сбой при смене аудиовыхода, например при подключении наушников или Bluetooth.
+• Посмотрите, прежде чем выбрать: настройки и меню паузы показывают живое превью каждой схемы управления.
+• Свайп, D-Pad, Поворот или Стик: при смене управления поле больше не сдвигается.
+• Бесплатные награды готовы по нажатию: Ежедневный бонус 2×, 2× монеты после игры, бесплатный вход в турнир и бесплатное усиление в магазине.
+• Доработки: аккуратнее экран паузы, а подсказки под полем больше не обрезаются.
 </ru-RU>
 <tr-TR>
-Düzeltmeler ve iyileştirmeler.
+Daha iyi kontroller, anında ödüller.
 
-• Daha düzenli oyun ekranı: tahta artık tek oyunculu modda ve Versus'ta ekran kenarlarına değmiyor, ekran kontrolleri de altta duruyor.
-• Ses çıkışı değiştiğinde, örneğin kulaklık takıldığında veya Bluetooth bağlandığında oluşan çökme giderildi.
+• Seçmeden önce gör: Ayarlar ve duraklatma menüsü her kontrol düzeninin canlı önizlemesini gösteriyor.
+• Kaydırma, D-Pad, Dönüş ya da Joystick: kontrol değiştirmek artık tahtayı yerinden oynatmıyor.
+• Ücretsiz ödüller dokununca hazır: Günlük Bonus 2×, oyun sonunda 2× jeton, ücretsiz turnuva girişi ve mağazanın ücretsiz güçlendiricisi.
+• İnce ayarlar: daha temiz bir duraklatma ekranı, tahtanın altındaki ipuçları artık kesilmiyor.
 </tr-TR>
 ```
 
@@ -106,10 +135,12 @@ Düzeltmeler ve iyileştirmeler.
 
 ### What's New
 
-Fixes and polish.
+Better controls, rewards on tap.
 
-• Cleaner game screen: the board keeps clear of the screen edges in solo and Versus, and the on-screen controls sit at the bottom.
-• Fixed a crash when the audio output changed, like plugging in headphones or connecting Bluetooth.
+• Preview before you pick: Settings and the pause menu show a live miniature of every control layout.
+• Swipe, D-Pad, Turn or Stick: switching controls no longer moves the board.
+• Free rewards are ready when you tap them: the Daily Bonus 2×, game over 2× coins, free tournament entry and the store's free power-up.
+• Polish: a cleaner pause screen, and tips under the board no longer get cut off.
 
 ### Promotional Text
 
@@ -121,10 +152,12 @@ A brand-new pixel-grid look, one more go from game over, every run charted, and 
 
 ### What's New
 
-सुधार और निखार।
+बेहतर कंट्रोल, टैप करते ही इनाम।
 
-• साफ़-सुथरी गेम स्क्रीन: सोलो और मुक़ाबले में बोर्ड अब स्क्रीन के किनारों से दूर रहता है, और ऑन-स्क्रीन कंट्रोल नीचे रहते हैं।
-• ऑडियो आउटपुट बदलने पर होने वाला क्रैश ठीक किया, जैसे हेडफ़ोन लगाने या ब्लूटूथ जोड़ने पर।
+• चुनने से पहले देखें: सेटिंग्स और पॉज़ मेन्यू हर कंट्रोल लेआउट की लाइव झलक दिखाते हैं।
+• स्वाइप, डी-पैड, मोड़ या स्टिक: कंट्रोल बदलने पर बोर्ड अब अपनी जगह से नहीं हिलता।
+• मुफ़्त इनाम टैप करते ही तैयार: दैनिक बोनस 2×, गेम ओवर पर 2× सिक्के, मुफ़्त टूर्नामेंट एंट्री और स्टोर का मुफ़्त पावर-अप।
+• निखार: साफ़ पॉज़ स्क्रीन, और बोर्ड के नीचे के टिप्स अब कटते नहीं।
 
 ### Promotional Text
 
@@ -136,10 +169,12 @@ A brand-new pixel-grid look, one more go from game over, every run charted, and 
 
 ### What's New
 
-Correções e ajustes.
+Controles melhores, recompensas na hora.
 
-• Tela de jogo mais limpa: o tabuleiro fica longe das bordas da tela no modo solo e no Versus, e os controles na tela ficam na parte de baixo.
-• Corrigimos uma falha ao trocar a saída de áudio, como ao conectar fones de ouvido ou Bluetooth.
+• Veja antes de escolher: os Ajustes e o menu de pausa mostram uma prévia ao vivo de cada layout de controle.
+• Deslizar, D-Pad, Virar ou Joystick: trocar de controle não move mais o tabuleiro.
+• Recompensas grátis prontas ao tocar: o Bônus Diário 2×, 2× moedas no fim de jogo, a entrada grátis no torneio e o power-up grátis da loja.
+• Ajustes: tela de pausa mais limpa, e as dicas abaixo do tabuleiro não são mais cortadas.
 
 ### Promotional Text
 
@@ -151,10 +186,12 @@ Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida 
 
 ### What's New
 
-Correcciones y mejoras.
+Mejores controles, recompensas al instante.
 
-• Pantalla de juego más limpia: el tablero ya no toca los bordes de la pantalla en solitario ni en Versus, y los controles en pantalla quedan abajo.
-• Se corrigió un cierre inesperado al cambiar la salida de audio, como al conectar audífonos o Bluetooth.
+• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
+• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
+• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
+• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
 
 ### Promotional Text
 
@@ -166,10 +203,12 @@ Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cad
 
 ### What's New
 
-Corrections et finitions.
+Meilleures commandes, récompenses sans attente.
 
-• Écran de jeu plus net : le plateau ne touche plus les bords de l'écran, en solo comme en Versus, et les commandes à l'écran sont en bas.
-• Correction d'un plantage lors d'un changement de sortie audio, par exemple en branchant un casque ou en connectant le Bluetooth.
+• Voyez avant de choisir : Réglages et menu pause montrent un aperçu en direct de chaque commande.
+• Balayage, D-Pad, Virage ou Joystick : changer de commande ne déplace plus le plateau.
+• Récompenses gratuites prêtes dès le toucher : Bonus Quotidien 2×, pièces 2× en fin de partie, entrée de tournoi et power-up gratuit de la boutique.
+• Finitions : pause plus nette, et les conseils sous le plateau ne sont plus coupés.
 
 ### Promotional Text
 
@@ -181,10 +220,12 @@ Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, c
 
 ### What's New
 
-Исправления и доработки.
+Удобнее управление, награды без ожидания.
 
-• Аккуратнее игровой экран: поле больше не упирается в края экрана в одиночной игре и в Версусе, а экранные кнопки находятся внизу.
-• Исправлен сбой при смене аудиовыхода, например при подключении наушников или Bluetooth.
+• Посмотрите, прежде чем выбрать: настройки и меню паузы показывают живое превью каждой схемы управления.
+• Свайп, D-Pad, Поворот или Стик: при смене управления поле больше не сдвигается.
+• Бесплатные награды готовы по нажатию: Ежедневный бонус 2×, 2× монеты после игры, бесплатный вход в турнир и бесплатное усиление в магазине.
+• Доработки: аккуратнее экран паузы, а подсказки под полем больше не обрезаются.
 
 ### Promotional Text
 
@@ -196,10 +237,12 @@ Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, c
 
 ### What's New
 
-Poprawki i dopracowanie.
+Lepsze sterowanie, nagrody od ręki.
 
-• Czystszy ekran gry: plansza nie dotyka już krawędzi ekranu w grze solo i w Versus, a przyciski ekranowe są na dole.
-• Naprawiono awarię przy zmianie wyjścia audio, np. po podłączeniu słuchawek lub Bluetooth.
+• Zobacz, zanim wybierzesz: Ustawienia i menu pauzy pokazują podgląd na żywo każdego układu sterowania.
+• Gesty, D-Pad, Skręt czy Gałka: zmiana sterowania nie przesuwa już planszy.
+• Darmowe nagrody gotowe po dotknięciu: Dzienny Bonus 2×, 2× monet po grze, darmowe wejście do turnieju i darmowe wzmocnienie w sklepie.
+• Szlify: czystszy ekran pauzy, a wskazówki pod planszą nie są już ucinane.
 
 ### Promotional Text
 
@@ -211,10 +254,12 @@ Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na
 
 ### What's New
 
-إصلاحات وتحسينات.
+تحكم أفضل ومكافآت فورية.
 
-• شاشة لعب أنظف: لم تعد اللوحة تلامس حواف الشاشة في اللعب الفردي والمواجهة، وأزرار التحكم على الشاشة صارت في الأسفل.
-• إصلاح تعطّل عند تغيير مخرج الصوت، مثل توصيل سماعات الرأس أو البلوتوث.
+• شاهد قبل أن تختار: الإعدادات وقائمة الإيقاف المؤقت تعرض معاينة حية لكل نمط تحكم.
+• سحب أو اتجاهات أو انعطاف أو عصا: تغيير التحكم لم يعد يحرّك اللوحة.
+• المكافآت المجانية جاهزة عند النقر: المكافأة اليومية ×2، وضعف العملات عند انتهاء اللعبة، ودخول البطولة المجاني، والتعزيز المجاني في المتجر.
+• لمسات أخيرة: شاشة إيقاف مؤقت أنظف، ولم تعد النصائح أسفل اللوحة تُقتطع.
 
 ### Promotional Text
 
@@ -226,10 +271,12 @@ Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na
 
 ### What's New
 
-Correzioni e rifiniture.
+Comandi migliori, ricompense subito.
 
-• Schermata di gioco più pulita: il tabellone non tocca più i bordi dello schermo in singolo e nel Versus, e i comandi a schermo stanno in basso.
-• Corretto un crash al cambio dell'uscita audio, ad esempio collegando le cuffie o il Bluetooth.
+• Guarda prima di scegliere: Impostazioni e menu di pausa mostrano un'anteprima dal vivo di ogni schema di comandi.
+• Scorri, D-Pad, Gira o Stick: cambiare comandi non sposta più il tabellone.
+• Ricompense gratis pronte al tocco: il Bonus Giornaliero 2×, monete 2× a fine partita, l'ingresso gratis al torneo e il power-up gratis del negozio.
+• Rifiniture: una schermata di pausa più pulita, e i consigli sotto il tabellone non vengono più tagliati.
 
 ### Promotional Text
 
@@ -241,10 +288,12 @@ Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni 
 
 ### What's New
 
-Düzeltmeler ve iyileştirmeler.
+Daha iyi kontroller, anında ödüller.
 
-• Daha düzenli oyun ekranı: tahta artık tek oyunculu modda ve Versus'ta ekran kenarlarına değmiyor, ekran kontrolleri de altta duruyor.
-• Ses çıkışı değiştiğinde, örneğin kulaklık takıldığında veya Bluetooth bağlandığında oluşan çökme giderildi.
+• Seçmeden önce gör: Ayarlar ve duraklatma menüsü her kontrol düzeninin canlı önizlemesini gösteriyor.
+• Kaydırma, D-Pad, Dönüş ya da Joystick: kontrol değiştirmek artık tahtayı yerinden oynatmıyor.
+• Ücretsiz ödüller dokununca hazır: Günlük Bonus 2×, oyun sonunda 2× jeton, ücretsiz turnuva girişi ve mağazanın ücretsiz güçlendiricisi.
+• İnce ayarlar: daha temiz bir duraklatma ekranı, tahtanın altındaki ipuçları artık kesilmiyor.
 
 ### Promotional Text
 
