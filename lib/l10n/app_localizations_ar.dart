@@ -6057,6 +6057,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbRestorePurchases => 'استعادة المشتريات';
 
   @override
+  String get lbRestoreAccountHint =>
+      'هل لديك أكثر من حساب؟ تبقى المشتريات في الحساب الذي اشتريتها به. سجّل الدخول بذلك الحساب لاستعادتها.';
+
+  @override
+  String get settingsRestoreSubtitle => 'سجّل الدخول بالحساب الذي اشتريت به';
+
+  @override
+  String get purchaseOtherAccountTitle => 'تم الشراء بحساب آخر';
+
+  @override
+  String get purchaseOtherAccountBody =>
+      'تم هذا الشراء بحساب آخر في Snake Classic ويبقى في ذلك الحساب. إذا كان لديك أكثر من حساب، فسجّل الدخول بالحساب الذي استخدمته للشراء.';
+
+  @override
   String lbBuyPrice(String price) {
     return 'شراء · $price';
   }

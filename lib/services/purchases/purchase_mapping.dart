@@ -22,7 +22,16 @@ enum VerifyOutcome {
 
   /// Looked at and refused. Deliver nothing.
   rejected,
+
+  /// A real purchase, but made while signed in to a different Snake Classic
+  /// account, which keeps it. Deliver nothing here; tell the player to sign
+  /// in with the account they bought it on.
+  otherAccount,
 }
+
+/// The backend's stable prefix for a purchase that belongs to another
+/// account (see VerifyPurchaseCommandHandler.OwnedByAnotherAccount).
+const ownedByAnotherAccountPrefix = 'PURCHASE_OWNED_BY_ANOTHER_ACCOUNT';
 
 /// Backend error codes that mean "not now" rather than "no". They are the
 /// stable prefixes VerifyPurchaseCommandHandler puts in front of its
@@ -43,6 +52,9 @@ VerifyOutcome classifyVerifyResponse(Map<String, dynamic>? response) {
   if (response == null) return VerifyOutcome.transient;
   if (response['is_valid'] == true) return VerifyOutcome.granted;
   final reason = (response['error'] ?? response['message'])?.toString() ?? '';
+  if (reason.startsWith(ownedByAnotherAccountPrefix)) {
+    return VerifyOutcome.otherAccount;
+  }
   for (final prefix in transientBackendErrorPrefixes) {
     if (reason.startsWith(prefix)) return VerifyOutcome.transient;
   }

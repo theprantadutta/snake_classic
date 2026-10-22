@@ -10690,6 +10690,30 @@ abstract class AppLocalizations {
   /// **'RESTORE PURCHASES'**
   String get lbRestorePurchases;
 
+  /// Store footer, under RESTORE PURCHASES: purchases belong to the account that bought them
+  ///
+  /// In en, this message translates to:
+  /// **'Have more than one account? Purchases stay with the account you bought them on. Sign in with that one to restore them.'**
+  String get lbRestoreAccountHint;
+
+  /// Settings, under Restore Purchases
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with the account you bought on'**
+  String get settingsRestoreSubtitle;
+
+  /// Dialog title: a purchase belongs to a different Snake Classic account
+  ///
+  /// In en, this message translates to:
+  /// **'Bought on another account'**
+  String get purchaseOtherAccountTitle;
+
+  /// Dialog body: a purchase belongs to a different Snake Classic account
+  ///
+  /// In en, this message translates to:
+  /// **'This purchase was made while you were signed in to a different Snake Classic account, and it stays with that account. If you have more than one account, sign in with the one you used to buy it.'**
+  String get purchaseOtherAccountBody;
+
   /// Buy button with the store price
   ///
   /// In en, this message translates to:

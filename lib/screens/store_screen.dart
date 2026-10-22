@@ -61,6 +61,10 @@ class _StoreScreenState extends State<StoreScreen>
   // so the spinner never spins forever if a webhook is genuinely lost.
   final Set<String> _pendingProductIds = {};
 
+  /// While a restore runs it reports purchases from another account itself,
+  /// once, so the per-purchase status below stays quiet.
+  bool _restoring = false;
+
   // Listens for cancel/failure terminal events from the purchase stream so a
   // product's "Verifying…" spinner is dropped immediately when the user backs
   // out of the store sheet or the payment fails — instead of spinning until
@@ -106,6 +110,15 @@ class _StoreScreenState extends State<StoreScreen>
     );
   }
 
+  Future<void> _restore() async {
+    _restoring = true;
+    try {
+      await lbRestorePurchases(context);
+    } finally {
+      _restoring = false;
+    }
+  }
+
   /// Drop the "Verifying…" spinner the moment a purchase is canceled or fails.
   /// These product-scoped events come from PurchaseService after the async
   /// purchase stream reports a non-success terminal status — the path that the
@@ -114,11 +127,17 @@ class _StoreScreenState extends State<StoreScreen>
     String? productId;
     var failed = false;
     var pending = false;
+    var otherAccount = false;
     if (status.startsWith('purchase_canceled:')) {
       productId = status.substring('purchase_canceled:'.length);
     } else if (status.startsWith('purchase_failed:')) {
       productId = status.substring('purchase_failed:'.length);
       failed = true;
+    } else if (status.startsWith('purchase_other_account:')) {
+      // The store says this store account already owns it — bought while
+      // signed in to a different Snake Classic account, which keeps it.
+      productId = status.substring('purchase_other_account:'.length);
+      otherAccount = true;
     } else if (status.startsWith('purchase_pending:')) {
       // A deferred payment (cash at a kiosk, carrier billing): the store
       // has accepted the order but no money has moved. Nothing unlocks
@@ -134,7 +153,10 @@ class _StoreScreenState extends State<StoreScreen>
     }
     // Only surface a message on a genuine failure; a user-initiated cancel
     // should quietly return the card to its "Buy" state.
-    if (failed) {
+    if (otherAccount) {
+      // A restore shows this itself, once, when it finishes.
+      if (!_restoring) unawaited(showPurchaseOnOtherAccountDialog(context));
+    } else if (failed) {
       ScaffoldMessenger.of(context).showSnackBar(
         arcadeSnackBar(
           context,
@@ -311,7 +333,7 @@ class _StoreScreenState extends State<StoreScreen>
     // backend's VerifyPurchase response lands.
     _reconcilePendingPurchases(premiumState);
     final perks = lbProPerks(l10n);
-    final restore = StoreFooter(onRestore: () => lbRestorePurchases(context));
+    final restore = StoreFooter(onRestore: _restore);
 
     // Paid Pro user — status, then the one action they might actually want
     // here: moving between billing periods. The plan blocks stay hidden (they

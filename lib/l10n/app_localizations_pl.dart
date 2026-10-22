@@ -6087,6 +6087,20 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lbRestorePurchases => 'PRZYWRÓĆ ZAKUPY';
 
   @override
+  String get lbRestoreAccountHint =>
+      'Masz więcej niż jedno konto? Zakupy pozostają na koncie, na którym zostały dokonane. Zaloguj się na to konto, aby je przywrócić.';
+
+  @override
+  String get settingsRestoreSubtitle => 'Zaloguj się na konto użyte do zakupu';
+
+  @override
+  String get purchaseOtherAccountTitle => 'Kupione na innym koncie';
+
+  @override
+  String get purchaseOtherAccountBody =>
+      'Ten zakup został dokonany na innym koncie Snake Classic i pozostaje na tym koncie. Jeśli masz więcej niż jedno konto, zaloguj się na to, które zostało użyte do zakupu.';
+
+  @override
   String lbBuyPrice(String price) {
     return 'KUP · $price';
   }

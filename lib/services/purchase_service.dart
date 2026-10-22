@@ -90,6 +90,12 @@ class PurchaseService {
   /// reconcile until then.
   final Set<String> _rejectedThisSession = {};
 
+  /// Of those, the ones the backend refused because a different Snake
+  /// Classic account bought them, and how many the current restore has met
+  /// (see [restorePurchases]).
+  final Set<String> _otherAccountThisSession = {};
+  int _otherAccountHits = 0;
+
   /// Purchases being verified right now, by identity. The purchase-stream
   /// event and the app-resume reconcile both see a fresh purchase within
   /// the same second (the billing sheet closing IS the resume), and without
@@ -403,11 +409,29 @@ class PurchaseService {
     }
   }
 
+  /// The last error reported, so the same error arriving twice is reported
+  /// once. On iOS a refused purchase (a cancel, a failure) both throws from
+  /// requestPurchase and arrives on purchaseErrorListener, in either order.
+  String? _lastReportedErrorKey;
+  DateTime? _lastReportedErrorAt;
+  static const Duration _duplicateErrorWindow = Duration(seconds: 2);
+
   void _reportPurchaseError(
     PurchaseError error, {
     required String? fallbackProductId,
   }) {
     final productId = error.productId ?? fallbackProductId ?? '';
+    final key = '$productId|${error.code?.value}';
+    final now = DateTime.now();
+    final lastAt = _lastReportedErrorAt;
+    if (key == _lastReportedErrorKey &&
+        lastAt != null &&
+        now.difference(lastAt) < _duplicateErrorWindow) {
+      return;
+    }
+    _lastReportedErrorKey = key;
+    _lastReportedErrorAt = now;
+
     switch (error.code) {
       case ErrorCode.UserCancelled:
         AppLogger.info('Purchase canceled by user: $productId');
@@ -481,7 +505,10 @@ class PurchaseService {
       await _finish(purchase, consumable: consumable);
       return;
     }
-    if (identity != null && _rejectedThisSession.contains(identity)) return;
+    if (identity != null && _rejectedThisSession.contains(identity)) {
+      if (_otherAccountThisSession.contains(identity)) _otherAccountHits++;
+      return;
+    }
 
     final payload = mapping.backendPayloadFor(purchase);
     final outcome = payload == null
@@ -510,6 +537,29 @@ class PurchaseService {
         _purchaseStatusController.add(
           'Purchase delivered (backend sync pending)',
         );
+      case VerifyOutcome.otherAccount:
+        // Paid for, but by this store account while signed in to another
+        // Snake Classic account, which keeps it. Nothing is delivered here;
+        // the UI tells the player to sign in with the account that bought
+        // it. Finished on iOS like a refusal; on Android it was acknowledged
+        // when its owner got it.
+        AppLogger.info(
+          'Purchase ${identity ?? '?'} ($productId) belongs to another account',
+        );
+        if (identity != null) {
+          _rejectedThisSession.add(identity);
+          _otherAccountThisSession.add(identity);
+        }
+        _otherAccountHits++;
+        _purchaseStatusController.add('purchase_other_account:$productId');
+        _analytics?.trackPurchaseFailed(
+          productId: productId,
+          errorCode: 'other_account',
+        );
+        if (Platform.isIOS || Platform.isMacOS) {
+          await _finish(purchase, consumable: consumable);
+        }
+        return;
       case VerifyOutcome.rejected:
         // The backend looked at the receipt and said no. Nothing is
         // delivered. On Android the purchase is left unacknowledged so Play
@@ -586,6 +636,10 @@ class PurchaseService {
           AppLogger.warning(
             'Backend verification unavailable for ${payload.productId}: '
             '${result?['error'] ?? result?['message'] ?? 'no response'}',
+          );
+        case VerifyOutcome.otherAccount:
+          AppLogger.info(
+            'Backend: ${payload.productId} belongs to another account',
           );
         case VerifyOutcome.rejected:
           AppLogger.error(
@@ -703,6 +757,7 @@ class PurchaseService {
             );
           case VerifyOutcome.transient:
             remaining.add(entry);
+          case VerifyOutcome.otherAccount:
           case VerifyOutcome.rejected:
             // Already delivered locally when it was queued; the backend's
             // entitlement sync is what reconciles that. Retrying forever
@@ -770,11 +825,16 @@ class PurchaseService {
 
   /// Restore purchases: ask the store to sync (on iOS this may show the App
   /// Store sign-in), then run everything it reports through delivery.
-  Future<void> restorePurchases() async {
+  ///
+  /// Returns true when the store reported purchases that belong to a
+  /// different Snake Classic account, so the caller can tell the player
+  /// which account to sign in with rather than "restored".
+  Future<bool> restorePurchases() async {
     if (!_isAvailable) {
       _purchaseStatusController.add('In-app purchases not available');
-      return;
+      return false;
     }
+    _otherAccountHits = 0;
     try {
       AppLogger.info('Restoring purchases...');
       await _iap.restorePurchases();
@@ -784,6 +844,7 @@ class PurchaseService {
       AppLogger.error('Error restoring purchases', e);
       _purchaseStatusController.add('Failed to restore purchases');
     }
+    return _otherAccountHits > 0;
   }
 
   /// Run every purchase the store still reports through the delivery

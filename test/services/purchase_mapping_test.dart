@@ -126,6 +126,25 @@ void main() {
       expect(classifyVerifyResponse({}), VerifyOutcome.rejected);
     });
 
+    test('a purchase another account owns is told apart from a refusal', () {
+      // Single verify: a 400 whose code lands on `error`.
+      expect(
+        classifyVerifyResponse({
+          'is_valid': false,
+          'error': '$ownedByAnotherAccountPrefix: This purchase was made while signed in to a different Snake Classic account.',
+        }),
+        VerifyOutcome.otherAccount,
+      );
+      // Batch verify: the same code arrives on `message`.
+      expect(
+        classifyVerifyResponse({
+          'is_valid': false,
+          'message': '$ownedByAnotherAccountPrefix: ...',
+        }),
+        VerifyOutcome.otherAccount,
+      );
+    });
+
     test('the stable "not now" codes are retried, whatever the wording', () {
       for (final code in transientBackendErrorPrefixes) {
         expect(

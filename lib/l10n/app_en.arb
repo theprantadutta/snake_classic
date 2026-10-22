@@ -3285,6 +3285,22 @@
   "@lbRestorePurchases": {
     "description": "Restore purchases link"
   },
+  "lbRestoreAccountHint": "Have more than one account? Purchases stay with the account you bought them on. Sign in with that one to restore them.",
+  "@lbRestoreAccountHint": {
+    "description": "Store footer, under RESTORE PURCHASES: purchases belong to the account that bought them"
+  },
+  "settingsRestoreSubtitle": "Sign in with the account you bought on",
+  "@settingsRestoreSubtitle": {
+    "description": "Settings, under Restore Purchases"
+  },
+  "purchaseOtherAccountTitle": "Bought on another account",
+  "@purchaseOtherAccountTitle": {
+    "description": "Dialog title: a purchase belongs to a different Snake Classic account"
+  },
+  "purchaseOtherAccountBody": "This purchase was made while you were signed in to a different Snake Classic account, and it stays with that account. If you have more than one account, sign in with the one you used to buy it.",
+  "@purchaseOtherAccountBody": {
+    "description": "Dialog body: a purchase belongs to a different Snake Classic account"
+  },
   "lbBuyPrice": "BUY · {price}",
   "@lbBuyPrice": {
     "description": "Buy button with the store price",

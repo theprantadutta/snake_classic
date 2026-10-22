@@ -31,6 +31,7 @@ import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_display_panel.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_rows.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_theme_strip.dart';
+import 'package:snake_classic/widgets/lb_screens/store/store_pro_parts.dart';
 import 'package:snake_classic/widgets/pause_overlay.dart' show LBControlChoice;
 
 /// Settings (Living Board screen 16).
@@ -1176,6 +1177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         SettingsValueRow(
           title: l10n.settingsRestorePurchases,
+          subtitle: l10n.settingsRestoreSubtitle,
           leading: const LBPixelIcon(LBIcon.next, cell: 3.4),
           onTap: _restorePurchases,
         ),
@@ -1212,8 +1214,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ).showSnackBar(arcadeSnackBar(context, message: l10n.settingsRestoring));
 
       final purchaseService = PurchaseService();
-      await purchaseService.restorePurchases();
+      final otherAccount = await purchaseService.restorePurchases();
 
+      if (!mounted) return;
+      if (otherAccount) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        await showPurchaseOnOtherAccountDialog(context);
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           arcadeSnackBar(

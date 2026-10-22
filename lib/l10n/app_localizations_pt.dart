@@ -6090,6 +6090,20 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lbRestorePurchases => 'RESTAURAR COMPRAS';
 
   @override
+  String get lbRestoreAccountHint =>
+      'Tem mais de uma conta? As compras ficam na conta em que você as fez. Entre com essa conta para restaurá-las.';
+
+  @override
+  String get settingsRestoreSubtitle => 'Entre com a conta usada na compra';
+
+  @override
+  String get purchaseOtherAccountTitle => 'Comprado em outra conta';
+
+  @override
+  String get purchaseOtherAccountBody =>
+      'Esta compra foi feita com outra conta do Snake Classic e fica nessa conta. Se você tem mais de uma conta, entre com a que usou para comprar.';
+
+  @override
   String lbBuyPrice(String price) {
     return 'COMPRAR · $price';
   }

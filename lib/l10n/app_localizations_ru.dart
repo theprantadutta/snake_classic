@@ -6080,6 +6080,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbRestorePurchases => 'ВОССТАНОВИТЬ ПОКУПКИ';
 
   @override
+  String get lbRestoreAccountHint =>
+      'У вас несколько аккаунтов? Покупки остаются в том аккаунте, с которого они сделаны. Войдите в него, чтобы восстановить их.';
+
+  @override
+  String get settingsRestoreSubtitle =>
+      'Войдите в аккаунт, с которого покупали';
+
+  @override
+  String get purchaseOtherAccountTitle => 'Куплено в другом аккаунте';
+
+  @override
+  String get purchaseOtherAccountBody =>
+      'Эта покупка сделана в другом аккаунте Snake Classic и остаётся в нём. Если у вас несколько аккаунтов, войдите в тот, с которого покупали.';
+
+  @override
   String lbBuyPrice(String price) {
     return 'КУПИТЬ · $price';
   }

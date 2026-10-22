@@ -6030,6 +6030,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get lbRestorePurchases => 'खरीदारी बहाल करें';
 
   @override
+  String get lbRestoreAccountHint =>
+      'एक से ज़्यादा अकाउंट हैं? ख़रीदारी उसी अकाउंट में रहती है जिससे आपने उसे ख़रीदा था। उन्हें वापस पाने के लिए उसी अकाउंट से साइन इन करें।';
+
+  @override
+  String get settingsRestoreSubtitle =>
+      'उसी अकाउंट से साइन इन करें जिससे ख़रीदा था';
+
+  @override
+  String get purchaseOtherAccountTitle => 'दूसरे अकाउंट से ख़रीदा गया';
+
+  @override
+  String get purchaseOtherAccountBody =>
+      'यह ख़रीदारी Snake Classic के किसी दूसरे अकाउंट से की गई थी और उसी अकाउंट में रहती है। अगर आपके एक से ज़्यादा अकाउंट हैं, तो उसी अकाउंट से साइन इन करें जिससे आपने इसे ख़रीदा था।';
+
+  @override
   String lbBuyPrice(String price) {
     return 'खरीदें · $price';
   }

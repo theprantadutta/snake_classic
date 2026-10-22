@@ -27,6 +27,21 @@ List<String> lbProPerks(AppLocalizations l10n) {
   ];
 }
 
+/// Purchases stay with the Snake Classic account that bought them. Shown
+/// when the store hands us one bought on a different account — a restore
+/// after signing in another way, or "already subscribed" on the Go Pro sheet
+/// — so the player knows which account to sign in with.
+Future<void> showPurchaseOnOtherAccountDialog(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  return showLBDialog<void>(
+    context: context,
+    title: l10n.purchaseOtherAccountTitle,
+    body: l10n.purchaseOtherAccountBody,
+    primaryLabel: l10n.commonClose,
+    onPrimary: () => Navigator.of(context, rootNavigator: true).pop(),
+  );
+}
+
 /// Restore purchases with the same feedback Settings gives: "restoring",
 /// then restored / failed. The purchase stream does the actual granting.
 Future<void> lbRestorePurchases(BuildContext context) async {
@@ -36,7 +51,13 @@ Future<void> lbRestorePurchases(BuildContext context) async {
     messenger.showSnackBar(
       arcadeSnackBar(context, message: l10n.settingsRestoring),
     );
-    await PurchaseService().restorePurchases();
+    final otherAccount = await PurchaseService().restorePurchases();
+    if (!context.mounted) return;
+    if (otherAccount) {
+      messenger.hideCurrentSnackBar();
+      await showPurchaseOnOtherAccountDialog(context);
+      return;
+    }
     if (context.mounted) {
       messenger.showSnackBar(
         arcadeSnackBar(
@@ -420,6 +441,14 @@ class StoreFooter extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            l10n.lbRestoreAccountHint,
+            textAlign: TextAlign.center,
+            style: LBText.body(p, color: p.inkDim, size: 11),
           ),
         ),
       ],

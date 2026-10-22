@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -30,10 +32,22 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
   /// True while a plan-change flow is being handed to the store.
   bool _switchingPlan = false;
 
+  StreamSubscription<String>? _purchaseStatusSub;
+  bool _restoring = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Go Pro on a store account that already subscribes under another Snake
+    // Classic account hands back that subscription, which stays with its
+    // owner: say which account to use instead of silently doing nothing.
+    _purchaseStatusSub = PurchaseService().purchaseStatusStream.listen((status) {
+      if (!mounted || _restoring) return;
+      if (status.startsWith('purchase_other_account:')) {
+        unawaited(showPurchaseOnOtherAccountDialog(context));
+      }
+    });
     // The purchase stream is silent until something happens, so a subscriber
     // arriving on a cold start has no plan recorded yet and would be shown
     // the paywall. Ask the store what they actually own.
@@ -44,6 +58,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
 
   @override
   void dispose() {
+    _purchaseStatusSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -102,7 +117,7 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
                     _buildPricingCards(theme),
                   ],
                   const SizedBox(height: 12),
-                  StoreFooter(onRestore: () => lbRestorePurchases(context)),
+                  StoreFooter(onRestore: _restore),
                 ],
               ),
               // A paying subscriber has nothing to buy, so no CTA bar. A
@@ -391,6 +406,16 @@ class _PremiumBenefitsScreenState extends State<PremiumBenefitsScreen>
         ],
       ),
     );
+  }
+
+  /// A restore reports purchases from another account itself, once.
+  Future<void> _restore() async {
+    _restoring = true;
+    try {
+      await lbRestorePurchases(context);
+    } finally {
+      _restoring = false;
+    }
   }
 
   /// Real subscription purchase — opens the Google Play sheet.
