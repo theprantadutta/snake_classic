@@ -6,30 +6,28 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.3.0+66**.
+Connect. Written for **7.3.1+67**.
 
-Scope: what a player notices against 7.2.1, which is live on the App Store
-with the notes archived in release_notes_7.2.1.md. 7.2.2+65 was bumped but
-never released, so its control-zone work is folded in here: the live
-preview of each control layout in Settings and Pause, the board no longer
-moving when the layout changes, rewarded offers that load on tap instead of
-sitting greyed out, and the pause-blur and wrapping fixes.
+Scope: what a player notices against 7.3.0, which is live on the App Store
+with the notes archived in release_notes_7.3.0.md. Pro renewals are checked
+with the store every day (the server's daily reconcile against the App Store
+and Play APIs), and restore / Go Pro now say when a purchase belongs to a
+different Snake Classic account instead of appearing to do nothing.
 
-Deliberately absent: the ad plumbing — banner auto-refresh, the consent
-deadline, ad_load_stats, and the short ad after a declined rewarded intro,
-which is not something to advertise.
+Deliberately absent: the webhook retry and appAccountToken plumbing behind
+the renewal fix, and the duplicate cancel event, which no player sees.
 
-Control-layout and feature names (SWIPE, D-PAD, TURN, STICK, Daily Bonus)
-use the in-app translations from lib/l10n/app_<locale>.arb, so the notes
-match the screens. The app has no Turkish UI; tr names them in Turkish.
-
-Promotional Text is unchanged from 7.2.1 — still accurate, and App Store
+Promotional Text is unchanged from 7.3.0 — still accurate, and App Store
 Connect does not carry it over to a new version on its own.
 
 Every What's New block fits Play's 500-character limit, so the same text
 goes to both stores. App Store limits: What's New 4000, Promotional Text 170.
 
 en-GB is not listed separately: it takes the `en` text verbatim.
+
+**App Store Connect: entered and saved for all 10 locales on 2026-10-22**
+(en-US, en-GB, ar, fr, hi, it, pl, pt-BR, es-MX, tr), checked after a page
+reload.
 
 ---
 
@@ -40,261 +38,95 @@ the `es` text.
 
 ```
 <en-US>
-Better controls, rewards on tap.
+Purchases you can count on.
 
-• Preview before you pick: Settings and the pause menu show a live miniature of every control layout.
-• Swipe, D-Pad, Turn or Stick: switching controls no longer moves the board.
-• Free rewards are ready when you tap them: the Daily Bonus 2×, game over 2× coins, free tournament entry and the store's free power-up.
-• Polish: a cleaner pause screen, and tips under the board no longer get cut off.
+• Pro renewals are now double-checked with the store every day, so your subscription stays on.
+• More than one account? Purchases stay with the account you bought them on. Restore now tells you when something was bought on another account, so you know which one to sign in with.
+• Small fixes in the store.
 </en-US>
 <ar>
-تحكم أفضل ومكافآت فورية.
+مشتريات يمكنك الاعتماد عليها.
 
-• شاهد قبل أن تختار: الإعدادات وقائمة الإيقاف المؤقت تعرض معاينة حية لكل نمط تحكم.
-• سحب أو اتجاهات أو انعطاف أو عصا: تغيير التحكم لم يعد يحرّك اللوحة.
-• المكافآت المجانية جاهزة عند النقر: المكافأة اليومية ×2، وضعف العملات عند انتهاء اللعبة، ودخول البطولة المجاني، والتعزيز المجاني في المتجر.
-• لمسات أخيرة: شاشة إيقاف مؤقت أنظف، ولم تعد النصائح أسفل اللوحة تُقتطع.
+• يتم الآن التحقق من تجديدات Pro مع المتجر يوميًا، ليبقى اشتراكك فعّالًا.
+• هل لديك أكثر من حساب؟ تبقى المشتريات في الحساب الذي اشتريتها به. عند الاستعادة، يخبرك التطبيق الآن إذا تم شراء شيء بحساب آخر، لتعرف بأي حساب تسجّل الدخول.
+• إصلاحات صغيرة في المتجر.
 </ar>
 <es-419>
-Mejores controles, recompensas al instante.
+Compras en las que puedes confiar.
 
-• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
-• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
-• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
-• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
+• Las renovaciones de Pro ahora se verifican con la tienda cada día, para que tu suscripción siga activa.
+• ¿Tienes más de una cuenta? Las compras se quedan en la cuenta con la que las hiciste. Al restaurar, la app te avisa si algo se compró con otra cuenta, para que sepas con cuál iniciar sesión.
+• Pequeños arreglos en la tienda.
 </es-419>
 <es-ES>
-Mejores controles, recompensas al instante.
+Compras en las que puedes confiar.
 
-• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
-• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
-• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
-• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
+• Las renovaciones de Pro ahora se verifican con la tienda cada día, para que tu suscripción siga activa.
+• ¿Tienes más de una cuenta? Las compras se quedan en la cuenta con la que las hiciste. Al restaurar, la app te avisa si algo se compró con otra cuenta, para que sepas con cuál iniciar sesión.
+• Pequeños arreglos en la tienda.
 </es-ES>
 <fr-FR>
-Meilleures commandes, récompenses sans attente.
+Des achats sur lesquels compter.
 
-• Voyez avant de choisir : Réglages et menu pause montrent un aperçu en direct de chaque commande.
-• Balayage, D-Pad, Virage ou Joystick : changer de commande ne déplace plus le plateau.
-• Récompenses gratuites prêtes dès le toucher : Bonus Quotidien 2×, pièces 2× en fin de partie, entrée de tournoi et power-up gratuit de la boutique.
-• Finitions : pause plus nette, et les conseils sous le plateau ne sont plus coupés.
+• Les renouvellements Pro sont désormais vérifiés chaque jour auprès de la boutique, pour que votre abonnement reste actif.
+• Plusieurs comptes ? Les achats restent liés au compte avec lequel vous les avez faits. La restauration vous indique désormais quand un achat appartient à un autre compte, pour savoir avec lequel vous connecter.
+• Petites corrections dans la boutique.
 </fr-FR>
 <hi-IN>
-बेहतर कंट्रोल, टैप करते ही इनाम।
+ऐसी ख़रीदारी जिस पर भरोसा कर सकें।
 
-• चुनने से पहले देखें: सेटिंग्स और पॉज़ मेन्यू हर कंट्रोल लेआउट की लाइव झलक दिखाते हैं।
-• स्वाइप, डी-पैड, मोड़ या स्टिक: कंट्रोल बदलने पर बोर्ड अब अपनी जगह से नहीं हिलता।
-• मुफ़्त इनाम टैप करते ही तैयार: दैनिक बोनस 2×, गेम ओवर पर 2× सिक्के, मुफ़्त टूर्नामेंट एंट्री और स्टोर का मुफ़्त पावर-अप।
-• निखार: साफ़ पॉज़ स्क्रीन, और बोर्ड के नीचे के टिप्स अब कटते नहीं।
+• Pro रिन्यूअल अब हर दिन स्टोर से जाँचे जाते हैं, ताकि आपका सब्सक्रिप्शन चालू रहे।
+• एक से ज़्यादा अकाउंट हैं? ख़रीदारी उसी अकाउंट में रहती है जिससे आपने ख़रीदा था। रिस्टोर करते समय ऐप अब बताता है कि कोई चीज़ दूसरे अकाउंट से ख़रीदी गई थी, ताकि आप जानें किस अकाउंट से साइन इन करना है।
+• स्टोर में छोटे सुधार।
 </hi-IN>
 <it-IT>
-Comandi migliori, ricompense subito.
+Acquisti su cui contare.
 
-• Guarda prima di scegliere: Impostazioni e menu di pausa mostrano un'anteprima dal vivo di ogni schema di comandi.
-• Scorri, D-Pad, Gira o Stick: cambiare comandi non sposta più il tabellone.
-• Ricompense gratis pronte al tocco: il Bonus Giornaliero 2×, monete 2× a fine partita, l'ingresso gratis al torneo e il power-up gratis del negozio.
-• Rifiniture: una schermata di pausa più pulita, e i consigli sotto il tabellone non vengono più tagliati.
+• I rinnovi Pro ora vengono verificati ogni giorno con lo store, così il tuo abbonamento resta attivo.
+• Hai più di un account? Gli acquisti restano sull'account con cui li hai fatti. Il ripristino ora ti avvisa quando qualcosa è stato acquistato con un altro account, così sai con quale accedere.
+• Piccole correzioni nel negozio.
 </it-IT>
 <pl-PL>
-Lepsze sterowanie, nagrody od ręki.
+Zakupy, na których możesz polegać.
 
-• Zobacz, zanim wybierzesz: Ustawienia i menu pauzy pokazują podgląd na żywo każdego układu sterowania.
-• Gesty, D-Pad, Skręt czy Gałka: zmiana sterowania nie przesuwa już planszy.
-• Darmowe nagrody gotowe po dotknięciu: Dzienny Bonus 2×, 2× monet po grze, darmowe wejście do turnieju i darmowe wzmocnienie w sklepie.
-• Szlify: czystszy ekran pauzy, a wskazówki pod planszą nie są już ucinane.
+• Odnowienia Pro są teraz codziennie sprawdzane w sklepie, więc subskrypcja pozostaje aktywna.
+• Masz więcej niż jedno konto? Zakupy pozostają na koncie, na którym zostały dokonane. Przywracanie informuje teraz, gdy coś kupiono na innym koncie, więc wiesz, na które się zalogować.
+• Drobne poprawki w sklepie.
 </pl-PL>
 <pt-BR>
-Controles melhores, recompensas na hora.
+Compras em que você pode confiar.
 
-• Veja antes de escolher: os Ajustes e o menu de pausa mostram uma prévia ao vivo de cada layout de controle.
-• Deslizar, D-Pad, Virar ou Joystick: trocar de controle não move mais o tabuleiro.
-• Recompensas grátis prontas ao tocar: o Bônus Diário 2×, 2× moedas no fim de jogo, a entrada grátis no torneio e o power-up grátis da loja.
-• Ajustes: tela de pausa mais limpa, e as dicas abaixo do tabuleiro não são mais cortadas.
+• As renovações do Pro agora são conferidas com a loja todos os dias, para sua assinatura continuar ativa.
+• Tem mais de uma conta? As compras ficam na conta em que você as fez. Ao restaurar, o app avisa quando algo foi comprado em outra conta, para você saber com qual entrar.
+• Pequenas correções na loja.
 </pt-BR>
 <ru-RU>
-Удобнее управление, награды без ожидания.
+Покупки, на которые можно положиться.
 
-• Посмотрите, прежде чем выбрать: настройки и меню паузы показывают живое превью каждой схемы управления.
-• Свайп, D-Pad, Поворот или Стик: при смене управления поле больше не сдвигается.
-• Бесплатные награды готовы по нажатию: Ежедневный бонус 2×, 2× монеты после игры, бесплатный вход в турнир и бесплатное усиление в магазине.
-• Доработки: аккуратнее экран паузы, а подсказки под полем больше не обрезаются.
+• Продления Pro теперь ежедневно сверяются с магазином, чтобы подписка оставалась активной.
+• У вас несколько аккаунтов? Покупки остаются в том аккаунте, с которого они сделаны. При восстановлении приложение подскажет, если покупка сделана в другом аккаунте, — чтобы вы знали, в какой войти.
+• Небольшие исправления в магазине.
 </ru-RU>
 <tr-TR>
-Daha iyi kontroller, anında ödüller.
+Güvenebileceğin satın alımlar.
 
-• Seçmeden önce gör: Ayarlar ve duraklatma menüsü her kontrol düzeninin canlı önizlemesini gösteriyor.
-• Kaydırma, D-Pad, Dönüş ya da Joystick: kontrol değiştirmek artık tahtayı yerinden oynatmıyor.
-• Ücretsiz ödüller dokununca hazır: Günlük Bonus 2×, oyun sonunda 2× jeton, ücretsiz turnuva girişi ve mağazanın ücretsiz güçlendiricisi.
-• İnce ayarlar: daha temiz bir duraklatma ekranı, tahtanın altındaki ipuçları artık kesilmiyor.
+• Pro yenilemeleri artık her gün mağazayla kontrol ediliyor, böylece aboneliğin aktif kalıyor.
+• Birden fazla hesabın mı var? Satın alımlar, onları yaptığın hesapta kalır. Geri yükleme artık bir şeyin başka bir hesapla satın alındığını söylüyor, böylece hangi hesapla giriş yapacağını biliyorsun.
+• Mağazada küçük düzeltmeler.
 </tr-TR>
 ```
 
 ---
 
-## en
-
-### What's New
-
-Better controls, rewards on tap.
-
-• Preview before you pick: Settings and the pause menu show a live miniature of every control layout.
-• Swipe, D-Pad, Turn or Stick: switching controls no longer moves the board.
-• Free rewards are ready when you tap them: the Daily Bonus 2×, game over 2× coins, free tournament entry and the store's free power-up.
-• Polish: a cleaner pause screen, and tips under the board no longer get cut off.
-
-### Promotional Text
-
-A brand-new pixel-grid look, one more go from game over, every run charted, and smoother online duels.
-
----
-
-## hi
-
-### What's New
-
-बेहतर कंट्रोल, टैप करते ही इनाम।
-
-• चुनने से पहले देखें: सेटिंग्स और पॉज़ मेन्यू हर कंट्रोल लेआउट की लाइव झलक दिखाते हैं।
-• स्वाइप, डी-पैड, मोड़ या स्टिक: कंट्रोल बदलने पर बोर्ड अब अपनी जगह से नहीं हिलता।
-• मुफ़्त इनाम टैप करते ही तैयार: दैनिक बोनस 2×, गेम ओवर पर 2× सिक्के, मुफ़्त टूर्नामेंट एंट्री और स्टोर का मुफ़्त पावर-अप।
-• निखार: साफ़ पॉज़ स्क्रीन, और बोर्ड के नीचे के टिप्स अब कटते नहीं।
-
-### Promotional Text
-
-बिल्कुल नया पिक्सेल-ग्रिड रूप, गेम ओवर से एक और मौक़ा, हर रन का चार्ट और ज़्यादा स्मूथ ऑनलाइन मुक़ाबले।
-
----
-
-## pt
-
-### What's New
-
-Controles melhores, recompensas na hora.
-
-• Veja antes de escolher: os Ajustes e o menu de pausa mostram uma prévia ao vivo de cada layout de controle.
-• Deslizar, D-Pad, Virar ou Joystick: trocar de controle não move mais o tabuleiro.
-• Recompensas grátis prontas ao tocar: o Bônus Diário 2×, 2× moedas no fim de jogo, a entrada grátis no torneio e o power-up grátis da loja.
-• Ajustes: tela de pausa mais limpa, e as dicas abaixo do tabuleiro não são mais cortadas.
-
-### Promotional Text
-
-Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida num gráfico e duelos online mais fluidos.
-
----
-
-## es
-
-### What's New
-
-Mejores controles, recompensas al instante.
-
-• Míralo antes de elegir: Ajustes y el menú de pausa muestran una vista previa en vivo de cada esquema de control.
-• Deslizar, Cruceta, Girar o Stick: cambiar de control ya no mueve el tablero.
-• Recompensas gratis listas al tocarlas: el Bonus Diario 2×, 2× monedas al terminar la partida, la entrada gratis al torneo y el potenciador gratis de la tienda.
-• Pulido: una pantalla de pausa más limpia, y los consejos bajo el tablero ya no se cortan.
-
-### Promotional Text
-
-Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cada partida en un gráfico y duelos online más fluidos.
-
----
-
-## fr
-
-### What's New
-
-Meilleures commandes, récompenses sans attente.
-
-• Voyez avant de choisir : Réglages et menu pause montrent un aperçu en direct de chaque commande.
-• Balayage, D-Pad, Virage ou Joystick : changer de commande ne déplace plus le plateau.
-• Récompenses gratuites prêtes dès le toucher : Bonus Quotidien 2×, pièces 2× en fin de partie, entrée de tournoi et power-up gratuit de la boutique.
-• Finitions : pause plus nette, et les conseils sous le plateau ne sont plus coupés.
-
-### Promotional Text
-
-Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, chaque partie en graphique et des duels en ligne plus fluides.
-
----
-
-## ru
-
-### What's New
-
-Удобнее управление, награды без ожидания.
-
-• Посмотрите, прежде чем выбрать: настройки и меню паузы показывают живое превью каждой схемы управления.
-• Свайп, D-Pad, Поворот или Стик: при смене управления поле больше не сдвигается.
-• Бесплатные награды готовы по нажатию: Ежедневный бонус 2×, 2× монеты после игры, бесплатный вход в турнир и бесплатное усиление в магазине.
-• Доработки: аккуратнее экран паузы, а подсказки под полем больше не обрезаются.
-
-### Promotional Text
-
-Новый облик в пиксельной сетке, ещё один шанс после проигрыша, график каждого забега и более плавные онлайн-дуэли.
-
----
-
-## pl
-
-### What's New
-
-Lepsze sterowanie, nagrody od ręki.
-
-• Zobacz, zanim wybierzesz: Ustawienia i menu pauzy pokazują podgląd na żywo każdego układu sterowania.
-• Gesty, D-Pad, Skręt czy Gałka: zmiana sterowania nie przesuwa już planszy.
-• Darmowe nagrody gotowe po dotknięciu: Dzienny Bonus 2×, 2× monet po grze, darmowe wejście do turnieju i darmowe wzmocnienie w sklepie.
-• Szlify: czystszy ekran pauzy, a wskazówki pod planszą nie są już ucinane.
-
-### Promotional Text
-
-Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na wykresie i płynniejsze pojedynki online.
-
----
-
-## ar
-
-### What's New
-
-تحكم أفضل ومكافآت فورية.
-
-• شاهد قبل أن تختار: الإعدادات وقائمة الإيقاف المؤقت تعرض معاينة حية لكل نمط تحكم.
-• سحب أو اتجاهات أو انعطاف أو عصا: تغيير التحكم لم يعد يحرّك اللوحة.
-• المكافآت المجانية جاهزة عند النقر: المكافأة اليومية ×2، وضعف العملات عند انتهاء اللعبة، ودخول البطولة المجاني، والتعزيز المجاني في المتجر.
-• لمسات أخيرة: شاشة إيقاف مؤقت أنظف، ولم تعد النصائح أسفل اللوحة تُقتطع.
-
-### Promotional Text
-
-مظهر جديد بشبكة البكسلات، وفرصة أخرى عند انتهاء اللعبة، ورسم بياني لكل جولة، ومواجهات أونلاين أكثر سلاسة.
-
----
-
-## it
-
-### What's New
-
-Comandi migliori, ricompense subito.
-
-• Guarda prima di scegliere: Impostazioni e menu di pausa mostrano un'anteprima dal vivo di ogni schema di comandi.
-• Scorri, D-Pad, Gira o Stick: cambiare comandi non sposta più il tabellone.
-• Ricompense gratis pronte al tocco: il Bonus Giornaliero 2×, monete 2× a fine partita, l'ingresso gratis al torneo e il power-up gratis del negozio.
-• Rifiniture: una schermata di pausa più pulita, e i consigli sotto il tabellone non vengono più tagliati.
-
-### Promotional Text
-
-Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni partita in un grafico e sfide online più fluide.
-
----
-
-## tr
-
-### What's New
-
-Daha iyi kontroller, anında ödüller.
-
-• Seçmeden önce gör: Ayarlar ve duraklatma menüsü her kontrol düzeninin canlı önizlemesini gösteriyor.
-• Kaydırma, D-Pad, Dönüş ya da Joystick: kontrol değiştirmek artık tahtayı yerinden oynatmıyor.
-• Ücretsiz ödüller dokununca hazır: Günlük Bonus 2×, oyun sonunda 2× jeton, ücretsiz turnuva girişi ve mağazanın ücretsiz güçlendiricisi.
-• İnce ayarlar: daha temiz bir duraklatma ekranı, tahtanın altındaki ipuçları artık kesilmiyor.
-
-### Promotional Text
-
-Yepyeni piksel ızgarası görünümü, oyun sonunda bir şans daha, her oyunun grafiği ve daha akıcı çevrimiçi düellolar.
+## Promotional Text (App Store, unchanged from 7.3.0)
+
+- **en / en-GB:** A brand-new pixel-grid look, one more go from game over, every run charted, and smoother online duels.
+- **ar:** مظهر جديد بشبكة البكسلات، وفرصة أخرى عند انتهاء اللعبة، ورسم بياني لكل جولة، ومواجهات أونلاين أكثر سلاسة.
+- **es:** Un aspecto nuevo de cuadrícula de píxeles, una oportunidad más al perder, cada partida en un gráfico y duelos online más fluidos.
+- **fr:** Un tout nouveau look en grille de pixels, une chance de plus en fin de partie, chaque partie en graphique et des duels en ligne plus fluides.
+- **hi:** बिल्कुल नया पिक्सेल-ग्रिड रूप, गेम ओवर से एक और मौक़ा, हर रन का चार्ट और ज़्यादा स्मूथ ऑनलाइन मुक़ाबले।
+- **it:** Un nuovo aspetto a griglia di pixel, un'altra possibilità a fine partita, ogni partita in un grafico e sfide online più fluide.
+- **pl:** Nowy wygląd w siatce pikseli, jeszcze jedna szansa po końcu gry, każda gra na wykresie i płynniejsze pojedynki online.
+- **pt:** Um visual novo em grade de pixels, mais uma chance no fim de jogo, cada partida num gráfico e duelos online mais fluidos.
+- **ru:** Новый облик в пиксельной сетке, ещё один шанс после проигрыша, график каждого забега и более плавные онлайн-дуэли.
+- **tr:** Yepyeni piksel ızgarası görünümü, oyun sonunda bir şans daha, her oyunun grafiği ve daha akıcı çevrimiçi düellolar.
