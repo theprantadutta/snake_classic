@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -159,6 +160,20 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
       return;
     }
 
+    // The spare is on its way: take it when it lands instead of sending a
+    // second request beside it.
+    if (ads.warmBannerInFlight) {
+      _wakeIn(const Duration(seconds: 1));
+      return;
+    }
+    // Every banner in the app shares one backoff after a failure, so a
+    // screen opened during a no-fill spell doesn't ask again at once.
+    final wait = ads.bannerRetryIn;
+    if (wait > Duration.zero) {
+      _wakeIn(wait);
+      return;
+    }
+
     _loading = true;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnitId,
@@ -171,6 +186,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           } else {
             _ads?.loadStats.filled('banner');
           }
+          _ads?.noteBannerResult(filled: true);
           if (!mounted) {
             ad.dispose();
             return;
@@ -194,6 +210,7 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
             return;
           }
           _ads?.loadStats.failed('banner', error.code, error.message);
+          _ads?.noteBannerResult(filled: false);
           ad.dispose();
           _loading = false;
           _scheduleRetry();
@@ -239,11 +256,22 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     if (!mounted || _failedAttempts >= _retryDelays.length) return;
     final delay = _retryDelays[_failedAttempts];
     _failedAttempts++;
+    // _maybeLoad defers again if the shared backoff is longer than this.
+    _wakeIn(delay);
+  }
+
+  /// Try [_maybeLoad] again after [delay], plus up to a second of jitter so
+  /// banners on stacked screens waiting out the same backoff don't all
+  /// request on the same tick.
+  void _wakeIn(Duration delay) {
     _retryTimer?.cancel();
-    _retryTimer = Timer(delay, () {
+    final jitter = Duration(milliseconds: _jitter.nextInt(1000));
+    _retryTimer = Timer(delay + jitter, () {
       if (mounted) _maybeLoad();
     });
   }
+
+  static final Random _jitter = Random();
 
   @override
   void dispose() {

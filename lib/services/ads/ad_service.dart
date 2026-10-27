@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/foundation.dart';
@@ -276,13 +277,56 @@ class AdService {
 
   /// Schedule a backoff retry for [key]. Gives up after the last delay; a
   /// [_rearmAll] (network back, consent granted, Pro lapsed) resets the count.
-  void _scheduleRetry(String key, void Function() load) {
+  ///
+  /// [minDelay] raises the wait for formats with their own backoff (banners
+  /// share one, see [bannerRetryIn]). Every delay is jittered: formats that
+  /// failed together (startup, network back) used to retry on the same tick
+  /// and collide again.
+  void _scheduleRetry(String key, void Function() load, {Duration? minDelay}) {
     if (!adsEnabled) return;
     final attempt = _loadAttempts[key] ?? 0;
     if (attempt >= _loadRetryDelays.length) return;
     _loadAttempts[key] = attempt + 1;
     _retryTimers.remove(key)?.cancel();
-    _retryTimers[key] = Timer(_loadRetryDelays[attempt], load);
+    var delay = _loadRetryDelays[attempt];
+    if (minDelay != null && minDelay > delay) delay = minDelay;
+    _retryTimers[key] = Timer(_jittered(delay), load);
+  }
+
+  static final Random _random = Random();
+
+  /// [d] scaled by a random 0.8–1.4.
+  static Duration _jittered(Duration d) =>
+      d * (0.8 + _random.nextDouble() * 0.6);
+
+  // ==================== Startup preload ====================
+
+  // Gap between the first request of each format. Requesting all five at
+  // once made the SDK fail with "Unable to obtain a JavascriptEngine" (it
+  // ran out of WebView JS engines): October 2026, a third of all load
+  // failures across every format carried that message.
+  static const Duration _preloadStagger = Duration(milliseconds: 1500);
+  Timer? _preloadTimer;
+
+  /// Request every format, one at a time, most visible first: the banner is
+  /// on screen at once, rewarded backs the buttons, the game-over slot isn't
+  /// needed until a run ends, and App Open not until the app is reopened.
+  void _preloadAll() {
+    _preloadTimer?.cancel();
+    final steps = <void Function()>[
+      _loadWarmBanner,
+      _loadRewarded,
+      preloadGameOverAd,
+      _loadAppOpen,
+    ];
+    var i = 0;
+    void next() {
+      if (!adsEnabled || i >= steps.length) return;
+      steps[i++]();
+      if (i < steps.length) _preloadTimer = Timer(_preloadStagger, next);
+    }
+
+    next();
   }
 
   void _clearRetry(String key) {
@@ -300,10 +344,8 @@ class AdService {
       timer.cancel();
     }
     _retryTimers.clear();
-    preloadGameOverAd();
-    _loadRewarded();
-    _loadAppOpen();
-    _loadWarmBanner();
+    _resetBannerBackoff();
+    _preloadAll();
     _rearmNotifier.value++;
   }
 
@@ -417,12 +459,7 @@ class AdService {
 
       _sdkReady = true;
       AppLogger.success('AdService initialized (ads ${adsEnabled ? 'on' : 'off'})');
-      if (adsEnabled) {
-        preloadGameOverAd();
-        _loadRewarded();
-        _loadAppOpen();
-        _loadWarmBanner();
-      }
+      if (adsEnabled) _preloadAll();
     } catch (e) {
       AppLogger.error('AdService init failed', e);
     } finally {
@@ -1345,6 +1382,51 @@ class AdService {
   /// on backgrounding. Banner widgets that load their own ad report here too.
   final AdLoadStats loadStats = AdLoadStats();
 
+  // ---- One backoff for every banner request in the app ----
+  //
+  // Each banner widget used to retry on its own (2/8/30 s) beside the warm
+  // spare's retries, and every screen opened during a no-fill spell asked
+  // again at once. October 2026 ad_load_stats: 25–37 first-load requests per
+  // player, 13% filled, and AdMob answering "Too many recently failed
+  // requests for ad unit ID" — while auto-refreshes of banners already on
+  // screen filled 68%. Asking less often is what gets answered. Any banner
+  // fill (including a refresh) clears it.
+  static const List<Duration> _bannerBackoff = [
+    Duration(seconds: 15),
+    Duration(seconds: 30),
+    Duration(minutes: 1),
+    Duration(minutes: 2),
+    Duration(minutes: 5),
+  ];
+  int _bannerFailStreak = 0;
+  int _bannerBlockedUntilMs = 0;
+
+  /// How long until a banner may be requested again (zero when it may now).
+  Duration get bannerRetryIn {
+    final ms = _bannerBlockedUntilMs - DateTime.now().millisecondsSinceEpoch;
+    return ms > 0 ? Duration(milliseconds: ms) : Duration.zero;
+  }
+
+  /// Record a banner load outcome from any placement.
+  void noteBannerResult({required bool filled}) {
+    if (filled) {
+      _resetBannerBackoff();
+      // Demand is there right now: the moment to (re)fill the spare, a beat
+      // later so it doesn't land on the same tick as this load.
+      Timer(_preloadStagger, _loadWarmBanner);
+      return;
+    }
+    final step = min(_bannerFailStreak, _bannerBackoff.length - 1);
+    _bannerFailStreak++;
+    _bannerBlockedUntilMs = DateTime.now().millisecondsSinceEpoch +
+        _jittered(_bannerBackoff[step]).inMilliseconds;
+  }
+
+  void _resetBannerBackoff() {
+    _bannerFailStreak = 0;
+    _bannerBlockedUntilMs = 0;
+  }
+
   /// Register the anchored adaptive size once the banner widget has resolved
   /// it for this device. The app is portrait-locked, so it is stable for the
   /// session — and the warm banner must be the same size as the placement it
@@ -1368,17 +1450,17 @@ class AdService {
   /// listener, not the caller's: without it a warm-served banner would silently
   /// stop counting impressions on refresh, while a self-loaded one kept
   /// counting them.
+  ///
+  /// A miss does NOT start a spare: the caller is about to request its own
+  /// banner, and a spare requested beside it doubled every miss. The spare is
+  /// refilled after the next banner fill instead (see [noteBannerResult]).
   BannerAd? takeWarmBanner(AdSize size, {required void Function() onRefreshed}) {
     final ad = _warmBanner;
-    if (ad == null || _bannerSize != size) {
-      _loadWarmBanner();
-      return null;
-    }
+    if (ad == null || _bannerSize != size) return null;
     _warmBanner = null;
     final age = DateTime.now().millisecondsSinceEpoch - _warmBannerLoadedAtMs;
     if (age > _warmBannerMaxAge.inMilliseconds) {
       ad.dispose();
-      _loadWarmBanner();
       return null;
     }
     _bannerOwners[ad] = onRefreshed;
@@ -1392,10 +1474,16 @@ class AdService {
   /// not be called again.
   void releaseBanner(BannerAd ad) => _bannerOwners[ad] = null;
 
+  /// The spare is being requested right now. A placement mounting meanwhile
+  /// waits for it rather than sending a second request beside it.
+  bool get warmBannerInFlight => _warmBannerLoading;
+
   void _loadWarmBanner() {
     if (!adsEnabled || !_hasInternet) return;
     final size = _bannerSize;
     if (size == null || _warmBanner != null || _warmBannerLoading) return;
+    if (bannerRetryIn > Duration.zero) return; // shared backoff
+    loadStats.requested('banner');
     _warmBannerLoading = true;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnitId,
@@ -1414,6 +1502,7 @@ class AdService {
           final owner = _bannerOwners[banner];
           if (owner != null) {
             loadStats.refreshed();
+            noteBannerResult(filled: true);
             owner();
             return;
           }
@@ -1434,6 +1523,7 @@ class AdService {
           _warmBannerLoadedAtMs = DateTime.now().millisecondsSinceEpoch;
           _warmBannerLoading = false;
           _clearRetry(_kLoadBanner);
+          noteBannerResult(filled: true);
         },
         onAdFailedToLoad: (ad, error) {
           // A failed auto-refresh of a banner a placement owns: it is on
@@ -1449,7 +1539,9 @@ class AdService {
           ad.dispose();
           _warmBannerLoading = false;
           AppLogger.warning('Warm banner failed to load: ${error.message}');
-          _scheduleRetry(_kLoadBanner, _loadWarmBanner);
+          noteBannerResult(filled: false);
+          _scheduleRetry(_kLoadBanner, _loadWarmBanner,
+              minDelay: bannerRetryIn);
         },
         // Revenue is attributed here because this listener travels with the ad
         // into whichever widget displays it. The IMPRESSION is tracked by that
@@ -1465,7 +1557,6 @@ class AdService {
         },
       ),
     );
-    loadStats.requested('banner');
     ad.load();
   }
 
@@ -1514,6 +1605,7 @@ class AdService {
   void dispose() {
     _connectivity?.removeListener(_onConnectivityChanged);
     _premiumSub?.cancel();
+    _preloadTimer?.cancel();
     for (final timer in _retryTimers.values) {
       timer.cancel();
     }
