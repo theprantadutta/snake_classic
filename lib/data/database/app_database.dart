@@ -1689,6 +1689,12 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'snake_classic.db'));
-    return NativeDatabase.createInBackground(file);
+    // busy_timeout: wait up to 5s for a lock instead of failing at once with
+    // "database is locked" (Sentry FLUTTER-14 hit it creating the tables on
+    // a fresh install).
+    return NativeDatabase.createInBackground(
+      file,
+      setup: (db) => db.execute('PRAGMA busy_timeout = 5000;'),
+    );
   });
 }
