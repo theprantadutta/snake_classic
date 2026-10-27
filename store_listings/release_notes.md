@@ -6,7 +6,7 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.4.2+70**.
+Connect. Written for **7.4.3+71**.
 
 **The two stores get different text this time.** 7.3.1+67 shipped on the
 App Store only (notes archived in release_notes_7.3.1.md), so iOS players
@@ -16,7 +16,7 @@ already have its purchase changes and Android players do not:
   stability line.
 - **App Store** compares against 7.3.1: the stability line only.
 
-The stability line stands for what 7.4.2 adds over 7.3.1, none of which a
+The stability line stands for what 7.4.3 adds over 7.3.1, none of which a
 player can name: ads are requested less often and spaced out at startup
 (more of them fill), steering ignores touches after a Versus match ends
 under the finger, the username dialog no longer errors when closed
@@ -33,7 +33,7 @@ en-GB is not listed separately: it takes the `en` text verbatim.
 
 ---
 
-## App Store Connect — What's New (7.4.2)
+## App Store Connect — What's New (7.4.3)
 
 - **en / en-GB:** Stability fixes and smoother play.
 - **ar:** إصلاحات لتحسين الثبات ولعب أكثر سلاسة.
