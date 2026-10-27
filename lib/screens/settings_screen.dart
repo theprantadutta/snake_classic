@@ -1510,6 +1510,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (authState.isGuestUser) {
                 success = await authCubit.updateGuestUsername(newUsername);
                 if (!success) {
+                  // The dialog can be closed while the update is in flight;
+                  // its setState then throws (Sentry FLUTTER-15).
+                  if (!dialogContext.mounted) return;
                   final validation = usernameService.validateUsername(
                     newUsername,
                   );
@@ -1527,6 +1530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!success) {
                   final validation = await UsernameService()
                       .validateUsernameComplete(newUsername);
+                  if (!dialogContext.mounted) return;
                   setState(() {
                     errorMessage = validation.errorCode != null
                         ? _usernameErrorText(validation.errorCode!, l10n)
@@ -1535,8 +1539,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               }
 
-              if (success && dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
+              if (success) {
+                // Shown even if the dialog was closed meanwhile: the rename
+                // did happen.
                 scaffoldMessenger.showSnackBar(
                   arcadeSnackBarFor(
                     snackTheme,
@@ -1544,7 +1549,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     tone: ArcadeSnackTone.success,
                   ),
                 );
+                if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                return; // the dialog is gone; nothing left to rebuild
               }
+              if (!dialogContext.mounted) return;
 
               setState(() {
                 isLoading = false;
