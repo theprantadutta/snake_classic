@@ -144,15 +144,19 @@ class _FloatingJoystickState extends State<FloatingJoystick> {
     setState(() => _thumb = e.localPosition);
   }
 
+  // A drag keeps delivering to the State it started on, even after the
+  // control is unmounted mid-drag (a Versus match ending swaps the board
+  // out): every later move then hit setState on a disposed State, hundreds
+  // of errors per held drag in 7.3.0 (Sentry FLUTTER-16/17).
   void _move(PointerMoveEvent e) {
-    if (e.pointer != _activePointer) return;
+    if (!mounted || e.pointer != _activePointer) return;
     final direction = _tracker.update(e.localPosition);
     setState(() => _thumb = e.localPosition);
     if (direction != null) widget.onDirection(direction);
   }
 
   void _end(PointerEvent e) {
-    if (e.pointer != _activePointer) return;
+    if (!mounted || e.pointer != _activePointer) return;
     _activePointer = null;
     _tracker.end();
     setState(() => _thumb = null);

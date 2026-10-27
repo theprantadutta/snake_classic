@@ -106,8 +106,10 @@ class _DPadControlsState extends State<DPadControls> {
     _handlePointer(event.localPosition);
   }
 
+  // `mounted`: a drag keeps delivering to a State unmounted mid-drag, and
+  // setState then throws on every move (see FloatingJoystick._move).
   void _onPointerMove(PointerMoveEvent event) {
-    if (event.pointer != _activePointer) return;
+    if (!mounted || event.pointer != _activePointer) return;
     // The Listener keeps delivering moves after the finger leaves its box,
     // so a thumb that drifts past the edge still resolves to the nearest
     // arm instead of dropping the press mid-corner.
@@ -115,7 +117,7 @@ class _DPadControlsState extends State<DPadControls> {
   }
 
   void _onPointerEnd(PointerEvent event) {
-    if (event.pointer != _activePointer) return;
+    if (!mounted || event.pointer != _activePointer) return;
     _activePointer = null;
     _releasePointer();
   }

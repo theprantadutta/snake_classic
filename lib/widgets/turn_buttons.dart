@@ -121,8 +121,10 @@ class _TurnButtonState extends State<_TurnButton> {
     if (firstPress) widget.onTurn(widget.turn);
   }
 
+  // `mounted`: a press keeps delivering to a State unmounted mid-press (see
+  // FloatingJoystick._move).
   void _end(PointerEvent event) {
-    if (event.pointer != _activePointer) return;
+    if (!mounted || event.pointer != _activePointer) return;
     _activePointer = null;
     if (_pressed) setState(() => _pressed = false);
   }
