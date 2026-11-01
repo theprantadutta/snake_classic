@@ -6,22 +6,27 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.4.3+71**.
+Connect. Written for **7.4.4+72**.
 
-**The two stores get different text this time.** 7.3.1+67 shipped on the
-App Store only (notes archived in release_notes_7.3.1.md), so iOS players
-already have its purchase changes and Android players do not:
+**The two stores get different text again.** Play has 7.4.3 live (notes
+archived in release_notes_7.4.3.md), so the Play block covers only what
+7.4.4 adds. The App Store last shipped 7.3.1, so its block also carries the
+stability line from 7.4.x.
 
-- **Play** compares against 7.3.0: the 7.3.1 purchase notes, plus a
-  stability line.
-- **App Store** compares against 7.3.1: the stability line only.
+What 7.4.4 adds:
 
-The stability line stands for what 7.4.3 adds over 7.3.1, none of which a
-player can name: ads are requested less often and spaced out at startup
-(more of them fill), steering ignores touches after a Versus match ends
-under the finger, the username dialog no longer errors when closed
-mid-save, and the database waits for a lock instead of failing on a fresh
-install. Ad plumbing is deliberately not described to players.
+- **Zen and Speed daily challenges now count.** The server's challenges
+  asked for "zen" / "speed" while a finished run reported "Zen Mode" /
+  "Speed Challenge", so only Classic challenges ever progressed. A player
+  reported it in a Play review (replied to on 2026-11-01, promising the fix
+  in this update and a month of Pro).
+- **A crash when music starts.** The music loops streamed from a temporary
+  file Android can delete on low storage; about 96% of 7.4.3's Play
+  crashes. Players see it as "the app closed on its own".
+
+Mode names in the notes are each language's in-app names (modeZen,
+modeSpeedChallenge in the .arb files). Turkish is not an in-app language,
+so it gets a Turkish rendering.
 
 Promotional Text is unchanged from 7.3.0 — still accurate, and App Store
 Connect does not carry it over to a new version on its own.
@@ -33,17 +38,17 @@ en-GB is not listed separately: it takes the `en` text verbatim.
 
 ---
 
-## App Store Connect — What's New (7.4.3)
+## App Store Connect — What's New (7.4.4)
 
-- **en / en-GB:** Stability fixes and smoother play.
-- **ar:** إصلاحات لتحسين الثبات ولعب أكثر سلاسة.
-- **es-MX:** Correcciones de estabilidad y un juego más fluido.
-- **fr:** Corrections de stabilité et un jeu plus fluide.
-- **hi:** स्थिरता में सुधार और ज़्यादा स्मूथ गेमप्ले।
-- **it:** Correzioni di stabilità e un gioco più fluido.
-- **pl:** Poprawki stabilności i płynniejsza rozgrywka.
-- **pt-BR:** Correções de estabilidade e um jogo mais fluido.
-- **tr:** Kararlılık düzeltmeleri ve daha akıcı oyun.
+- **en / en-GB:** Zen Mode and Speed Challenge daily challenges now count the games you play in those modes. Also fixed a crash some phones hit when the music started, plus stability fixes and smoother play.
+- **ar:** تحديات وضع الاسترخاء وتحدي السرعة اليومية تحتسب الآن الألعاب التي تلعبها في هذين الوضعين. كما أصلحنا انهيارًا كان يحدث على بعض الهواتف عند بدء الموسيقى، مع إصلاحات لتحسين الثبات ولعب أكثر سلاسة.
+- **es-MX:** Los desafíos diarios de Modo Zen y Desafío de Velocidad ahora cuentan las partidas que juegas en esos modos. También corregimos un cierre inesperado al empezar la música en algunos teléfonos, además de mejoras de estabilidad y un juego más fluido.
+- **fr:** Les défis quotidiens Mode Zen et Défi de Vitesse comptent désormais les parties jouées dans ces modes. Nous avons aussi corrigé un plantage au lancement de la musique sur certains téléphones, avec des corrections de stabilité et un jeu plus fluide.
+- **hi:** ज़ेन मोड और स्पीड चैलेंज के डेली चैलेंज अब उन मोड में खेले गए गेम गिनते हैं। कुछ फ़ोन पर म्यूज़िक शुरू होते समय होने वाला क्रैश भी ठीक किया गया है, साथ ही स्थिरता में सुधार और ज़्यादा स्मूथ गेमप्ले।
+- **it:** Le sfide giornaliere di Modalità Zen e Sfida di Velocità ora contano le partite giocate in quelle modalità. Abbiamo anche corretto un arresto anomalo all'avvio della musica su alcuni telefoni, oltre a correzioni di stabilità e un gioco più fluido.
+- **pl:** Codzienne wyzwania Tryb Zen i Wyzwanie prędkości liczą teraz gry rozegrane w tych trybach. Naprawiliśmy też awarię przy włączaniu muzyki na niektórych telefonach, a do tego poprawki stabilności i płynniejsza rozgrywka.
+- **pt-BR:** Os desafios diários de Modo Zen e Desafio de Velocidade agora contam as partidas jogadas nesses modos. Também corrigimos um fechamento inesperado ao iniciar a música em alguns celulares, além de correções de estabilidade e um jogo mais fluido.
+- **tr:** Zen Modu ve Hız Mücadelesi günlük görevleri artık bu modlarda oynadığın oyunları sayıyor. Bazı telefonlarda müzik başlarken yaşanan çökmeyi de düzelttik; ayrıca kararlılık düzeltmeleri ve daha akıcı oyun.
 
 ---
 
@@ -54,92 +59,70 @@ the `es` text.
 
 ```
 <en-US>
-Purchases you can count on.
+Fixes from your feedback.
 
-• Pro renewals are now double-checked with the store every day, so your subscription stays on.
-• More than one account? Purchases stay with the account you bought them on. Restore now tells you when something was bought on another account, so you know which one to sign in with.
-• Small fixes in the store.
-• Stability fixes and smoother play.
+• Zen Mode and Speed Challenge daily challenges now count the games you play in those modes.
+• Fixed a crash some phones hit when the music started.
 </en-US>
 <ar>
-مشتريات يمكنك الاعتماد عليها.
+إصلاحات بناءً على ملاحظاتكم.
 
-• يتم الآن التحقق من تجديدات Pro مع المتجر يوميًا، ليبقى اشتراكك فعّالًا.
-• هل لديك أكثر من حساب؟ تبقى المشتريات في الحساب الذي اشتريتها به. عند الاستعادة، يخبرك التطبيق الآن إذا تم شراء شيء بحساب آخر، لتعرف بأي حساب تسجّل الدخول.
-• إصلاحات صغيرة في المتجر.
-• إصلاحات لتحسين الثبات ولعب أكثر سلاسة.
+• تحديات وضع الاسترخاء وتحدي السرعة اليومية تحتسب الآن الألعاب التي تلعبها في هذين الوضعين.
+• إصلاح انهيار كان يحدث على بعض الهواتف عند بدء الموسيقى.
 </ar>
 <es-419>
-Compras en las que puedes confiar.
+Arreglos gracias a tus comentarios.
 
-• Las renovaciones de Pro ahora se verifican con la tienda cada día, para que tu suscripción siga activa.
-• ¿Tienes más de una cuenta? Las compras se quedan en la cuenta con la que las hiciste. Al restaurar, la app te avisa si algo se compró con otra cuenta, para que sepas con cuál iniciar sesión.
-• Pequeños arreglos en la tienda.
-• Correcciones de estabilidad y un juego más fluido.
+• Los desafíos diarios de Modo Zen y Desafío de Velocidad ahora cuentan las partidas que juegas en esos modos.
+• Corregimos un cierre inesperado al empezar la música en algunos teléfonos.
 </es-419>
 <es-ES>
-Compras en las que puedes confiar.
+Arreglos gracias a tus comentarios.
 
-• Las renovaciones de Pro ahora se verifican con la tienda cada día, para que tu suscripción siga activa.
-• ¿Tienes más de una cuenta? Las compras se quedan en la cuenta con la que las hiciste. Al restaurar, la app te avisa si algo se compró con otra cuenta, para que sepas con cuál iniciar sesión.
-• Pequeños arreglos en la tienda.
-• Correcciones de estabilidad y un juego más fluido.
+• Los desafíos diarios de Modo Zen y Desafío de Velocidad ahora cuentan las partidas que juegas en esos modos.
+• Corregimos un cierre inesperado al empezar la música en algunos teléfonos.
 </es-ES>
 <fr-FR>
-Des achats sur lesquels compter.
+Des corrections grâce à vos retours.
 
-• Les renouvellements Pro sont désormais vérifiés chaque jour auprès de la boutique, pour que votre abonnement reste actif.
-• Plusieurs comptes ? Les achats restent liés au compte avec lequel vous les avez faits. La restauration vous indique désormais quand un achat appartient à un autre compte, pour savoir avec lequel vous connecter.
-• Petites corrections dans la boutique.
-• Corrections de stabilité et un jeu plus fluide.
+• Les défis quotidiens Mode Zen et Défi de Vitesse comptent désormais les parties jouées dans ces modes.
+• Correction d'un plantage au lancement de la musique sur certains téléphones.
 </fr-FR>
 <hi-IN>
-ऐसी ख़रीदारी जिस पर भरोसा कर सकें।
+आपके सुझावों से सुधार।
 
-• Pro रिन्यूअल अब हर दिन स्टोर से जाँचे जाते हैं, ताकि आपका सब्सक्रिप्शन चालू रहे।
-• एक से ज़्यादा अकाउंट हैं? ख़रीदारी उसी अकाउंट में रहती है जिससे आपने ख़रीदा था। रिस्टोर करते समय ऐप अब बताता है कि कोई चीज़ दूसरे अकाउंट से ख़रीदी गई थी, ताकि आप जानें किस अकाउंट से साइन इन करना है।
-• स्टोर में छोटे सुधार।
-• स्थिरता में सुधार और ज़्यादा स्मूथ गेमप्ले।
+• ज़ेन मोड और स्पीड चैलेंज के डेली चैलेंज अब उन मोड में खेले गए गेम गिनते हैं।
+• कुछ फ़ोन पर म्यूज़िक शुरू होते समय होने वाला क्रैश ठीक किया गया।
 </hi-IN>
 <it-IT>
-Acquisti su cui contare.
+Correzioni grazie ai vostri commenti.
 
-• I rinnovi Pro ora vengono verificati ogni giorno con lo store, così il tuo abbonamento resta attivo.
-• Hai più di un account? Gli acquisti restano sull'account con cui li hai fatti. Il ripristino ora ti avvisa quando qualcosa è stato acquistato con un altro account, così sai con quale accedere.
-• Piccole correzioni nel negozio.
-• Correzioni di stabilità e un gioco più fluido.
+• Le sfide giornaliere di Modalità Zen e Sfida di Velocità ora contano le partite giocate in quelle modalità.
+• Corretto un arresto anomalo all'avvio della musica su alcuni telefoni.
 </it-IT>
 <pl-PL>
-Zakupy, na których możesz polegać.
+Poprawki dzięki Waszym opiniom.
 
-• Odnowienia Pro są teraz codziennie sprawdzane w sklepie, więc subskrypcja pozostaje aktywna.
-• Masz więcej niż jedno konto? Zakupy pozostają na koncie, na którym zostały dokonane. Przywracanie informuje teraz, gdy coś kupiono na innym koncie, więc wiesz, na które się zalogować.
-• Drobne poprawki w sklepie.
-• Poprawki stabilności i płynniejsza rozgrywka.
+• Codzienne wyzwania Tryb Zen i Wyzwanie prędkości liczą teraz gry rozegrane w tych trybach.
+• Naprawiono awarię przy włączaniu muzyki na niektórych telefonach.
 </pl-PL>
 <pt-BR>
-Compras em que você pode confiar.
+Correções a partir do seu feedback.
 
-• As renovações do Pro agora são conferidas com a loja todos os dias, para sua assinatura continuar ativa.
-• Tem mais de uma conta? As compras ficam na conta em que você as fez. Ao restaurar, o app avisa quando algo foi comprado em outra conta, para você saber com qual entrar.
-• Pequenas correções na loja.
-• Correções de estabilidade e um jogo mais fluido.
+• Os desafios diários de Modo Zen e Desafio de Velocidade agora contam as partidas jogadas nesses modos.
+• Corrigimos um fechamento inesperado ao iniciar a música em alguns celulares.
 </pt-BR>
 <ru-RU>
-Покупки, на которые можно положиться.
+Исправления по вашим отзывам.
 
-• Продления Pro теперь ежедневно сверяются с магазином, чтобы подписка оставалась активной.
-• У вас несколько аккаунтов? Покупки остаются в том аккаунте, с которого они сделаны. При восстановлении приложение подскажет, если покупка сделана в другом аккаунте, — чтобы вы знали, в какой войти.
-• Небольшие исправления в магазине.
-• Исправления стабильности и более плавная игра.
+• Ежедневные задания режимов «Дзен» и «Скоростной вызов» теперь засчитывают игры в этих режимах.
+• Исправлен вылет при запуске музыки на некоторых телефонах.
 </ru-RU>
 <tr-TR>
-Güvenebileceğin satın alımlar.
+Geri bildirimlerinle gelen düzeltmeler.
 
-• Pro yenilemeleri artık her gün mağazayla kontrol ediliyor, böylece aboneliğin aktif kalıyor.
-• Birden fazla hesabın mı var? Satın alımlar, onları yaptığın hesapta kalır. Geri yükleme artık bir şeyin başka bir hesapla satın alındığını söylüyor, böylece hangi hesapla giriş yapacağını biliyorsun.
-• Mağazada küçük düzeltmeler.
-• Kararlılık düzeltmeleri ve daha akıcı oyun.
+• Zen Modu ve Hız Mücadelesi günlük görevleri artık bu modlarda oynadığın oyunları sayıyor.
+• Bazı telefonlarda müzik başlarken yaşanan çökme düzeltildi.
 </tr-TR>
 ```
 
