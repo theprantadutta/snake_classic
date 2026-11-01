@@ -41,6 +41,35 @@ enum ChallengeType {
   }
 }
 
+/// Whether a game played in [playedMode] counts toward a challenge or quest
+/// that requires [requiredMode].
+///
+/// The two sides spell modes differently. The server's challenge templates
+/// say "classic", "zen", "speed"; a finished run reports the mode's display
+/// label ("Classic", "Zen Mode", "Speed Challenge"), and the backend enum
+/// spells them "Zen", "SpeedChallenge". The old comparison was a plain
+/// case-insensitive equality, so only Classic ever matched: Zen and Speed
+/// daily challenges could never complete (a Play review, Oct 2026). Both
+/// sides are reduced to one key here instead. Mirrored server-side by
+/// GameModeKey in SnakeClassic.Application — change both together.
+bool challengeModeMatches(String requiredMode, String playedMode) =>
+    gameModeKey(requiredMode) == gameModeKey(playedMode);
+
+/// Any spelling of a game mode reduced to one key: lowercase letters only,
+/// with the short and long names folded together.
+String gameModeKey(String mode) {
+  final letters = mode.toLowerCase().replaceAll(RegExp('[^a-z]'), '');
+  return _gameModeAliases[letters] ?? letters;
+}
+
+const Map<String, String> _gameModeAliases = {
+  'zenmode': 'zen',
+  'speed': 'speedchallenge',
+  'multi': 'multifood',
+  'powerup': 'powerupmadness',
+  'perfect': 'perfectgame',
+};
+
 enum ChallengeDifficulty {
   easy,
   medium,

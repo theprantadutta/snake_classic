@@ -4,7 +4,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
-import 'package:snake_classic/models/daily_challenge.dart' show ChallengeDifficulty;
+import 'package:snake_classic/models/daily_challenge.dart'
+    show ChallengeDifficulty, challengeModeMatches;
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/weekly_quest.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -269,7 +270,7 @@ class WeeklyQuestService extends ChangeNotifier {
       if (type == WeeklyQuestType.gameMode &&
           quest.requiredGameMode != null &&
           gameMode != null &&
-          quest.requiredGameMode!.toLowerCase() != gameMode.toLowerCase()) {
+          !challengeModeMatches(quest.requiredGameMode!, gameMode)) {
         continue;
       }
 

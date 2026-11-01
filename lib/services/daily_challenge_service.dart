@@ -366,7 +366,7 @@ class DailyChallengeService extends ChangeNotifier {
       if (type == ChallengeType.gameMode &&
           challenge.requiredGameMode != null &&
           gameMode != null &&
-          challenge.requiredGameMode!.toLowerCase() != gameMode.toLowerCase()) {
+          !challengeModeMatches(challenge.requiredGameMode!, gameMode)) {
         continue;
       }
 
