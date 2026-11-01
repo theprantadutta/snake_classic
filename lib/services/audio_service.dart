@@ -358,15 +358,15 @@ class AudioService {
 
   Future<void> _startMusicVoice() async {
     try {
-      // LoadMode.disk streams the file instead of decompressing the whole
-      // track into RAM. Right trade for a multi-minute loop; the SFX stay in
-      // memory, where their latency matters.
+      // In memory, never LoadMode.disk. loadAsset copies the asset to a
+      // TEMPORARY file and disk mode reopens that file on every play; Android
+      // clears temp files under storage pressure, and the next play then hit
+      // fread(NULL) and aborted the app ("FORTIFY: fread: null FILE*" in
+      // SoLoud::DiskFile::read: ~96% of 7.4.3's Play crashes, budget phones).
+      // The loops are ~0.7 MB, so memory costs nothing.
       final generation = _engineGeneration;
       final source = _musicSource ??
-          await _soloud.loadAsset(
-            'assets/audio/lb/music/run_loop_140bpm.wav',
-            mode: LoadMode.disk,
-          );
+          await _soloud.loadAsset('assets/audio/lb/music/run_loop_140bpm.wav');
       if (generation != _engineGeneration) return;
       _musicSource = source;
 
@@ -552,11 +552,9 @@ class AudioService {
   Future<void> _startMenuVoice() async {
     try {
       final generation = _engineGeneration;
+      // In memory for the same reason as the run loop (_startMusicVoice).
       final source = _menuSource ??
-          await _soloud.loadAsset(
-            'assets/audio/lb/music/menu_loop_118bpm.wav',
-            mode: LoadMode.disk,
-          );
+          await _soloud.loadAsset('assets/audio/lb/music/menu_loop_118bpm.wav');
       if (generation != _engineGeneration) return;
       _menuSource = source;
       if (_liveMenuHandle != null || !_menuMusicWanted) return;
