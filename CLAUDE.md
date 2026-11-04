@@ -83,9 +83,10 @@ The rule, applied to every new code path:
   change one, change the other. They refuse to build if the version has
   already been released (`--force` / `-Force` overrides) or if a Sentry token
   is sitting in `.env`, which would ship it inside the app.
-- **`./tools/release_ios.sh`** - The App Store equivalent. **UNVERIFIED — never
-  been run**, written without access to macOS or Xcode. Read the banner and the
-  FIRST RUN CHECKLIST inside it before trusting any of it.
+- **`./tools/release_ios.sh`** - The App Store equivalent: builds the IPA and
+  uploads its Dart symbols and dSYMs to Sentry (token in `.sentry-auth-token`).
+  Upload the IPA from that same run with Transporter; symbols only match the
+  binary they were built with.
 - `flutter pub get` - Install dependencies
 - `flutter run` - Run the app (ask user for platform preference first)
 - `flutter run -d android` - Run on Android device/emulator

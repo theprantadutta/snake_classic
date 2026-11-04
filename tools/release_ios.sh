@@ -2,24 +2,17 @@
 #
 # Build the App Store IPA AND upload its debug symbols to Sentry.
 #
-# ############################################################################
-# #                                                                          #
-# #  UNVERIFIED. This script has never been run.                             #
-# #                                                                          #
-# #  It was written on a Windows machine with no macOS and no Xcode, by      #
-# #  translating tools/release_android.sh and applying the documented iOS    #
-# #  differences. Every Android step in it is battle-tested; every iOS-      #
-# #  specific step is reasoned-about, not observed.                          #
-# #                                                                          #
-# #  Treat the first run as a test of THIS SCRIPT, not of your release.      #
-# #  What to check is listed under "FIRST RUN CHECKLIST" at the bottom.      #
-# #                                                                          #
-# ############################################################################
+# The iOS twin of tools/release_android.sh. Builds an obfuscated IPA, then
+# uploads the Dart debug companions and the dSYMs for THAT build, so a crash
+# from it reads as file names and line numbers in Sentry.
+#
+# Symbols only match the binary they came from: upload the IPA this run
+# produced, not one from an earlier run of the same version.
 #
 # Usage:
 #   ./tools/release_ios.sh              # build + upload symbols
 #   ./tools/release_ios.sh --force      # rebuild an already-released version
-#   ./tools/release_ios.sh --no-upload  # build only, skip Sentry
+#   ./tools/release_ios.sh --no-upload  # build only, skip Sentry (do not ship it)
 #
 # The auth token is read from .sentry-auth-token (gitignored, repo root), or
 # from SENTRY_AUTH_TOKEN if already exported.
@@ -62,6 +55,16 @@ if [[ -z "${SENTRY_AUTH_TOKEN:-}" && -f "$TOKEN_FILE" ]]; then
   export SENTRY_AUTH_TOKEN
 fi
 
+# Fail now, not after a five minute build: an IPA without its symbols must
+# not ship, and rebuilding later would not produce matching ones.
+if [[ "$UPLOAD" == "1" && -z "${SENTRY_AUTH_TOKEN:-}" ]]; then
+  echo >&2
+  echo "  REFUSING TO BUILD: no Sentry auth token." >&2
+  echo "  Put it in .sentry-auth-token (gitignored), or pass --no-upload." >&2
+  echo >&2
+  exit 1
+fi
+
 VERSION="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
 
 # ---------------------------------------------------------------------------
@@ -92,6 +95,17 @@ fi
 
 echo "==> Building IPA for $VERSION"
 
+# Nothing from an earlier run may survive into this one: a stale IPA could be
+# mistaken for this build, and stale dSYMs or symbols would be uploaded for a
+# binary that no longer exists. Android's .symbols files stay; they are valid
+# for the Android build they came from.
+rm -rf build/ios/archive build/ios/ipa
+rm -f build/debug-info/app.ios-*.symbols
+
+# gen_snapshot writes the obfuscation map but does not create its folder. Only
+# an Android build creates build/app, so a fresh Mac fails without this.
+mkdir -p build/app build/debug-info
+
 # Same flags as Android: --obfuscate needs --split-debug-info, and the
 # obfuscation map is written out separately.
 #
@@ -106,29 +120,28 @@ flutter build ipa \
   --split-debug-info=build/debug-info \
   --extra-gen-snapshot-options=--save-obfuscation-map=build/app/obfuscation.map.json
 
+# The IPA must say what pubspec.yaml says, or it is not the build being
+# released.
+ARCHIVE_PLIST="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app/Info.plist"
+BUILT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ARCHIVE_PLIST")+$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$ARCHIVE_PLIST")"
+if [[ "$BUILT" != "$VERSION" ]]; then
+  echo "error: built $BUILT but pubspec.yaml says $VERSION" >&2
+  exit 1
+fi
+if ! compgen -G "build/ios/ipa/*.ipa" >/dev/null; then
+  echo "error: flutter build ipa produced no IPA in build/ios/ipa" >&2
+  exit 1
+fi
+
 if [[ "$UPLOAD" != "1" ]]; then
   echo "==> --no-upload given; skipping Sentry. Symbols NOT uploaded."
   exit 0
 fi
 
-if [[ -z "${SENTRY_AUTH_TOKEN:-}" ]]; then
-  echo >&2
-  echo "  BUILD OK, SYMBOLS NOT UPLOADED - no auth token found." >&2
-  echo "  Put it in .sentry-auth-token, then run: dart run sentry_dart_plugin" >&2
-  echo >&2
-  exit 1
-fi
-
 echo "==> Uploading debug symbols for $VERSION"
 
-# Pass 1: the plugin. On iOS it is also responsible for finding the dSYMs in
-# the Xcode archive, which is the part with no Android equivalent.
-#
-# Its exit code is tolerated for the same reason as on Android — it crashed
-# there AFTER a successful upload. Whether it does so on macOS is unknown;
-# the crash looked Windows-specific (a literal '*' handed to a directory
-# listing, which a Unix shell would have expanded). If it exits 0 on macOS,
-# nothing here changes.
+# Pass 1: the plugin. Wires up the release and usually uploads the symbols.
+# Its exit code is tolerated as on Android; passes 2 and 3 are what decide.
 plugin_exit=0
 dart run sentry_dart_plugin || plugin_exit=$?
 
@@ -141,73 +154,38 @@ if [[ ! -x "$CLI" ]]; then
 fi
 
 echo "==> Uploading Dart debug companions (build/debug-info)"
-"$CLI" debug-files upload --org pranta-corp --project snake-classic-flutter build/debug-info
+if ! "$CLI" debug-files upload --org pranta-corp --project snake-classic-flutter build/debug-info; then
+  echo "error: Dart symbol upload FAILED - do not ship this build" >&2
+  exit 1
+fi
 
-# Pass 3: the dSYMs. THIS HAS NO ANDROID COUNTERPART and is the step most
-# likely to need correcting on the first real run.
-#
-# Without dSYMs, a native iOS crash (the Flutter engine, a plugin's
-# Objective-C/Swift, a hard signal) symbolicates to hex addresses. The Dart
-# companions above do not cover that — they only cover libapp.
-#
-# Flutter writes the archive under build/ios/archive. The dSYM location has
-# moved between Xcode versions, so several candidates are tried and each is
-# uploaded if present, rather than assuming one layout.
-DSYM_FOUND=0
-for d in \
-  build/ios/archive/Runner.xcarchive/dSYMs \
-  build/ios/Release-iphoneos \
-  build/ios/iphoneos
-do
-  if [[ -d "$d" ]] && find "$d" -name '*.dSYM' -print -quit | grep -q .; then
-    echo "==> Uploading dSYMs from $d"
-    "$CLI" debug-files upload --org pranta-corp --project snake-classic-flutter "$d"
-    DSYM_FOUND=1
-  fi
-done
-
-if [[ "$DSYM_FOUND" != "1" ]]; then
-  echo >&2
-  echo "  WARNING: no dSYMs found in any known location." >&2
-  echo "  Native iOS crashes will symbolicate to hex addresses." >&2
-  echo "  Find them with:  find build/ios -name '*.dSYM'" >&2
-  echo "  then add that path to the loop above." >&2
-  echo >&2
+# Pass 3: the dSYMs, which have no Android counterpart. Without them a native
+# crash (the Flutter engine, a plugin's Swift, a hard signal) symbolicates to
+# hex addresses; the Dart companions above only cover libapp.
+DSYMS="build/ios/archive/Runner.xcarchive/dSYMs"
+if ! find "$DSYMS" -name '*.dSYM' -print -quit 2>/dev/null | grep -q .; then
+  echo "error: no dSYMs in $DSYMS - do not ship this build" >&2
+  exit 1
+fi
+echo "==> Uploading dSYMs from $DSYMS"
+if ! "$CLI" debug-files upload --org pranta-corp --project snake-classic-flutter "$DSYMS"; then
+  echo "error: dSYM upload FAILED - do not ship this build" >&2
+  exit 1
 fi
 
 if [[ "$plugin_exit" -ne 0 ]]; then
   echo
   echo "  NOTE: sentry_dart_plugin exited $plugin_exit. The explicit uploads"
-  echo "        above succeeded, so this build is fine — but on macOS this"
-  echo "        is NOT the known Windows crash, so it is worth reading the"
-  echo "        output once to see what it actually was."
+  echo "        above succeeded, so this build is fine."
 fi
 
 grep -qxF "$VERSION" "$LEDGER" 2>/dev/null || echo "$VERSION" >> "$LEDGER"
 
 cat <<EOF
 
-==> Done.
-    Artifact: build/ios/ipa/*.ipa
-    Upload it with Xcode Organizer or:
-        xcrun altool --upload-app -f build/ios/ipa/*.ipa -t ios \\
-          -u <apple-id> -p <app-specific-password>
+==> Done. Upload this exact file with Transporter:
+    $(ls build/ios/ipa/*.ipa)
 
-    Verify symbols:
+    Symbols uploaded for $VERSION. Verify at
     https://pranta-corp.sentry.io/settings/projects/snake-classic-flutter/debug-symbols/
-
-# ---------------------------------------------------------------------------
-# FIRST RUN CHECKLIST (this script is unverified)
-#
-#  1. Did 'flutter build ipa' accept the flags? Android takes all four; if
-#     iOS rejects one, the build fails immediately and loudly.
-#  2. Did pass 2 upload an arm64 debug companion? iOS ships arm64 only.
-#  3. Did pass 3 find dSYMs at all? If it printed the WARNING, run
-#     'find build/ios -name "*.dSYM"' and add the real path to the loop.
-#  4. Did the plugin exit 0 on macOS? If so, the tolerance in pass 1 is
-#     unnecessary here and can be tightened.
-#  5. THE ACTUAL TEST: ship it, force a crash on a real device, and confirm
-#     the Sentry issue shows your Dart file and line rather than hex. That
-#     is the only thing that proves any of this.
-# ---------------------------------------------------------------------------
 EOF
