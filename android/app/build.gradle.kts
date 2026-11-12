@@ -18,6 +18,15 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.pranta.snakeclassic"
+
+    // Android's default asset ignore list contains ".*", and since Flutter
+    // 3.50 the build no longer overrides it, so the `.env` asset is silently
+    // dropped from release APKs/AABs. main.dart awaits dotenv.load('.env')
+    // before runApp, so a build without it hangs on the native splash with
+    // no crash report. This is the default list minus ".*".
+    androidResources {
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
     // compileSdk = flutter.compileSdkVersion
     compileSdk = 37
     ndkVersion = flutter.ndkVersion

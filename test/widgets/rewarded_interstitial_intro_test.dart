@@ -50,20 +50,24 @@ void main() {
   testWidgets('states the reward before anything plays', (tester) async {
     await open(tester);
     expect(find.bySemanticsLabel('AD BREAK'), findsOneWidget);
-    expect(find.text('A short ad. 25 coins for you.'), findsOneWidget);
+    expect(
+      find.text('An ad plays next. Watch it all for 25 coins?'),
+      findsOneWidget,
+    );
+    expect(find.text('Or take a short one with no coins.'), findsOneWidget);
     expect(find.text('+25¢ WHEN IT ENDS'), findsOneWidget);
     expect(
-      find.text('STARTS IN 5 · OR SKIP, NO HARD FEELINGS'),
+      find.text('STARTS IN 5 · OR PICK THE SHORT AD'),
       findsOneWidget,
     );
     expect(find.text('WATCH NOW'), findsOneWidget);
-    expect(find.text('NO THANKS'), findsOneWidget);
+    expect(find.text('SHORT AD'), findsOneWidget);
   });
 
-  testWidgets('NO THANKS skips the ad', (tester) async {
+  testWidgets('SHORT AD declines the rewarded ad', (tester) async {
     final answers = await open(tester);
     await tester.pump(const Duration(milliseconds: 600)); // armed
-    await tester.tap(find.text('NO THANKS'));
+    await tester.tap(find.text('SHORT AD'));
     await tester.pumpAndSettle();
     expect(answers, [false]);
   });
@@ -107,13 +111,13 @@ void main() {
       (tester) async {
     final answers = await open(tester);
     // Still inside the arming window.
-    await tester.tap(find.text('NO THANKS'), warnIfMissed: false);
+    await tester.tap(find.text('SHORT AD'), warnIfMissed: false);
     await tester.pump();
     expect(answers, isEmpty);
     expect(find.bySemanticsLabel('AD BREAK'), findsOneWidget);
     // And once armed, the same tap counts.
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.tap(find.text('NO THANKS'));
+    await tester.tap(find.text('SHORT AD'));
     await tester.pumpAndSettle();
     expect(answers, [false]);
   });
