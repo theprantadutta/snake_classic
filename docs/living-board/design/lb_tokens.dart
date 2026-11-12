@@ -1,6 +1,6 @@
 // Snake Classic — Living Board design tokens.
 // Drop into lib/design/ (or merge into lib/utils/constants.dart). Pure data, no widgets.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract class LB {
   // Grid
