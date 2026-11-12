@@ -6,7 +6,13 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" and "Promotional Text" for Play Console / App Store
-Connect. Written for **7.4.4+72**.
+Connect. Written for **7.5.0+73**.
+
+7.5.0 is 7.4.4 rebuilt on Flutter 3.50 and the new Android tooling (Gradle
+9.8.1, AGP 9.4.1, Kotlin 2.4.0). It changes nothing players see, so the
+text below is the 7.4.4 text unchanged. If 7.4.4 already went live on Play,
+archive these notes as release_notes_7.4.4.md and give 7.5.0 a short
+"stability and performance improvements" block instead.
 
 **The two stores get different text again.** Play has 7.4.3 live (notes
 archived in release_notes_7.4.3.md), so the Play block covers only what
