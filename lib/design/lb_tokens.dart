@@ -4,7 +4,7 @@
 // that never change with the theme (grid, radii, reward/danger colours,
 // motion). [LBPalette] holds the colours a GameTheme re-skins; read it with
 // `context.lb`.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 abstract class LB {

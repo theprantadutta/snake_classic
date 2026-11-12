@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/utils/constants.dart';
 
 /// Places the D-pad within the lower control row according to the player's

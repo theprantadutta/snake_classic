@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Building blocks of the Living Board Settings screen (screen 16). Only the

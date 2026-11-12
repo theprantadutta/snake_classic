@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/router/app_router.dart';
 import 'package:snake_classic/router/routes.dart';
 

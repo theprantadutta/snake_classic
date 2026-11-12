@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// D-Pad position presets for user preference
 /// Which on-screen control is drawn when `dPadEnabled` is on.

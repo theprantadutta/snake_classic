@@ -7,7 +7,7 @@ import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
 import 'package:snake_classic/widgets/ads/ad_break_curtain.dart';

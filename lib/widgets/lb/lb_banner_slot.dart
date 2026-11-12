@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 
 /// The banner slot (DESIGN_SPEC §2, §8). A thin wrapper so screens read as

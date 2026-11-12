@@ -112,13 +112,12 @@ dependencies:
   # Declarative routing
   go_router: ^18.0.0
 
-  # NOT used directly — a DIRECT dependency purely so we can register its
-  # localization delegates. go_router 18 has migrated to package:material_ui,
-  # which declares its OWN MaterialLocalizations: a different Dart type from
-  # the one in package:flutter/material.dart that flutter_localizations
-  # cannot satisfy. Any material_ui widget that reaches
-  # debugCheckHasMaterialLocalizations throws without the delegates below.
-  material_ui: ^1.1.0
+  # Material widgets. Flutter 3.50 deprecated package:flutter/material.dart in
+  # favour of this package; every file imports package:material_ui instead.
+  # Its MaterialLocalizations is a different Dart type from the old one, so
+  # MaterialApp must register GlobalMaterialLocalizations.delegates from
+  # material_ui (see main.dart). Brings cupertino_ui in transitively.
+  material_ui: ^1.11.0
 
   # For Splash Screen
   flutter_native_splash: ^2.4.6

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/multiplayer/snake_glide.dart';
 import 'package:snake_classic/models/match_snapshot.dart';

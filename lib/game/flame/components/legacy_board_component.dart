@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_cell_text.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';

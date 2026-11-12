@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/widgets/flame_game_board.dart';
 import 'package:snake_classic/widgets/score_popup.dart';

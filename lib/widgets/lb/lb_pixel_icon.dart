@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_glyphs.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_cell_text.dart';

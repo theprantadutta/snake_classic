@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/models/snake.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum PowerUpType {
   speedBoost,

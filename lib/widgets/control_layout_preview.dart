@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/game_bottom_bar.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';

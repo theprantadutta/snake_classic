@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum TrailType { none, basic, glow, particles, lightning, rainbow, fire, ice, star, cosmic, neon, shadow, dragon }
 

@@ -1,5 +1,5 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/screens/legal_document_screen.dart';
 import 'package:snake_classic/utils/constants.dart';

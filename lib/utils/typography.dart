@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Game typography: JetBrains Mono everywhere (Living Board — one grid, one
 /// font). Bundled in assets/fonts/, declared in pubspec.yaml's `fonts:`.

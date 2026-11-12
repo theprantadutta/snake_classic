@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:snake_classic/l10n/achievement_l10n.dart';

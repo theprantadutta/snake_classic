@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Available transition types for page navigation.
 /// Only scale-based transitions — no slides.

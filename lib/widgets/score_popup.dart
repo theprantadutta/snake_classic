@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A floating score popup that rises and fades out
 class ScorePopup extends StatefulWidget {

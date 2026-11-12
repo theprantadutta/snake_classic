@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -550,9 +549,7 @@ class _StartupFailureAppState extends State<_StartupFailureApp> {
       // Same reason as the main app below. The recovery screen is the one
       // surface that must never fail to render, so it does not get to skip
       // the delegates just because it is plain.
-      localizationsDelegates: const [
-        ...material_ui.GlobalMaterialLocalizations.delegates,
-      ],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -815,15 +812,16 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // i18n: generated from lib/l10n/*.arb (see l10n.yaml). A null
       // locale follows the device language; unsupported device
       // languages resolve to English via the default resolution.
-      // Flutter's delegates, plus material_ui's own. go_router 18 has moved
-      // to package:material_ui, whose MaterialLocalizations is a DIFFERENT
-      // Dart type that flutter_localizations cannot satisfy — so both sets
-      // have to be registered or any material_ui widget in the tree throws
-      // "No MaterialLocalizations found" at runtime. Both coexist happily,
-      // and material_ui ships 80 locales, so this costs no coverage.
+      // The app is on package:material_ui (Flutter 3.50 deprecated
+      // package:flutter/material.dart). Its MaterialLocalizations is a
+      // different Dart type from the old one, so these must be material_ui's
+      // delegates or every material_ui widget throws "No
+      // MaterialLocalizations found". material_ui ships 80 locales, so this
+      // costs no coverage. Packages still on the old Material get the old
+      // types from MaterialUiCompatibilityBridge in builder below.
       localizationsDelegates: const [
-        ...AppLocalizations.localizationsDelegates,
-        ...material_ui.GlobalMaterialLocalizations.delegates,
+        AppLocalizations.delegate,
+        ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: SupportedLocales.locales,
       locale: SupportedLocales.fromCode(settingsState.localeCode),
@@ -846,7 +844,15 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
           data: mediaQuery.copyWith(
             textScaler: TextScaler.linear(baseScale * osScale),
           ),
-          child: child ?? const SizedBox.shrink(),
+          // Gives widgets from packages still built on the deprecated
+          // package:flutter/material.dart (dialogs, pickers, debug screens)
+          // the old Theme and MaterialLocalizations they look up. It is a
+          // temporary aid, deprecated on purpose; drop it once every
+          // dependency has moved to material_ui.
+          // ignore: deprecated_member_use
+          child: MaterialUiCompatibilityBridge(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       theme: ThemeData(

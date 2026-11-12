@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';

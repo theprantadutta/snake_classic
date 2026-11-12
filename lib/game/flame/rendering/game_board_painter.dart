@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
