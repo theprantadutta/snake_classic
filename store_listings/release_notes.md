@@ -44,17 +44,23 @@ en-GB is not listed separately: it takes the `en` text verbatim.
 
 ---
 
-## App Store Connect — What's New (7.4.4)
+## App Store Connect — What's New (7.6.0)
 
-- **en / en-GB:** Zen Mode and Speed Challenge daily challenges now count the games you play in those modes. Also fixed a crash some phones hit when the music started, plus stability fixes and smoother play.
-- **ar:** تحديات وضع الاسترخاء وتحدي السرعة اليومية تحتسب الآن الألعاب التي تلعبها في هذين الوضعين. كما أصلحنا انهيارًا كان يحدث على بعض الهواتف عند بدء الموسيقى، مع إصلاحات لتحسين الثبات ولعب أكثر سلاسة.
-- **es-MX:** Los desafíos diarios de Modo Zen y Desafío de Velocidad ahora cuentan las partidas que juegas en esos modos. También corregimos un cierre inesperado al empezar la música en algunos teléfonos, además de mejoras de estabilidad y un juego más fluido.
-- **fr:** Les défis quotidiens Mode Zen et Défi de Vitesse comptent désormais les parties jouées dans ces modes. Nous avons aussi corrigé un plantage au lancement de la musique sur certains téléphones, avec des corrections de stabilité et un jeu plus fluide.
-- **hi:** ज़ेन मोड और स्पीड चैलेंज के डेली चैलेंज अब उन मोड में खेले गए गेम गिनते हैं। कुछ फ़ोन पर म्यूज़िक शुरू होते समय होने वाला क्रैश भी ठीक किया गया है, साथ ही स्थिरता में सुधार और ज़्यादा स्मूथ गेमप्ले।
-- **it:** Le sfide giornaliere di Modalità Zen e Sfida di Velocità ora contano le partite giocate in quelle modalità. Abbiamo anche corretto un arresto anomalo all'avvio della musica su alcuni telefoni, oltre a correzioni di stabilità e un gioco più fluido.
-- **pl:** Codzienne wyzwania Tryb Zen i Wyzwanie prędkości liczą teraz gry rozegrane w tych trybach. Naprawiliśmy też awarię przy włączaniu muzyki na niektórych telefonach, a do tego poprawki stabilności i płynniejsza rozgrywka.
-- **pt-BR:** Os desafios diários de Modo Zen e Desafio de Velocidade agora contam as partidas jogadas nesses modos. Também corrigimos um fechamento inesperado ao iniciar a música em alguns celulares, além de correções de estabilidade e um jogo mais fluido.
-- **tr:** Zen Modu ve Hız Mücadelesi günlük görevleri artık bu modlarda oynadığın oyunları sayıyor. Bazı telefonlarda müzik başlarken yaşanan çökmeyi de düzelttik; ayrıca kararlılık düzeltmeleri ve daha akıcı oyun.
+The App Store has 7.4.4 live (its What's New, the 7.4.4 text, went out
+with the 2026-11-04 submission and is in git history). 7.6.0 changes
+nothing players see, so it gets the short stability block. Entered in App
+Store Connect for all 10 locales on 2026-11-13, with the Promotional Text
+below.
+
+- **en / en-GB:** Stability and performance improvements. Snake Classic is now built on the latest tools, so it runs more smoothly and reliably.
+- **ar:** تحسينات في الثبات والأداء. أصبحت Snake Classic مبنية على أحدث الأدوات، لتعمل بسلاسة وموثوقية أكبر.
+- **es-MX:** Mejoras de estabilidad y rendimiento. Snake Classic ahora usa las herramientas más recientes, para funcionar de forma más fluida y confiable.
+- **fr:** Améliorations de la stabilité et des performances. Snake Classic repose désormais sur les outils les plus récents, pour un jeu plus fluide et plus fiable.
+- **hi:** स्थिरता और परफ़ॉर्मेंस में सुधार। Snake Classic अब नए टूल्स पर बना है, इसलिए यह ज़्यादा स्मूथ और भरोसेमंद तरीके से चलता है।
+- **it:** Miglioramenti di stabilità e prestazioni. Snake Classic ora usa gli strumenti più recenti, per un gioco più fluido e affidabile.
+- **pl:** Poprawki stabilności i wydajności. Snake Classic korzysta teraz z najnowszych narzędzi, więc działa płynniej i bardziej niezawodnie.
+- **pt-BR:** Melhorias de estabilidade e desempenho. O Snake Classic agora usa as ferramentas mais recentes, para rodar de forma mais fluida e confiável.
+- **tr:** Kararlılık ve performans iyileştirmeleri. Snake Classic artık en yeni araçlarla geliştiriliyor; böylece daha akıcı ve güvenilir çalışıyor.
 
 ---
 

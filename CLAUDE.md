@@ -172,9 +172,9 @@ Added 2026-11-13 after the November audit found AdMob Network was the only bidde
 Nothing below could be checked on Windows. Do every step, in order, and record results in `docs/AD_MEDIATION_PARTNERS.md`. Stop and tell the owner if any step fails instead of shipping around it.
 1. **Sync:** `git pull` in both repos; `flutter --version` must match what Android built with (3.50.x); `flutter clean && flutter pub get`.
 2. **Dependencies:** the iOS project uses Swift Package Manager, not CocoaPods; `flutter build ios` resolves the adapters itself. The built `Runner.app/Frameworks` must contain `UnityAdapter`, `UnityAds`, `LiftoffMonetizeAdapter` and `VungleAdsSDK`. Commit the updated `Package.resolved` files.
-3. **SKAdNetwork IDs:** `Info.plist` holds 156 IDs (Google's + Unity's + Liftoff's + AppLovin's lists, merged 2026-11-13). Refresh before release and make sure each list is fully contained (re-download, diff, add missing ones):
+3. **SKAdNetwork IDs:** `Info.plist` holds 171 IDs (Google's + Unity's + Liftoff's + AppLovin's lists, merged 2026-11-13; Liftoff's 15 newest added on macOS the same day). Refresh before release and make sure each list is fully contained (re-download, diff, add missing ones):
    - Unity: https://skan.mz.unity3d.com/v3/partner/skadnetworks.plist.json
-   - Liftoff: the SKAdNetwork section of Liftoff's iOS integration docs (support.vungle.com blocks scripted fetches; open it in a browser)
+   - Liftoff: https://vungle-static-assets.s3.amazonaws.com/dashboard/admin/prod/skadnetworkids.xml (the XML linked from Liftoff's iOS integration docs; curl fetches it fine)
    - Google: https://developers.google.com/admob/ios/3p-skadnetworks
    Check the plist still parses: `plutil -lint ios/Runner/Info.plist`.
 4. **Build:** `flutter build ios --release` must succeed with no adapter/version errors. Each adapter is built against one google_mobile_ads version (its CHANGELOG); if the build fails on an adapter, bump the adapters and google_mobile_ads together, never one alone.
