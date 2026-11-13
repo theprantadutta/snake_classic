@@ -63,7 +63,7 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   interstitial).
 - App side: `gma_mediation_unity`. No Dart code; consent comes from UMP/TCF.
 
-### Liftoff Monetize (formerly Vungle): LIVE for Snake Classic Android (2026-11-13)
+### Liftoff Monetize (formerly Vungle): LIVE for Snake Classic Android, set up for iOS (2026-11-13)
 - `signin.liftoff.io` is **Liftoff Accelerate** (advertisers): "no active user for
   this email". The publisher dashboard is `publisher.vungle.com`, which refuses to
   load while the browser's ad blocker is on. With it off, it redirects to the
@@ -85,7 +85,19 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   (monetize@liftoff.io) to enable it, then map `rewarded_interstitial_ad`.
 - app-ads.txt line: `vungle.com, 6af6a1a0efb36623c25ff32e, DIRECT, c107d686becd2d77`
   (Liftoff validates it on pranta.dev before serving). In both app-ads.txt files.
-- Not yet: the Snake **iOS** app in Liftoff (same steps, App Store id 6779621362).
+- Snake Classic iOS, done 2026-11-13: "Snake Classic iOS" (App Store id
+  6779621362), Liftoff **App ID `6af6bd699b6208a5310feaed`**, In-App Bidding
+  placements: banner `SNAKE_BANNER_BIDDING-9645199`, interstitial
+  `SNAKE_INTERSTITIAL_BIDDING-9147400`, rewarded `SNAKE_REWARDED_BIDDING-5585743`,
+  App Open `SNAKE_APPOPEN_BIDDING-4437907` (plus an unused auto-created `default`,
+  `DEFAULT-3584867`, bidding off). All four are mapped to the iOS units and added to
+  `banner_ad_ios`, `interstitial_ios`, `rewarded_ad_ios` and a new **`app_open_ios`**
+  group (3160260662; AdMob Network + Liftoff). The Snake iOS App Open unit is named
+  "Snake Classic Android — App Open" in AdMob even though it belongs to the iOS app;
+  rename it in AdMob → Apps if that confuses anyone. Live only once an iOS build
+  with the adapter ships (see CLAUDE.md, macOS checklist).
+- Adding an app in Liftoff asks for a COPPA (child-directed) declaration; the owner
+  answers that one personally.
 - Formats via bidding: all, including App Open; rewarded interstitial needs
   Liftoff's account manager to enable it.
 - App side: `gma_mediation_liftoffmonetize`.

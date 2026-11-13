@@ -180,7 +180,8 @@ Nothing below could be checked on Windows. Do every step, in order, and record r
 4. **Build:** `flutter build ios --release` must succeed with no adapter/version errors. Each adapter is built against one google_mobile_ads version (its CHANGELOG); if the build fails on an adapter, bump the adapters and google_mobile_ads together, never one alone.
 5. **Device check (real iPhone, not the simulator):** run a release build on a device registered as an AdMob test device (AdMob → Settings → Test devices), open the AdMob **Ad Inspector** (shake gesture after registering, or a temporary `MobileAds.instance.openAdInspector` call in a debug-only spot; remove it afterwards). Confirm:
    - Unity Ads and Liftoff Monetize both show as **adapter initialized** (green), not "not found".
-   - Per ad unit, the mediation group lists Unity Ads (bidding) and, once Liftoff is mapped, Liftoff Monetize (bidding).
+   - Per ad unit, the mediation group lists Unity Ads (bidding) and Liftoff Monetize (bidding); both were mapped for iOS on 2026-11-13 (groups `banner_ad_ios`, `interstitial_ios`, `rewarded_ad_ios`, and `app_open_ios` for Liftoff only). IDs in `docs/AD_MEDIATION_PARTNERS.md`.
+   - Single-source test for Liftoff too: banner/interstitial/rewarded/App Open with "Liftoff Monetize" only (turn on test mode for the iOS app in publisher.vungle.com first, off afterwards).
    - Single-source test: load banner/interstitial/rewarded with "Unity Ads" only; each must fill (enable test mode in the Unity dashboard first and turn it off afterwards).
 6. **Consent:** on a fresh install with an EU VPN or the UMP debug geography, accept and decline the consent form; ads must still load after accepting and the app must not crash after declining.
 7. **Ship:** `./tools/release_ios.sh` (uploads Sentry symbols), upload that same IPA with Transporter.
