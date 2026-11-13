@@ -124,8 +124,15 @@ The CLAUDE.md macOS checklist, step by step:
    On the iOS simulator (debug) Unity logs "Initializing SDK 4.21.0 with game id
    800436843 ... Initialized successfully"; startup, home, a game, game over and
    the menu all ran with no errors. `flutter analyze` clean, 949 tests pass.
-5. **Real-device Ad Inspector check:** not done yet, needs a physical iPhone.
-6. **Consent (UMP) check:** not done yet, same.
+5. **Real-device Ad Inspector check:** not done. No iPhone was connected, and the
+   owner chose to ship 7.6.0+74 without it. Do it on the next macOS session with a
+   device, and meanwhile watch AdMob → Reports → Mediation (iOS) for Unity and
+   Liftoff requests once 7.6.0 is live: zero requests after a few days points at
+   a mapping or adapter problem.
+6. **Consent (UMP) check:** not done, same reason.
+7. **Ship:** `./tools/release_ios.sh` built 7.6.0+74 (171 SKAdNetwork IDs and all
+   four adapter frameworks in the IPA, Apple Distribution signature valid) and
+   uploaded its Dart symbols and dSYMs to Sentry.
 
 ## Setting up a partner for an app (checklist)
 
