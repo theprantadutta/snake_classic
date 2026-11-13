@@ -102,6 +102,31 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   Liftoff's account manager to enable it.
 - App side: `gma_mediation_liftoffmonetize`.
 
+## iOS verification on macOS (2026-11-13, for 7.6.0+74)
+
+The CLAUDE.md macOS checklist, step by step:
+
+1. **Sync:** both repos pulled; Flutter 3.50.0 (Dart 3.14.0); `flutter clean` +
+   `flutter pub get` OK.
+2. **Dependencies:** there is no CocoaPods here. The iOS project uses Swift Package
+   Manager, and both adapters resolve through it on the first build:
+   `googleads-mobile-ios-mediation-unity` (with `unity-ads-swift-package`) and
+   `vungleadssdk-swiftpackagemanager`. The release app bundles
+   `UnityAdapter`, `UnityAds`, `LiftoffMonetizeAdapter` and `VungleAdsSDK`.
+   The two `Package.resolved` files are committed. Deployment target 15.0.
+3. **SKAdNetwork IDs:** all 76 of Unity's and all 50 of Google's were already in
+   `Info.plist`. Liftoff's list (its official XML,
+   `vungle-static-assets.s3.amazonaws.com/dashboard/admin/prod/skadnetworkids.xml`,
+   dated 2026-02-02, linked from the iOS integration page) had 15 more; added, now
+   171, no duplicates, `plutil -lint` OK. Liftoff's file also lists 2
+   AdAttributionKit IDs (`AdNetworkIdentifiers` key); not added, optional.
+4. **Build:** `flutter build ios --release` OK, no adapter or version errors.
+   On the iOS simulator (debug) Unity logs "Initializing SDK 4.21.0 with game id
+   800436843 ... Initialized successfully"; startup, home, a game, game over and
+   the menu all ran with no errors. `flutter analyze` clean, 949 tests pass.
+5. **Real-device Ad Inspector check:** not done yet, needs a physical iPhone.
+6. **Consent (UMP) check:** not done yet, same.
+
 ## Setting up a partner for an app (checklist)
 
 1. Partner dashboard: add the app (store URL), create one **bidding** placement per
@@ -117,7 +142,8 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
 5. Add the partner's lines to the developer website's `app-ads.txt`.
 6. App: add the official `gma_mediation_<partner>` package at the version matching
    the app's `google_mobile_ads`; iOS also needs the partner's SKAdNetwork IDs in
-   `Info.plist` and a `pod install` (macOS).
+   `Info.plist`. The iOS adapters come in through Swift Package Manager on the next
+   `flutter build ios` (no `pod install`); commit the updated `Package.resolved`.
 7. Verify with AdMob **Ad Inspector** on a registered test device, then watch AdMob
    → Reports → **Mediation** for a week (per-source requests, win rate, eCPM).
 
