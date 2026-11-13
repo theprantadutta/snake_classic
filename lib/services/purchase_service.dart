@@ -592,6 +592,8 @@ class PurchaseService {
       itemId: productId,
       itemType: _productTypeFor(productId),
       price: getProduct(productId)?.displayPrice ?? 'unknown',
+      value: getProduct(productId)?.price,
+      currency: getProduct(productId)?.currency,
     );
   }
 

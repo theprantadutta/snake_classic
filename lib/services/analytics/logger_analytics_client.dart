@@ -175,9 +175,11 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     required String itemId,
     required String itemType,
     required String price,
+    double? value,
+    String? currency,
   }) async {
     AppLogger.info(
-      '$_tag item_purchased: id=$itemId, type=$itemType, price=$price',
+      '$_tag item_purchased: id=$itemId, type=$itemType, price=$price, value=$value $currency',
     );
   }
 
@@ -384,6 +386,11 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       '$_tag ad_revenue: format=$format, valueMicros=$valueMicros, '
       'currency=$currencyCode, precision=$precision',
     );
+  }
+
+  @override
+  Future<void> trackGameOverAd({required String outcome}) async {
+    AppLogger.info('$_tag game_over_ad: outcome=$outcome');
   }
 
   @override

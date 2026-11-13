@@ -114,6 +114,9 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
 
   // Diagnostics for the ad stack, not design telemetry.
   @override
+  Future<void> trackGameOverAd({required String outcome}) async {}
+
+  @override
   Future<void> trackAdLoadStats({
     required String format,
     required int requests,
@@ -137,6 +140,8 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
     required String itemId,
     required String itemType,
     required String price,
+    double? value,
+    String? currency,
   }) async =>
       _tracker.purchaseCompleted();
 

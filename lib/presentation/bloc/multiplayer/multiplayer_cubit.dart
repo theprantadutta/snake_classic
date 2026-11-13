@@ -61,6 +61,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// to a different match and must not relabel this one.
   String? _settlingGameId;
 
+  // The match multiplayer_game_started was last logged for, so the stream of
+  // `playing` updates during a match counts it once.
+  String? _startTrackedGameId;
+
   // Stream subscriptions
   StreamSubscription? _gameSubscription;
   StreamSubscription? _actionsSubscription;
@@ -1011,9 +1015,6 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _hapticService.mediumImpact();
 
       final success = await _multiplayerService.startGame();
-      if (success) {
-        _analytics.trackMultiplayerGameStarted();
-      }
       if (!success) {
         emit(
           state.copyWith(
@@ -1108,6 +1109,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     } else if (game.status == MultiplayerGameStatus.playing) {
       newStatus = MultiplayerStatus.playing;
       shouldClearLoading = true;
+      // Counted here, once per match, for every player. It used to fire only
+      // from the host's startGame(), so matchmade games (which no client
+      // starts) never logged it: 71 users "started" against 407 who finished.
+      if (_startTrackedGameId != game.id) {
+        _startTrackedGameId = game.id;
+        _analytics.trackMultiplayerGameStarted();
+      }
       // Same reasoning as a fresh snapshot: the server says this match is
       // live, which settles any error from before it was.
       clearStaleError = MultiplayerRecovery.provesMatchLive(game.status);

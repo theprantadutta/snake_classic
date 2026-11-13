@@ -225,6 +225,8 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     required String itemId,
     required String itemType,
     required String price,
+    double? value,
+    String? currency,
   }) {
     return _analytics.logEvent(
       name: 'item_purchased',
@@ -232,6 +234,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         'item_id': itemId,
         'item_type': itemType,
         'price': price,
+        // Numeric twin of [price] so GA can sum it as the event value.
+        'value': ?value,
+        'currency': ?currency,
       },
     );
   }
@@ -518,6 +523,14 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         'currency': currencyCode,
         'precision': precision,
       },
+    );
+  }
+
+  @override
+  Future<void> trackGameOverAd({required String outcome}) {
+    return _analytics.logEvent(
+      name: 'game_over_ad',
+      parameters: {'outcome': outcome},
     );
   }
 

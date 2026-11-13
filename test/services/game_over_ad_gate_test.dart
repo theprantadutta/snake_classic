@@ -58,4 +58,36 @@ void main() {
       GameOverAdFormat.none,
     );
   });
+  test('every outcome names the rule that settled it', () {
+    String reason({
+      bool firstDone = true,
+      int gamesSince = 1,
+      int sinceInterstitial = 10 * 60 * 1000,
+      int sinceAnyFullScreen = 10 * 60 * 1000,
+      bool rewarded = true,
+      bool interstitial = true,
+    }) =>
+        GameOverAdGate.evaluate(
+          firstGameOverDone: firstDone,
+          gamesSinceLastAd: gamesSince,
+          msSinceInterstitial: sinceInterstitial,
+          msSinceAnyFullScreenAd: sinceAnyFullScreen,
+          rewardedLoaded: rewarded,
+          interstitialLoaded: interstitial,
+          everyNGames: 2,
+          minGapMs: 90 * 1000,
+          fullScreenGapMs: 2 * 60 * 1000,
+        ).reason;
+
+    expect(reason(firstDone: false), GameOverAdReason.firstGame);
+    expect(reason(gamesSince: 0), GameOverAdReason.cadence);
+    expect(reason(sinceInterstitial: 60 * 1000),
+        GameOverAdReason.interstitialGap);
+    expect(reason(sinceAnyFullScreen: 60 * 1000),
+        GameOverAdReason.fullScreenGap);
+    expect(reason(rewarded: false, interstitial: false),
+        GameOverAdReason.notLoaded);
+    expect(reason(), GameOverAdReason.rewarded);
+    expect(reason(rewarded: false), GameOverAdReason.interstitial);
+  });
 }

@@ -159,6 +159,13 @@ assets/
 - Every new ad load path must report `requested` / `filled` / `failed` to it, or the numbers stop adding up to AdMob's request count.
 - Aggregated on purpose: an event per failure would be ~200K events a month from banners alone.
 - Registered 2026-10-14 as GA4 custom definitions (property `snake-classic-2a376`, Admin → Data display → Custom definitions; Firebase's own page no longer hosts them). Dimensions: `app_ad_format` (param `format`, shared with `ad_revenue`), `ad_failure_codes` (`codes`), `ad_last_error` (`last_error`). Metrics: `ad_requests`, `ad_filled`, `ad_failed`, `ad_refresh_ok`, `ad_refresh_failed`. A new param needs its own definition before it shows in reports, and only from that day on.
+- **Why its fill rate is lower than AdMob's match rate** (Nov 2026: ~24% vs 56–59%). `requests` counts every load the app sends: the startup preload, each retry in the backoff (`_loadRetryDelays`, up to 5 per format until a re-arm), the reload after every show, and App Open's one request per session (held up to 4 h, shown rarely). AdMob's match rate also counts banner auto-refreshes, which here sit in `refresh_ok` / `refresh_failed` and not in `requests`. So compare `filled / requests` with itself across releases, not with AdMob. Averages over a window that spans a release mix builds: `failed` per event fell from ~5 to ~2 when 7.4.x shipped (Oct 27, startup stagger and shared banner backoff).
+
+### Game-over ad decisions (`game_over_ad`)
+One Firebase Analytics event per game over that reaches `AdService.maybeShowGameOverAd`, param `outcome`: what the slot did, or the rule that kept it empty. It exists because the slot fires on ~1 game over in 10 (Nov 2026: ~1,080 full-screen ads against ~10,900 game overs a week) against a cadence of every 2nd, and nothing said which rule was holding it back.
+- Values (`GameOverAdReason` in `lib/services/ads/game_over_ad_gate.dart`): `ads_off` (Pro / no consent / SDK not ready), `first_game`, `cadence`, `interstitial_gap`, `fullscreen_gap` (any full-screen ad in the last 2 min, e.g. a revive watch), `not_loaded`, `told_none` (the screen promised no ad on build), `cancelled`, `show_failed`, `shown_rewarded_interstitial`, `shown_interstitial`, `short_ad` (SHORT AD on the rewarded intro, plain interstitial played), `short_ad_unavailable`.
+- Per game over rather than aggregated: ~45K a month is modest, and one dimension is all a report needs.
+- Needs a GA4 custom dimension on param `outcome` before it shows in reports.
 
 ## In-App Purchase Setup (RTDN)
 

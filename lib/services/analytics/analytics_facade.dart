@@ -198,12 +198,16 @@ class AnalyticsFacade implements AnalyticsClient {
     required String itemId,
     required String itemType,
     required String price,
+    double? value,
+    String? currency,
   }) async =>
       _fire(
         (c) => c.trackItemPurchased(
           itemId: itemId,
           itemType: itemType,
           price: price,
+          value: value,
+          currency: currency,
         ),
       );
 
@@ -375,6 +379,10 @@ class AnalyticsFacade implements AnalyticsClient {
     String? placement,
   }) async =>
       _fire((c) => c.trackAdImpression(format: format, placement: placement));
+
+  @override
+  Future<void> trackGameOverAd({required String outcome}) async =>
+      _fire((c) => c.trackGameOverAd(outcome: outcome));
 
   @override
   Future<void> trackAdLoadStats({

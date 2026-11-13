@@ -78,6 +78,8 @@ abstract class AnalyticsClient {
     required String itemId,
     required String itemType,
     required String price,
+    double? value,
+    String? currency,
   });
 
   /// User tapped a buy button — Google Play sheet is about to open.
@@ -223,6 +225,10 @@ abstract class AnalyticsClient {
   /// (`3` no fill, `2` network, `1` invalid request, `0` internal);
   /// [refreshOk] / [refreshFailed] are banner auto-refreshes of an ad
   /// already on screen; [lastError] is the most recent failure message.
+  /// What the game-over ad slot did on one game over, or the rule that kept
+  /// it empty. [outcome] is one of GameOverAdReason (game_over_ad_gate.dart).
+  Future<void> trackGameOverAd({required String outcome});
+
   Future<void> trackAdLoadStats({
     required String format,
     required int requests,

@@ -795,10 +795,16 @@ class AdService {
   /// complain about.
   GameOverAdFormat peekGameOverAd() {
     if (!adsEnabled) return GameOverAdFormat.none;
+    return _evaluateGameOverAd()?.format ?? GameOverAdFormat.none;
+  }
+
+  /// [peekGameOverAd] with the rule that decided it, or null before the
+  /// preferences are loaded.
+  ({GameOverAdFormat format, String reason})? _evaluateGameOverAd() {
     final prefs = _prefs;
-    if (prefs == null) return GameOverAdFormat.none;
+    if (prefs == null) return null;
     final now = DateTime.now().millisecondsSinceEpoch;
-    return GameOverAdGate.decide(
+    return GameOverAdGate.evaluate(
       firstGameOverDone: prefs.getBool(_kFirstGameOverDone) ?? false,
       gamesSinceLastAd: prefs.getInt(_kGamesSinceInterstitial) ?? 0,
       msSinceInterstitial: now - (prefs.getInt(_kLastInterstitialMs) ?? 0),
@@ -849,30 +855,42 @@ class AdService {
     Future<bool> Function(GameOverAdFormat format)? confirm,
     VoidCallback? onAdShowing,
   }) async {
-    if (!adsEnabled) return false;
+    if (!adsEnabled) {
+      _logGameOverAd(GameOverAdReason.adsOff);
+      return false;
+    }
     final prefs = _prefs;
     if (prefs == null) return false;
 
     // Very first game-over ever → never interrupt; just mark it done.
     if (!(prefs.getBool(_kFirstGameOverDone) ?? false)) {
+      _logGameOverAd(GameOverAdReason.firstGame);
       await prefs.setBool(_kFirstGameOverDone, true);
       return false;
     }
 
     final games = (prefs.getInt(_kGamesSinceInterstitial) ?? 0) + 1;
-    var format = peekGameOverAd();
-    if (announced == GameOverAdFormat.none) {
+    final decision = _evaluateGameOverAd()!;
+    var format = decision.format;
+    var reason = decision.reason;
+    if (format != GameOverAdFormat.none &&
+        (announced == GameOverAdFormat.none ||
+            (announced == GameOverAdFormat.rewarded &&
+                format == GameOverAdFormat.interstitial))) {
       format = GameOverAdFormat.none;
-    } else if (announced == GameOverAdFormat.rewarded &&
-        format == GameOverAdFormat.interstitial) {
-      format = GameOverAdFormat.none;
+      reason = GameOverAdReason.toldNone;
     }
 
     if (format == GameOverAdFormat.none) {
+      _logGameOverAd(reason);
       await prefs.setInt(_kGamesSinceInterstitial, games);
       preloadGameOverAd();
       return false;
     }
+
+    // Set when the player picks SHORT AD on the rewarded intro, so the plain
+    // interstitial that follows is reported as that choice.
+    var shortAd = false;
 
     // Preferred path: rewarded interstitial. Resets the same counter and gap
     // as the plain one, so the slot fires at one cadence regardless of which
@@ -886,6 +904,7 @@ class AdService {
         // otherwise the very next game over would ask again.
         _analytics?.trackRewardedAbandoned('game_over_intro_skipped');
         if (_interstitial == null) {
+          _logGameOverAd(GameOverAdReason.shortAdNone);
           await prefs.setInt(_kGamesSinceInterstitial, 0);
           await prefs.setInt(
               _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
@@ -893,6 +912,7 @@ class AdService {
           return false;
         }
         format = GameOverAdFormat.interstitial;
+        shortAd = true;
       } else {
         final shown = await _showRewardedInterstitial(
           placement: 'game_over',
@@ -900,6 +920,7 @@ class AdService {
           onAdShowing: onAdShowing,
         );
         if (shown) {
+          _logGameOverAd(GameOverAdReason.rewarded);
           await prefs.setInt(_kGamesSinceInterstitial, 0);
           await prefs.setInt(
               _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
@@ -908,6 +929,7 @@ class AdService {
         // Failed to show. Fall through to the plain interstitial only if
         // the player was not promised coins.
         if (_interstitial == null || announced == GameOverAdFormat.rewarded) {
+          _logGameOverAd(GameOverAdReason.showFailed);
           await prefs.setInt(_kGamesSinceInterstitial, games);
           return false;
         }
@@ -921,11 +943,15 @@ class AdService {
     if (format == GameOverAdFormat.interstitial &&
         confirm != null &&
         !await confirm(format)) {
+      _logGameOverAd(GameOverAdReason.cancelled);
       await prefs.setInt(_kGamesSinceInterstitial, games);
       return false;
     }
     final ad = _interstitial;
     if (ad == null) {
+      _logGameOverAd(
+        shortAd ? GameOverAdReason.shortAdNone : GameOverAdReason.notLoaded,
+      );
       await prefs.setInt(_kGamesSinceInterstitial, games);
       preloadGameOverAd();
       return false;
@@ -954,8 +980,24 @@ class AdService {
     await prefs.setInt(_kGamesSinceInterstitial, 0);
     await prefs.setInt(
         _kLastInterstitialMs, DateTime.now().millisecondsSinceEpoch);
-    return shown.future;
+    final played = await shown.future;
+    _logGameOverAd(
+      !played
+          ? GameOverAdReason.showFailed
+          : shortAd
+              ? GameOverAdReason.shortAd
+              : GameOverAdReason.interstitial,
+    );
+    return played;
   }
+
+  /// One `game_over_ad` event per game over: what the slot did, or the rule
+  /// that kept it empty. Per game over rather than aggregated like
+  /// [loadStats]: ~45K game overs a month is a modest event volume, and one
+  /// dimension (`outcome`) is all a report needs. See CLAUDE.md, Ad Load
+  /// Diagnostics.
+  void _logGameOverAd(String outcome) =>
+      _analytics?.trackGameOverAd(outcome: outcome);
 
   // ==================== Rewarded ====================
 
