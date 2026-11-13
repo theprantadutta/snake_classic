@@ -43,8 +43,14 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   `BP_Banner_Android`, `BP_Interstitial_Android`, `BP_Rewarded_Android`, mapped in
   AdMob to `banner_ad`, `interstitial_ad`, `rewarded_ad` and added to the
   `banner_ad`, `interestitial`, `rewarded_ad` mediation groups (all green).
-- Not yet: the iOS app in Unity (Snake iOS earns ~$0.12/week; add it the same way
-  when iOS ships the adapters), and Unity's "Developer website" field in
+- Snake Classic iOS, done 2026-11-13: app "Snake Classic: Retro Arcade" (App Store
+  id 6779621362, not child-directed). **Game ID `800436843`**. Placements
+  `BP_Banner_iOS`, `BP_Interstitial_iOS`, `BP_Rewarded_iOS`, mapped to the iOS
+  `banner_ad`, `interstitial_ad`, `rewarded_ad` units. The account had no iOS
+  mediation groups at all, so three were created: `banner_ad_ios`,
+  `interstitial_ios`, `rewarded_ad_ios` (AdMob Network + Unity Ads bidding).
+  iOS only starts using them once an iOS build with the adapters ships.
+- Not yet: Unity's "Developer website" field in
   Monetization > Settings > Organization (still empty, so Unity's app-ads.txt check
   reports "badUrlForm" until it is set to the site serving the file).
 - `app-ads.txt`: the full Unity block (unity.com, 162886020, DIRECT plus 162
@@ -57,15 +63,29 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   interstitial).
 - App side: `gma_mediation_unity`. No Dart code; consent comes from UMP/TCF.
 
-### Liftoff Monetize (formerly Vungle): sign-up pending
+### Liftoff Monetize (formerly Vungle): LIVE for Snake Classic Android (2026-11-13)
 - `signin.liftoff.io` is **Liftoff Accelerate** (advertisers): "no active user for
   this email". The publisher dashboard is `publisher.vungle.com`, which refuses to
   load while the browser's ad blocker is on. With it off, it redirects to the
   **sign-up** page for prantadutta1997@gmail.com: no Monetize account exists. On
   2026-11-13 the sign-up form was filled in (Android, com.pranta.snakeclassic,
   company Pranta Dutta, pranta.dev, Bangladesh); the owner sets the password and
-  submits. After approval: add placements per format, map them in AdMob, add
-  Liftoff's app-ads.txt lines (publisher.vungle.com/vungleAdsTxt).
+  submitted it; the account was approved the same day.
+- Snake Classic Android: Liftoff **App ID `6af6ab95b828b7d5f62ccd4b`**, In-App
+  Bidding placements (reference IDs): banner `SNAKE_BANNER_BIDDING-2700000`,
+  interstitial `SNAKE_INTERSTITIAL_BIDDING-9402391`, rewarded
+  `SNAKE_REWARDED_BIDDING-7710171`, App Open `SNAKE_APPOPEN_BIDDING-4045837`.
+  (Liftoff also auto-created a `default` interstitial, `DEFAULT-2190977`,
+  bidding off; it is unused.) All four are mapped in AdMob and added to the
+  `banner_ad`, `interestitial`, `rewarded_ad`, `app_open_ad` groups.
+- Adding App Open put Snake's App Open unit into the `app_open_ad` group for the
+  first time: it had never been in it (the audit's "app_open_ad group shows 0"),
+  so App Open had been served by AdMob's default group.
+- Rewarded interstitial is not offered for self-serve; ask Liftoff
+  (monetize@liftoff.io) to enable it, then map `rewarded_interstitial_ad`.
+- app-ads.txt line: `vungle.com, 6af6a1a0efb36623c25ff32e, DIRECT, c107d686becd2d77`
+  (Liftoff validates it on pranta.dev before serving). In both app-ads.txt files.
+- Not yet: the Snake **iOS** app in Liftoff (same steps, App Store id 6779621362).
 - Formats via bidding: all, including App Open; rewarded interstitial needs
   Liftoff's account manager to enable it.
 - App side: `gma_mediation_liftoffmonetize`.
