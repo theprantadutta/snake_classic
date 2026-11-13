@@ -166,10 +166,25 @@ Added 2026-11-13 after the November audit found AdMob Network was the only bidde
 - **App side:** `gma_mediation_unity` and `gma_mediation_liftoffmonetize` in pubspec. **AppLovin is not integrated:** its publisher account showed "disabled, can't be reactivated" on 2026-11-13, most likely because it sat idle (0 mappings on every app). If AppLovin support reinstates it, add `gma_mediation_applovin` back (built against the same google_mobile_ads version) and map its units; it bids on interstitial, rewarded and App Open, not banner. No Dart code: the adapters register themselves, and GDPR consent reaches them through the UMP/TCF signal `AdService` already collects. Each adapter is built against one `google_mobile_ads` version (its CHANGELOG says which); bump them together or the build can break.
 - **Formats by network (bidding):** Unity: banner, interstitial, rewarded. Liftoff: all formats, but rewarded interstitial needs Liftoff's account manager to enable.
 - **Console side:** each network needs the app and one placement per format in its own dashboard, then AdMob → Mediation → Bidding sources → (network) → Ad unit mapping for every Snake Classic ad unit (Android and iOS), then the network added as a bidding source in each mediation group, and its lines in the website's `app-ads.txt`. Verify with AdMob Ad Inspector on a registered test device; watch AdMob → Reports → Mediation for a week.
-- **iOS / next macOS session (cannot be done on Windows):**
-  1. `cd ios && pod install --repo-update` so the Unity and Vungle (Liftoff) pods and their AdMob adapters get pulled in. The adapters raise the iOS deployment target minimum to 13.0; the Podfile platform must be at least that.
-  2. `Info.plist` already carries the merged SKAdNetwork IDs (156: AdMob's own plus AppLovin's and Unity's published lists, and Liftoff's). Refresh them before an iOS release from https://skadnetwork-ids.applovin.com/v1/skadnetworkids.json and https://skan.mz.unity3d.com/v3/partner/skadnetworks.plist.json; Liftoff's list is on its iOS integration page.
-  3. Build with `./tools/release_ios.sh`, then check Ad Inspector on a real iPhone shows each network.
+- **Current state:** see `docs/AD_MEDIATION_PARTNERS.md` (IDs, what is live, what is pending). Android ships the adapters from 7.6.0+74. The iOS side was prepared on Windows but has **never been built or run**.
+
+#### macOS session: verify iOS mediation before the next App Store build
+Nothing below could be checked on Windows. Do every step, in order, and record results in `docs/AD_MEDIATION_PARTNERS.md`. Stop and tell the owner if any step fails instead of shipping around it.
+1. **Sync:** `git pull` in both repos; `flutter --version` must match what Android built with (3.50.x); `flutter clean && flutter pub get`.
+2. **Pods:** `cd ios && pod install --repo-update`. The output must list `GoogleMobileAdsMediationUnity` and `GoogleMobileAdsMediationVungle` (plus `UnityAds` and `VungleAds`). If CocoaPods complains about the platform, set `platform :ios, '15.0'` (or the higher minimum the error names) in `ios/Podfile` and in Xcode's Runner target, then re-run. Commit the resulting `Podfile` / `Podfile.lock` changes.
+3. **SKAdNetwork IDs:** `Info.plist` holds 156 IDs (Google's + Unity's + Liftoff's + AppLovin's lists, merged 2026-11-13). Refresh before release and make sure each list is fully contained (re-download, diff, add missing ones):
+   - Unity: https://skan.mz.unity3d.com/v3/partner/skadnetworks.plist.json
+   - Liftoff: the SKAdNetwork section of Liftoff's iOS integration docs (support.vungle.com blocks scripted fetches; open it in a browser)
+   - Google: https://developers.google.com/admob/ios/3p-skadnetworks
+   Check the plist still parses: `plutil -lint ios/Runner/Info.plist`.
+4. **Build:** `flutter build ios --release` must succeed with no adapter/version errors. Each adapter is built against one google_mobile_ads version (its CHANGELOG); if the build fails on an adapter, bump the adapters and google_mobile_ads together, never one alone.
+5. **Device check (real iPhone, not the simulator):** run a release build on a device registered as an AdMob test device (AdMob → Settings → Test devices), open the AdMob **Ad Inspector** (shake gesture after registering, or a temporary `MobileAds.instance.openAdInspector` call in a debug-only spot; remove it afterwards). Confirm:
+   - Unity Ads and Liftoff Monetize both show as **adapter initialized** (green), not "not found".
+   - Per ad unit, the mediation group lists Unity Ads (bidding) and, once Liftoff is mapped, Liftoff Monetize (bidding).
+   - Single-source test: load banner/interstitial/rewarded with "Unity Ads" only; each must fill (enable test mode in the Unity dashboard first and turn it off afterwards).
+6. **Consent:** on a fresh install with an EU VPN or the UMP debug geography, accept and decline the consent form; ads must still load after accepting and the app must not crash after declining.
+7. **Ship:** `./tools/release_ios.sh` (uploads Sentry symbols), upload that same IPA with Transporter.
+8. **After a week:** AdMob → Reports → Mediation, filter iOS: Unity and Liftoff should show requests and some wins. Zero requests means a mapping or adapter problem; recheck step 5.
 
 ### Game-over ad decisions (`game_over_ad`)
 One Firebase Analytics event per game over that reaches `AdService.maybeShowGameOverAd`, param `outcome`: what the slot did, or the rule that kept it empty. It exists because the slot fires on ~1 game over in 10 (Nov 2026: ~1,080 full-screen ads against ~10,900 game overs a week) against a cadence of every 2nd, and nothing said which rule was holding it back.
