@@ -181,6 +181,7 @@ class AdService {
   AppOpenAd? _appOpenAd;
   bool _appOpenLoading = false;
   int _appOpenLoadedAtMs = 0;
+  int _appOpenLoadStartedMs = 0;
   int _lastAppOpenShownMs = 0;
   // When ANY full-screen ad was last dismissed — see [_fullScreenAdMinGap].
   int _lastFullScreenAdMs = 0;
@@ -309,15 +310,21 @@ class AdService {
   Timer? _preloadTimer;
 
   /// Request every format, one at a time, most visible first: the banner is
-  /// on screen at once, rewarded backs the buttons, the game-over slot isn't
-  /// needed until a run ends, and App Open not until the app is reopened.
+  /// on screen at once, rewarded backs the buttons, and the game-over slot
+  /// isn't needed until a run ends.
+  ///
+  /// App Open is deliberately not here. It can only show on a return after
+  /// 30+ minutes away, so a request at startup almost always expired unshown:
+  /// November 2026, ~17K App Open loads in 28 days for ~44 impressions a
+  /// week. It is requested when the app comes back to the foreground instead
+  /// ([preloadAppOpen], from the lifecycle observer), so it is held for the
+  /// next return after a real break.
   void _preloadAll() {
     _preloadTimer?.cancel();
     final steps = <void Function()>[
       _loadWarmBanner,
       _loadRewarded,
       preloadGameOverAd,
-      _loadAppOpen,
     ];
     var i = 0;
     void next() {
@@ -1275,9 +1282,17 @@ class AdService {
       _appOpenAd = null;
       stale.dispose();
     }
+    // A load that never reported back must not block App Open for the rest
+    // of the process: after a minute, treat it as lost and ask again.
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (_appOpenLoading &&
+        nowMs - _appOpenLoadStartedMs > const Duration(minutes: 1).inMilliseconds) {
+      _appOpenLoading = false;
+    }
     if (!adsEnabled || _appOpenAd != null || _appOpenLoading) return;
     if (!_hasInternet) return;
     _appOpenLoading = true;
+    _appOpenLoadStartedMs = nowMs;
     loadStats.requested('app_open');
     AppOpenAd.load(
       adUnitId: AdConfig.appOpenUnitId,
@@ -1309,8 +1324,9 @@ class AdService {
     );
   }
 
-  /// Eagerly (re)load an App Open ad — call when the app goes to background so
-  /// one is ready for the next foreground.
+  /// Load an App Open ad to hold for the next qualifying return. Called by the
+  /// lifecycle observer on `resumed`, after the show check. Never on pause: a
+  /// load sent from the background never reported back on a test device.
   void preloadAppOpen() => _loadAppOpen();
 
   /// Show an App Open ad on a genuine return to the foreground, if every guard
@@ -1335,10 +1351,9 @@ class AdService {
     // pops an ad. Keep the loaded ad for the next real return.
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _backgroundedAtMs < _appOpenMinAway.inMilliseconds) return;
-    if (!_appOpenAvailable) {
-      _loadAppOpen();
-      return;
-    }
+    // Nothing loaded: the lifecycle observer requests one right after this
+    // returns ([preloadAppOpen]); it can only show on a later return.
+    if (!_appOpenAvailable) return;
     if (now - _lastAppOpenShownMs < _appOpenMinGap.inMilliseconds) return;
     // Respect the global full-screen spacing too — e.g. the user watched a
     // rewarded ad, briefly left, and came right back.
@@ -1353,13 +1368,13 @@ class AdService {
         _lastAppOpenShownMs = nowMs;
         _lastFullScreenAdMs = nowMs;
         ad.dispose();
-        _loadAppOpen();
+        // No reload here: the next one can't show for 30 minutes, and the
+        // next return to the foreground requests it.
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _fullScreenAdShowing = false;
         ad.dispose();
         AppLogger.warning('App Open failed to show: ${error.message}');
-        _loadAppOpen();
       },
     );
     _fullScreenAdShowing = true;
@@ -1619,6 +1634,7 @@ class AdService {
   static const String placementFreePowerUp = 'free_powerup';
   static const String placementBattlePassXp = 'bp_xp';
   static const String placementTournamentEntry = 'tournament_entry';
+  static const String placementWeeklyQuest2x = 'weekly_quest_2x';
 
   /// Coins granted per "watch for coins" ad.
   static const int freeCoinsPerAd = 25;

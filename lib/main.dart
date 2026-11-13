@@ -649,7 +649,14 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // Show an App Open ad on a genuine return to the foreground. Self-gated:
       // skips cold start, active gameplay, purchase/consent returns, Pro, and
       // when another full-screen ad is up.
-      unawaited(getIt<AdService>().maybeShowAppOpenOnResume());
+      unawaited(getIt<AdService>().maybeShowAppOpenOnResume().then((_) {
+        // Then warm one for the NEXT return. Requested here, in the
+        // foreground, not on pause: a load sent while the app was in the
+        // background never reported back on a Galaxy A24 (Nov 2026), which
+        // left App Open stuck "loading". Cold starts make no request at all,
+        // which is where nearly every App Open load used to expire unshown.
+        getIt<AdService>().preloadAppOpen();
+      }));
       // The player came back on their own, so the pending Day-1 comeback nudge
       // has nothing left to do — firing it later would just be nagging someone
       // who already returned. Re-armed on the next game over.
@@ -661,8 +668,6 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
         state == AppLifecycleState.inactive) {
       unawaited(getIt<SyncEngine>().syncNow());
       DataSyncService().forceSyncNow();
-      // Warm up an App Open ad for the next resume. Safe on either state.
-      getIt<AdService>().preloadAppOpen();
     }
 
     // Mark the background trip on `paused` ONLY -- never on `inactive`.

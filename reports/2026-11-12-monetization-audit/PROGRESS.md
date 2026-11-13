@@ -45,3 +45,24 @@ Console numbers were checked against the report's own screenshots (`admob-02`, `
 
 - Task 1 mediation (console checklist + adapter SDKs), Task 2.2 App Open, Task 4 rewarded placements,
   Task 9 push diet, Tasks 0.2 / 5 / 6 / 10.1 / 12 / 13 data and console items.
+
+## 2026-11-13 (later): owner decisions acted on
+
+- **Task 1 mediation (approved):** `gma_mediation_unity` and `gma_mediation_liftoffmonetize` added
+  (google_mobile_ads 9.1.0 -> 9.2.0); iOS `Info.plist` SKAdNetwork IDs merged to 156 from the
+  networks' published lists. AppLovin left out: its publisher account is disabled (ticket
+  #136960 filed). Unity: project "Snake Classic" created, app + placements in progress. Liftoff:
+  account status unknown. Full state: `docs/AD_MEDIATION_PARTNERS.md`.
+- **Task 2.2 App Open (approved "request only when showable"):** no request at cold start or on
+  network re-arm; one request when the app returns to the foreground, held for the next return
+  after 30+ min away. A request sent from the background never reported back on the A24, so it
+  is made in the foreground, and a load silent for a minute no longer blocks later ones.
+  Verified on the A24: cold start sent no App Open request; after a return, `app_open req=1 filled=1`.
+- **Task 4 rewarded (approved):** double run coins, daily bonus 2x and the store free item
+  already existed (the audit missed them, along with challenge 2x, free coins, Season XP and
+  tournament entry). Added a **weekly quest 2x** on the claim toast (`weekly_quest_2x`).
+- **Task 9 push (approved "just cap it"):** backend `b16f18d`: at most 3 scheduled pushes per
+  player per rolling 7 days (`user_push_sends`, migration applied to production). Topic
+  broadcasts (weekly leaderboard, tournament started) can't be capped per player.
+- Verified on the A24 release build: `game_over_ad` fires (`outcome=cadence`), 2x coins rewarded
+  completes (`placement=double_coins`), no Flutter errors.

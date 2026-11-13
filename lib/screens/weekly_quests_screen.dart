@@ -1,12 +1,19 @@
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/server_text_l10n.dart';
+import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/weekly_quest.dart';
+import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
+import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
+import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
+import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb_screens/daily/lb_daily_parts.dart';
@@ -55,12 +62,55 @@ class _WeeklyQuestsScreenState extends State<WeeklyQuestsScreen> {
     // transactions, the same defect the daily-challenge screens had.
     HapticService().mediumImpact();
     _audioService.playSound('coin_collect');
-    ScaffoldMessenger.of(context).showSnackBar(
+
+    // The claim toast offers a rewarded "2×" on the quest's coins, like the
+    // daily-challenge claim. Not gated on a loaded ad: showRewardedOrWait
+    // loads on demand and says so when nothing comes back.
+    final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
+    final canDouble = ads != null && ads.adsEnabled && quest.coinReward > 0;
+    final messenger = ScaffoldMessenger.of(context);
+    final coins = context.read<CoinsCubit>();
+    final theme = context.read<ThemeCubit>().state.currentTheme;
+
+    Future<void> doubleIt() async {
+      final outcome = await ads!.showRewardedOrWait(
+        placement: AdService.placementWeeklyQuest2x,
+        onReward: () {
+          // An ad-funded bonus on top of the claim, so it is credited as
+          // watchedAd (as the game-over 2× is), not as a second claim.
+          coins.earnCoins(
+            CoinEarningSource.watchedAd,
+            customAmount: quest.coinReward,
+            itemName: 'Weekly quest 2x',
+            metadata: {'doubled': true, 'quest_id': quest.id},
+          );
+          showRewardToast(
+            messenger,
+            l10n.dchDoubledBonus(quest.coinReward),
+            icon: Icons.monetization_on,
+          );
+        },
+      );
+      if (outcome == RewardedOutcome.unavailable) {
+        messenger.showSnackBar(
+          arcadeSnackBarFor(
+            theme,
+            message: l10n.goNoAdAvailable,
+            icon: Icons.hourglass_empty,
+          ),
+        );
+      }
+    }
+
+    messenger.showSnackBar(
       arcadeSnackBar(
         context,
         message: l10n.wqClaimToast(quest.coinReward, quest.battlePassXpReward),
         tone: ArcadeSnackTone.success,
         icon: Icons.monetization_on,
+        duration: Duration(seconds: canDouble ? 6 : 4),
+        actionLabel: canDouble ? l10n.dchWatchTo2x : null,
+        onAction: canDouble ? doubleIt : null,
       ),
     );
   }

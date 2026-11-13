@@ -94,7 +94,17 @@ dependencies:
   flutter_inapp_purchase: ^10.6.1
 
   # Ads (AdMob). Bundles the UMP consent SDK. Pro/trial users never see ads.
-  google_mobile_ads: ^9.0.0
+  google_mobile_ads: ^9.2.0
+  # Mediation adapters: Unity Ads and Liftoff Monetize bid in the AdMob
+  # auction (Nov 2026 audit: AdMob Network was the only bidder). AppLovin is
+  # left out: its publisher account is disabled (see CLAUDE.md). No
+  # Dart code: the adapters register themselves and read the UMP/TCF
+  # consent signal. Each must match the google_mobile_ads version it was
+  # built against (see its CHANGELOG) or the build can break, so bump them
+  # together. iOS also needs each network's SKAdNetwork IDs in Info.plist,
+  # and a `pod install` on macOS — see CLAUDE.md, "Ad mediation".
+  gma_mediation_unity: ^1.12.0
+  gma_mediation_liftoffmonetize: ^1.5.7
   # iOS App Tracking Transparency prompt (required alongside UMP on iOS 14+).
   app_tracking_transparency: ^2.0.7
 
