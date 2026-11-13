@@ -35,23 +35,37 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   units, and add AppLovin to `app-ads.txt`. AppLovin bids on interstitial, rewarded
   and App Open, **not banner**.
 
-### Unity Ads: in progress
+### Unity Ads: LIVE for Snake Classic Android (2026-11-13)
 - Account: Unity org `prantadutta1997` (cloud.unity.com, org id 18968547514182).
-- Snake Classic: Unity project "Snake Classic" created 2026-11-13. Next: add the
-  Android app (Play URL `.../details?id=com.pranta.snakeclassic`; check the store
-  lookup shows "Snake Classic: Retro Arcade", it once resolved to the wrong app
-  `com.pra`), create **bidding** placements for banner, interstitial and rewarded,
-  then map them in AdMob. Waterfall is retired at Unity (Jan 2026), so bidding only.
+- Snake Classic Android, done 2026-11-13: Unity project "Snake Classic", app
+  "Snake Classic: Retro Arcade" (Google Play, not child-directed, matching Play
+  Console's 13+ target age). **Game ID `800436806`**. Bidding placements
+  `BP_Banner_Android`, `BP_Interstitial_Android`, `BP_Rewarded_Android`, mapped in
+  AdMob to `banner_ad`, `interstitial_ad`, `rewarded_ad` and added to the
+  `banner_ad`, `interestitial`, `rewarded_ad` mediation groups (all green).
+- Not yet: the iOS app in Unity (Snake iOS earns ~$0.12/week; add it the same way
+  when iOS ships the adapters), and Unity's "Developer website" field in
+  Monetization > Settings > Organization (still empty, so Unity's app-ads.txt check
+  reports "badUrlForm" until it is set to the site serving the file).
+- `app-ads.txt`: the full Unity block (unity.com, 162886020, DIRECT plus 162
+  resellers, exactly as the dashboard lists them) is in Snake's backend
+  `wwwroot/app-ads.txt` (snakeclassic.pranta.dev) and the portfolio
+  `static/app-ads.txt` (pranta.dev). Live once both are redeployed.
+- Waterfall is retired at Unity (Jan 2026), so bidding only.
 - Declined Unity's "Developer Data" sharing on purpose; mediation doesn't need it.
 - Formats via bidding: banner, interstitial, rewarded (no App Open, no rewarded
   interstitial).
 - App side: `gma_mediation_unity`. No Dart code; consent comes from UMP/TCF.
 
-### Liftoff Monetize (formerly Vungle): unknown
+### Liftoff Monetize (formerly Vungle): sign-up pending
 - `signin.liftoff.io` is **Liftoff Accelerate** (advertisers): "no active user for
   this email". The publisher dashboard is `publisher.vungle.com`, which refuses to
-  load while the browser's ad blocker is on. Whether a Monetize account exists is
-  still unknown.
+  load while the browser's ad blocker is on. With it off, it redirects to the
+  **sign-up** page for prantadutta1997@gmail.com: no Monetize account exists. On
+  2026-11-13 the sign-up form was filled in (Android, com.pranta.snakeclassic,
+  company Pranta Dutta, pranta.dev, Bangladesh); the owner sets the password and
+  submits. After approval: add placements per format, map them in AdMob, add
+  Liftoff's app-ads.txt lines (publisher.vungle.com/vungleAdsTxt).
 - Formats via bidding: all, including App Open; rewarded interstitial needs
   Liftoff's account manager to enable it.
 - App side: `gma_mediation_liftoffmonetize`.
