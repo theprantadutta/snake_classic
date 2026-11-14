@@ -137,8 +137,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // line than every other theme, plus a redundant full-board path per
     // frame.
 
-    // Draw wall warning if snake is near edges (visual safety indicator)
-    if (gameState.status == GameStatus.playing) {
+    // Draw wall warning if snake is near edges (visual safety indicator).
+    // Only in modes with walls: in Zen the snake wraps around, so a red
+    // "danger" glow at the edge warned about a crash that cannot happen
+    // (a player asked in a Play review why Zen's walls glow).
+    if (gameState.status == GameStatus.playing && gameState.gameMode.hasWalls) {
       _drawWallWarning(canvas, size, cellWidth, cellHeight);
     }
 

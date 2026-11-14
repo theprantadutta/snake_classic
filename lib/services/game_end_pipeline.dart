@@ -399,9 +399,9 @@ class GameEndPipeline {
       // 4. STEP B — Network-bearing syncs. The caller fire-and-forgets
       // runPostGame, so even if these block on slow API calls the
       // user-visible game-over flow doesn't wait on them.
-      await Future.wait([
-        _achievementService.syncUnlockedAchievements(),
-        _dailyChallengeService.updateProgressBatch([
+      // Daily progress first: the weekly batch below needs to know how many
+      // daily challenges this game completed.
+      final dailiesCompleted = await _dailyChallengeService.updateProgressBatch([
           if (summary.score > 0)
             (
               type: ChallengeType.score,
@@ -426,7 +426,10 @@ class GameEndPipeline {
             value: 1,
             gameMode: summary.gameMode,
           ),
-        ]),
+        ]);
+
+      await Future.wait([
+        _achievementService.syncUnlockedAchievements(),
         // Mirror the daily-challenge progress events to the weekly-quest
         // tracker — the backend filters by Type so events without a matching
         // active quest are no-ops.
@@ -458,6 +461,14 @@ class GameEndPipeline {
             (
               type: WeeklyQuestType.tournamentParticipation,
               incrementBy: 1,
+              gameMode: null,
+            ),
+          // "Complete N daily challenges this week". Without this the
+          // Daily Doer / Daily Adept quests never moved for anyone.
+          if (dailiesCompleted > 0)
+            (
+              type: WeeklyQuestType.dailyChallengesCompleted,
+              incrementBy: dailiesCompleted,
               gameMode: null,
             ),
         ]),

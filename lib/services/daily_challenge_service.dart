@@ -336,10 +336,21 @@ class DailyChallengeService extends ChangeNotifier {
   }
 
   /// Batched per-game progress update.
-  Future<void> updateProgressBatch(
+  ///
+  /// Returns how many challenges this batch moved from incomplete to
+  /// complete. The game-end pipeline forwards that count to the weekly
+  /// "complete N daily challenges" quests, which nothing else feeds:
+  /// before 7.6.1 they could never progress. Completion is absorbing
+  /// ([_updateLocalProgress] skips completed challenges), so a challenge is
+  /// counted exactly once, on the game that finishes it.
+  Future<int> updateProgressBatch(
     List<({ChallengeType type, int value, String? gameMode})> updates,
   ) async {
-    if (updates.isEmpty) return;
+    if (updates.isEmpty) return 0;
+    final wasCompleted = {
+      for (final c in _challenges)
+        if (c.isCompleted) c.id,
+    };
     final changed = <String, DailyChallenge>{};
     for (final update in updates) {
       if (update.value <= 0) continue;
@@ -350,6 +361,9 @@ class DailyChallengeService extends ChangeNotifier {
     }
     notifyListeners();
     await _persistProgress(changed.values);
+    return changed.values
+        .where((c) => c.isCompleted && !wasCompleted.contains(c.id))
+        .length;
   }
 
   /// Applies the delta to matching in-memory challenges and returns the
