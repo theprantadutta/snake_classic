@@ -50,9 +50,9 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   mediation groups at all, so three were created: `banner_ad_ios`,
   `interstitial_ios`, `rewarded_ad_ios` (AdMob Network + Unity Ads bidding).
   iOS only starts using them once an iOS build with the adapters ships.
-- Not yet: Unity's "Developer website" field in
-  Monetization > Settings > Organization (still empty, so Unity's app-ads.txt check
-  reports "badUrlForm" until it is set to the site serving the file).
+- Unity's "Developer website" (Monetization > Settings > Organization) is
+  `https://pranta.dev`; on 2026-11-14 Unity reported the app-ads.txt at
+  https://pranta.dev/app-ads.txt as up to date.
 - `app-ads.txt`: the full Unity block (unity.com, 162886020, DIRECT plus 162
   resellers, exactly as the dashboard lists them) is in Snake's backend
   `wwwroot/app-ads.txt` (snakeclassic.pranta.dev) and the portfolio
