@@ -66,3 +66,16 @@ Console numbers were checked against the report's own screenshots (`admob-02`, `
   broadcasts (weekly leaderboard, tournament started) can't be capped per player.
 - Verified on the A24 release build: `game_over_ad` fires (`outcome=cadence`), 2x coins rewarded
   completes (`placement=double_coins`), no Flutter errors.
+
+## 2026-11-14: 7.6.0 live on both stores, first checks
+
+- Dashboard App Releases: latest version 7.6.0 on Android and iOS (minimum left at 7.3.0).
+- Sentry, release 7.6.0+74: one new issue (SNAKE-CLASSIC-FLUTTER-1P, ConcurrentModificationError
+  inside Flutter's LicenseRegistry, 1 user, app in background); the two native `abort` issues and
+  the SIGSEGV predate 7.6.0. Play vitals had no 7.6.0 data yet; the last 7 days show four
+  one-user issues, all on 7.4.4.
+- AdMob mediation, 2026-11-13 (first day): Android Unity 908 requests / 25 impressions /
+  $6.41 eCPM, Liftoff 992 / 44 / $0.19; iOS Unity 26 and Liftoff 27 requests, no fills yet.
+  The iOS adapters are reaching both networks, which covers the real-device check that was skipped.
+- GA4: custom dimension `game_over_ad_outcome` (param `outcome`) registered.
+- Still to do: the one-week comparison against the baseline (around 2026-11-20).

@@ -191,7 +191,7 @@ Nothing below could be checked on Windows. Do every step, in order, and record r
 One Firebase Analytics event per game over that reaches `AdService.maybeShowGameOverAd`, param `outcome`: what the slot did, or the rule that kept it empty. It exists because the slot fires on ~1 game over in 10 (Nov 2026: ~1,080 full-screen ads against ~10,900 game overs a week) against a cadence of every 2nd, and nothing said which rule was holding it back.
 - Values (`GameOverAdReason` in `lib/services/ads/game_over_ad_gate.dart`): `ads_off` (Pro / no consent / SDK not ready), `first_game`, `cadence`, `interstitial_gap`, `fullscreen_gap` (any full-screen ad in the last 2 min, e.g. a revive watch), `not_loaded`, `told_none` (the screen promised no ad on build), `cancelled`, `show_failed`, `shown_rewarded_interstitial`, `shown_interstitial`, `short_ad` (SHORT AD on the rewarded intro, plain interstitial played), `short_ad_unavailable`.
 - Per game over rather than aggregated: ~45K a month is modest, and one dimension is all a report needs.
-- Needs a GA4 custom dimension on param `outcome` before it shows in reports.
+- GA4 custom dimension `game_over_ad_outcome` (event scope, param `outcome`) registered 2026-11-14 on property snake-classic-2a376; it only collects from that date on.
 
 ## In-App Purchase Setup (RTDN)
 
