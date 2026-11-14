@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:snake_classic/debug/demo_autopilot.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/data/database/app_database.dart' show ReplaysCompanion;
@@ -834,6 +835,14 @@ class GameCubit extends Cubit<GameCubitState> {
 
     _gameTimer = Timer(Duration(milliseconds: speed), () {
       try {
+        // DEMO ONLY (demo/autopilot branch): steer before each tick.
+        final gs = state.gameState;
+        if (kDemoAutopilot && gs != null && gs.snake.bufferedTurns == 0) {
+          final d = demoAutopilotDirection(gs);
+          if (d != null && d != gs.snake.currentDirection) {
+            gs.snake.changeDirection(d);
+          }
+        }
         _updateGame();
       } catch (e, stackTrace) {
         debugPrint('🎮 [GameCubit] ERROR in game update loop: $e');
@@ -1568,7 +1577,7 @@ class GameCubit extends Cubit<GameCubitState> {
     // Local (offline-capable) achievement evaluation + per-unlock BP XP.
     // Server-only unlocks earn their XP after the post-game sync completes
     // (handled inside the pipeline's runPostGame).
-    _endPipeline.evaluateLocalUnlocks(_lastRunSummary!);
+    if (!kDemoAutopilot) _endPipeline.evaluateLocalUnlocks(_lastRunSummary!);
   }
 
   /// Finish and save the run's replay (local only). Part of the deferred
@@ -1949,6 +1958,8 @@ class GameCubit extends Cubit<GameCubitState> {
     required Set<String> milestones,
     required int runId,
   }) async {
+    // DEMO ONLY: autopilot runs never reach leaderboards, stats or rewards.
+    if (kDemoAutopilot) return;
     try {
       if (isNewHighScore) {
         await _storageService.saveHighScore(highScore);
