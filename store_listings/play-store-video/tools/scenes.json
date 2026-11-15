@@ -1,0 +1,16 @@
+{"segments": [
+  {"src": "rec1.mp4", "a": 0.6,   "b": 4.0,   "chip": "TAP TO PLAY",  "color": "lime",   "title": "Classic snake,", "sub": "reborn with a retro pixel look."},
+  {"src": "rec1.mp4", "a": 12.0,  "b": 17.5,  "chip": "CLASSIC",      "color": "lime",   "title": "Eat. Grow. Repeat.", "sub": "Swipe, D-pad, turn buttons or joystick: play your way."},
+  {"src": "rec1.mp4", "a": 27.0,  "b": 32.0,  "chip": "POWER-UPS",    "color": "gold",   "title": "Grab a power-up", "sub": "Invincibility, slow-mo, ghost mode, double score."},
+  {"src": "rec1.mp4", "a": 136.0, "b": 141.5, "chip": "COMBOS",       "color": "gold",   "title": "Chain your combos", "sub": "Eat fast to stay on fire and multiply your score."},
+  {"src": "rec3.mp4", "a": 0.6,   "b": 4.6,   "chip": "8 MODES",      "color": "lime",   "title": "Every mode is free", "sub": "8 modes, 9 board sizes, 3 difficulties. 0 paywalls."},
+  {"src": "rec2.mp4", "a": 28.0,  "b": 33.5,  "chip": "ZEN MODE",     "color": "purple", "title": "No walls. Just vibes.", "sub": "Slide off one edge and wrap around to the other."},
+  {"src": "rec2.mp4", "a": 62.0,  "b": 67.0,  "chip": "SPEED",        "color": "red",    "title": "Fast. Then faster.", "sub": "Speed Challenge ramps up with every bite."},
+  {"src": "rec3.mp4", "a": 20.0,  "b": 25.0,  "chip": "MULTI-FOOD",   "color": "lime",   "title": "The buffet is open", "sub": "Several apples on the board at once."},
+  {"src": "rec3.mp4", "a": 84.0,  "b": 90.0,  "chip": "MADNESS",      "color": "gold",   "title": "Power-ups. So many.", "sub": "Power-Up Madness throws everything at you."},
+  {"src": "rec4.mp4", "a": 54.6,  "b": 59.6,  "chip": "VERSUS",       "color": "red",    "title": "Play someone else", "sub": "Online 1v1 matches, private rooms and live tournaments."},
+  {"src": "rec4.mp4", "a": 2.8,   "b": 7.8,   "chip": "DAILY",        "color": "lime",   "title": "Fresh goals daily", "sub": "Daily challenges and weekly quests with coin rewards."},
+  {"src": "rec4.mp4", "a": 14.6,  "b": 19.0,  "chip": "SEASON",       "color": "gold",   "title": "Earn XP every run", "sub": "Climb the season pass tier by tier."},
+  {"src": "rec4.mp4", "a": 26.4,  "b": 30.4,  "chip": "RANKS",        "color": "gold",   "title": "Top the leaderboard", "sub": "Global, weekly and friends rankings."},
+  {"src": "rec1.mp4", "a": 158.5, "b": 164.5, "chip": "NEW BEST",     "color": "gold",   "title": "One more go?", "sub": "Every run charted, food by food."}
+]}
