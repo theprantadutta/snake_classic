@@ -9,7 +9,7 @@ Last updated: 2026-11-16. Snake Classic is the first app being wired up.
 
 **Any agent picking this up:** read the quick status below, then the section for
 the partner you are touching. Before changing anything, check Gmail
-(`from:(applovin OR axon OR unity OR liftoff OR vungle OR indexexchange OR magnite) newer_than:14d`)
+(`from:(applovin OR axon OR unity OR liftoff OR vungle OR indexexchange OR magnite OR openx OR pubmatic OR verve OR smaato OR inmobi OR media.net OR equativ OR smartadserver) newer_than:14d`)
 and ask the owner for news; partners answer by email. The owner's Chrome runs an
 ad blocker that breaks these dashboards and sign-up forms: ask them to turn it
 off for the site rather than working around it. Partner agreements, terms
@@ -33,8 +33,40 @@ never by an agent.
 | InMobi Exchange | Open Bidding (no SDK) | **Accepted 2026-11-16**, listed in AdMob | none |
 | Media.net | Open Bidding (no SDK) | **Submitted 2026-11-16**, listed in AdMob; Media.net reviews within ~48 business hours | none |
 | Equativ | Open Bidding (no SDK) | **Submitted 2026-11-16**; not yet listed in AdMob (see note) | none |
-| Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
+| TripleLift | Open Bidding | Not offered in this AdMob account's list | — |
+| Other Open Bidding exchanges | Open Bidding (no SDK) | **Owner decided to stop here (2026-11-16)**; small extras listed below if ever wanted | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
+
+**SDK work:** none for the Open Bidding exchanges: they bid through Google's
+servers and need no adapter, app release or InMobi/Media.net SDK (ignore those
+dashboards' "integrate the SDK" steps). The only app-side work still planned is the
+Meta / Mintegral / Pangle adapters (see "SDK networks"), after the 2026-11-20
+revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
+
+**What's left for the Open Bidding exchanges:**
+1. Wait for approvals (email). AdMob then shows "Active partnership".
+2. Acknowledge the bidding agreement in AdMob if it asks (owner).
+3. Add the exchange as a bidding source to every mediation group; until then it
+   does not bid.
+4. Add the app-ads.txt lines each one sends (consolidated list below) to
+   pranta.dev and snakeclassic.pranta.dev, **and to every other app's own site**
+   (cosmo-strike, Gridwell, odyssey, Pourfect, screw-out, Sunstone, the-accountant,
+   ai-persona backends' `wwwroot/app-ads.txt`): those repos belong to their own
+   sessions, so tell those sessions or the owner.
+5. Equativ: check around 2026-11-20 whether AdMob lists it (see its section).
+
+### app-ads.txt lines added for mediation partners (copy to every app's site)
+```
+# Unity Ads: the full unity.com block (162886020 DIRECT + resellers), see pranta.dev/app-ads.txt
+vungle.com, 6af6a1a0efb36623c25ff32e, DIRECT, c107d686becd2d77
+rubiconproject.com, 22884, DIRECT, 0bfd66d529a55807
+inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d
+smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3
+smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3
+```
+Pending (they send lines on approval): Index Exchange, OpenX, PubMatic, Verve,
+Smaato, Media.net. Live on pranta.dev and snakeclassic.pranta.dev once those sites
+redeploy (portfolio `static/app-ads.txt`, backend `wwwroot/app-ads.txt`).
 
 ## Why this exists
 
