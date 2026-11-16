@@ -25,7 +25,8 @@ never by an agent.
 | Liftoff Monetize | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_liftoffmonetize` |
 | AppLovin | SDK bidding | **Closed**: account disabled, reactivation refused 2026-11-16 | don't add |
 | Index Exchange | Open Bidding (no SDK) | **Applied 2026-11-16**, awaiting IX review | none |
-| Magnite DV+ | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
+| Magnite DV+ | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16**, pending Magnite review (1–2 weeks) | none |
+| OpenX | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
@@ -223,8 +224,26 @@ them to each exchange once they are live in their stores.
 
 ### Status per exchange
 - **Index Exchange** (signup.indexexchange.com): applied 2026-11-16 with all 14
-  apps. Waiting on IX; then acknowledge in AdMob. IX says activation can take ~48 h.
-- **Magnite DV+** (cta.magnite.com): form filled 2026-11-16 with all 14 apps
+  apps. The IX page showed success, but no email came, and IX is still in AdMob's
+  "Set up ad source" list (Magnite left it once its agreement registered). The
+  form was submitted from a plain signup.indexexchange.com tab, not the one AdMob's
+  "View & sign" opened, so the link may not have registered. If IX stays listed
+  for a few days, redo it through AdMob's View & sign. IX says activation can
+  take ~48 h.
+- **OpenX** (contracts.openx.com): form filled 2026-11-16 (company, website, email;
+  account type and publisher ID come prefilled from AdMob). Bundles go in as a
+  one-column CSV with no header, one bundle per row (the 14 store IDs above). The
+  owner ticks the terms box and submits.
+- **Magnite DV+** (cta.magnite.com): **submitted and acknowledged in AdMob
+  2026-11-16**; AdMob shows "Pending partnership". Magnite's email says review
+  takes ~1–2 weeks; support obsupport@magnite.com (quote the publisher ID).
+  app-ads.txt line `rubiconproject.com, 22884, DIRECT, 0bfd66d529a55807` is on
+  pranta.dev (portfolio b477c89) and snakeclassic.pranta.dev (backend de1f576);
+  **each other app's own site still needs it** (cosmo-strike, Gridwell, odyssey,
+  Pourfect, screw-out, Sunstone, the-accountant backends' `wwwroot/app-ads.txt`).
+  The Unity block already has `rubiconproject.com` RESELLER lines; Magnite's own
+  DIRECT line is separate, so add it even if rubiconproject is present.
+  Form filled with all 14 apps
   (category Arts & Entertainment; Odyssey = Travel; The Accountant = Personal
   Finance; formats Display, Interstitial Display, Interstitial Video, and
   Outstream Rewarded for apps with rewarded ads). The owner ticks the terms box
