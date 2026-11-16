@@ -31,6 +31,7 @@ never by an agent.
 | Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | InMobi Exchange | Open Bidding (no SDK) | **Accepted 2026-11-16**, listed in AdMob | none |
+| Equativ | Open Bidding (no SDK) | **Submitted 2026-11-16**; not yet listed in AdMob (see note) | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
@@ -292,6 +293,18 @@ them to each exchange once they are live in their stores.
   registered in AdMob. Redone from AdMob's own View & sign link; it then appeared
   in AdMob's bidding sources at once. **Lesson: always submit these forms from the
   tab AdMob opens**, never a re-typed URL.
+- **Equativ** (equativ.com/ob-onlineonboarding): the form is a Pardot iframe
+  (go.smartadserver.com/l/311061/2021-12-08/2mkfcxv) that the ad blocker hides.
+  It was filled by opening the iframe URL directly, which may have cut the link to
+  AdMob (like the first IX attempt): after submit Equativ showed its FAQ, but AdMob
+  did not list Equativ. If it is still missing in a day or two, redo it from AdMob's
+  View & sign and fill the form **inside** the equativ.com page. Fields: contact,
+  address in one box, HQ country, publisher ID, app-ads.txt URLs, formats (Banner,
+  Video, Rewarded), monthly requests per region (free text), bundles one per line,
+  rep assisting No, then the owner ticks the RTB + Services Agreement and privacy
+  boxes. Review takes ~7 days. app-ads.txt lines (both added: portfolio 6449320,
+  backend e6e10c8): `smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3` and
+  `smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3` (the -OB stays upper case).
 - **After an exchange shows "Active partnership":** add it as a bidding source to
   the mediation groups (banner_ad, interestitial, rewarded_ad, app_open_ad and the
   _ios groups); until then it is not in any auction.
