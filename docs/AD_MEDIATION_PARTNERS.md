@@ -29,7 +29,8 @@ never by an agent.
 | OpenX | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16** (13 apps; Gridwell iOS rejected) | none |
 | PubMatic | Open Bidding (no SDK) | **Applied + contract signed 2026-11-16** (14 apps) | none |
 | Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
-| Smaato | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
+| Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
+| InMobi Exchange | Open Bidding (no SDK) | **Account created 2026-11-16**; not yet listed in AdMob | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
@@ -275,7 +276,19 @@ them to each exchange once they are live in their stores.
   and does the reCAPTCHA. Verve sends its app-ads.txt lines once live.
 - **Smaato** (smaato.com/request-page): form filled 2026-11-16 the same way, plus a
   "Smaato DPA contract" checkbox for the owner. Cookie banner: Reject All.
-- **Next, in order:** InMobi Exchange,
+- **Smaato:** submitted 2026-11-16 (owner ticked the declarations and DPA).
+- **InMobi Exchange** (inmobi.com/google-open-bidding): sign-up creates a free InMobi
+  SSP account (publisher.inmobi.com, account "Pranta Dutta"; the owner set the
+  login). Form: name, email, company, country Bangladesh, industry Gaming,
+  "Number of App Installs" Yes/No. After sign-up AdMob did not list InMobi as a
+  bidding source yet; check again in a few days, and redo View & sign if it is
+  still missing. The dashboard's Quick Start (add inventory, payment details, SDK)
+  is for InMobi's own SDK/oRTB business; Open Bidding is paid by Google, so skip
+  it unless InMobi asks. app-ads.txt line (Inventory > app-ads.txt, "Only InMobi"):
+  `inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d`, added
+  to pranta.dev (portfolio 2922455) and snakeclassic.pranta.dev (backend fa22568);
+  other apps' sites still need it.
+- **Next, in order:**
   Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
