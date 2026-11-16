@@ -31,6 +31,7 @@ never by an agent.
 | Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | InMobi Exchange | Open Bidding (no SDK) | **Accepted 2026-11-16**, listed in AdMob | none |
+| Media.net | Open Bidding (no SDK) | **Submitted 2026-11-16**, listed in AdMob; Media.net reviews within ~48 business hours | none |
 | Equativ | Open Bidding (no SDK) | **Submitted 2026-11-16**; not yet listed in AdMob (see note) | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
@@ -309,11 +310,18 @@ them to each exchange once they are live in their stores.
   boxes. Review takes ~7 days. app-ads.txt lines (both added: portfolio 6449320,
   backend e6e10c8): `smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3` and
   `smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3` (the -OB stays upper case).
+- **Media.net** (openbidding.media.net): submitted 2026-11-16 from AdMob's View &
+  sign tab; AdMob listed it right away. Form: publisher, contact, phone with country
+  picker (+880), company "as in the app stores", country/state (Chittagong
+  District), address, Play Store URLs and App Store URLs in separate boxes (Domains
+  left empty: no web inventory), app-ads.txt URLs, impressions "Less than 1M", top 3
+  countries by impression share (Brazil 21%, India 15%, US 9%), then the owner's
+  signatory name. Media.net said it would reach out within 48 business hours.
 - **After an exchange shows "Active partnership":** add it as a bidding source to
   the mediation groups (banner_ad, interestitial, rewarded_ad, app_open_ad and the
   _ios groups); until then it is not in any auction.
 - **Next, in order:**
-  Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
+  TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
 
