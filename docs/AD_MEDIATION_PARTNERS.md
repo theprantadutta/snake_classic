@@ -255,7 +255,16 @@ them to each exchange once they are live in their stores.
   Form quirks: **Add App** does nothing until every field above it is filled;
   each app is saved by clicking Add App, which is slow, so wait ~6 s between
   apps; values set by script alone are lost, so use real input events.
-- **Next, in order:** OpenX, PubMatic, Verve Group, Smaato, InMobi Exchange,
+- **OpenX:** submitted and acknowledged 2026-11-16 (see above).
+- **PubMatic** (onboarding.pubmatic.com): **submitted 2026-11-16**. Blocked by the ad
+  blocker until the owner turned it off. Two pages: an application (rep assisting:
+  **No**; the radio defaults to Yes and a click on the tiny input doesn't register,
+  so click the "No" label text; region APAC; inventory Both; monthly impressions
+  "> 10,000"; top geographies all four regions; app-ads.txt URLs pranta.dev and
+  snakeclassic.pranta.dev; apps as full store URLs, one per line), then a 12-month
+  service order (Google pays; PubMatic may claw back "Charged Adjustments"
+  directly). The owner signs it. Support: admobsupport@pubmatic.zendesk.com.
+- **Next, in order:** Verve Group, Smaato, InMobi Exchange,
   Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
