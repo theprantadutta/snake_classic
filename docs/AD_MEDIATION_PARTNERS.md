@@ -26,7 +26,8 @@ never by an agent.
 | AppLovin | SDK bidding | **Closed**: account disabled, reactivation refused 2026-11-16 | don't add |
 | Index Exchange | Open Bidding (no SDK) | **Applied 2026-11-16**, awaiting IX review | none |
 | Magnite DV+ | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16**, pending Magnite review (1–2 weeks) | none |
-| OpenX | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
+| OpenX | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16** (13 apps; Gridwell iOS rejected) | none |
+| PubMatic | Open Bidding (no SDK) | **Applied + contract signed 2026-11-16** (14 apps) | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
