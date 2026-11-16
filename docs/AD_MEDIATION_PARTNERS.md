@@ -298,7 +298,11 @@ them to each exchange once they are live in their stores.
   It was filled by opening the iframe URL directly, which may have cut the link to
   AdMob (like the first IX attempt): after submit Equativ showed its FAQ, but AdMob
   did not list Equativ. If it is still missing in a day or two, redo it from AdMob's
-  View & sign and fill the form **inside** the equativ.com page. Fields: contact,
+  View & sign and fill the form **inside** the equativ.com page. (Retry the same
+  day: View & sign now skips the form and lands straight on Equativ's FAQ, so
+  Equativ already has the application. If AdMob still shows step 1 open after
+  Equativ's ~7-day review, email openbidding@equativ.com with the publisher ID and
+  ask them to complete the Google partnership link.) Fields: contact,
   address in one box, HQ country, publisher ID, app-ads.txt URLs, formats (Banner,
   Video, Rewarded), monthly requests per region (free text), bundles one per line,
   rep assisting No, then the owner ticks the RTB + Services Agreement and privacy
