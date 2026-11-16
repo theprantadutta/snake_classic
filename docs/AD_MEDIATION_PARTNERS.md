@@ -309,7 +309,7 @@ them to each exchange once they are live in their stores.
   the mediation groups (banner_ad, interestitial, rewarded_ad, app_open_ad and the
   _ios groups); until then it is not in any auction.
 - **Next, in order:**
-  Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
+  Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
 
