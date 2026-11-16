@@ -74,6 +74,9 @@ inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d
 smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3
 smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3
 ```
+**Verified live 2026-11-16** on all 10 sites (pranta.dev, snakeclassic, aipersona,
+cosmostrike, gridwell, odyssey, pourfect, screwout, sunstone, theaccountant
+.pranta.dev): HTTP 200 for GET and HEAD, text/plain, 175 lines, every line above present.
 Pending (they send lines on approval): Index Exchange, OpenX, PubMatic, Verve,
 Smaato, Media.net. Live on pranta.dev and snakeclassic.pranta.dev once those sites
 redeploy (portfolio `static/app-ads.txt`, backend `wwwroot/app-ads.txt`).
