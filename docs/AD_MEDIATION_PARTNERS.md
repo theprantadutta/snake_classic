@@ -5,7 +5,29 @@ Shared by **every app** the owner publishes: they all sit in one AdMob account
 `app-ads.txt` lines and its AdMob bidding source are shared too. Each app still
 needs its own placements and ad-unit mappings.
 
-Last updated: 2026-11-13. Snake Classic is the first app being wired up.
+Last updated: 2026-11-16. Snake Classic is the first app being wired up.
+
+**Any agent picking this up:** read the quick status below, then the section for
+the partner you are touching. Before changing anything, check Gmail
+(`from:(applovin OR axon OR unity OR liftoff OR vungle OR indexexchange OR magnite) newer_than:14d`)
+and ask the owner for news; partners answer by email. The owner's Chrome runs an
+ad blocker that breaks these dashboards and sign-up forms: ask them to turn it
+off for the site rather than working around it. Partner agreements, terms
+checkboxes and COPPA / child-directed declarations are signed by the **owner**,
+never by an agent.
+
+## Quick status (2026-11-16)
+
+| Partner | Kind | Status | App code needed |
+|---|---|---|---|
+| AdMob Network | Google | Live everywhere | — |
+| Unity Ads | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_unity` |
+| Liftoff Monetize | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_liftoffmonetize` |
+| AppLovin | SDK bidding | **Closed**: account disabled, reactivation refused 2026-11-16 | don't add |
+| Index Exchange | Open Bidding (no SDK) | **Applied 2026-11-16**, awaiting IX review | none |
+| Magnite DV+ | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
+| Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
+| Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
 ## Why this exists
 
@@ -138,6 +160,104 @@ The CLAUDE.md macOS checklist, step by step:
 7. **Ship:** `./tools/release_ios.sh` built 7.6.0+74 (171 SKAdNetwork IDs and all
    four adapter frameworks in the IPA, Apple Distribution signature valid) and
    uploaded its Dart symbols and dSYMs to Sentry.
+
+## Open Bidding exchanges (no SDK, no app update)
+
+AdMob lists 42 bidding sources under Mediation → Bidding sources → **Set up ad
+source**. About half are "Open Bidding" exchanges: they buy through Google's
+servers, so they need no adapter, no app release and no extra download size, and
+they are paid out **by Google** with the normal AdMob payment. Because the account
+is shared, one approval covers every app listed in the application.
+
+### How to add one
+1. AdMob → Mediation → Bidding sources → **Set up ad source** → pick the exchange →
+   **Next**. The dialog has two steps.
+2. **Sign partnership agreement** → **View & sign** opens the exchange's own
+   sign-up page in a new tab. Keep the AdMob tab open, and the ad blocker off.
+   Fill in the form (details below); the **owner** ticks the terms boxes and
+   submits, since it is a contract in their name.
+3. The exchange reviews it, which takes days, and some decline small publishers.
+   The approval arrives by email.
+4. Back in the same AdMob dialog: **Acknowledge bidding agreement**.
+5. Add the exchange to the mediation groups as a bidding source, and add any
+   `app-ads.txt` line it asks for to pranta.dev and to each app's own site.
+6. Watch AdMob → Reports → Mediation (Ad source) for its requests and wins.
+
+### What the forms ask for
+- Contact: Pranta Dutta, owner, prantadutta1997@gmail.com. Phone and postal address
+  (Chattogram, Bangladesh) come from the owner; don't commit them here.
+- Company "Pranta Dutta" (sole developer), website https://pranta.dev, country
+  Bangladesh, privacy policy https://legal.pranta.dev/privacy.
+- Google Publisher ID `pub-9242904787767394` (AdMob, not Ad Manager; no GAM
+  network code).
+- Apps: the 14 apps that have a store listing (table below). Android uses the
+  package name; iOS uses the numeric App Store ID, with store URL
+  `https://apps.apple.com/app/id<ID>`.
+- Some forms ask for monthly ad requests per app. Use AdMob → Reports → Ads
+  Activity → Mediation, last 30 days, by app.
+
+### App inventory for these forms (2026-11-16)
+
+Monthly requests = AdMob requests over the 30 days to 2026-11-16.
+
+| App | Platform | Store ID | Monthly requests |
+|---|---|---|---|
+| Snake Classic: Retro Arcade | Android | com.pranta.snakeclassic | 370,592 |
+| Snake Classic: Retro Arcade | iOS | 6779621362 | 4,025 |
+| AI Persona: Character Chat | Android | com.pranta.aipersona | 635 |
+| Cosmo Strike | Android | com.pranta.cosmostrike | 4 |
+| Cosmo Strike | iOS | 6824382793 | 60 |
+| Gridwell: Nonogram Puzzles | iOS | 6834377123 | 3 |
+| Odyssey Trip Planner & Journal | Android | com.pranta.odyssey | 13 |
+| Odyssey: Travel Journal | iOS | 6789549164 | 0 |
+| Pourfect: Ball Sort Puzzle | Android | com.pranta.pourfect | 258 |
+| Pourfect: Ball Sort Puzzle | iOS | 6824137375 | 94 |
+| Screw Out | Android | com.pranta.screwout | 1,730 |
+| Sunstone: Maya Temple Runner | Android | com.pranta.sunstone | 344 |
+| The Accountant: Money Manager | Android | com.pranta.theaccountant | 1 |
+| The Accountant: Money Manager | iOS | 6794265000 | 0 |
+
+Left out because AdMob shows them "Requires review" with no store linked: AI Persona
+iOS, Gridwell Android, Jadewell Android + iOS, Screw Out iOS, SunStone iOS. Add
+them to each exchange once they are live in their stores.
+
+### Status per exchange
+- **Index Exchange** (signup.indexexchange.com): applied 2026-11-16 with all 14
+  apps. Waiting on IX; then acknowledge in AdMob. IX says activation can take ~48 h.
+- **Magnite DV+** (cta.magnite.com): form filled 2026-11-16 with all 14 apps
+  (category Arts & Entertainment; Odyssey = Travel; The Accountant = Personal
+  Finance; formats Display, Interstitial Display, Interstitial Video, and
+  Outstream Rewarded for apps with rewarded ads). The owner ticks the terms box
+  and submits. Odyssey iOS was entered as 1 monthly request (real number 0).
+  Form quirks: **Add App** does nothing until every field above it is filled;
+  each app is saved by clicking Add App, which is slow, so wait ~6 s between
+  apps; values set by script alone are lost, so use real input events.
+- **Next, in order:** OpenX, PubMatic, Verve Group, Smaato, InMobi Exchange,
+  Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
+  Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
+  Japan-focused, skip: Ad Generation, Fluct, YieldOne.
+
+## SDK networks: plan for the next app release
+
+Each needs its own account (the owner signs up and answers the COPPA question),
+an app in its dashboard with bidding placements, AdMob ad-unit mapping, its
+`app-ads.txt` lines, its `gma_mediation_<network>` package at the version matching
+`google_mobile_ads`, and its SKAdNetwork IDs on iOS. Each also adds roughly
+5–15 MB and more startup code, so add them in one release and stop at three.
+
+| Network | Formats (bidding) | Why |
+|---|---|---|
+| Meta Audience Network | banner, interstitial, rewarded, rewarded interstitial, native | Usually the strongest after AdMob; needs a Meta Business account + app review |
+| Mintegral | app open, banner, interstitial, rewarded, native | Strong for games; one of few that bid on App Open |
+| Pangle (TikTok) | app open, banner, interstitial, rewarded, native | Strong for games, especially Asia; large SDK |
+
+Second tier if those disappoint: InMobi (SDK), DT Exchange, ironSource Ads
+(separate account from Unity Ads). Not worth it: Moloco (waterfall only for
+Flutter), Chartboost / myTarget / Vpon (waterfall only), maio / i-mobile / Zucks
+(Japan only). Source: developers.google.com/admob/flutter/choose-networks.
+
+Wait for the 2026-11-20 week-over-week check (Unity + Liftoff vs the baseline at
+the bottom) before adding SDK networks, so their effect is measurable.
 
 ## Setting up a partner for an app (checklist)
 
