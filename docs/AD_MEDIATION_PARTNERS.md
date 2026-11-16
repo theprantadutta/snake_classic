@@ -24,13 +24,13 @@ never by an agent.
 | Unity Ads | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_unity` |
 | Liftoff Monetize | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_liftoffmonetize` |
 | AppLovin | SDK bidding | **Closed**: account disabled, reactivation refused 2026-11-16 | don't add |
-| Index Exchange | Open Bidding (no SDK) | **Applied 2026-11-16**, awaiting IX review | none |
+| Index Exchange | Open Bidding (no SDK) | **Applied 2026-11-16** (redone via AdMob View & sign; now listed in AdMob) | none |
 | Magnite DV+ | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16**, pending Magnite review (1–2 weeks) | none |
 | OpenX | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16** (13 apps; Gridwell iOS rejected) | none |
 | PubMatic | Open Bidding (no SDK) | **Applied + contract signed 2026-11-16** (14 apps) | none |
 | Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
-| InMobi Exchange | Open Bidding (no SDK) | **Account created 2026-11-16**; not yet listed in AdMob | none |
+| InMobi Exchange | Open Bidding (no SDK) | **Accepted 2026-11-16**, listed in AdMob | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
@@ -288,6 +288,13 @@ them to each exchange once they are live in their stores.
   `inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d`, added
   to pranta.dev (portfolio 2922455) and snakeclassic.pranta.dev (backend fa22568);
   other apps' sites still need it.
+- **Index Exchange retry (2026-11-16):** the first application (plain tab) never
+  registered in AdMob. Redone from AdMob's own View & sign link; it then appeared
+  in AdMob's bidding sources at once. **Lesson: always submit these forms from the
+  tab AdMob opens**, never a re-typed URL.
+- **After an exchange shows "Active partnership":** add it as a bidding source to
+  the mediation groups (banner_ad, interestitial, rewarded_ad, app_open_ad and the
+  _ios groups); until then it is not in any auction.
 - **Next, in order:**
   Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
