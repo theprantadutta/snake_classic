@@ -321,7 +321,8 @@ them to each exchange once they are live in their stores.
   the mediation groups (banner_ad, interestitial, rewarded_ad, app_open_ad and the
   _ios groups); until then it is not in any auction.
 - **Next, in order:**
-  TripleLift. Then optionally Adagio, Bidease, EMX, Improve
+  (TripleLift is in Google's docs but **not offered** in this account's Set up ad
+  source list, checked 2026-11-16.) Optional extras: Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
 
