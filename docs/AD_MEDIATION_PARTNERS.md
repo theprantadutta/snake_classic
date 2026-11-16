@@ -58,8 +58,9 @@ revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
    the-accountant 06be1f8. Each site goes live only when that backend redeploys.
    Five of them (odyssey, Pourfect, screw-out, Sunstone, the-accountant) had only
    the Google line before, so Unity/Liftoff lines were missing there too. AI
-   Persona's backend serves no app-ads.txt at all (only /support, /marketing,
-   /public); its store listings' developer site decides which file counts.
+   Persona's backend had no app-ads.txt; it now serves the same file at
+   https://aipersona.pranta.dev/app-ads.txt (new GET/HEAD route in Program.cs,
+   commit b056dff).
    Cosmo Strike's feature worktrees (applerecon, reminders) still hold the old
    one-line file and pick up master's when merged.
 5. Equativ: check around 2026-11-20 whether AdMob lists it (see its section).
