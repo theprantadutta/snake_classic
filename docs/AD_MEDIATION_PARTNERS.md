@@ -28,6 +28,8 @@ never by an agent.
 | Magnite DV+ | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16**, pending Magnite review (1–2 weeks) | none |
 | OpenX | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16** (13 apps; Gridwell iOS rejected) | none |
 | PubMatic | Open Bidding (no SDK) | **Applied + contract signed 2026-11-16** (14 apps) | none |
+| Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
+| Smaato | Open Bidding (no SDK) | **Form filled 2026-11-16**, owner submits | none |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | Not started; see the list below | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
 
@@ -264,7 +266,16 @@ them to each exchange once they are live in their stores.
   snakeclassic.pranta.dev; apps as full store URLs, one per line), then a 12-month
   service order (Google pays; PubMatic may claw back "Charged Adjustments"
   directly). The owner signs it. Support: admobsupport@pubmatic.zendesk.com.
-- **Next, in order:** Verve Group, Smaato, InMobi Exchange,
+- **Verve Group** (c2a.verve.com): **submitted 2026-11-16**. Same form shape as
+  Smaato: name, address split over two lines, email, app-ads.txt link
+  (https://pranta.dev/app-ads.txt), publisher ID (prefilled), store URLs one per
+  line, monthly active users **11000** (Firebase, Snake Classic, 30 days to
+  2026-11-15: 11K; 7 days 3.2K; 1 day 680). The owner ticks the declarations
+  (accept AdMob contract, will add their app-ads.txt lines, GDPR TCF v2 via UMP)
+  and does the reCAPTCHA. Verve sends its app-ads.txt lines once live.
+- **Smaato** (smaato.com/request-page): form filled 2026-11-16 the same way, plus a
+  "Smaato DPA contract" checkbox for the owner. Cookie banner: Reject All.
+- **Next, in order:** InMobi Exchange,
   Equativ, Media.net, TripleLift. Then optionally Adagio, Bidease, EMX, Improve
   Digital, MobFox, Nexxen, OneTag, Rise, Sonobi, Yieldmo, Chocolate Platform.
   Japan-focused, skip: Ad Generation, Fluct, YieldOne.
