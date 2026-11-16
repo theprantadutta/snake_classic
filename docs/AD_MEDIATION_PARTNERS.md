@@ -18,7 +18,7 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
 
 ## Status per partner
 
-### AppLovin: blocked (account disabled)
+### AppLovin: closed (account disabled, reactivation refused 2026-11-16)
 - 2026-11-13: dashboard login says "Your account is currently disabled. We're not
   able to reactivate it at this time." No email had ever said it was approved,
   under review or disabled. Most likely cause: the account sat idle with no
@@ -28,6 +28,11 @@ rate 56–59%). More bidders is the standard fix for no-fill and price.
   (redirects to `ads.applovin.com/support/contact-us`), chatbot at
   `https://support.axon.ai`.
 - **Ticket filed 2026-11-13: AppLovin Support request #136960** (applovin.zendesk.com, category "Monetization (non-MAX)", signed in as the owner). Replies go to prantadutta1997@gmail.com.
+- **Answer, 2026-11-16 (ticket #136960):** AppLovin is "not accepting new MAX account
+  registrations or reactivating previously disabled accounts", with no timeline;
+  "check back periodically". No reason was given for the disabling. Treat AppLovin as
+  unavailable for every app; Unity and Liftoff cover mediation. Maybe ask again in a
+  few months.
 - Do **not** open a new AppLovin account to get around it; networks treat that as
   evasion.
 - In the app: `gma_mediation_applovin` was removed. If reinstated, add it back at
