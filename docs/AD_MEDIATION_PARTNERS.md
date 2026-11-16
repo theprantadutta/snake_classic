@@ -232,7 +232,10 @@ them to each exchange once they are live in their stores.
   take ~48 h.
 - **OpenX** (contracts.openx.com): form filled 2026-11-16 (company, website, email;
   account type and publisher ID come prefilled from AdMob). Bundles go in as a
-  one-column CSV with no header, one bundle per row (the 14 store IDs above). The
+  one-column CSV with no header, one bundle per row. OpenX rejected Gridwell iOS
+  (6834377123, "bundle does not exist") although it is live on the App Store
+  (newly released, probably not in OpenX's catalog yet), so it went in with 13;
+  add Gridwell later. The
   owner ticks the terms box and submits.
 - **Magnite DV+** (cta.magnite.com): **submitted and acknowledged in AdMob
   2026-11-16**; AdMob shows "Pending partnership". Magnite's email says review
