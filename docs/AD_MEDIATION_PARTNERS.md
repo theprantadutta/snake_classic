@@ -50,9 +50,18 @@ revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
    does not bid.
 4. Add the app-ads.txt lines each one sends (consolidated list below) to
    pranta.dev and snakeclassic.pranta.dev, **and to every other app's own site**
-   (cosmo-strike, Gridwell, odyssey, Pourfect, screw-out, Sunstone, the-accountant,
-   ai-persona backends' `wwwroot/app-ads.txt`): those repos belong to their own
-   sessions, so tell those sessions or the owner.
+   (cosmo-strike, Gridwell, odyssey, Pourfect, screw-out, Sunstone, the-accountant
+   backends' `wwwroot/app-ads.txt`). **2026-11-16: all seven synced** to an exact
+   copy of pranta.dev's file (portfolio `static/app-ads.txt` is the master copy;
+   copy it over, don't hand-edit each). Commits: cosmo-strike a412c88, Gridwell
+   5d73275, odyssey a8dc236, Pourfect 3fe8812, screw-out 2a35076, Sunstone 7fdbdaf,
+   the-accountant 06be1f8. Each site goes live only when that backend redeploys.
+   Five of them (odyssey, Pourfect, screw-out, Sunstone, the-accountant) had only
+   the Google line before, so Unity/Liftoff lines were missing there too. AI
+   Persona's backend serves no app-ads.txt at all (only /support, /marketing,
+   /public); its store listings' developer site decides which file counts.
+   Cosmo Strike's feature worktrees (applerecon, reminders) still hold the old
+   one-line file and pick up master's when merged.
 5. Equativ: check around 2026-11-20 whether AdMob lists it (see its section).
 
 ### app-ads.txt lines added for mediation partners (copy to every app's site)
