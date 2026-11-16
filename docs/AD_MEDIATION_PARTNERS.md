@@ -65,6 +65,14 @@ revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
    one-line file and pick up master's when merged.
 5. Equativ: check around 2026-11-20 whether AdMob lists it (see its section).
 
+### Mediation groups now cover every app (2026-11-16)
+All 8 shared groups were extended so every app's units are in them (before, only Snake,
+AI Persona Android, Odyssey Android and Cosmo Strike were): banner_ad 14 units,
+interestitial 9, rewarded_ad 12, app_open_ad 5, banner_ad_ios 14, interstitial_ios 9,
+rewarded_ad_ios 12, app_open_ios 5. The "Map ad units" step was skipped for the new units
+(Unity/Liftoff aren't set up for those apps). Each app repo now has `docs/AD_MEDIATION.md`
+(and a CLAUDE.md pointer) with its own IDs and group membership.
+
 ### app-ads.txt lines added for mediation partners (copy to every app's site)
 ```
 # Unity Ads: the full unity.com block (162886020 DIRECT + resellers), see pranta.dev/app-ads.txt
