@@ -701,6 +701,10 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // delivered: a deferred payment that cleared, a purchase made on
       // another device, a transaction left unfinished by a crash.
       await PurchaseService().reconcileStoreState();
+      // A declined Pro renewal sits in grace period / account hold until the
+      // player fixes their card; let Play show its "fix your payment" message
+      // (Android only, throttled, silent when there is nothing to fix).
+      unawaited(PurchaseService().maybeShowBillingMessages());
       // Sync premium entitlements (catches subscription renewals/cancellations)
       getIt<PremiumCubit>().syncWithBackend();
     } catch (e) {

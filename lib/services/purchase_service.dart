@@ -210,6 +210,7 @@ class PurchaseService {
       AppLogger.info(
         'Purchase Service initialized successfully (post-auth reconcile pending)',
       );
+      unawaited(maybeShowBillingMessages());
     } catch (e) {
       _isAvailable = false;
       AppLogger.error('Error initializing Purchase Service', e);
@@ -870,6 +871,47 @@ class PurchaseService {
       AppLogger.error('Error reconciling store purchases', e);
     } finally {
       _reconciling = false;
+    }
+  }
+
+  // ==================== Play payment-issue messages ====================
+
+  DateTime? _lastBillingMessageCheck;
+  static const _billingMessageInterval = Duration(hours: 6);
+
+  /// Let Google Play show its own "fix your payment" snackbar (Android only).
+  ///
+  /// When a Pro renewal is declined the subscription drops into grace period
+  /// or account hold while Google retries the card. Play Billing can show the
+  /// player a message to update their payment method, but only if the app
+  /// asks (showInAppMessages). It appears only for a signed-in Play account
+  /// that actually has a subscription in grace/hold; for everyone else Play
+  /// does nothing, so calling it for free players is harmless. Throttled to
+  /// once every 6 hours across cold start and resumes.
+  ///
+  /// If the player fixes their payment, Play reports
+  /// SubscriptionStatusUpdated and the store inventory is reconciled through
+  /// the normal delivery pipeline, so Pro comes back without waiting for the
+  /// RTDN to reach the backend. Never throws: it runs from the resume handler.
+  Future<void> maybeShowBillingMessages() async {
+    if (!Platform.isAndroid || !_isAvailable) return;
+    final now = DateTime.now();
+    final last = _lastBillingMessageCheck;
+    if (last != null && now.difference(last) < _billingMessageInterval) return;
+    _lastBillingMessageCheck = now;
+    try {
+      final result = await _iap.showInAppMessagesAndroid(
+        const InAppMessageParamsAndroid(),
+      );
+      if (result.responseCode ==
+          InAppMessageResponseCodeAndroid.SubscriptionStatusUpdated) {
+        AppLogger.info(
+          'Play reports a subscription status update from its in-app message; reconciling',
+        );
+        await reconcileStoreState();
+      }
+    } catch (e) {
+      AppLogger.warning('Play in-app billing message check failed: $e');
     }
   }
 
