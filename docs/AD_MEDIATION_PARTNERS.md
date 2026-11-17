@@ -85,7 +85,7 @@ smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3
 **Verified live 2026-11-16** on all 10 sites (pranta.dev, snakeclassic, aipersona,
 cosmostrike, gridwell, odyssey, pourfect, screwout, sunstone, theaccountant
 .pranta.dev): HTTP 200 for GET and HEAD, text/plain, 175 lines, every line above present.
-Pending (they send lines on approval): Index Exchange, OpenX, PubMatic, Verve,
+Pending (they send lines on approval): OpenX, PubMatic, Verve,
 Smaato, Media.net. Live on pranta.dev and snakeclassic.pranta.dev once those sites
 redeploy (portfolio `static/app-ads.txt`, backend `wwwroot/app-ads.txt`).
 
@@ -282,7 +282,7 @@ iOS, Gridwell Android, Jadewell Android + iOS, Screw Out iOS, SunStone iOS. Add
 them to each exchange once they are live in their stores.
 
 ### Status per exchange
-- **Index Exchange** (signup.indexexchange.com): applied 2026-11-16 with all 14
+- **Index Exchange** (signup.indexexchange.com): **REJECTED 2026-11-16 ("did not meet our Exchange Quality standards"; no reason given; may re-apply when traffic grows).** Applied 2026-11-16 with all 14
   apps. The IX page showed success, but no email came, and IX is still in AdMob's
   "Set up ad source" list (Magnite left it once its agreement registered). The
   form was submitted from a plain signup.indexexchange.com tab, not the one AdMob's
