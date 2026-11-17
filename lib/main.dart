@@ -218,12 +218,14 @@ Future<void> _bootstrap() async {
     // goes full-immersive via immersiveSticky (handled in GameScreen).
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
+      // Icon brightness only. Any bar COLOUR here (even transparent) makes
+      // the engine call Window.setStatusBarColor / setNavigationBarColor /
+      // setNavigationBarDividerColor, all deprecated on Android 15 and the
+      // source of Play's "deprecated APIs for edge-to-edge" warning. The
+      // bars are already transparent: MainActivity's enableEdgeToEdge().
       const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
-        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
 
@@ -718,12 +720,14 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
     // setStatusBarColor path Play Console flags.
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
+      // Icon brightness only. Any bar COLOUR here (even transparent) makes
+      // the engine call Window.setStatusBarColor / setNavigationBarColor /
+      // setNavigationBarDividerColor, all deprecated on Android 15 and the
+      // source of Play's "deprecated APIs for edge-to-edge" warning. The
+      // bars are already transparent: MainActivity's enableEdgeToEdge().
       const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
-        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
   }

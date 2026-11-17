@@ -7,29 +7,28 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.core.view.WindowCompat
+import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterShellArgs
+import io.flutter.embedding.android.FlutterFragment
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     // Two things happen here, both required for Android 15+ (SDK 35)
     // compliance and to match the original "status bar hidden, nav bar
     // visible" look the app shipped with:
     //
-    //   1. WindowCompat.enableEdgeToEdge(window) — the explicit edge-to-edge
-    //      opt-in for EVERY Android version. Android 15 forces edge-to-edge
-    //      on apps targeting SDK 35, but on 14 and below the app only got
-    //      it because we asked; Play Console checks for exactly this call
-    //      ("Edge-to-edge may not display for all users" on release 54 was
-    //      raised because we used to call setDecorFitsSystemWindows(false)
-    //      instead, which does the same job but is not what the scanner
-    //      recognises). It sets decorFitsSystemWindows=false, transparent
-    //      status/navigation bars and theme-appropriate icon contrast, the
-    //      same things the LaunchTheme XML already declares.
+    //   1. enableEdgeToEdge() (androidx.activity) — the explicit edge-to-edge
+    //      opt-in for EVERY Android version, and the exact call Play Console's
+    //      "Edge-to-edge may not display for all users" check looks for. It
+    //      sets decorFitsSystemWindows=false, transparent status/navigation
+    //      bars and theme-appropriate icon contrast, the same things the
+    //      LaunchTheme XML already declares. We used to call the
+    //      androidx.core WindowCompat.enableEdgeToEdge(window) variant, which
+    //      does the same job but Play kept flagging the release; the
+    //      ComponentActivity extension is the one Play documents.
     //
     //   2. WindowInsetsController.hide(statusBars()) — the modern, non-
     //      deprecated way to hide ONLY the status bar app-wide. Pre-Android
@@ -46,11 +45,12 @@ class MainActivity : FlutterActivity() {
     // See flutter/flutter#183372 for the deprecated-API thread that
     // motivated this.
     //
-    // This is the androidx.core variant rather than
-    // androidx.activity.enableEdgeToEdge() because the latter is an
-    // extension on ComponentActivity — FlutterActivity inherits from plain
-    // Activity, so the extension doesn't apply. core 1.16+ added the
-    // Window-based one for exactly this case.
+    // enableEdgeToEdge() is an extension on ComponentActivity, which plain
+    // FlutterActivity (an android.app.Activity) is not. That is why this is a
+    // FlutterFragmentActivity: it extends FragmentActivity -> ComponentActivity
+    // and exposes getInitialRoute and configureFlutterEngine. It has no
+    // getFlutterShellArgs, see createFlutterFragment below.
+    //
     // Android 10 renders with Skia, not Impeller.
     //
     // Play Console vitals, v6.1.0+47: SIGSEGV inside the GPU vendor drivers --
@@ -76,25 +76,35 @@ class MainActivity : FlutterActivity() {
     // precisely the ones that were never getting Vulkan in the first place.
     // Every device that can run Vulkan keeps Impeller and keeps Vulkan.
     //
-    // Done through shell args rather than the manifest because the manifest
+    // Done through engine flags rather than the manifest because the manifest
     // meta-data is static and would disable Impeller for everyone.
     // EnableImpeller is explicitly "settable via the command line and
-    // manifest" and allowedInRelease=true (FlutterEngineFlags.java), and these
-    // args reach the engine via getFlutterShellArgs().toArray().
+    // manifest" and allowedInRelease=true (FlutterEngineFlags.java).
+    //
+    // How the flag gets in: FlutterFragmentActivity has no getFlutterShellArgs()
+    // hook (only FlutterActivity does), and intent extras are ignored in release
+    // builds (release FlutterEngineFlagsProviderImpl returns an empty list). The
+    // FlutterFragment it creates reads its engine flags from the fragment
+    // arguments' "initialization_args" string array
+    // (FlutterFragment.ARG_FLUTTER_INITIALIZATION_ARGS, getFlutterEngineFlags),
+    // so we append the flag there before the fragment is attached. A fragment
+    // restored after process death keeps its arguments, flag included.
     //
     // Note: the ImpellerBackend manifest key is NOT an alternative here. Its
     // handling in flutter_main.cc sits inside `#ifndef FLUTTER_RELEASE`, so it
     // does nothing in a production build despite what its javadoc implies.
-    override fun getFlutterShellArgs(): FlutterShellArgs {
-        val args = super.getFlutterShellArgs()
+    override fun createFlutterFragment(): FlutterFragment {
+        val fragment = super.createFlutterFragment()
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-            args.add(FlutterShellArgs.ARG_DISABLE_IMPELLER)
+            val bundle = fragment.arguments ?: Bundle().also { fragment.arguments = it }
+            val existing = bundle.getStringArray(INITIALIZATION_ARGS) ?: emptyArray()
+            bundle.putStringArray(INITIALIZATION_ARGS, existing + DISABLE_IMPELLER)
         }
-        return args
+        return fragment
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        WindowCompat.enableEdgeToEdge(window)
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val controller = WindowInsetsControllerCompat(window, window.decorView)
@@ -180,5 +190,12 @@ class MainActivity : FlutterActivity() {
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    private companion object {
+        // FlutterFragment.ARG_FLUTTER_INITIALIZATION_ARGS (protected in Java).
+        const val INITIALIZATION_ARGS = "initialization_args"
+        // FlutterShellArgs.ARG_DISABLE_IMPELLER.
+        const val DISABLE_IMPELLER = "--enable-impeller=false"
     }
 }

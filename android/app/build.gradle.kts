@@ -86,9 +86,10 @@ kotlin {
 }
 
 dependencies {
-    // WindowCompat.enableEdgeToEdge(Window) (MainActivity) needs core 1.16+.
-    // It is already resolved transitively at 1.18; pinning it here keeps the
-    // compile classpath from ever drifting below the API we call.
+    // ComponentActivity.enableEdgeToEdge() (MainActivity, Play's edge-to-edge
+    // check) lives in androidx.activity. core is pinned so WindowInsets*Compat
+    // never drifts below what MainActivity calls.
+    implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.core:core:1.18.0")
     implementation("androidx.window:window:1.0.0")
     implementation("androidx.window:window-java:1.0.0")
