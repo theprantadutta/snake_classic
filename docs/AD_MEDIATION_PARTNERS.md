@@ -32,7 +32,7 @@ never by an agent.
 | Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | InMobi Exchange | Open Bidding (no SDK) | **Accepted by InMobi 2026-11-16**; AdMob partnership still Pending (2026-11-18) | none |
 | Media.net | Open Bidding (no SDK) | **Rejected** (AdMob shows "Rejected / Retry" on 2026-11-18; no email yet) | — |
-| Equativ | Open Bidding (no SDK) | **Agreement unfinished**: AdMob shows "Started agreement / Continue" (2026-11-18). The owner must click Continue and finish it | none |
+| Equativ | Open Bidding (no SDK) | **Linked 2026-11-18** (redone from AdMob's View & sign; owner submitted + acknowledged). AdMob: Pending partnership. **In all 6 banner/interstitial/rewarded groups** | none |
 | TripleLift | Open Bidding | Not offered in this AdMob account's list | — |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | **Owner decided to stop here (2026-11-16)**; small extras listed below if ever wanted | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
@@ -90,6 +90,8 @@ rubiconproject.com, 22884, DIRECT, 0bfd66d529a55807
 inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d
 smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3
 smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3
+sharethrough.com, 4194-OB, RESELLER, 060d053dcf45cbf3
+sharethrough.com, 4194, RESELLER, 060d053dcf45cbf3
 openx.com, 661298559, RESELLER, 6a698e2ec38604c6
 pubmatic.com, 159856, DIRECT, 5d62403b186f2ace
 ```
@@ -97,6 +99,10 @@ pubmatic.com, 159856, DIRECT, 5d62403b186f2ace
 lines) and synced to all 9 backends. Commits: portfolio bcb495e, aipersona f374bd3,
 cosmo-strike d42129b, Gridwell 4788f2b, odyssey 0c69c9f, Pourfect eb8efa3, screw-out
 cefb40e, snake-classic-backend 5123a3e, Sunstone b007e3c, the-accountant 9c64514.
+Then Equativ's 2026-11-18 email added two sharethrough.com lines (Sharethrough is part of
+Equativ): master now 189 lines, synced to all 9 backends (portfolio 6fd64f5, aipersona
+e8292c0, cosmo-strike 3776615, Gridwell af7d037, odyssey 4549035, Pourfect 91cf153,
+screw-out e83ab91, snake-classic-backend 0065994, Sunstone 3cc583a, the-accountant 565f3c9).
 Live once each backend and the portfolio redeploy.
 **Verified live 2026-11-16** on all 10 sites (pranta.dev, snakeclassic, aipersona,
 cosmostrike, gridwell, odyssey, pourfect, screwout, sunstone, theaccountant
@@ -303,6 +309,14 @@ them to each exchange once they are live in their stores.
   reload) and to app-ads.txt everywhere. AdMob shows Magnite DV+ and Media.net
   **Rejected** (neither has emailed yet) and Equativ as "Started agreement" (owner to
   click Continue in AdMob > Mediation > Bidding sources > Set up ad source).
+- **Equativ redone 2026-11-18:** Set up ad source > Equativ > Sign partnership agreement >
+  View & sign opened equativ.com/ob-onlineonboarding with the form visible this time and the
+  Google Publisher ID **pre-filled and read-only** (the sign that the AdMob link is intact;
+  the first attempt didn't have it). Filled inside that page (Pardot iframe, so real clicks
+  and typing), 14 bundles, 10 app-ads URLs, ~380K requests/month worldwide. The RTB +
+  Services Agreement box appeared pre-ticked; the owner reviewed, ticked privacy, submitted
+  and acknowledged the bidding agreement in AdMob. AdMob then listed Equativ as Pending and it
+  was added to the 6 groups.
 - **Index Exchange** (signup.indexexchange.com): **REJECTED 2026-11-16 ("did not meet our Exchange Quality standards"; no reason given; may re-apply when traffic grows).** Applied 2026-11-16 with all 14
   apps. The IX page showed success, but no email came, and IX is still in AdMob's
   "Set up ad source" list (Magnite left it once its agreement registered). The
