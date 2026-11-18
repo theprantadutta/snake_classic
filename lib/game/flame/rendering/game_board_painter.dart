@@ -403,9 +403,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..shader = null
       ..maskFilter = null;
     final bodyRadius = Radius.circular(cell * .15);
+    // Miami Nights: the body runs pink -> sunset orange toward the tail.
+    final sunsetBody = theme == GameTheme.miamiNights && !invincible;
     for (var i = n - 1; i >= 1; i--) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
-      _snakeBodyPaint.color = bodyColor.withValues(alpha: 1 - .55 * t);
+      _snakeBodyPaint.color = sunsetBody
+          ? Color.lerp(bodyColor, theme.accentColor, t)!.withValues(alpha: 1 - .25 * t)
+          : bodyColor.withValues(alpha: 1 - .55 * t);
       canvas.drawRRect(RRect.fromRectAndRadius(rects[i], bodyRadius), _snakeBodyPaint);
     }
 

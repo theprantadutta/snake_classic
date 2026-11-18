@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/design/miami_nights_scene.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 
 /// The board every screen sits on (DESIGN_SPEC §3): the palette's board
@@ -19,6 +21,21 @@ class LBGridBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.lb;
     final cell = LB.cell * context.uiScale;
+    // Miami Nights paints its sunset scene behind the grid instead of the
+    // flat board colour (screens that pass their own colour keep it).
+    if (color == null && identical(p, LBPalette.of(GameTheme.miamiNights))) {
+      return CustomPaint(
+        painter: const _MiamiPainter(),
+        isComplex: true,
+        willChange: false,
+        child: CustomPaint(
+          painter: _GridPainter(cell: cell, color: p.gridLine),
+          isComplex: true,
+          willChange: false,
+          child: child,
+        ),
+      );
+    }
     return ColoredBox(
       color: color ?? p.board,
       child: CustomPaint(
@@ -45,6 +62,19 @@ extension LBLayout on BuildContext {
     if (inset > 0) return inset + cell;
     return (width % cell) / 2 + cell;
   }
+}
+
+class _MiamiPainter extends CustomPainter {
+  const _MiamiPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) =>
+      // Darker and with a faint floor grid behind menus: text of every
+      // weight (muted captions included) has to read on top of it.
+      MiamiNightsScene.paint(canvas, size, dim: .62, lines: .35, sun: .4, horizonVeil: .45);
+
+  @override
+  bool shouldRepaint(_MiamiPainter old) => false;
 }
 
 class _GridPainter extends CustomPainter {

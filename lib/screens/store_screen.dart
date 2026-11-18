@@ -1015,7 +1015,12 @@ class _StoreScreenState extends State<StoreScreen>
     } else if (isOwned) {
       action = StoreActionBlock(
         label: l10n.storePillApply,
-        onTap: () => context.read<ThemeCubit>().setTheme(target),
+        onTap: () {
+          // Pin the card so it shows ACTIVE instead of jumping to the next
+          // locked theme once this one is applied.
+          setState(() => _focusTheme = target);
+          context.read<ThemeCubit>().setTheme(target);
+        },
       );
     } else if (productId != null) {
       final price = PurchaseService().getStorePriceOrDefault(

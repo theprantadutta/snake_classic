@@ -360,13 +360,13 @@ class GameConstants {
   static const Color crystalAccent = Color(0xFFE6E6FA); // Lavender shimmer
 
   // Colors - Miami Nights (limited event theme, Nov 2026). Generic retro
-  // sunset: aqua-mint snake on dusk violet with flamingo-pink food. Kept
-  // apart from Neon (cyan on black) and Crystal (pale blue on amethyst).
+  // sunset: hot-pink snake fading to orange, neon aqua, dusk violet.
   // Name and look are deliberately generic; never tie it to any other
   // game's name, logo, lettering or art.
-  static const Color miamiNightsBackground = Color(0xFF3A1450); // Dusk violet
-  static const Color miamiNightsSnake = Color(0xFF3EF2C8); // Aqua mint
-  static const Color miamiNightsFood = Color(0xFFFF5CA8); // Flamingo pink
+  // The board and menus also get MiamiNightsScene (sunset, sun, palms).
+  static const Color miamiNightsBackground = Color(0xFF2E0B50); // Dusk violet
+  static const Color miamiNightsSnake = Color(0xFFFF4FA3); // Hot flamingo pink
+  static const Color miamiNightsFood = Color(0xFF2DE2E6); // Neon aqua
   static const Color miamiNightsAccent = Color(0xFFFF9E44); // Sunset orange
 
   // Animation durations

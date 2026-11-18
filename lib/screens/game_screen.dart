@@ -686,7 +686,10 @@ class _GameScreenState extends State<GameScreen>
                     // and grid paint under the status-bar inset — same as
                     // AppBackground on every other screen. With it inside,
                     // the inset showed the flat scaffold colour as a band.
+                    // Explicit colour: a themed scene (Miami Nights) belongs
+                    // on the board only, not doubled up behind it.
                     body: LBGridBackground(
+                      color: context.lb.board,
                       child: Stack(
                         children: [
                           // Top/bottom insets are handled INSIDE, per row:

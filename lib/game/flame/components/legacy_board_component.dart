@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/design/miami_nights_scene.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb_cell_text.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/snake.dart';
@@ -50,6 +52,10 @@ class LegacyBoardComponent extends Component
     final palette = LBPalette.of(game.theme);
     _bgPaint.color = palette.board;
     canvas.drawRect(Offset.zero & size, _bgPaint);
+    if (game.theme == GameTheme.miamiNights) {
+      // Dimmed more than the menus: the snake and food must pop at speed.
+      MiamiNightsScene.paint(canvas, size, dim: .38);
+    }
 
     // World-to-screen scale for the fixed-resolution camera: the world is
     // `board * cellSize` units and gets fitted into the viewport, so anything
