@@ -400,7 +400,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ThemeState themeState,
     PremiumState premium,
   ) {
-    final premiumCount = PremiumContent.premiumThemes.length;
+    // Counted live so an event theme in its free window counts as free.
+    final premiumCount =
+        GameTheme.values.where(PremiumContent.isPremiumTheme).length;
     final freeCount = GameTheme.values.length - premiumCount;
     return SettingsSection(
       label: l10n.lbTheme,

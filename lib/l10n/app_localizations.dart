@@ -1888,6 +1888,18 @@ abstract class AppLocalizations {
   /// **'Icy crystalline blue'**
   String get storeThemeDescCrystal;
 
+  /// No description provided for @storeThemeDescMiamiNights.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset neon and palm-tree nights'**
+  String get storeThemeDescMiamiNights;
+
+  /// Store featured-card footnote for a limited event theme; date is month + day
+  ///
+  /// In en, this message translates to:
+  /// **'Free for everyone until {date}'**
+  String storeThemeFreeUntil(String date);
+
   /// No description provided for @storeUnlockFor.
   ///
   /// In en, this message translates to:
@@ -2241,6 +2253,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crystal'**
   String get themeCrystal;
+
+  /// No description provided for @themeMiamiNights.
+  ///
+  /// In en, this message translates to:
+  /// **'Miami Nights'**
+  String get themeMiamiNights;
 
   /// No description provided for @dpadLeft.
   ///

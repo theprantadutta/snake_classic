@@ -1022,6 +1022,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storeThemeDescCrystal => 'Ледяной кристальный синий';
 
   @override
+  String get storeThemeDescMiamiNights => 'Неон заката и ночи под пальмами';
+
+  @override
+  String storeThemeFreeUntil(String date) {
+    return 'Бесплатно для всех до $date';
+  }
+
+  @override
   String storeUnlockFor(Object name, Object price) {
     return 'Открыть $name за $price?';
   }
@@ -1226,6 +1234,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get themeCrystal => 'Кристалл';
+
+  @override
+  String get themeMiamiNights => 'Ночи Майами';
 
   @override
   String get dpadLeft => 'Слева';

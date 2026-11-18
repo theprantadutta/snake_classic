@@ -828,6 +828,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
           theme.snakeColor.withValues(alpha: 0.7),
         ];
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return [
           _headTint(theme.snakeColor),
           theme.snakeColor.withValues(alpha: 0.9),
@@ -885,6 +886,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case GameTheme.modern:
         return const MaskFilter.blur(BlurStyle.normal, 1.5);
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return const MaskFilter.blur(BlurStyle.normal, 4.0);
       case GameTheme.retro:
         return const MaskFilter.blur(BlurStyle.normal, 1.0);
@@ -1029,6 +1031,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case GameTheme.modern:
         return theme.snakeColor.withValues(alpha: opacity * 0.9);
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return theme.snakeColor.withValues(alpha: opacity);
       case GameTheme.retro:
         return theme.snakeColor.withValues(alpha: opacity * 0.95);
@@ -1054,6 +1057,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case GameTheme.modern:
         return const MaskFilter.blur(BlurStyle.normal, 0.5);
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return const MaskFilter.blur(BlurStyle.normal, 2.0);
       case GameTheme.retro:
         return null;
@@ -1079,6 +1083,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case GameTheme.modern:
         return Radius.circular(rect.width * 0.25);
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return Radius.circular(rect.width * 0.3);
       case GameTheme.retro:
         return Radius.circular(rect.width * 0.2);
@@ -1124,6 +1129,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         canvas.drawOval(highlightRect, highlightPaint);
         break;
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         // Core bright spot for neon effect
         final coreRect = Rect.fromLTWH(
           rect.left + rect.width * 0.3,
@@ -1998,6 +2004,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       case GameTheme.modern:
         return const MaskFilter.blur(BlurStyle.normal, 1.0);
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return const MaskFilter.blur(BlurStyle.normal, 3.0);
       case GameTheme.retro:
         return const MaskFilter.blur(BlurStyle.normal, 0.5);
@@ -2800,6 +2807,9 @@ class GameBoardBackgroundPainter extends CustomPainter {
 
     // Additional theme-specific enhancements
     switch (theme) {
+      case GameTheme.miamiNights:
+        _drawMiamiNightsEnhancements(canvas, size);
+        break;
       case GameTheme.neon:
         _drawNeonEnhancements(canvas, size);
         break;
@@ -2830,6 +2840,64 @@ class GameBoardBackgroundPainter extends CustomPainter {
       case GameTheme.classic:
         // Minimal enhancements for classic theme
         break;
+    }
+  }
+
+  /// Miami Nights: a striped retro sun sitting on the horizon over a
+  /// receding floor grid. Generic synthwave imagery only.
+  void _drawMiamiNightsEnhancements(Canvas canvas, Size size) {
+    final horizon = size.height * 0.72;
+    final center = Offset(size.width / 2, horizon);
+    final r = size.width * 0.28;
+    final sunRect = Rect.fromCircle(center: center, radius: r);
+
+    final sun = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          theme.accentColor.withValues(alpha: 0.12),
+          theme.foodColor.withValues(alpha: 0.08),
+        ],
+      ).createShader(sunRect);
+
+    // Upper half of the sun, cut into bands that thin toward the horizon.
+    canvas.save();
+    canvas.clipPath(Path()..addOval(sunRect));
+    final band = r * 0.16;
+    var y = center.dy - r;
+    for (var i = 0; y < horizon; i++) {
+      final gap = i < 3 ? 0.0 : (i - 2) * r * 0.035;
+      final bottom = math.min(y + band - gap, horizon);
+      if (bottom > y) {
+        canvas.drawRect(
+          Rect.fromLTRB(center.dx - r, y, center.dx + r, bottom),
+          sun,
+        );
+      }
+      y += band;
+    }
+    canvas.restore();
+
+    final grid = Paint()
+      ..color = theme.accentColor.withValues(alpha: 0.10)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset(0, horizon), Offset(size.width, horizon), grid);
+
+    grid.color = theme.foodColor.withValues(alpha: 0.06);
+    final depth = size.height - horizon;
+    for (var k = 1; k <= 6; k++) {
+      final t = k / 6;
+      final gy = horizon + depth * t * t;
+      canvas.drawLine(Offset(0, gy), Offset(size.width, gy), grid);
+    }
+    for (var k = -6; k <= 6; k++) {
+      canvas.drawLine(
+        center,
+        Offset(size.width / 2 + k * size.width / 6, size.height),
+        grid,
+      );
     }
   }
 

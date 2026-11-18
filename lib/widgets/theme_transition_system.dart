@@ -484,6 +484,7 @@ class ThemeTransitionPresets {
     GameTheme.forest: TransitionType.morph,
     GameTheme.desert: TransitionType.wave,
     GameTheme.crystal: TransitionType.ripple,
+    GameTheme.miamiNights: TransitionType.wave,
   };
 
   static TransitionType getPreferredTransition(GameTheme theme) {

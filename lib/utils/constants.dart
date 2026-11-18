@@ -359,6 +359,16 @@ class GameConstants {
   static const Color crystalFood = Color(0xFFFF4D9E); // Magenta quartz
   static const Color crystalAccent = Color(0xFFE6E6FA); // Lavender shimmer
 
+  // Colors - Miami Nights (limited event theme, Nov 2026). Generic retro
+  // sunset: aqua-mint snake on dusk violet with flamingo-pink food. Kept
+  // apart from Neon (cyan on black) and Crystal (pale blue on amethyst).
+  // Name and look are deliberately generic; never tie it to any other
+  // game's name, logo, lettering or art.
+  static const Color miamiNightsBackground = Color(0xFF3A1450); // Dusk violet
+  static const Color miamiNightsSnake = Color(0xFF3EF2C8); // Aqua mint
+  static const Color miamiNightsFood = Color(0xFFFF5CA8); // Flamingo pink
+  static const Color miamiNightsAccent = Color(0xFFFF9E44); // Sunset orange
+
   // Animation durations
   static const Duration shortAnimation = Duration(milliseconds: 150);
   static const Duration mediumAnimation = Duration(milliseconds: 300);
@@ -396,7 +406,11 @@ enum GameTheme {
   cyberpunk,
   forest,
   desert,
-  crystal;
+  crystal,
+
+  /// Limited event theme. MUST stay last: the selected theme is stored and
+  /// synced by index, and older builds clamp an unknown index.
+  miamiNights;
 
   String get name {
     switch (this) {
@@ -420,6 +434,8 @@ enum GameTheme {
         return 'Desert';
       case GameTheme.crystal:
         return 'Crystal';
+      case GameTheme.miamiNights:
+        return 'Miami Nights';
     }
   }
 
@@ -445,6 +461,8 @@ enum GameTheme {
         return GameConstants.desertBackground;
       case GameTheme.crystal:
         return GameConstants.crystalBackground;
+      case GameTheme.miamiNights:
+        return GameConstants.miamiNightsBackground;
     }
   }
 
@@ -470,6 +488,8 @@ enum GameTheme {
         return GameConstants.desertSnake;
       case GameTheme.crystal:
         return GameConstants.crystalSnake;
+      case GameTheme.miamiNights:
+        return GameConstants.miamiNightsSnake;
     }
   }
 
@@ -495,6 +515,8 @@ enum GameTheme {
         return GameConstants.desertFood;
       case GameTheme.crystal:
         return GameConstants.crystalFood;
+      case GameTheme.miamiNights:
+        return GameConstants.miamiNightsFood;
     }
   }
 
@@ -520,6 +542,8 @@ enum GameTheme {
         return GameConstants.desertAccent;
       case GameTheme.crystal:
         return GameConstants.crystalAccent;
+      case GameTheme.miamiNights:
+        return GameConstants.miamiNightsAccent;
     }
   }
 
@@ -545,6 +569,8 @@ enum GameTheme {
         return GameConstants.desertSnake;
       case GameTheme.crystal:
         return GameConstants.crystalSnake;
+      case GameTheme.miamiNights:
+        return GameConstants.miamiNightsSnake;
     }
   }
 
@@ -558,6 +584,7 @@ enum GameTheme {
       case GameTheme.space:
       case GameTheme.cyberpunk:
       case GameTheme.crystal:
+      case GameTheme.miamiNights:
         return Colors.white;
       case GameTheme.ocean:
       case GameTheme.forest:
@@ -589,6 +616,8 @@ enum GameTheme {
         return Colors.orange.shade100;
       case GameTheme.crystal:
         return Colors.purple.shade100;
+      case GameTheme.miamiNights:
+        return Colors.deepPurple.shade900;
     }
   }
 
@@ -605,6 +634,7 @@ enum GameTheme {
       case GameTheme.forest:
       case GameTheme.desert:
       case GameTheme.crystal:
+      case GameTheme.miamiNights:
         return true;
       case GameTheme.classic:
       case GameTheme.modern:

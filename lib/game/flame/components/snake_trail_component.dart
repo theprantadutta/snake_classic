@@ -281,6 +281,7 @@ class SnakeTrailComponent extends Component
       case GameTheme.modern:
         return TrailType.glow;
       case GameTheme.neon:
+      case GameTheme.miamiNights:
         return TrailType.glow;
       case GameTheme.retro:
         return TrailType.basic;

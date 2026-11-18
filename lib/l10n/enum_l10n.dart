@@ -58,6 +58,7 @@ extension GameThemeL10n on GameTheme {
         GameTheme.forest => l10n.themeForest,
         GameTheme.desert => l10n.themeDesert,
         GameTheme.crystal => l10n.themeCrystal,
+        GameTheme.miamiNights => l10n.themeMiamiNights,
       };
 }
 

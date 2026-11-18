@@ -33,8 +33,31 @@ class PremiumContent {
     GameTheme.crystal,
   };
 
-  /// Check if a theme requires premium
-  static bool isPremiumTheme(GameTheme theme) => premiumThemes.contains(theme);
+  /// Themes that come with Pro but are not sold on their own (no store
+  /// product, not part of the themes bundle, unknown to the backend
+  /// catalog). Kept out of [premiumThemes] so the bundle grant can't hand
+  /// them out permanently.
+  static const Set<GameTheme> proOnlyThemes = {GameTheme.miamiNights};
+
+  /// Miami Nights is free for everyone until this local time (the first
+  /// moment it is NOT free), then becomes a Pro theme. Launched for the
+  /// big Nov 19 2026 game release week.
+  static final DateTime miamiNightsFreeUntil = DateTime(2026, 12, 8);
+
+  /// Last day Miami Nights is free, for the "free until" store copy.
+  static DateTime get miamiNightsLastFreeDay =>
+      miamiNightsFreeUntil.subtract(const Duration(days: 1));
+
+  /// Whether [theme] is in a free-for-everyone event window right now.
+  static bool isEventFree(GameTheme theme, [DateTime? now]) =>
+      theme == GameTheme.miamiNights &&
+      (now ?? DateTime.now()).isBefore(miamiNightsFreeUntil);
+
+  /// Check if a theme requires premium (right now: an event theme in its
+  /// free window does not).
+  static bool isPremiumTheme(GameTheme theme) =>
+      (premiumThemes.contains(theme) || proOnlyThemes.contains(theme)) &&
+      !isEventFree(theme);
 }
 
 /// State class for PremiumCubit

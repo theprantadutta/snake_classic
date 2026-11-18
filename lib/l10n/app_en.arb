@@ -390,6 +390,16 @@
   "storeThemeDescForest": "Vivid emerald jungle",
   "storeThemeDescDesert": "Canyon + cactus teal",
   "storeThemeDescCrystal": "Icy crystalline blue",
+  "storeThemeDescMiamiNights": "Sunset neon and palm-tree nights",
+  "storeThemeFreeUntil": "Free for everyone until {date}",
+  "@storeThemeFreeUntil": {
+    "description": "Store featured-card footnote for a limited event theme; date is month + day",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "storeUnlockFor": "Unlock {name} for {price}?",
   "storeVerifyingPurchase": "Verifying {name} purchase…",
   "storeThemeNotAvailable": "Theme not available. Please try again later.",
@@ -449,6 +459,7 @@
   "themeForest": "Forest",
   "themeDesert": "Desert",
   "themeCrystal": "Crystal",
+  "themeMiamiNights": "Miami Nights",
   "dpadLeft": "Left",
   "dpadCenter": "Center",
   "dpadRight": "Right",

@@ -905,8 +905,10 @@ class _StoreScreenState extends State<StoreScreen>
   Widget _buildThemesTab(GameTheme theme, PremiumState premiumState) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
-    // Premium themes — listed as products in the Play Store catalog.
+    // Premium themes — listed as products in the Play Store catalog, plus
+    // Pro-only Miami Nights (no product) leading the list.
     const premiumThemes = [
+      GameTheme.miamiNights,
       GameTheme.crystal,
       GameTheme.cyberpunk,
       GameTheme.space,
@@ -929,12 +931,17 @@ class _StoreScreenState extends State<StoreScreen>
     // set on the next frame so we don't trigger a build-during-build.
     _reconcilePendingPurchases(premiumState);
 
+    // During its free window Miami Nights is the featured card until the
+    // player has it on, so the event is the first thing the tab shows.
     final focus =
         _focusTheme ??
-        premiumThemes.firstWhere(
-          (t) => !premiumState.isThemeUnlocked(t),
-          orElse: () => theme,
-        );
+        (PremiumContent.isEventFree(GameTheme.miamiNights) &&
+                theme != GameTheme.miamiNights
+            ? GameTheme.miamiNights
+            : premiumThemes.firstWhere(
+                (t) => !premiumState.isThemeUnlocked(t),
+                orElse: () => theme,
+              ));
 
     return _tabList([
       _buildThemeFeatured(focus, theme, premiumState),
@@ -1039,7 +1046,14 @@ class _StoreScreenState extends State<StoreScreen>
       titleColor: isOwned ? null : LB.gold,
       line: _shortThemeDescription(target),
       action: action,
-      footnote: !isOwned && productId != null && !premiumState.hasPremium
+      footnote: PremiumContent.isEventFree(target)
+          ? l10n.storeThemeFreeUntil(
+              AppFormats.monthDay(
+                PremiumContent.miamiNightsLastFreeDay,
+                Localizations.localeOf(context),
+              ),
+            )
+          : !isOwned && productId != null && !premiumState.hasPremium
           ? l10n.lbOrFreeWithPro
           : null,
     );
@@ -1240,6 +1254,8 @@ class _StoreScreenState extends State<StoreScreen>
         return l10n.storeThemeDescDesert;
       case GameTheme.crystal:
         return l10n.storeThemeDescCrystal;
+      case GameTheme.miamiNights:
+        return l10n.storeThemeDescMiamiNights;
     }
   }
 
