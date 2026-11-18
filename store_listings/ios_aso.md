@@ -90,8 +90,13 @@ published at once. Zero engineering work; pure App Store Connect metadata.
 **IAP display names** are indexed. Renaming e.g. `Coins Pack` → `Snake Coins Booster
 Pack` adds indexed surface for free.
 
-**Category.** Primary `Games > Arcade`, secondary `Games > Casual`. Category drives browse
-placement and top-chart eligibility, which is a discovery path independent of search.
+**Category.** App Store Connect has **no Arcade subcategory** for games (only Action,
+Adventure, Board, Card, Casino, Casual, Family, Music, Puzzle, Racing, Role Playing,
+Simulation, Sports, Strategy, Trivia, Word). Until 2026-11-18 the app sat in `Games > Board`
++ `Casual`, so Apple benchmarked and charted it against board games. Now `Games`, subcategories
+**Casual** + **Action**, secondary category Entertainment (set with the 7.6.2 version; ships
+with it). Category drives browse placement and top-chart eligibility, which is a discovery
+path independent of search.
 
 ---
 
