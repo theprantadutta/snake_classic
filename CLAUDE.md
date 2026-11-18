@@ -200,7 +200,7 @@ A Nov 18 GA4 review (Oct 21 – Nov 17) found 94% of new installs start a game, 
 - **`game_backgrounded`** (`score`, `duration_seconds`, `run_number`): the app left the foreground mid-run, once per run. It is not logged for revive / +30s ads. Started runs = `game_over` + `game_abandoned` + runs killed in the background, which carry this event.
 - **`push_opened`** (`push_type` = the payload's `type`, `cold_start`, `age_minutes`): a tapped push, including the local `day_one_reminder`. Per-type open rate = these taps ÷ `success_count` per type in the backend's `notification_histories` table. GA's automatic `notification_open` has no type.
 - **`daily_challenge_completed`** / **`daily_challenge_reward_claimed`**: fired from `DailyChallengeService`, so every path counts once. Completed challenges are claimed automatically by `GameEndPipeline`, because 80% of completed rewards were never claimed and expired with the day.
-- A new param shows in GA reports only once it is registered as a custom definition, and only from that day on (see the ad sections above).
+- A new param shows in GA reports only once it is registered as a custom definition, and only from that day on (see the ad sections above). Registered 2026-11-18, event scope: dimensions `game_end_trigger` (`end_trigger`), `run_end_reason` (`reason`), `run_number`, `push_type`, `push_cold_start` (`cold_start`), `game_mode`, `control_scheme`; metrics `push_age_minutes` (`age_minutes`), `run_duration_seconds` (`duration_seconds`, seconds), `run_score` (`score`). `score` and `duration_seconds` were already on `game_over`, so they collect from every build from that date.
 
 ## In-App Purchase Setup (RTDN)
 
