@@ -5,7 +5,7 @@ Shared by **every app** the owner publishes: they all sit in one AdMob account
 `app-ads.txt` lines and its AdMob bidding source are shared too. Each app still
 needs its own placements and ad-unit mappings.
 
-Last updated: 2026-11-16. Snake Classic is the first app being wired up.
+Last updated: 2026-11-18. Snake Classic is the first app being wired up.
 
 **Any agent picking this up:** read the quick status below, then the section for
 the partner you are touching. Before changing anything, check Gmail
@@ -16,7 +16,7 @@ off for the site rather than working around it. Partner agreements, terms
 checkboxes and COPPA / child-directed declarations are signed by the **owner**,
 never by an agent.
 
-## Quick status (2026-11-16)
+## Quick status (2026-11-18)
 
 | Partner | Kind | Status | App code needed |
 |---|---|---|---|
@@ -25,14 +25,14 @@ never by an agent.
 | Liftoff Monetize | SDK bidding | **Live** Snake Android; iOS set up | `gma_mediation_liftoffmonetize` |
 | AppLovin | SDK bidding | **Closed**: account disabled, reactivation refused 2026-11-16 | don't add |
 | Index Exchange | Open Bidding (no SDK) | **Rejected 2026-11-16** ("did not meet our Exchange Quality standards", no detail) | — |
-| Magnite DV+ | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16**, pending Magnite review (1–2 weeks) | none |
-| OpenX | Open Bidding (no SDK) | **Applied + acknowledged 2026-11-16** (13 apps; Gridwell iOS rejected) | none |
-| PubMatic | Open Bidding (no SDK) | **Applied + contract signed 2026-11-16** (14 apps) | none |
+| Magnite DV+ | Open Bidding (no SDK) | **Rejected** (AdMob shows "Rejected / Retry" on 2026-11-18; no email yet) | — |
+| OpenX | Open Bidding (no SDK) | **Approved 2026-11-17** ("Inventory creation success" email); AdMob still says Pending partnership. **In all 6 banner/interstitial/rewarded groups** and app-ads.txt 2026-11-18 | none |
+| PubMatic | Open Bidding (no SDK) | **Approved 2026-11-16, Active in AdMob** (11 apps; Screw Out and Gridwell not on the list). **In all 6 banner/interstitial/rewarded groups** and app-ads.txt 2026-11-18 | none |
 | Verve Group | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
 | Smaato | Open Bidding (no SDK) | **Applied 2026-11-16** | none |
-| InMobi Exchange | Open Bidding (no SDK) | **Accepted 2026-11-16**, listed in AdMob | none |
-| Media.net | Open Bidding (no SDK) | **Submitted 2026-11-16**, listed in AdMob; Media.net reviews within ~48 business hours | none |
-| Equativ | Open Bidding (no SDK) | **Submitted 2026-11-16**; not yet listed in AdMob (see note) | none |
+| InMobi Exchange | Open Bidding (no SDK) | **Accepted by InMobi 2026-11-16**; AdMob partnership still Pending (2026-11-18) | none |
+| Media.net | Open Bidding (no SDK) | **Rejected** (AdMob shows "Rejected / Retry" on 2026-11-18; no email yet) | — |
+| Equativ | Open Bidding (no SDK) | **Agreement unfinished**: AdMob shows "Started agreement / Continue" (2026-11-18). The owner must click Continue and finish it | none |
 | TripleLift | Open Bidding | Not offered in this AdMob account's list | — |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | **Owner decided to stop here (2026-11-16)**; small extras listed below if ever wanted | none |
 | Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
@@ -42,6 +42,15 @@ servers and need no adapter, app release or InMobi/Media.net SDK (ignore those
 dashboards' "integrate the SDK" steps). The only app-side work still planned is the
 Meta / Mintegral / Pangle adapters (see "SDK networks"), after the 2026-11-20
 revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
+
+**AdMob statuses on 2026-11-18** (Add bidding ad source dialog): PubMatic Active;
+OpenX, Verve Group, Smaato, InMobi Exchange, Index Exchange Pending (IX shows Pending
+even though IX emailed a rejection); Magnite DV+ and Media.net Rejected; Equativ
+"Started agreement". Exchanges can't bid on **App Open**: neither app open group
+offers them (only SDK networks: Liftoff, Mintegral, Pangle, Bigo), so they go in the
+6 banner/interstitial/rewarded groups only. Both OpenX and PubMatic are already in the
+GDPR ad-partner list ("Automatically include common ad partners", 199 partners):
+OpenX Technologies (GVL 69), PubMatic (GVL 76). Check each new exchange there too.
 
 **What's left for the Open Bidding exchanges:**
 1. Wait for approvals (email). AdMob then shows "Active partnership".
@@ -81,13 +90,18 @@ rubiconproject.com, 22884, DIRECT, 0bfd66d529a55807
 inmobi.com, 85403fc616154ee1b41247e0388c1af0, DIRECT, 83e75a7ae333ca9d
 smartadserver.com, 4194-OB, RESELLER, 060d053dcf45cbf3
 smartadserver.com, 4194, RESELLER, 060d053dcf45cbf3
+openx.com, 661298559, RESELLER, 6a698e2ec38604c6
+pubmatic.com, 159856, DIRECT, 5d62403b186f2ace
 ```
+**2026-11-18:** the OpenX and PubMatic lines were added to the master copy (now 186
+lines) and synced to all 9 backends. Commits: portfolio bcb495e, aipersona f374bd3,
+cosmo-strike d42129b, Gridwell 4788f2b, odyssey 0c69c9f, Pourfect eb8efa3, screw-out
+cefb40e, snake-classic-backend 5123a3e, Sunstone b007e3c, the-accountant 9c64514.
+Live once each backend and the portfolio redeploy.
 **Verified live 2026-11-16** on all 10 sites (pranta.dev, snakeclassic, aipersona,
 cosmostrike, gridwell, odyssey, pourfect, screwout, sunstone, theaccountant
 .pranta.dev): HTTP 200 for GET and HEAD, text/plain, 175 lines, every line above present.
-Pending (they send lines on approval): OpenX, PubMatic, Verve,
-Smaato, Media.net. Live on pranta.dev and snakeclassic.pranta.dev once those sites
-redeploy (portfolio `static/app-ads.txt`, backend `wwwroot/app-ads.txt`).
+Pending (they send lines on approval): Verve, Smaato. InMobi's line is already in.
 
 ## Why this exists
 
@@ -282,6 +296,13 @@ iOS, Gridwell Android, Jadewell Android + iOS, Screw Out iOS, SunStone iOS. Add
 them to each exchange once they are live in their stores.
 
 ### Status per exchange
+- **2026-11-18 round-up:** OpenX approved (email 2026-11-17) and PubMatic approved
+  (email 2026-11-16: 6779621362, 6789549164, 6794265000, 6824137375 and the Android
+  apps aipersona, cosmostrike, odyssey, pourfect, snakeclassic, sunstone,
+  theaccountant). Both added to the 6 banner/interstitial/rewarded groups (verified after
+  reload) and to app-ads.txt everywhere. AdMob shows Magnite DV+ and Media.net
+  **Rejected** (neither has emailed yet) and Equativ as "Started agreement" (owner to
+  click Continue in AdMob > Mediation > Bidding sources > Set up ad source).
 - **Index Exchange** (signup.indexexchange.com): **REJECTED 2026-11-16 ("did not meet our Exchange Quality standards"; no reason given; may re-apply when traffic grows).** Applied 2026-11-16 with all 14
   apps. The IX page showed success, but no email came, and IX is still in AdMob's
   "Set up ad source" list (Magnite left it once its agreement registered). The
