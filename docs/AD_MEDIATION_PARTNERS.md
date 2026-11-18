@@ -103,7 +103,10 @@ Then Equativ's 2026-11-18 email added two sharethrough.com lines (Sharethrough i
 Equativ): master now 189 lines, synced to all 9 backends (portfolio 6fd64f5, aipersona
 e8292c0, cosmo-strike 3776615, Gridwell af7d037, odyssey 4549035, Pourfect 91cf153,
 screw-out e83ab91, snake-classic-backend 0065994, Sunstone 3cc583a, the-accountant 565f3c9).
-Live once each backend and the portfolio redeploy.
+**Deployed and verified live 2026-11-18** on all 10 sites: HTTP 200, 189 lines, OpenX,
+PubMatic and both Sharethrough lines present. (VPS: `ssh -p 10 root@ssh.pranta.dev`; backends in
+`/root/apis/<repo>`, the portfolio in `/root/clients/portfolio-svelte-web`; deploy = `git pull
+--ff-only` then `docker compose up -d --build` in that folder.)
 **Verified live 2026-11-16** on all 10 sites (pranta.dev, snakeclassic, aipersona,
 cosmostrike, gridwell, odyssey, pourfect, screwout, sunstone, theaccountant
 .pranta.dev): HTTP 200 for GET and HEAD, text/plain, 175 lines, every line above present.
