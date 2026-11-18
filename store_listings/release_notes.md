@@ -19,11 +19,17 @@ stores (it includes everything 7.6.1 has). What 7.6.2 adds over 7.6.0:
   called without the App Store ID, which iOS needs, so the row did nothing.
   The automatic review prompt on iOS now asks after 5 games / 1 day instead
   of 8 / 3 (the listing had zero ratings).
+- **Daily challenges claim themselves** (c7d75cc). 1,715 players completed
+  one in Oct 21 - Nov 17, only 351 ever claimed; claims expire daily.
+- **Home Season tile shows waiting rewards** (c7d75cc). 1,335 of 1,396
+  tier-2+ players had never claimed one.
+- **A run is kept when the app closes on game over** (f2f1884). Since the
+  continue window, closing the app within 8 s lost the score, coins and stats.
 - Android only, invisible: Play's "fix your payment" in-app message
   (7ec2f00) and the edge-to-edge fix for Play's warning (e48b236).
 
-Play's text is the same as 7.6.1's (its rate button already worked). The App
-Store text adds the rate-button line. Mode names are each language's in-app
+Play's text is 7.6.1's plus the three reward/run lines (its rate button
+already worked). The App Store text adds the rate-button line too. Mode names are each language's in-app
 name (modeZen in the .arb files); Turkish is not an in-app language. Every
 Play block fits the 500-character limit.
 
@@ -39,66 +45,99 @@ Fixes from your feedback.
 
 • Completing daily challenges now counts toward your weekly quests.
 • Zen Mode no longer shows a wall warning glow, since Zen has no walls.
+• Completed daily challenges now pay out automatically, so rewards no longer expire unclaimed.
+• The Season tile on Home lights up when you have rewards to claim.
+• Closing the app on the game-over screen no longer loses that run's score and coins.
 </en-US>
 <ar>
 إصلاحات بناءً على ملاحظاتكم.
 
 • إكمال التحديات اليومية يُحتسب الآن ضمن مهامك الأسبوعية.
 • لم يعد وضع الاسترخاء يُظهر توهج التحذير من الجدران، فلا جدران فيه.
+• مكافآت التحديات اليومية المكتملة تُضاف الآن تلقائيًا، فلا تضيع قبل استلامها.
+• تضيء بطاقة «الموسم» في الشاشة الرئيسية عندما تكون لديك مكافآت لاستلامها.
+• إغلاق التطبيق في شاشة انتهاء اللعبة لم يعد يُضيّع نقاط تلك الجولة وعملاتها.
 </ar>
 <es-419>
 Arreglos gracias a tus comentarios.
 
 • Completar desafíos diarios ahora cuenta para tus misiones semanales.
 • El Modo Zen ya no muestra el brillo de advertencia de pared, porque no tiene paredes.
+• Los desafíos diarios completados ahora se cobran solos: las recompensas ya no caducan sin reclamar.
+• La casilla Temporada del inicio se ilumina cuando tienes recompensas por reclamar.
+• Cerrar la app en la pantalla de fin de partida ya no hace perder la puntuación ni las monedas.
 </es-419>
 <es-ES>
 Arreglos gracias a tus comentarios.
 
 • Completar desafíos diarios ahora cuenta para tus misiones semanales.
 • El Modo Zen ya no muestra el brillo de advertencia de pared, porque no tiene paredes.
+• Los desafíos diarios completados ahora se cobran solos: las recompensas ya no caducan sin reclamar.
+• La casilla Temporada del inicio se ilumina cuando tienes recompensas por reclamar.
+• Cerrar la app en la pantalla de fin de partida ya no hace perder la puntuación ni las monedas.
 </es-ES>
 <fr-FR>
 Des corrections grâce à vos retours.
 
 • Terminer des défis quotidiens compte désormais pour vos quêtes hebdomadaires.
 • Le Mode Zen n'affiche plus la lueur d'alerte des murs, puisqu'il n'a pas de murs.
+• Les défis du jour terminés sont désormais récompensés automatiquement : plus de récompenses perdues.
+• La tuile Saison de l'accueil s'allume quand des récompenses vous attendent.
+• Fermer l'app sur l'écran de fin de partie ne fait plus perdre le score ni les pièces.
 </fr-FR>
 <hi-IN>
 आपके सुझावों से सुधार।
 
 • डेली चैलेंज पूरे करना अब आपकी वीकली क्वेस्ट में गिना जाता है।
 • ज़ेन मोड में अब दीवार की चेतावनी वाली चमक नहीं दिखती, क्योंकि इसमें दीवारें नहीं हैं।
+• पूरे हुए डेली चैलेंज के इनाम अब अपने-आप मिलते हैं, इसलिए वे बिना लिए खत्म नहीं होते।
+• होम पर सीज़न टाइल अब चमकती है जब कोई इनाम लेना बाकी हो।
+• गेम ओवर स्क्रीन पर ऐप बंद करने से अब उस राउंड का स्कोर और सिक्के नहीं खोते।
 </hi-IN>
 <it-IT>
 Correzioni grazie ai vostri commenti.
 
 • Completare le sfide giornaliere ora conta per le missioni settimanali.
 • La Modalità Zen non mostra più il bagliore di avviso dei muri, perché non ha muri.
+• Le sfide giornaliere completate ora vengono riscattate da sole: niente più premi scaduti.
+• Il riquadro Stagione nella Home si illumina quando hai premi da riscattare.
+• Chiudere l'app nella schermata di fine partita non fa più perdere punteggio e monete.
 </it-IT>
 <pl-PL>
 Poprawki dzięki Waszym opiniom.
 
 • Ukończone wyzwania dzienne liczą się teraz do zadań tygodniowych.
 • Tryb Zen nie pokazuje już ostrzegawczej poświaty ścian, bo nie ma w nim ścian.
+• Nagrody za ukończone wyzwania dzienne trafiają teraz do Ciebie automatycznie i już nie przepadają.
+• Kafelek Sezon na ekranie głównym świeci, gdy czekają nagrody do odebrania.
+• Zamknięcie aplikacji na ekranie końca gry nie kasuje już wyniku i monet z tej rundy.
 </pl-PL>
 <pt-BR>
 Correções a partir do seu feedback.
 
 • Completar desafios diários agora conta para as suas missões semanais.
 • O Modo Zen não mostra mais o brilho de alerta das paredes, já que não tem paredes.
+• Desafios diários concluídos agora são resgatados sozinhos: as recompensas não expiram mais.
+• O bloco Temporada na tela inicial acende quando há recompensas para resgatar.
+• Fechar o app na tela de fim de jogo não faz mais perder a pontuação e as moedas.
 </pt-BR>
 <ru-RU>
 Исправления по вашим отзывам.
 
 • Выполненные ежедневные задания теперь засчитываются в еженедельные квесты.
 • В режиме «Дзен» больше нет подсветки-предупреждения о стенах: стен там нет.
+• Награды за выполненные задания дня теперь начисляются сами и больше не сгорают.
+• Плитка «Сезон» на главном экране подсвечивается, когда вас ждут награды.
+• Закрытие приложения на экране конца игры больше не стирает счёт и монеты этого забега.
 </ru-RU>
 <tr-TR>
 Geri bildirimlerinle gelen düzeltmeler.
 
 • Tamamladığın günlük görevler artık haftalık görevlerine sayılıyor.
 • Zen Modu artık duvar uyarı parıltısı göstermiyor, çünkü Zen'de duvar yok.
+• Tamamlanan günlük görevlerin ödülleri artık otomatik veriliyor, alınmadan kaybolmuyor.
+• Ana ekrandaki Sezon kutucuğu, alınacak ödül olduğunda parlıyor.
+• Oyun sonu ekranında uygulamayı kapatmak artık o turun skorunu ve jetonlarını kaybettirmiyor.
 </tr-TR>
 ```
 
@@ -114,6 +153,9 @@ Fixes from your feedback.
 
 • Completing daily challenges now counts toward your weekly quests.
 • Zen Mode no longer shows a wall warning glow, since Zen has no walls.
+• Completed daily challenges now pay out automatically, so rewards no longer expire unclaimed.
+• The Season tile on Home lights up when you have rewards to claim.
+• Closing the app on the game-over screen no longer loses that run's score and coins.
 • "Rate Snake Classic" in Settings now opens the App Store.
 ```
 
@@ -123,6 +165,9 @@ Fixes from your feedback.
 
 • إكمال التحديات اليومية يُحتسب الآن ضمن مهامك الأسبوعية.
 • لم يعد وضع الاسترخاء يُظهر توهج التحذير من الجدران، فلا جدران فيه.
+• مكافآت التحديات اليومية المكتملة تُضاف الآن تلقائيًا، فلا تضيع قبل استلامها.
+• تضيء بطاقة «الموسم» في الشاشة الرئيسية عندما تكون لديك مكافآت لاستلامها.
+• إغلاق التطبيق في شاشة انتهاء اللعبة لم يعد يُضيّع نقاط تلك الجولة وعملاتها.
 • زر «قيّم Snake Classic» في الإعدادات يفتح الآن App Store.
 ```
 
@@ -132,6 +177,9 @@ Arreglos gracias a tus comentarios.
 
 • Completar desafíos diarios ahora cuenta para tus misiones semanales.
 • El Modo Zen ya no muestra el brillo de advertencia de pared, porque no tiene paredes.
+• Los desafíos diarios completados ahora se cobran solos: las recompensas ya no caducan sin reclamar.
+• La casilla Temporada del inicio se ilumina cuando tienes recompensas por reclamar.
+• Cerrar la app en la pantalla de fin de partida ya no hace perder la puntuación ni las monedas.
 • «Valora Snake Classic» en Ajustes ahora abre el App Store.
 ```
 
@@ -141,6 +189,9 @@ Des corrections grâce à vos retours.
 
 • Terminer des défis quotidiens compte désormais pour vos quêtes hebdomadaires.
 • Le Mode Zen n'affiche plus la lueur d'alerte des murs, puisqu'il n'a pas de murs.
+• Les défis du jour terminés sont désormais récompensés automatiquement : plus de récompenses perdues.
+• La tuile Saison de l'accueil s'allume quand des récompenses vous attendent.
+• Fermer l'app sur l'écran de fin de partie ne fait plus perdre le score ni les pièces.
 • « Noter Snake Classic » dans les Réglages ouvre désormais l'App Store.
 ```
 
@@ -150,6 +201,9 @@ Des corrections grâce à vos retours.
 
 • डेली चैलेंज पूरे करना अब आपकी वीकली क्वेस्ट में गिना जाता है।
 • ज़ेन मोड में अब दीवार की चेतावनी वाली चमक नहीं दिखती, क्योंकि इसमें दीवारें नहीं हैं।
+• पूरे हुए डेली चैलेंज के इनाम अब अपने-आप मिलते हैं, इसलिए वे बिना लिए खत्म नहीं होते।
+• होम पर सीज़न टाइल अब चमकती है जब कोई इनाम लेना बाकी हो।
+• गेम ओवर स्क्रीन पर ऐप बंद करने से अब उस राउंड का स्कोर और सिक्के नहीं खोते।
 • सेटिंग्स में "Snake Classic को रेट करें" अब App Store खोलता है।
 ```
 
@@ -159,6 +213,9 @@ Correzioni grazie ai vostri commenti.
 
 • Completare le sfide giornaliere ora conta per le missioni settimanali.
 • La Modalità Zen non mostra più il bagliore di avviso dei muri, perché non ha muri.
+• Le sfide giornaliere completate ora vengono riscattate da sole: niente più premi scaduti.
+• Il riquadro Stagione nella Home si illumina quando hai premi da riscattare.
+• Chiudere l'app nella schermata di fine partita non fa più perdere punteggio e monete.
 • "Valuta Snake Classic" nelle Impostazioni ora apre l'App Store.
 ```
 
@@ -168,6 +225,9 @@ Poprawki dzięki Waszym opiniom.
 
 • Ukończone wyzwania dzienne liczą się teraz do zadań tygodniowych.
 • Tryb Zen nie pokazuje już ostrzegawczej poświaty ścian, bo nie ma w nim ścian.
+• Nagrody za ukończone wyzwania dzienne trafiają teraz do Ciebie automatycznie i już nie przepadają.
+• Kafelek Sezon na ekranie głównym świeci, gdy czekają nagrody do odebrania.
+• Zamknięcie aplikacji na ekranie końca gry nie kasuje już wyniku i monet z tej rundy.
 • „Oceń Snake Classic” w Ustawieniach otwiera teraz App Store.
 ```
 
@@ -177,6 +237,9 @@ Correções a partir do seu feedback.
 
 • Completar desafios diários agora conta para as suas missões semanais.
 • O Modo Zen não mostra mais o brilho de alerta das paredes, já que não tem paredes.
+• Desafios diários concluídos agora são resgatados sozinhos: as recompensas não expiram mais.
+• O bloco Temporada na tela inicial acende quando há recompensas para resgatar.
+• Fechar o app na tela de fim de jogo não faz mais perder a pontuação e as moedas.
 • "Avalie Snake Classic" nos Ajustes agora abre a App Store.
 ```
 
@@ -186,5 +249,8 @@ Geri bildirimlerinle gelen düzeltmeler.
 
 • Tamamladığın günlük görevler artık haftalık görevlerine sayılıyor.
 • Zen Modu artık duvar uyarı parıltısı göstermiyor, çünkü Zen'de duvar yok.
+• Tamamlanan günlük görevlerin ödülleri artık otomatik veriliyor, alınmadan kaybolmuyor.
+• Ana ekrandaki Sezon kutucuğu, alınacak ödül olduğunda parlıyor.
+• Oyun sonu ekranında uygulamayı kapatmak artık o turun skorunu ve jetonlarını kaybettirmiyor.
 • Ayarlar'daki "Snake Classic'i Değerlendir" artık App Store'u açıyor.
 ```
