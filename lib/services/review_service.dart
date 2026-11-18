@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,12 +37,19 @@ class ReviewService {
 
   /// New installs need a baseline of play before being prompted.
   /// 8 lifetime games × ~2 min each ≈ 15+ minutes of engagement.
-  static const int _minLifetimeGames = 8;
+  ///
+  /// iOS uses a lower bar (5 games, 1 day). The App Store listing had zero
+  /// ratings in Nov 2026 with ~100 installs a month, and almost nobody stayed
+  /// long enough to reach the Android gate. With no stars shown in search,
+  /// App Store visibility stays low, so getting the first ratings matters more
+  /// there. StoreKit still caps the sheet at 3 per user per year.
+  static int get _minLifetimeGames => Platform.isIOS ? 5 : 8;
 
   /// Don't prompt anyone who installed less than this ago — even if they
   /// somehow blasted through 8 games on day 1, that's not "I love this app"
   /// territory yet.
-  static const Duration _minDaysSinceFirstPlay = Duration(days: 3);
+  static Duration get _minDaysSinceFirstPlay =>
+      Platform.isIOS ? const Duration(days: 1) : const Duration(days: 3);
 
   /// Delay before triggering the OS dialog after the eligibility check
   /// passes. Lets celebration audio + animation finish first so the prompt
@@ -49,6 +57,11 @@ class ReviewService {
   static const Duration _promptDelay = Duration(milliseconds: 1800);
 
   static const String _kLastPromptedAtMillisKey = 'review_last_prompted_at';
+
+  /// Apple ID of the App Store listing. `openStoreListing` needs it on iOS
+  /// (and macOS): without it in_app_review has nothing to open, so the
+  /// Settings "Rate us" row did nothing on iPhone. Android ignores it.
+  static const String appStoreId = '6779621362';
   static const String _kEligibilityTag = '[ReviewService]';
 
   final InAppReview _inAppReview;
@@ -162,7 +175,7 @@ class ReviewService {
   Future<void> openStoreListing() async {
     try {
       _analytics.trackReviewRequested('manual_store_listing');
-      await _inAppReview.openStoreListing();
+      await _inAppReview.openStoreListing(appStoreId: appStoreId);
     } catch (e) {
       AppLogger.info('$_kEligibilityTag openStoreListing failed: $e');
     }

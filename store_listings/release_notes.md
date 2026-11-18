@@ -6,20 +6,26 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**7.6.1+75**. The 7.6.0 notes are archived in release_notes_7.6.0.md.
+**7.6.2+76**. The 7.6.0 notes are archived in release_notes_7.6.0.md.
 
-What 7.6.1 adds over 7.6.0 (commit 34dc93f), both from Marthad Osman's
-updated Play review (replied to 2026-11-14, promising them "for our next
-update"):
+7.6.1+75 was built for Play on 2026-11-16 but 7.6.2 supersedes it on both
+stores (it includes everything 7.6.1 has). What 7.6.2 adds over 7.6.0:
 
-- **Daily challenges count toward weekly quests.** The Daily Doer / Daily
-  Adept weekly quests had no progress source, so they never moved.
-- **No wall glow in Zen.** The near-wall warning drew in Zen, which has no
-  walls (the snake wraps around).
+- **Daily challenges count toward weekly quests** (34dc93f). The Daily Doer /
+  Daily Adept weekly quests had no progress source, so they never moved.
+- **No wall glow in Zen** (34dc93f). Zen has no walls (the snake wraps).
+  Both from Marthad Osman's Play review, promised "for our next update".
+- **iOS: Settings > Rate Snake Classic works.** `openStoreListing()` was
+  called without the App Store ID, which iOS needs, so the row did nothing.
+  The automatic review prompt on iOS now asks after 5 games / 1 day instead
+  of 8 / 3 (the listing had zero ratings).
+- Android only, invisible: Play's "fix your payment" in-app message
+  (7ec2f00) and the edge-to-edge fix for Play's warning (e48b236).
 
-Both stores have 7.6.0, so the same text goes to both. Mode names are each
-language's in-app name (modeZen in the .arb files); Turkish is not an in-app
-language. Every block fits Play's 500-character limit.
+Play's text is the same as 7.6.1's (its rate button already worked). The App
+Store text adds the rate-button line. Mode names are each language's in-app
+name (modeZen in the .arb files); Turkish is not an in-app language. Every
+Play block fits the 500-character limit.
 
 ---
 
@@ -96,7 +102,89 @@ Geri bildirimlerinle gelen düzeltmeler.
 </tr-TR>
 ```
 
-## App Store Connect — What's New (7.6.1)
+## App Store Connect — What's New (7.6.2)
 
-Use the matching Play text per locale (en-GB = en, es-MX = es, pt-BR = pt).
-Promotional Text is unchanged; see release_notes_7.6.0.md.
+The App Store has 7.6.0 live, so this carries the 7.6.1 fixes too. The rate
+line uses each language's in-app row name (settingsRateApp). Promotional
+Text is unchanged; see release_notes_7.6.0.md.
+
+**en-US / en-GB**
+```
+Fixes from your feedback.
+
+• Completing daily challenges now counts toward your weekly quests.
+• Zen Mode no longer shows a wall warning glow, since Zen has no walls.
+• "Rate Snake Classic" in Settings now opens the App Store.
+```
+
+**ar**
+```
+إصلاحات بناءً على ملاحظاتكم.
+
+• إكمال التحديات اليومية يُحتسب الآن ضمن مهامك الأسبوعية.
+• لم يعد وضع الاسترخاء يُظهر توهج التحذير من الجدران، فلا جدران فيه.
+• زر «قيّم Snake Classic» في الإعدادات يفتح الآن App Store.
+```
+
+**es-MX**
+```
+Arreglos gracias a tus comentarios.
+
+• Completar desafíos diarios ahora cuenta para tus misiones semanales.
+• El Modo Zen ya no muestra el brillo de advertencia de pared, porque no tiene paredes.
+• «Valora Snake Classic» en Ajustes ahora abre el App Store.
+```
+
+**fr-FR**
+```
+Des corrections grâce à vos retours.
+
+• Terminer des défis quotidiens compte désormais pour vos quêtes hebdomadaires.
+• Le Mode Zen n'affiche plus la lueur d'alerte des murs, puisqu'il n'a pas de murs.
+• « Noter Snake Classic » dans les Réglages ouvre désormais l'App Store.
+```
+
+**hi**
+```
+आपके सुझावों से सुधार।
+
+• डेली चैलेंज पूरे करना अब आपकी वीकली क्वेस्ट में गिना जाता है।
+• ज़ेन मोड में अब दीवार की चेतावनी वाली चमक नहीं दिखती, क्योंकि इसमें दीवारें नहीं हैं।
+• सेटिंग्स में "Snake Classic को रेट करें" अब App Store खोलता है।
+```
+
+**it**
+```
+Correzioni grazie ai vostri commenti.
+
+• Completare le sfide giornaliere ora conta per le missioni settimanali.
+• La Modalità Zen non mostra più il bagliore di avviso dei muri, perché non ha muri.
+• "Valuta Snake Classic" nelle Impostazioni ora apre l'App Store.
+```
+
+**pl**
+```
+Poprawki dzięki Waszym opiniom.
+
+• Ukończone wyzwania dzienne liczą się teraz do zadań tygodniowych.
+• Tryb Zen nie pokazuje już ostrzegawczej poświaty ścian, bo nie ma w nim ścian.
+• „Oceń Snake Classic” w Ustawieniach otwiera teraz App Store.
+```
+
+**pt-BR**
+```
+Correções a partir do seu feedback.
+
+• Completar desafios diários agora conta para as suas missões semanais.
+• O Modo Zen não mostra mais o brilho de alerta das paredes, já que não tem paredes.
+• "Avalie Snake Classic" nos Ajustes agora abre a App Store.
+```
+
+**tr**
+```
+Geri bildirimlerinle gelen düzeltmeler.
+
+• Tamamladığın günlük görevler artık haftalık görevlerine sayılıyor.
+• Zen Modu artık duvar uyarı parıltısı göstermiyor, çünkü Zen'de duvar yok.
+• Ayarlar'daki "Snake Classic'i Değerlendir" artık App Store'u açıyor.
+```
