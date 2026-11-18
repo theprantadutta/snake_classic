@@ -193,6 +193,15 @@ One Firebase Analytics event per game over that reaches `AdService.maybeShowGame
 - Per game over rather than aggregated: ~45K a month is modest, and one dimension is all a report needs.
 - GA4 custom dimension `game_over_ad_outcome` (event scope, param `outcome`) registered 2026-11-14 on property snake-classic-2a376; it only collects from that date on.
 
+### Run, retention and push analytics (added 7.6.2, 2026-11-18)
+A Nov 18 GA4 review (Oct 21 – Nov 17) found 94% of new installs start a game, but only 69% of those finish one, about 14% come back the next day, and about 3.4% after a week. These events show where the rest go:
+- **`game_over.end_trigger`**: what closed the game-over continue window: `timer`, `again`, `home`, `replay`, `declined`, `background`, `new_run`, `no_offer`, `reset`, `menu`, `close`. `background` counts runs the app saved on its way out; before 7.6.2 those runs were lost (no high score, coins, stats or event). The run finalizes from `GameCubit.finalizeOnAppBackground`, called by the game-over screen's lifecycle observer. It is skipped while a continue is being paid for, because the rewarded ad itself backgrounds the app.
+- **`game_abandoned`** (`reason`: `quit` / `restart`, plus `score`, `duration_seconds`, `run_number`, `game_mode`): a run left mid-play. `run_number` is lifetime, so 1 = first game ever.
+- **`game_backgrounded`** (`score`, `duration_seconds`, `run_number`): the app left the foreground mid-run, once per run. It is not logged for revive / +30s ads. Started runs = `game_over` + `game_abandoned` + runs killed in the background, which carry this event.
+- **`push_opened`** (`push_type` = the payload's `type`, `cold_start`, `age_minutes`): a tapped push, including the local `day_one_reminder`. Per-type open rate = these taps ÷ `success_count` per type in the backend's `notification_histories` table. GA's automatic `notification_open` has no type.
+- **`daily_challenge_completed`** / **`daily_challenge_reward_claimed`**: fired from `DailyChallengeService`, so every path counts once. Completed challenges are claimed automatically by `GameEndPipeline`, because 80% of completed rewards were never claimed and expired with the day.
+- A new param shows in GA reports only once it is registered as a custom definition, and only from that day on (see the ad sections above).
+
 ## In-App Purchase Setup (RTDN)
 
 ### Google Play RTDN Setup
