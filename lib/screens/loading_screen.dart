@@ -24,6 +24,8 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/presentation/bloc/premium/premium_state.dart';
+import 'package:snake_classic/utils/constants.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
@@ -578,12 +580,24 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final screen = Scaffold(
       body: LBGridBackground(
         child: SafeArea(
           child: _hasError ? _buildErrorView(context) : _buildLoadingView(context),
         ),
       ),
+    );
+    // During the Miami Nights window the native splash is the sunset scene
+    // for everyone, so this screen wears it too (whatever theme is picked)
+    // rather than cutting from sunset to green. Remove with the event splash.
+    if (!PremiumContent.isEventFree(GameTheme.miamiNights)) return screen;
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(extensions: [
+        ...theme.extensions.values.where((e) => e is! LBPalette),
+        LBPalette.of(GameTheme.miamiNights),
+      ]),
+      child: screen,
     );
   }
 
