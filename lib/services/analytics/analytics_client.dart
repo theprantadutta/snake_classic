@@ -74,6 +74,9 @@ abstract class AnalyticsClient {
     required bool coldStart,
     required int ageMinutes,
   });
+  /// One-time event theme announcement: action is shown / accepted /
+  /// dismissed.
+  Future<void> trackThemePromo({required String action});
   Future<void> trackLevelUp(int level);
   Future<void> trackPowerUpUsed(String powerUpType);
 

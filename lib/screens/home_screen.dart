@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/widgets/design_feedback_sheet.dart';
+import 'package:snake_classic/widgets/event_theme_promo.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/home/lb_home_snake.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
@@ -182,11 +183,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // screen, and the remaining prompts self-gate and run on the next visit.
     if (tourRan) return;
 
-    // 2. Daily bonus popup — resolves when the dialog is dismissed.
+    // 2. Limited event theme announcement — once per install, only while
+    //    the theme is free. When it shows it is the visit's interruption;
+    //    the daily bonus badge stays on screen for later.
+    if (await maybeShowMiamiNightsPromo(context)) return;
+    if (!mounted) return;
+
+    // 3. Daily bonus popup — resolves when the dialog is dismissed.
     await _checkDailyBonus();
     if (!mounted) return;
 
-    // 3. "How's the game feeling?" — once, after five finished runs and two
+    // 4. "How's the game feeling?" — once, after five finished runs and two
     //    days installed (DesignFeedbackPolicy). Home rather than game over,
     //    so it can never land on a run or on top of its rewards. When it
     //    shows, that is the visit's interruption: the notification ask
@@ -194,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (await maybeShowDesignFeedback(context)) return;
     if (!mounted) return;
 
-    // 4. Notification init + soft-ask → primer chain.
+    // 5. Notification init + soft-ask → primer chain.
     await _maybeInitNotifications();
   }
 

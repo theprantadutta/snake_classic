@@ -1033,6 +1033,28 @@ class AppLocalizationsPt extends AppLocalizations {
       'Neon do pôr do sol e noites entre palmeiras';
 
   @override
+  String get promoMiamiTitle => 'TEMA NOVO';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'O maior lançamento de games do ano merece um pôr do sol. Chegou Noites de Miami: neon, palmeiras e uma cobra rosa. Grátis para todos até $date.';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'Tem certeza? Agora não custa nada e é seu até $date. Depois passa a ser pago.';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'Ok, quero testar';
+
+  @override
+  String get promoMiamiSureNo => 'Não, obrigado';
+
+  @override
+  String get promoMiamiTry => 'Experimente grátis';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return 'Grátis para todos até $date';
   }

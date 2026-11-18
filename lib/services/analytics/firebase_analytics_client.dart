@@ -180,6 +180,14 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackThemePromo({required String action}) {
+    return _analytics.logEvent(
+      name: 'theme_promo',
+      parameters: {'promo_action': action, 'theme': 'miami_nights'},
+    );
+  }
+
+  @override
   Future<void> trackPushOpened({
     required String type,
     required bool coldStart,

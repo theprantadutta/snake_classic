@@ -97,6 +97,9 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
   }) async {}
 
   @override
+  Future<void> trackThemePromo({required String action}) async {}
+
+  @override
   Future<void> trackGameAbandoned({
     required String reason,
     required int score,

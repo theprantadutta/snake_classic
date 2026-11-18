@@ -1894,6 +1894,42 @@ abstract class AppLocalizations {
   /// **'Sunset neon and palm-tree nights'**
   String get storeThemeDescMiamiNights;
 
+  /// Title of the one-time sheet announcing the limited Miami Nights theme (cell font, keep short)
+  ///
+  /// In en, this message translates to:
+  /// **'NEW THEME'**
+  String get promoMiamiTitle;
+
+  /// Body of the Miami Nights announcement; date is month + day
+  ///
+  /// In en, this message translates to:
+  /// **'The biggest game launch of the year deserves a sunset. Miami Nights is here: neon, palm trees and a pink snake. Free for everyone until {date}.'**
+  String promoMiamiBody(String date);
+
+  /// Second ask after the player taps Not now on the Miami Nights announcement; date is month + day
+  ///
+  /// In en, this message translates to:
+  /// **'Sure? It costs nothing right now, and it\'s yours to play until {date}. After that it goes on sale.'**
+  String promoMiamiSure(String date);
+
+  /// No description provided for @promoMiamiSureYes.
+  ///
+  /// In en, this message translates to:
+  /// **'OK, try it'**
+  String get promoMiamiSureYes;
+
+  /// No description provided for @promoMiamiSureNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get promoMiamiSureNo;
+
+  /// Button that applies the Miami Nights theme from the announcement
+  ///
+  /// In en, this message translates to:
+  /// **'Try it free'**
+  String get promoMiamiTry;
+
   /// Store featured-card footnote for a limited event theme; date is month + day
   ///
   /// In en, this message translates to:

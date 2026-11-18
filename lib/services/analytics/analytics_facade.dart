@@ -105,6 +105,10 @@ class AnalyticsFacade implements AnalyticsClient {
       );
 
   @override
+  Future<void> trackThemePromo({required String action}) async =>
+      _fire((c) => c.trackThemePromo(action: action));
+
+  @override
   Future<void> trackGameBackgrounded({
     required int score,
     required int durationSeconds,

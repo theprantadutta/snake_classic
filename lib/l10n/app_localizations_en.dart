@@ -1026,6 +1026,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeThemeDescMiamiNights => 'Sunset neon and palm-tree nights';
 
   @override
+  String get promoMiamiTitle => 'NEW THEME';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'The biggest game launch of the year deserves a sunset. Miami Nights is here: neon, palm trees and a pink snake. Free for everyone until $date.';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'Sure? It costs nothing right now, and it\'s yours to play until $date. After that it goes on sale.';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'OK, try it';
+
+  @override
+  String get promoMiamiSureNo => 'No thanks';
+
+  @override
+  String get promoMiamiTry => 'Try it free';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return 'Free for everyone until $date';
   }

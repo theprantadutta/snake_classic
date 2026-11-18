@@ -1031,6 +1031,28 @@ class AppLocalizationsPl extends AppLocalizations {
       'Neon zachodu słońca i noce pod palmami';
 
   @override
+  String get promoMiamiTitle => 'NOWY MOTYW';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'Największa premiera gier tego roku zasługuje na zachód słońca. Nadchodzą Noce Miami: neon, palmy i różowy wąż. Za darmo dla wszystkich do $date.';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'Na pewno? Teraz nic nie kosztuje i jest Twój do $date. Potem będzie płatny.';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'Dobra, wypróbuję';
+
+  @override
+  String get promoMiamiSureNo => 'Nie, dzięki';
+
+  @override
+  String get promoMiamiTry => 'Wypróbuj za darmo';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return 'Za darmo dla wszystkich do $date';
   }

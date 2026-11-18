@@ -20,7 +20,20 @@ void main() {
 
   test('the themes bundle can never grant it', () {
     expect(PremiumContent.premiumThemes, isNot(contains(GameTheme.miamiNights)));
-    expect(PremiumContent.proOnlyThemes, contains(GameTheme.miamiNights));
+    expect(PremiumContent.nonBundleThemes, contains(GameTheme.miamiNights));
+  });
+
+  test('after the window it is a paid premium theme with a store product', () {
+    expect(PremiumContent.allPremiumThemes, contains(GameTheme.miamiNights));
+    expect(PremiumContent.themeProductIds['miami_nights_theme'],
+        GameTheme.miamiNights);
+  });
+
+  test('every premium theme maps from its server product id', () {
+    for (final t in PremiumContent.allPremiumThemes) {
+      expect(PremiumContent.themeProductIds.containsValue(t), isTrue,
+          reason: '$t has no product id, so server ownership would drop it');
+    }
   });
 
   test('it stays last so stored theme indexes keep their meaning', () {

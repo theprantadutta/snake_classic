@@ -33,15 +33,32 @@ class PremiumContent {
     GameTheme.crystal,
   };
 
-  /// Themes that come with Pro but are not sold on their own (no store
-  /// product, not part of the themes bundle, unknown to the backend
-  /// catalog). Kept out of [premiumThemes] so the bundle grant can't hand
-  /// them out permanently.
-  static const Set<GameTheme> proOnlyThemes = {GameTheme.miamiNights};
+  /// Premium themes sold on their own and included with Pro, but NOT part
+  /// of the "all 6 premium themes" bundle (bundle buyers paid for six).
+  /// Kept out of [premiumThemes] because the bundle grant loops over it.
+  /// Backend mirror: ProductCatalog.Themes has it, BundleThemes doesn't.
+  static const Set<GameTheme> nonBundleThemes = {GameTheme.miamiNights};
+
+  /// Every premium theme Pro includes.
+  static Set<GameTheme> get allPremiumThemes =>
+      {...premiumThemes, ...nonBundleThemes};
+
+  /// Bare store product id -> theme. The backend reports owned themes by
+  /// these ids ("crystal_theme"), never by display name.
+  static const Map<String, GameTheme> themeProductIds = {
+    'crystal_theme': GameTheme.crystal,
+    'cyberpunk_theme': GameTheme.cyberpunk,
+    'space_theme': GameTheme.space,
+    'ocean_theme': GameTheme.ocean,
+    'desert_theme': GameTheme.desert,
+    'forest_theme': GameTheme.forest,
+    'miami_nights_theme': GameTheme.miamiNights,
+  };
 
   /// Miami Nights is free for everyone until this local time (the first
-  /// moment it is NOT free), then becomes a Pro theme. Launched for the
-  /// big Nov 19 2026 game release week.
+  /// moment it is NOT free). After that it is a paid theme: bought on its
+  /// own (store product miami_nights_theme) or included with Pro. Launched
+  /// for the big Nov 19 2026 game release week.
   static final DateTime miamiNightsFreeUntil = DateTime(2026, 12, 8);
 
   /// Last day Miami Nights is free, for the "free until" store copy.
@@ -56,7 +73,7 @@ class PremiumContent {
   /// Check if a theme requires premium (right now: an event theme in its
   /// free window does not).
   static bool isPremiumTheme(GameTheme theme) =>
-      (premiumThemes.contains(theme) || proOnlyThemes.contains(theme)) &&
+      allPremiumThemes.contains(theme) &&
       !isEventFree(theme);
 }
 

@@ -613,8 +613,16 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ExcludeSemantics(
                     child: Text(
                       'CLASSIC',
-                      style: LBText.label(p, color: p.lime.withValues(alpha: .75))
-                          .copyWith(fontSize: 13, letterSpacing: 13),
+                      // Full-strength head colour plus a soft dark halo:
+                      // it has to read on every theme's backdrop, including
+                      // Miami Nights' sunset.
+                      style: LBText.label(p, color: p.head).copyWith(
+                        fontSize: 13,
+                        letterSpacing: 13,
+                        shadows: const [
+                          Shadow(color: Color(0xCC000000), blurRadius: 8),
+                        ],
+                      ),
                     ),
                   ),
                   const Spacer(flex: 4),

@@ -1025,6 +1025,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storeThemeDescMiamiNights => 'Неон заката и ночи под пальмами';
 
   @override
+  String get promoMiamiTitle => 'НОВАЯ ТЕМА';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'Самый громкий игровой релиз года заслуживает заката. Встречайте «Ночи Майами»: неон, пальмы и розовая змейка. Бесплатно для всех до $date.';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'Точно? Сейчас это ничего не стоит, и тема ваша до $date. Потом она станет платной.';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'Ладно, попробую';
+
+  @override
+  String get promoMiamiSureNo => 'Нет, спасибо';
+
+  @override
+  String get promoMiamiTry => 'Попробовать бесплатно';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return 'Бесплатно для всех до $date';
   }

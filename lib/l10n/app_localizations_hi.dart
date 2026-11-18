@@ -1029,6 +1029,28 @@ class AppLocalizationsHi extends AppLocalizations {
       'सूर्यास्त का नियॉन और ताड़ के पेड़ों वाली रातें';
 
   @override
+  String get promoMiamiTitle => 'नई थीम';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'साल के सबसे बड़े गेम लॉन्च के लिए एक सूर्यास्त तो बनता है। मियामी नाइट्स आ गई: नियॉन, ताड़ के पेड़ और गुलाबी साँप। $date तक सभी के लिए मुफ़्त।';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'पक्का? अभी यह बिल्कुल मुफ़्त है और $date तक आपकी है। उसके बाद यह बिक्री पर आएगी।';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'ठीक है, आज़माएँ';
+
+  @override
+  String get promoMiamiSureNo => 'नहीं, धन्यवाद';
+
+  @override
+  String get promoMiamiTry => 'मुफ़्त में आज़माएँ';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return '$date तक सभी के लिए मुफ़्त';
   }

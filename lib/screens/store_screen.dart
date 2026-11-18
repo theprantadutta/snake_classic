@@ -1278,6 +1278,9 @@ class _StoreScreenState extends State<StoreScreen>
         return ProductIds.desertTheme;
       case GameTheme.forest:
         return ProductIds.forestTheme;
+      case GameTheme.miamiNights:
+        // Only shows a price after the free window (it's owned until then).
+        return ProductIds.miamiNightsTheme;
       default:
         return null;
     }

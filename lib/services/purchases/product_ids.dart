@@ -29,6 +29,9 @@ class ProductIds {
   static const String oceanTheme = '${prefix}ocean_theme';
   static const String desertTheme = '${prefix}desert_theme';
   static const String forestTheme = '${prefix}forest_theme';
+  // Limited event theme, free until Dec 7 2026, sold from then on. Not in
+  // the bundle. Must exist in Play Console AND App Store Connect.
+  static const String miamiNightsTheme = '${prefix}miami_nights_theme';
   static const String themesBundle = '${prefix}premium_themes_bundle';
 
   // Snake Coins (Consumable)
@@ -72,12 +75,12 @@ class ProductIds {
   static const String tournamentSilver = '${prefix}tournament_silver';
   static const String tournamentGold = '${prefix}tournament_gold';
 
-  /// All active store product IDs (37 products).
+  /// All active store product IDs (38 products).
   /// Battle Pass and power-up IAPs are excluded.
   static List<String> get allProductIds => [
-    // Themes (7)
+    // Themes (8)
     crystalTheme, cyberpunkTheme, spaceTheme,
-    oceanTheme, desertTheme, forestTheme, themesBundle,
+    oceanTheme, desertTheme, forestTheme, miamiNightsTheme, themesBundle,
     // Coins (4)
     coinPackSmall, coinPackMedium, coinPackLarge, coinPackMega,
     // Snake skins (11)

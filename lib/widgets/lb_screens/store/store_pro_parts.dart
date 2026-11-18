@@ -21,7 +21,7 @@ List<String> lbProPerks(AppLocalizations l10n) {
   return [
     l10n.lbProPerkNoAds,
     l10n.lbProPerkRevive,
-    l10n.lbProPerkThemes('${PremiumContent.premiumThemes.length}'),
+    l10n.lbProPerkThemes('${PremiumContent.allPremiumThemes.length}'),
     l10n.lbProPerkCosmetics('$skins', '$trails'),
     l10n.lbProPerkCoins,
   ];

@@ -251,14 +251,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     }
 
     // Theme purchases
-    const themeProductMap = {
-      'crystal_theme': GameTheme.crystal,
-      'cyberpunk_theme': GameTheme.cyberpunk,
-      'space_theme': GameTheme.space,
-      'ocean_theme': GameTheme.ocean,
-      'desert_theme': GameTheme.desert,
-      'forest_theme': GameTheme.forest,
-    };
+    const themeProductMap = PremiumContent.themeProductIds;
     if (themeProductMap.containsKey(internalId)) {
       await unlockTheme(themeProductMap[internalId]!);
       return;
@@ -694,8 +687,12 @@ class PremiumCubit extends Cubit<PremiumState> {
     if (data['owned_themes'] is List) {
       final serverThemeNames =
           (data['owned_themes'] as List).whereType<String>().toSet();
+      // The server sends product ids ("crystal_theme"); GameTheme.name is
+      // the display name ("Crystal"). Matching only on the name dropped
+      // every individually bought theme from state on each sync.
       final serverThemes = serverThemeNames
           .map((name) =>
+              PremiumContent.themeProductIds[name] ??
               GameTheme.values.where((t) => t.name == name).firstOrNull)
           .whereType<GameTheme>()
           .toSet();

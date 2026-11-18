@@ -142,6 +142,11 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackThemePromo({required String action}) async {
+    AppLogger.info('$_tag theme_promo: $action');
+  }
+
+  @override
   Future<void> trackLevelUp(int level) async {
     AppLogger.info('$_tag level_up: $level');
   }

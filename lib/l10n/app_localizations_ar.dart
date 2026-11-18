@@ -1015,6 +1015,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get storeThemeDescMiamiNights => 'نيون الغروب وليالي النخيل';
 
   @override
+  String get promoMiamiTitle => 'ثيم جديد';
+
+  @override
+  String promoMiamiBody(String date) {
+    return 'أكبر إطلاق ألعاب هذا العام يستحق غروبًا. وصل ثيم ليالي ميامي: نيون وأشجار نخيل وثعبان وردي. مجاني للجميع حتى $date.';
+  }
+
+  @override
+  String promoMiamiSure(String date) {
+    return 'متأكد؟ لا يكلّف شيئًا الآن، وهو لك حتى $date. بعد ذلك يصبح للبيع.';
+  }
+
+  @override
+  String get promoMiamiSureYes => 'حسنًا، سأجرّبه';
+
+  @override
+  String get promoMiamiSureNo => 'لا، شكرًا';
+
+  @override
+  String get promoMiamiTry => 'جرّبه مجانًا';
+
+  @override
   String storeThemeFreeUntil(String date) {
     return 'مجاني للجميع حتى $date';
   }
