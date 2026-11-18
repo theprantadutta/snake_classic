@@ -91,6 +91,52 @@ class AnalyticsFacade implements AnalyticsClient {
   Future<void> trackGamePaused() async => _fire((c) => c.trackGamePaused());
 
   @override
+  Future<void> trackPushOpened({
+    required String type,
+    required bool coldStart,
+    required int ageMinutes,
+  }) async =>
+      _fire(
+        (c) => c.trackPushOpened(
+          type: type,
+          coldStart: coldStart,
+          ageMinutes: ageMinutes,
+        ),
+      );
+
+  @override
+  Future<void> trackGameBackgrounded({
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+  }) async =>
+      _fire(
+        (c) => c.trackGameBackgrounded(
+          score: score,
+          durationSeconds: durationSeconds,
+          runNumber: runNumber,
+        ),
+      );
+
+  @override
+  Future<void> trackGameAbandoned({
+    required String reason,
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+    required String gameMode,
+  }) async =>
+      _fire(
+        (c) => c.trackGameAbandoned(
+          reason: reason,
+          score: score,
+          durationSeconds: durationSeconds,
+          runNumber: runNumber,
+          gameMode: gameMode,
+        ),
+      );
+
+  @override
   Future<void> trackGameResumed() async =>
       _fire((c) => c.trackGameResumed());
 
@@ -106,6 +152,7 @@ class AnalyticsFacade implements AnalyticsClient {
     required bool isNewHighScore,
     required int inputsAccepted,
     required int inputsRejected,
+    String endTrigger = 'other',
   }) async =>
       _fire(
         (c) => c.trackGameOver(
@@ -119,6 +166,7 @@ class AnalyticsFacade implements AnalyticsClient {
           isNewHighScore: isNewHighScore,
           inputsAccepted: inputsAccepted,
           inputsRejected: inputsRejected,
+          endTrigger: endTrigger,
         ),
       );
 

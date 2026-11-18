@@ -317,6 +317,15 @@ class GameCubit extends Cubit<GameCubitState> {
   Timer? _continueWindowTimer;
   DateTime? _continueDeadline;
   Future<void> Function()? _pendingFinalization;
+  // True while the player is paying for a continue (sheet or rewarded ad up).
+  // A full-screen ad backgrounds the Flutter activity, so the app-background
+  // finalize must leave a held offer alone.
+  bool _continueHeld = false;
+  // What closed the continue window for the run being finalized; read
+  // synchronously by the pending closure for the `game_over` event.
+  String _endTrigger = 'no_offer';
+  // The run `game_backgrounded` was last logged for (once per run).
+  int _backgroundedRunId = -1;
   int _preEndConsecutiveNoWall = 0;
   int _preEndPowerUpTime = 0;
   int _preEndHighScore = 0;
@@ -351,8 +360,10 @@ class GameCubit extends Cubit<GameCubitState> {
 
   void startGame() {
     debugPrint('🎮 [GameCubit] startGame() called');
+    // Restart from the pause menu: the run being replaced never ends.
+    _trackAbandonIfMidRun('restart');
     // A previous run still waiting out its continue window is over now.
-    unawaited(finalizeGameOver());
+    unawaited(finalizeGameOver(trigger: 'new_run'));
 
     // Warm the ads this run might need, using the run itself as load time.
     // The interstitial is offered at game over and the rewarded on a crash —
@@ -1654,7 +1665,8 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Reset the game to initial state while preserving high score
   void resetGame() {
-    unawaited(finalizeGameOver());
+    _trackAbandonIfMidRun('quit');
+    unawaited(finalizeGameOver(trigger: 'reset'));
     _gameTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
@@ -1687,7 +1699,8 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Return to menu state
   void backToMenu() {
-    unawaited(finalizeGameOver());
+    _trackAbandonIfMidRun('quit');
+    unawaited(finalizeGameOver(trigger: 'menu'));
     _gameTimer?.cancel();
     _powerUpTimer?.cancel();
     _timeAttackTimer?.cancel();
@@ -1805,6 +1818,7 @@ class GameCubit extends Cubit<GameCubitState> {
         inputsRejected: _inputsRejectedThisGame,
         maxCombo: gameState.maxCombo,
         isNewHighScore: isNewHighScore,
+        endTrigger: _endTrigger,
       );
 
 
@@ -1837,13 +1851,14 @@ class GameCubit extends Cubit<GameCubitState> {
     // Offer a continue on the game-over screen when this run can take one;
     // otherwise finalize straight away, exactly as before.
     if (_canOfferGameOverContinue(gameState)) {
+      _continueHeld = false;
       _continueDeadline = DateTime.now().add(gameOverContinueWindow);
       _continueWindowTimer?.cancel();
       _continueWindowTimer = Timer(gameOverContinueWindow, () {
-        unawaited(finalizeGameOver());
+        unawaited(finalizeGameOver(trigger: 'timer'));
       });
     } else {
-      await finalizeGameOver();
+      await finalizeGameOver(trigger: 'no_offer');
     }
   }
 
@@ -1861,6 +1876,7 @@ class GameCubit extends Cubit<GameCubitState> {
   /// or [finalizeGameOver] runs.
   void holdGameOverContinue() {
     if (_pendingFinalization == null) return;
+    _continueHeld = true;
     _continueWindowTimer?.cancel();
     _continueWindowTimer = null;
     _continueDeadline = DateTime.now().add(const Duration(days: 1));
@@ -1868,14 +1884,78 @@ class GameCubit extends Cubit<GameCubitState> {
 
   /// Run the held-back game-over work (see [gameOverContinueWindow]). Safe
   /// to call any number of times; only the first call does anything.
-  Future<void> finalizeGameOver() async {
+  /// [trigger] says what ended the offer and rides on the `game_over` event.
+  Future<void> finalizeGameOver({String trigger = 'other'}) async {
     final pending = _pendingFinalization;
     if (pending == null) return;
     _pendingFinalization = null;
+    _continueHeld = false;
     _continueWindowTimer?.cancel();
     _continueWindowTimer = null;
     _continueDeadline = null;
+    _endTrigger = trigger;
     await pending();
+  }
+
+  /// The app left the foreground with a run still waiting out its continue
+  /// window. Dart timers stop when the process is suspended or killed, so
+  /// without this a player who closed the app on the game-over screen lost
+  /// the run: no high score, coins, XP, stats or `game_over` event. A held
+  /// offer is left alone, because the rewarded ad that pays for it is itself
+  /// what sends the app to the background.
+  Future<void> finalizeOnAppBackground() async {
+    if (_pendingFinalization == null || _continueHeld) return;
+    await finalizeGameOver(trigger: 'background');
+  }
+
+  /// The app went to the background with a run on the board (playing,
+  /// paused or crashed). Logged once per run: together with game_over and
+  /// game_abandoned it accounts for every started run.
+  void noteAppBackgrounded() {
+    final status = state.status;
+    if (status != GamePlayStatus.playing &&
+        status != GamePlayStatus.paused &&
+        status != GamePlayStatus.crashed) {
+      return;
+    }
+    // A revive or +30s rewarded ad also backgrounds the app; that is not
+    // the player leaving.
+    if (state.offeringRevive || state.offeringTimeBonus) return;
+    if (_backgroundedRunId == _runId) return;
+    final gs = state.gameState;
+    if (gs == null) return;
+    _backgroundedRunId = _runId;
+    final seconds = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+    _analytics.trackGameBackgrounded(
+      score: gs.score,
+      durationSeconds: seconds,
+      runNumber: _runNumber,
+    );
+  }
+
+  /// `game_abandoned` for a run that is left before it ends (pause-menu
+  /// restart, exit to menu). Without it, "started but never finished" in the
+  /// funnel can't be split into players quitting and runs lost in transit.
+  void _trackAbandonIfMidRun(String reason) {
+    final status = state.status;
+    if (status != GamePlayStatus.playing && status != GamePlayStatus.paused) {
+      return;
+    }
+    final gs = state.gameState;
+    if (gs == null) return;
+    // _gameStartTime is shifted forward by every pause, so this is play time.
+    final seconds = _gameStartTime != null
+        ? DateTime.now().difference(_gameStartTime!).inSeconds
+        : 0;
+    _analytics.trackGameAbandoned(
+      reason: reason,
+      score: gs.score,
+      durationSeconds: seconds,
+      runNumber: _runNumber,
+      gameMode: state.isTournamentMode ? 'tournament' : gs.gameMode.name,
+    );
   }
 
   /// Continue the run from the game-over screen (after a rewarded ad, coins,
@@ -1888,6 +1968,7 @@ class GameCubit extends Cubit<GameCubitState> {
     if (current == null) return false;
 
     _pendingFinalization = null;
+    _continueHeld = false;
     _continueWindowTimer?.cancel();
     _continueWindowTimer = null;
     _continueDeadline = null;
@@ -2054,7 +2135,7 @@ class GameCubit extends Cubit<GameCubitState> {
     _timeAttackTimer?.cancel();
     _reviveOfferTimer?.cancel();
     // Never drop a finished run's rewards because the cubit went away.
-    unawaited(finalizeGameOver());
+    unawaited(finalizeGameOver(trigger: 'close'));
     _rejectedInputClearTimer?.cancel();
     _acceptedInputClearTimer?.cancel();
     return super.close();

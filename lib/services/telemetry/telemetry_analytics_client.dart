@@ -76,10 +76,34 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
     required bool isNewHighScore,
     required int inputsAccepted,
     required int inputsRejected,
+    String endTrigger = 'other',
   }) async {
     _tracker.runFinished(score: score, durationSeconds: durationSeconds);
     unawaited(_feedbackStore.recordFinishedRun());
   }
+
+  @override
+  Future<void> trackGameBackgrounded({
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+  }) async {}
+
+  @override
+  Future<void> trackPushOpened({
+    required String type,
+    required bool coldStart,
+    required int ageMinutes,
+  }) async {}
+
+  @override
+  Future<void> trackGameAbandoned({
+    required String reason,
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+    required String gameMode,
+  }) async {}
 
   @override
   Future<void> trackMultiplayerGameEnded({

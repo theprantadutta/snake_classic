@@ -93,12 +93,51 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     required bool isNewHighScore,
     required int inputsAccepted,
     required int inputsRejected,
+    String endTrigger = 'other',
   }) async {
     AppLogger.info(
       '$_tag game_over: score=$score, level=$level, duration=${durationSeconds}s, '
       'cause=$cause, food=$foodEaten, powerUps=$powerUpsCollected, '
       'maxCombo=$maxCombo, newHighScore=$isNewHighScore, '
-      'inputs=$inputsAccepted accepted/$inputsRejected rejected',
+      'inputs=$inputsAccepted accepted/$inputsRejected rejected, '
+      'endTrigger=$endTrigger',
+    );
+  }
+
+  @override
+  Future<void> trackGameAbandoned({
+    required String reason,
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+    required String gameMode,
+  }) async {
+    AppLogger.info(
+      '$_tag game_abandoned: reason=$reason, score=$score, '
+      'duration=${durationSeconds}s, run=$runNumber, mode=$gameMode',
+    );
+  }
+
+  @override
+  Future<void> trackGameBackgrounded({
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+  }) async {
+    AppLogger.info(
+      '$_tag game_backgrounded: score=$score, '
+      'duration=${durationSeconds}s, run=$runNumber',
+    );
+  }
+
+  @override
+  Future<void> trackPushOpened({
+    required String type,
+    required bool coldStart,
+    required int ageMinutes,
+  }) async {
+    AppLogger.info(
+      '$_tag push_opened: type=$type, coldStart=$coldStart, age=${ageMinutes}m',
     );
   }
 

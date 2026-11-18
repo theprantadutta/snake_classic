@@ -49,7 +49,8 @@ class GameOverScreen extends ConsumerStatefulWidget {
   ConsumerState<GameOverScreen> createState() => _GameOverScreenState();
 }
 
-class _GameOverScreenState extends ConsumerState<GameOverScreen> {
+class _GameOverScreenState extends ConsumerState<GameOverScreen>
+    with WidgetsBindingObserver {
   /// Seeds the crash line so it stays the same across rebuilds.
   final int _seed = DateTime.now().millisecondsSinceEpoch;
 
@@ -111,6 +112,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _loadAchievements();
 
@@ -261,8 +263,20 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     );
   }
 
+  /// Closing the app from here must not lose the run still waiting out its
+  /// continue window: see GameCubit.finalizeOnAppBackground.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(context.read<GameCubit>().finalizeOnAppBackground());
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _achievementService.removeListener(_onAchievementsChanged);
     _progressionService.removeListener(_maybeShowLevelUp);
     super.dispose();
@@ -778,7 +792,7 @@ class _GameOverActionsState extends State<_GameOverActions> {
   Future<void> _again(BuildContext context, GameOverAdFormat announced) =>
       _press(() async {
         final cubit = context.read<GameCubit>();
-        await cubit.finalizeGameOver();
+        await cubit.finalizeGameOver(trigger: 'again');
         if (!context.mounted) return;
         // Frequency-capped + Pro/connectivity-gated inside AdService; a no-op
         // when an ad shouldn't show.
@@ -794,7 +808,7 @@ class _GameOverActionsState extends State<_GameOverActions> {
 
   Future<void> _home(BuildContext context, GameOverAdFormat announced) =>
       _press(() async {
-        await context.read<GameCubit>().finalizeGameOver();
+        await context.read<GameCubit>().finalizeGameOver(trigger: 'home');
         if (!context.mounted) return;
         await _showGameOverAd(context, announced: announced);
         if (!context.mounted) return;
@@ -809,7 +823,7 @@ class _GameOverActionsState extends State<_GameOverActions> {
 
   Future<void> _replay(BuildContext context) => _press(() async {
     final cubit = context.read<GameCubit>();
-    await cubit.finalizeGameOver();
+    await cubit.finalizeGameOver(trigger: 'replay');
     if (!context.mounted) return;
     final id = cubit.lastReplayId;
     context.push(
@@ -829,7 +843,7 @@ class _GameOverActionsState extends State<_GameOverActions> {
       context.go(AppRoutes.game);
     } else {
       // Declined: the run is over.
-      await cubit.finalizeGameOver();
+      await cubit.finalizeGameOver(trigger: 'declined');
       if (mounted) setState(() {});
     }
   });

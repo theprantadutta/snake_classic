@@ -120,6 +120,7 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     required bool isNewHighScore,
     required int inputsAccepted,
     required int inputsRejected,
+    String endTrigger = 'other',
   }) {
     return _analytics.logEvent(
       name: 'game_over',
@@ -134,6 +135,62 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         'is_new_high_score': isNewHighScore ? 1 : 0,
         'inputs_accepted': inputsAccepted,
         'inputs_rejected': inputsRejected,
+        // What closed the continue window: timer | again | home | replay |
+        // declined | background | new_run | no_offer | ... `background`
+        // counts the runs that were lost before 7.6.2.
+        'end_trigger': endTrigger,
+      },
+    );
+  }
+
+  @override
+  Future<void> trackGameAbandoned({
+    required String reason,
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+    required String gameMode,
+  }) {
+    return _analytics.logEvent(
+      name: 'game_abandoned',
+      parameters: {
+        'reason': reason,
+        'score': score,
+        'duration_seconds': durationSeconds,
+        'run_number': runNumber,
+        'game_mode': gameMode,
+      },
+    );
+  }
+
+  @override
+  Future<void> trackGameBackgrounded({
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+  }) {
+    return _analytics.logEvent(
+      name: 'game_backgrounded',
+      parameters: {
+        'score': score,
+        'duration_seconds': durationSeconds,
+        'run_number': runNumber,
+      },
+    );
+  }
+
+  @override
+  Future<void> trackPushOpened({
+    required String type,
+    required bool coldStart,
+    required int ageMinutes,
+  }) {
+    return _analytics.logEvent(
+      name: 'push_opened',
+      parameters: {
+        'push_type': type,
+        'cold_start': coldStart ? 1 : 0,
+        'age_minutes': ageMinutes,
       },
     );
   }

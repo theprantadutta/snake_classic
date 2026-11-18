@@ -283,6 +283,11 @@ class _GameScreenState extends State<GameScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final gameCubit = context.read<GameCubit>();
 
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      gameCubit.noteAppBackgrounded();
+    }
+
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (gameCubit.state.isPlaying) {

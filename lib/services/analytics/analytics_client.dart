@@ -44,6 +44,35 @@ abstract class AnalyticsClient {
     required bool isNewHighScore,
     required int inputsAccepted,
     required int inputsRejected,
+    String endTrigger = 'other',
+  });
+  /// A single-player run left before it ended: [reason] is `quit` (exit to
+  /// menu) or `restart` (pause-menu restart). [runNumber] is lifetime, so
+  /// 1 = the player's first game ever.
+  Future<void> trackGameAbandoned({
+    required String reason,
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+    required String gameMode,
+  });
+  /// The app left the foreground during a single-player run (once per run).
+  /// Runs that never reach game_over or game_abandoned and carry this event
+  /// were most likely closed from the background.
+  Future<void> trackGameBackgrounded({
+    required int score,
+    required int durationSeconds,
+    required int runNumber,
+  });
+  /// A push was tapped. [type] is the payload's `type` (daily_challenge,
+  /// streak_at_risk, high_score_nudge, win_back, challenge_announcement, ...)
+  /// so open rate can be read per push type against the server's
+  /// notification_histories counts; GA's automatic notification_open has no
+  /// type. [ageMinutes] is from the payload's `sent_at`, -1 when absent.
+  Future<void> trackPushOpened({
+    required String type,
+    required bool coldStart,
+    required int ageMinutes,
   });
   Future<void> trackLevelUp(int level);
   Future<void> trackPowerUpUsed(String powerUpType);

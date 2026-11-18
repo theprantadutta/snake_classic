@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:snake_classic/core/di/injection.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'dart:convert';
 import 'dart:ui' show Color, Locale, PlatformDispatcher;
 
@@ -315,6 +317,7 @@ class NotificationService {
           final initialMessage = await _firebaseMessaging.getInitialMessage();
           if (initialMessage != null) {
             _initialMessageConsumed = true;
+            _trackPushOpened(initialMessage.data, coldStart: true);
             _routeFromData(initialMessage.data, deferIfNotReady: true);
           }
         } catch (e) {
@@ -508,6 +511,7 @@ class NotificationService {
         final initialMessage = await _firebaseMessaging.getInitialMessage();
         if (initialMessage != null) {
           _initialMessageConsumed = true;
+          _trackPushOpened(initialMessage.data, coldStart: true);
           _routeFromData(initialMessage.data, deferIfNotReady: true);
         }
       }
@@ -589,7 +593,33 @@ class NotificationService {
     AppLogger.info('👆 App opened from notification: ${message.messageId}');
     // Tap while the app is already running (background→foreground): the
     // router is on a real route, so route immediately.
+    _trackPushOpened(message.data, coldStart: false);
     _routeFromData(message.data, deferIfNotReady: false);
+  }
+
+  /// `push_opened`, with the payload's own `type`, so open rate can be read
+  /// per push type. Never throws: analytics must not block a deep link.
+  void _trackPushOpened(
+    Map<String, dynamic> data, {
+    required bool coldStart,
+  }) {
+    try {
+      if (!getIt.isRegistered<AnalyticsFacade>()) return;
+      final type = data['type'];
+      final sentAt = data['sent_at'] is String
+          ? DateTime.tryParse(data['sent_at'] as String)
+          : null;
+      final age = sentAt == null
+          ? -1
+          : DateTime.now().toUtc().difference(sentAt.toUtc()).inMinutes;
+      unawaited(getIt<AnalyticsFacade>().trackPushOpened(
+        type: type is String && type.isNotEmpty ? type : 'unknown',
+        coldStart: coldStart,
+        ageMinutes: age < 0 ? -1 : age,
+      ));
+    } catch (e) {
+      AppLogger.warning('push_opened tracking failed: $e');
+    }
   }
 
   /// Route from a notification's data map. When [deferIfNotReady] and the
@@ -632,6 +662,11 @@ class NotificationService {
     if (response.payload != null) {
       try {
         final data = Map<String, dynamic>.from(jsonDecode(response.payload!));
+        // A server push shown while the app was in the foreground, or the
+        // local day-1 reminder: both carry a `type`.
+        if (data['type'] != null) {
+          _trackPushOpened(data, coldStart: false);
+        }
         // Defer if not ready: a local-notification tap can also cold-start
         // the app (e.g. a foreground message shown while the app was then
         // killed), so route through the same pending-aware path.
