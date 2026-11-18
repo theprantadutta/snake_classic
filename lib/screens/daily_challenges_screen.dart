@@ -16,7 +16,6 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
-import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
@@ -69,7 +68,6 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         .read(dailyChallengesProvider.notifier)
         .claimReward(challenge.id);
     if (success) {
-      getIt<AnalyticsFacade>().trackDailyChallengeRewardClaimed();
       // The coins are NOT granted here. DailyChallengeService.claimReward
       // already credited them, from the amount on the persisted row, after
       // the Drift gate settled the claim. This screen used to credit them a

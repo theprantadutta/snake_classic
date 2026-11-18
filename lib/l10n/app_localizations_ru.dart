@@ -6441,6 +6441,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbHomeVersusSubOffline => '1 на 1 · живые соперники';
 
   @override
+  String lbHomeSeasonClaim(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count награды ждут',
+      many: '$count наград ждут',
+      few: '$count награды ждут',
+      one: '$count награда ждёт',
+    );
+    return 'Ур. $tier · $_temp0';
+  }
+
+  @override
   String get lbHomeSeasonSubNone => 'XP за каждый забег';
 
   @override

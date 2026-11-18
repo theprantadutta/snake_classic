@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "Nenhum anúncio agora. Tente de novo em instantes.",
   "lbServerDown": "Nossos servidores bateram na parede. Seu progresso está salvo neste celular.",
   "lbHomeVersusSubOffline": "1v1 · rivais de verdade",
+  "lbHomeSeasonClaim": "Nível {tier} · {count, plural, =1{1 recompensa para resgatar} other{{count} recompensas para resgatar}}",
   "lbHomeSeasonSubNone": "Ganhe XP em toda partida",
   "lbMenuHowToPlay": "COMO JOGAR",
   "lbMenuTournaments": "TORNEIOS",

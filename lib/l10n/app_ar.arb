@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "لا يوجد إعلان الآن. حاول بعد قليل.",
   "lbServerDown": "خوادمنا اصطدمت. تقدّمك محفوظ على هذا الهاتف.",
   "lbHomeVersusSubOffline": "1 ضد 1 · خصوم حقيقيون",
+  "lbHomeSeasonClaim": "المستوى {tier} · {count, plural, zero{لا مكافآت} one{مكافأة واحدة بانتظارك} two{مكافأتان بانتظارك} few{{count} مكافآت بانتظارك} many{{count} مكافأة بانتظارك} other{{count} مكافأة بانتظارك}}",
   "lbHomeSeasonSubNone": "اكسب خبرة في كل جولة",
   "lbMenuHowToPlay": "طريقة اللعب",
   "lbMenuTournaments": "البطولات",

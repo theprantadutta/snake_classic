@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "Brak reklamy w tej chwili. Spróbuj za moment.",
   "lbServerDown": "Nasze serwery zaliczyły bęc. Twój postęp jest bezpieczny na tym telefonie.",
   "lbHomeVersusSubOffline": "1v1 · prawdziwi rywale",
+  "lbHomeSeasonClaim": "Poziom {tier} · {count, plural, one{1 nagroda do odebrania} few{{count} nagrody do odebrania} many{{count} nagród do odebrania} other{{count} nagrody do odebrania}}",
   "lbHomeSeasonSubNone": "Zdobywaj PD w każdej grze",
   "lbMenuHowToPlay": "JAK GRAĆ",
   "lbMenuTournaments": "TURNIEJE",

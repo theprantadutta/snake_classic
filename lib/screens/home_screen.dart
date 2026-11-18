@@ -957,13 +957,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final bp = context.watch<BattlePassCubit>().state;
         final end = bp.season?.endDate ?? bp.expiryDate;
         final daysLeft = end?.difference(DateTime.now()).inDays;
+        final toClaim = bp.claimableRewardCount;
         return _HomeTile(
           tall: tall,
           icon: LBIcon.star,
           title: l10n.lbHomeSeason,
-          subtitle: bp.isActive && daysLeft != null && daysLeft >= 0
-              ? l10n.lbHomeSeasonSub('${bp.currentTier}', daysLeft)
-              : l10n.lbHomeSeasonSubNone,
+          subtitle: toClaim > 0
+              ? l10n.lbHomeSeasonClaim('${bp.currentTier}', toClaim)
+              : bp.isActive && daysLeft != null && daysLeft >= 0
+                  ? l10n.lbHomeSeasonSub('${bp.currentTier}', daysLeft)
+                  : l10n.lbHomeSeasonSubNone,
+          // Gold like the daily tile when something is waiting.
+          kind: toClaim > 0 ? LBBlockKind.gold : LBBlockKind.outline,
           onTap: go,
         );
       case 'ranks':

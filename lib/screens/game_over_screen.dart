@@ -320,6 +320,26 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     // Arm the Day-1 comeback nudge with the score they just posted.
     _armDayOneReminder(displayHighScore, l10n);
 
+    // Challenges this run completed are claimed automatically by the
+    // post-game pipeline (DailyChallengeService.autoClaimCompleted). Say so,
+    // or the reward is invisible. A manual Claim All shows its own snackbar.
+    ref.listen<List<DailyChallenge>>(
+      dailyChallengesProvider.select((s) => s.challenges),
+      (previous, next) {
+        if (previous == null || _claimingAll) return;
+        final wasClaimed = {
+          for (final c in previous)
+            if (c.claimedReward) c.id,
+        };
+        final coins = next
+            .where((c) => c.claimedReward && !wasClaimed.contains(c.id))
+            .fold<int>(0, (sum, c) => sum + c.coinReward);
+        if (coins > 0) {
+          _audioService.playSound('coin_collect');
+          _showClaimSnackbar(l10n.goClaimedTotal(coins));
+        }
+      },
+    );
     final challenges = ref.watch(
       dailyChallengesProvider.select((s) => s.challenges),
     );

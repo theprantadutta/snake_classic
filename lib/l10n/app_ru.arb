@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "Рекламы сейчас нет. Попробуй через секунду.",
   "lbServerDown": "Наши серверы врезались в стену. Прогресс в сохранности на этом телефоне.",
   "lbHomeVersusSubOffline": "1 на 1 · живые соперники",
+  "lbHomeSeasonClaim": "Ур. {tier} · {count, plural, one{{count} награда ждёт} few{{count} награды ждут} many{{count} наград ждут} other{{count} награды ждут}}",
   "lbHomeSeasonSubNone": "XP за каждый забег",
   "lbMenuHowToPlay": "КАК ИГРАТЬ",
   "lbMenuTournaments": "ТУРНИРЫ",

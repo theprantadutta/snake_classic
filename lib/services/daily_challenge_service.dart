@@ -7,6 +7,7 @@ import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/daily_challenge.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/daily_challenge_hydration.dart';
 import 'package:snake_classic/data/database/settlement_write.dart';
@@ -361,10 +362,33 @@ class DailyChallengeService extends ChangeNotifier {
     }
     notifyListeners();
     await _persistProgress(changed.values);
-    return changed.values
+    final newlyCompleted = changed.values
         .where((c) => c.isCompleted && !wasCompleted.contains(c.id))
-        .length;
+        .toList();
+    for (final c in newlyCompleted) {
+      _analytics?.trackDailyChallengeCompleted(c.id);
+    }
+    return newlyCompleted.length;
   }
+
+  /// Analytics, when DI is up. Optional so the service stays usable from
+  /// tests and early-boot paths.
+  AnalyticsFacade? get _analytics => GetIt.I.isRegistered<AnalyticsFacade>()
+      ? GetIt.I<AnalyticsFacade>()
+      : null;
+
+  /// Claim every completed challenge without a tap, right after the game
+  /// that completed it.
+  ///
+  /// Production, Oct 21 - Nov 17 2026: 1,715 players completed a daily
+  /// challenge, 351 ever claimed one, and only 1,033 of 5,532 completed
+  /// challenges were claimed. Claims expire with the day, so the rest was
+  /// lost. Since the game-over continue window (8 s) the progress lands after
+  /// the screen has already said "nothing to claim", and a player who taps
+  /// Again never sees the claim row at all. A claim is only a durable intent
+  /// that the server settles once per account, so making it automatic
+  /// cannot pay twice.
+  Future<int> autoClaimCompleted() => claimAllRewards();
 
   /// Applies the delta to matching in-memory challenges and returns the
   /// ones that actually changed, so the caller can persist exactly those.
@@ -498,6 +522,7 @@ class DailyChallengeService extends ChangeNotifier {
     if (coins == null) return false;
 
     _challenges[index] = challenge.copyWith(claimedReward: true);
+    _analytics?.trackDailyChallengeRewardClaimed();
 
     // Nudge the settlement path so a player who is online sees the reward land
     // moments later rather than on the next app start. Offline this fails
@@ -524,6 +549,7 @@ class DailyChallengeService extends ChangeNotifier {
       }
       totalClaimed += coins;
       settledCount++;
+      _analytics?.trackDailyChallengeRewardClaimed();
     }
 
     // Same as claimReward: intents only. The coins arrive when the server's

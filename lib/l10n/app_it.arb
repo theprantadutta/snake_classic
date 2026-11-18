@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "Nessun annuncio ora. Riprova tra un attimo.",
   "lbServerDown": "I nostri server hanno sbattuto. I tuoi progressi sono al sicuro su questo telefono.",
   "lbHomeVersusSubOffline": "1v1 · rivali veri",
+  "lbHomeSeasonClaim": "Livello {tier} · {count, plural, =1{1 premio da riscattare} other{{count} premi da riscattare}}",
   "lbHomeSeasonSubNone": "Guadagna XP a ogni partita",
   "lbMenuHowToPlay": "COME SI GIOCA",
   "lbMenuTournaments": "TORNEI",

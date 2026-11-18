@@ -6448,6 +6448,19 @@ class AppLocalizationsPl extends AppLocalizations {
   String get lbHomeVersusSubOffline => '1v1 · prawdziwi rywale';
 
   @override
+  String lbHomeSeasonClaim(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nagrody do odebrania',
+      many: '$count nagród do odebrania',
+      few: '$count nagrody do odebrania',
+      one: '1 nagroda do odebrania',
+    );
+    return 'Poziom $tier · $_temp0';
+  }
+
+  @override
   String get lbHomeSeasonSubNone => 'Zdobywaj PD w każdej grze';
 
   @override

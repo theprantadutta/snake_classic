@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "अभी कोई विज्ञापन नहीं। थोड़ी देर में फिर कोशिश करें।",
   "lbServerDown": "हमारे सर्वर धड़ाम हो गए। आपकी प्रगति इस फ़ोन पर सुरक्षित है।",
   "lbHomeVersusSubOffline": "1v1 · असली प्रतिद्वंद्वी",
+  "lbHomeSeasonClaim": "टियर {tier} · {count, plural, =1{1 इनाम लेना बाकी} other{{count} इनाम लेना बाकी}}",
   "lbHomeSeasonSubNone": "हर रन में XP कमाएँ",
   "lbMenuHowToPlay": "कैसे खेलें",
   "lbMenuTournaments": "टूर्नामेंट",

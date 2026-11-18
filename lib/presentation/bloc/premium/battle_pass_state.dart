@@ -94,6 +94,27 @@ class BattlePassState extends Equatable {
   /// Check if a premium tier reward is claimed
   bool isPremiumTierClaimed(int tier) => claimedPremiumTiers.contains(tier);
 
+  /// Unlocked rewards this player can claim right now: free ones always,
+  /// premium ones only with a valid pass (the same rule as the Season
+  /// screen's AVAILABLE NOW list and claimPremiumReward).
+  ///
+  /// Shown on Home because nothing else said a reward was waiting:
+  /// Oct 21 - Nov 17 2026, 1,335 of the 1,396 players at tier 2+ never
+  /// claimed a single Season reward.
+  int get claimableRewardCount {
+    final s = season;
+    if (s == null) return 0;
+    var count = 0;
+    for (int i = 1; i <= currentTier && i <= s.levels.length; i++) {
+      final level = s.levels[i - 1];
+      if (level.freeReward != null && !isFreeTierClaimed(i)) count++;
+      if (isValid && level.premiumReward != null && !isPremiumTierClaimed(i)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   /// Maximum tier level (derived from season if available)
   int get maxTier => season?.levels.length ?? 100;
 

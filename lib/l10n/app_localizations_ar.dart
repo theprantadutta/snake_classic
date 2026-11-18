@@ -6415,6 +6415,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbHomeVersusSubOffline => '1 ضد 1 · خصوم حقيقيون';
 
   @override
+  String lbHomeSeasonClaim(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكافأة بانتظارك',
+      many: '$count مكافأة بانتظارك',
+      few: '$count مكافآت بانتظارك',
+      two: 'مكافأتان بانتظارك',
+      one: 'مكافأة واحدة بانتظارك',
+      zero: 'لا مكافآت',
+    );
+    return 'المستوى $tier · $_temp0';
+  }
+
+  @override
   String get lbHomeSeasonSubNone => 'اكسب خبرة في كل جولة';
 
   @override

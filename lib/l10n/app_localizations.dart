@@ -11344,6 +11344,12 @@ abstract class AppLocalizations {
   /// **'1v1 · real rivals'**
   String get lbHomeVersusSubOffline;
 
+  /// Home Season block subtitle when unlocked Season rewards are waiting to be claimed
+  ///
+  /// In en, this message translates to:
+  /// **'Tier {tier} · {count, plural, =1{1 reward to claim} other{{count} rewards to claim}}'**
+  String lbHomeSeasonClaim(String tier, int count);
+
   /// Home Season block subtitle when no season is active
   ///
   /// In en, this message translates to:

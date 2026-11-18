@@ -3798,6 +3798,18 @@
   "@lbHomeVersusSubOffline": {
     "description": "Home Versus block subtitle when the rating is unknown"
   },
+  "lbHomeSeasonClaim": "Tier {tier} · {count, plural, =1{1 reward to claim} other{{count} rewards to claim}}",
+  "@lbHomeSeasonClaim": {
+    "description": "Home Season block subtitle when unlocked Season rewards are waiting to be claimed",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "lbHomeSeasonSubNone": "Earn XP every run",
   "@lbHomeSeasonSubNone": {
     "description": "Home Season block subtitle when no season is active"

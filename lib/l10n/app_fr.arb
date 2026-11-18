@@ -1879,6 +1879,7 @@
   "lbNoAdNow": "Pas de pub pour l'instant. Réessaie dans un instant.",
   "lbServerDown": "Nos serveurs ont fait bonk. Ta progression est en sécurité sur ce téléphone.",
   "lbHomeVersusSubOffline": "1c1 · vrais rivaux",
+  "lbHomeSeasonClaim": "Palier {tier} · {count, plural, one{{count} récompense à réclamer} other{{count} récompenses à réclamer}}",
   "lbHomeSeasonSubNone": "Gagne de l'XP à chaque partie",
   "lbMenuHowToPlay": "COMMENT JOUER",
   "lbMenuTournaments": "TOURNOIS",

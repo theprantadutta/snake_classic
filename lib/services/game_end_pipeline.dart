@@ -428,6 +428,12 @@ class GameEndPipeline {
           ),
         ]);
 
+      // Completed challenges pay out on their own: see
+      // DailyChallengeService.autoClaimCompleted for the data behind it.
+      if (dailiesCompleted > 0) {
+        await _dailyChallengeService.autoClaimCompleted();
+      }
+
       await Future.wait([
         _achievementService.syncUnlockedAchievements(),
         // Mirror the daily-challenge progress events to the weekly-quest
