@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:snake_classic/design/lb_motion.dart';
 import 'package:snake_classic/screens/debug/lb_gallery_screen.dart';
 import 'package:snake_classic/models/game_replay.dart';
 import 'package:snake_classic/models/tournament.dart';
@@ -36,8 +37,12 @@ import 'package:snake_classic/screens/store_screen.dart';
 import 'package:snake_classic/screens/tournament_detail_screen.dart';
 import 'package:snake_classic/screens/tournaments_screen.dart';
 
-/// Zoom-in page transition (default for most routes)
-CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
+/// Default transition for pushed Living Board screens: a short fade with a
+/// 2% scale-up and rise, [LBMotion.base], easeOutSoft in and [LBMotion.exit]
+/// on the way out. The screen's own entrance choreography (LBStaggerIn) does
+/// the rest. Reduce motion: a plain [LBMotion.reducedFade] fade.
+CustomTransitionPage<void> _zoomPage(BuildContext context, GoRouterState state, Widget child) {
+  if (LBMotion.reduced(context)) return _reducedPage(state, child);
   return CustomTransitionPage(
     key: state.pageKey,
     // The GoRoute name reaches NavigatorObservers as RouteSettings.name —
@@ -45,21 +50,73 @@ CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
     // was unset, so every observer saw null.
     name: state.name ?? state.matchedLocation,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
+    transitionDuration: LBMotion.base,
+    reverseTransitionDuration: LBMotion.base,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final move = CurvedAnimation(
+        parent: animation,
+        curve: LBMotion.easeOutSoft,
+        reverseCurve: LBMotion.exit.flipped,
+      );
+      return SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, .02), end: Offset.zero).animate(move),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: .98, end: 1).animate(move),
+          // The page fades over a few frames at the start of the zoom (and the
+          // end of the zoom out) instead of the whole transition. While its
+          // opacity is below 1 the whole page — glows and all — is rendered
+          // offscreen every frame, and on the A24's GPU (already drawing two
+          // full screens during a transition) a long fade pushed half of all
+          // screen-open frames past the 11 ms budget at 90 Hz. Profiled with
+          // the fades interleaved in one build: 51% of opening frames over
+          // budget with the long fade, 18% with this one, 19% with no fade.
+          child: FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: const _QuickFade(),
+              reverseCurve: const _QuickFade(),
+            ),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Opacity for the LB transitions: easeOutSoft, finished in the first 30%.
+/// The same curve runs backwards on close, so the page stays opaque until
+/// the last few frames.
+class _QuickFade extends Curve {
+  const _QuickFade();
+
+  @override
+  double transformInternal(double t) =>
+      const Interval(0, .3, curve: LBMotion.easeOutSoft).transform(t);
+}
+
+/// Reveal for the game screens: a larger scale-up over [LBMotion.gentle],
+/// easeOutSoft in, [LBMotion.exit] out. Reduce motion: plain fade.
+CustomTransitionPage<void> _scalePage(BuildContext context, GoRouterState state, Widget child) {
+  if (LBMotion.reduced(context)) return _reducedPage(state, child);
+  return CustomTransitionPage(
+    key: state.pageKey,
+    // The GoRoute name reaches NavigatorObservers as RouteSettings.name —
+    // screen-view analytics and the menu-music observer both read it. It
+    // was unset, so every observer saw null.
+    name: state.name ?? state.matchedLocation,
+    child: child,
+    transitionDuration: LBMotion.gentle,
+    reverseTransitionDuration: LBMotion.base,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return ScaleTransition(
-        scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+        scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: LBMotion.easeOutSoft,
+            reverseCurve: LBMotion.exit.flipped,
+          ),
         ),
-        // The page fades over a few frames at the start of the zoom (and the
-        // end of the zoom out) instead of all 300 ms. While its opacity is
-        // below 1 the whole page — glows and all — is rendered offscreen
-        // every frame, and on the A24's GPU (already drawing two full
-        // screens during a transition) that pushed half of all screen-open
-        // frames past the 11 ms budget at 90 Hz (Ranks: 85%). Profiled with
-        // the fades interleaved in one build: 51% of opening frames over
-        // budget with the long fade, 18% with this one, 19% with no fade.
         child: FadeTransition(
           opacity: CurvedAnimation(
             parent: animation,
@@ -73,39 +130,16 @@ CustomTransitionPage<void> _zoomPage(GoRouterState state, Widget child) {
   );
 }
 
-/// Opacity for [_zoomPage]: the old ease-out, finished at 30% of it. The
-/// same curve runs backwards on close, so the page stays opaque until the
-/// last few frames.
-class _QuickFade extends Curve {
-  const _QuickFade();
-
-  @override
-  double transformInternal(double t) => const Interval(0, .3, curve: Curves.easeOut)
-      .transform(Curves.easeOut.transform(t));
-}
-
-/// Scale page transition (dramatic reveal for game screen)
-CustomTransitionPage<void> _scalePage(GoRouterState state, Widget child) {
+/// Reduce motion: every route is a plain [LBMotion.reducedFade] fade.
+CustomTransitionPage<void> _reducedPage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
     key: state.pageKey,
-    // The GoRoute name reaches NavigatorObservers as RouteSettings.name —
-    // screen-view analytics and the menu-music observer both read it. It
-    // was unset, so every observer saw null.
     name: state.name ?? state.matchedLocation,
     child: child,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 320),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return ScaleTransition(
-        scale: Tween<double>(begin: 0.85, end: 1.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-        ),
-        child: FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
-          child: child,
-        ),
-      );
-    },
+    transitionDuration: LBMotion.reducedFade,
+    reverseTransitionDuration: LBMotion.reducedFade,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(opacity: animation, child: child),
   );
 }
 
@@ -154,13 +188,13 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.firstTimeAuth,
       name: 'firstTimeAuth',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const FirstTimeAuthScreen()),
+          _zoomPage(context, state, const FirstTimeAuthScreen()),
     ),
     GoRoute(
       path: AppRoutes.privacyConsent,
       name: 'privacyConsent',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const PrivacyConsentScreen()),
+          _zoomPage(context, state, const PrivacyConsentScreen()),
     ),
     GoRoute(
       path: AppRoutes.emailAuth,
@@ -170,19 +204,19 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
         // from a fresh sign-in. Set when launching from the purchase-gate
         // bottom sheet.
         final isLink = state.uri.queryParameters['link'] == '1';
-        return _zoomPage(state, EmailAuthScreen(linkFromAnonymous: isLink));
+        return _zoomPage(context, state, EmailAuthScreen(linkFromAnonymous: isLink));
       },
     ),
     GoRoute(
       path: AppRoutes.usernameSetup,
       name: 'usernameSetup',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const UsernameSetupScreen()),
+          _zoomPage(context, state, const UsernameSetupScreen()),
     ),
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      pageBuilder: (context, state) => _zoomPage(state, const HomeScreen()),
+      pageBuilder: (context, state) => _zoomPage(context, state, const HomeScreen()),
     ),
 
     // Game flow
@@ -190,12 +224,13 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.playLoading,
       name: 'playLoading',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const PreGameLoadingScreen()),
+          _zoomPage(context, state, const PreGameLoadingScreen()),
     ),
     GoRoute(
       path: AppRoutes.game,
       name: 'game',
       pageBuilder: (context, state) => _scalePage(
+        context,
         state,
         GameScreen(startTutorial: AppRoutes.wantsTutorial(state.uri)),
       ),
@@ -204,7 +239,7 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.gameOver,
       name: 'gameOver',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const GameOverScreen()),
+          _zoomPage(context, state, const GameOverScreen()),
     ),
 
     // Profile & Stats
@@ -212,25 +247,25 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.profile,
       name: 'profile',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const ProfileScreen()),
+          _zoomPage(context, state, const ProfileScreen()),
     ),
     GoRoute(
       path: AppRoutes.settings,
       name: 'settings',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const SettingsScreen()),
+          _zoomPage(context, state, const SettingsScreen()),
     ),
     GoRoute(
       path: AppRoutes.statistics,
       name: 'statistics',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const StatisticsScreen()),
+          _zoomPage(context, state, const StatisticsScreen()),
     ),
     GoRoute(
       path: AppRoutes.achievements,
       name: 'achievements',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const AchievementsScreen()),
+          _zoomPage(context, state, const AchievementsScreen()),
     ),
 
     // Social & Competitive
@@ -238,25 +273,25 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.leaderboard,
       name: 'leaderboard',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const LeaderboardScreen()),
+          _zoomPage(context, state, const LeaderboardScreen()),
     ),
     GoRoute(
       path: AppRoutes.friendsLeaderboard,
       name: 'friendsLeaderboard',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const FriendsLeaderboardScreen()),
+          _zoomPage(context, state, const FriendsLeaderboardScreen()),
     ),
     GoRoute(
       path: AppRoutes.friends,
       name: 'friends',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const FriendsScreen()),
+          _zoomPage(context, state, const FriendsScreen()),
     ),
     GoRoute(
       path: AppRoutes.tournaments,
       name: 'tournaments',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const TournamentsScreen()),
+          _zoomPage(context, state, const TournamentsScreen()),
     ),
     GoRoute(
       path: AppRoutes.tournamentDetail,
@@ -268,6 +303,7 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
         final tournament = state.extra as Tournament?;
 
         return _zoomPage(
+          context,
           state,
           TournamentDetailScreen(
             tournamentId: tournamentId,
@@ -285,14 +321,14 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
         // Get initial tab from query parameter
         final tabString = state.uri.queryParameters['tab'];
         final initialTab = tabString != null ? int.tryParse(tabString) ?? 0 : 0;
-        return _zoomPage(state, StoreScreen(initialTab: initialTab));
+        return _zoomPage(context, state, StoreScreen(initialTab: initialTab));
       },
     ),
     GoRoute(
       path: AppRoutes.premiumBenefits,
       name: 'premiumBenefits',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const PremiumBenefitsScreen()),
+          _zoomPage(context, state, const PremiumBenefitsScreen()),
     ),
     // Cosmetics route is preserved as a redirect to the store's Skins tab.
     // The standalone CosmeticsScreen was removed when the store screen
@@ -307,7 +343,7 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.battlePass,
       name: 'battlePass',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const BattlePassScreen()),
+          _zoomPage(context, state, const BattlePassScreen()),
     ),
 
     // Other features
@@ -315,25 +351,25 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.dailyChallenges,
       name: 'dailyChallenges',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const DailyChallengesScreen()),
+          _zoomPage(context, state, const DailyChallengesScreen()),
     ),
     GoRoute(
       path: AppRoutes.weeklyQuests,
       name: 'weeklyQuests',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const WeeklyQuestsScreen()),
+          _zoomPage(context, state, const WeeklyQuestsScreen()),
     ),
     GoRoute(
       path: AppRoutes.instructions,
       name: 'instructions',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const InstructionsScreen()),
+          _zoomPage(context, state, const InstructionsScreen()),
     ),
     GoRoute(
       path: AppRoutes.replays,
       name: 'replays',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const ReplaysScreen()),
+          _zoomPage(context, state, const ReplaysScreen()),
     ),
     GoRoute(
       path: AppRoutes.replayViewer,
@@ -345,6 +381,7 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
         final replay = state.extra as GameReplay?;
 
         return _zoomPage(
+          context,
           state,
           ReplayViewerScreen(
             replayId: replayId,
@@ -358,14 +395,14 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.runSetup,
       name: 'runSetup',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const RunSetupScreen()),
+          _zoomPage(context, state, const RunSetupScreen()),
     ),
     if (kDebugMode)
       GoRoute(
         path: AppRoutes.lbGallery,
         name: 'lbGallery',
         pageBuilder: (context, state) =>
-            _zoomPage(state, const LBGalleryScreen()),
+            _zoomPage(context, state, const LBGalleryScreen()),
       ),
 
     // Multiplayer — order matters: /multiplayer/game MUST come before
@@ -374,20 +411,20 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       path: AppRoutes.multiplayerLobby,
       name: 'multiplayerLobby',
       pageBuilder: (context, state) =>
-          _zoomPage(state, const MultiplayerLobbyScreen()),
+          _zoomPage(context, state, const MultiplayerLobbyScreen()),
     ),
     GoRoute(
       path: AppRoutes.multiplayerGame,
       name: 'multiplayerGame',
       pageBuilder: (context, state) =>
-          _scalePage(state, const MultiplayerGameScreen()),
+          _scalePage(context, state, const MultiplayerGameScreen()),
     ),
     GoRoute(
       path: AppRoutes.multiplayerLobbyWithId,
       name: 'multiplayerLobbyWithId',
       pageBuilder: (context, state) {
         final gameId = state.pathParameters['gameId'];
-        return _zoomPage(state, MultiplayerLobbyScreen(gameId: gameId));
+        return _zoomPage(context, state, MultiplayerLobbyScreen(gameId: gameId));
       },
     ),
   ],

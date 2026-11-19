@@ -5,6 +5,8 @@ import 'package:snake_classic/widgets/lb/lb_glow_cache.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb_feedback.dart';
+import 'package:snake_classic/widgets/lb/lb_pressable.dart';
+import 'package:snake_classic/design/lb_motion.dart';
 
 /// Block kinds (DESIGN_SPEC §3). One [fill] per screen — "one loud thing".
 enum LBBlockKind {
@@ -34,8 +36,10 @@ enum LBBlockKind {
 }
 
 /// A rectangle snapped to the grid, inset 1 dp, radius 6 — the Living Board's
-/// only surface. Tappable when [onTap] is set: it presses to 0.97 for 90 ms
-/// with a light haptic and the `ui_tap` sound.
+/// only surface. Tappable when [onTap] is set: it presses like every LB
+/// surface ([LBPressable]: sinks to 0.97, springs back; filled kinds also dip
+/// 2 dp) with a light haptic and the `ui_tap` sound. Tappable filled blocks
+/// breathe their glow while idle (see [idleGlowPulse]).
 ///
 /// Children inherit a text colour that reads on the block ([foregroundOf]),
 /// so labels inside a block rarely set colours themselves.
@@ -84,6 +88,16 @@ class LBBlock extends StatefulWidget {
   /// Overrides the kind's base colour (rarity stripes, versus rival tint).
   final Color? accent;
 
+  /// Master switch for the idle glow pulse of tappable filled blocks. The
+  /// loop never settles, so widget tests turn it off
+  /// (test/flutter_test_config.dart) to keep `pumpAndSettle` usable.
+  static bool idleGlowPulse = true;
+
+  /// One full breath (dim to bright and back).
+  static const Duration glowPulsePeriod = Duration(milliseconds: 2400);
+  static const double glowAlphaLow = .30;
+  static const double glowAlphaHigh = .45;
+
   /// The text/icon colour that reads on [kind].
   static Color foregroundOf(LBBlockKind kind, LBPalette p) => switch (kind) {
         LBBlockKind.fill => p.onLime,
@@ -98,13 +112,38 @@ class LBBlock extends StatefulWidget {
   State<LBBlock> createState() => _LBBlockState();
 }
 
-class _LBBlockState extends State<LBBlock> {
-  bool _pressed = false;
+class _LBBlockState extends State<LBBlock> with SingleTickerProviderStateMixin {
+  /// Idle glow breathing for primary blocks; created on first need.
+  AnimationController? _pulse;
+  Animation<double>? _pulseCurve;
 
   bool get _interactive => widget.onTap != null || widget.onLongPress != null;
 
-  void _setPressed(bool v) {
-    if (_pressed != v && mounted) setState(() => _pressed = v);
+  bool get _filled => widget.kind == LBBlockKind.fill || widget.kind == LBBlockKind.goldFill;
+
+  @override
+  void dispose() {
+    _pulse?.dispose();
+    super.dispose();
+  }
+
+  /// Starts or stops the glow loop. The controller's vsync is this State, so
+  /// TickerMode mutes it while the route is covered or off screen.
+  bool _syncPulse(BuildContext context) {
+    final want = LBBlock.idleGlowPulse &&
+        _filled &&
+        widget.onTap != null &&
+        !LBMotion.reduced(context);
+    if (want) {
+      if (_pulse == null) {
+        _pulse = AnimationController(vsync: this, duration: LBBlock.glowPulsePeriod ~/ 2);
+        _pulseCurve = CurvedAnimation(parent: _pulse!, curve: LBMotion.standard);
+      }
+      if (!_pulse!.isAnimating) _pulse!.repeat(reverse: true);
+    } else if (_pulse?.isAnimating ?? false) {
+      _pulse!.stop();
+    }
+    return want;
   }
 
   @override
@@ -112,6 +151,7 @@ class _LBBlockState extends State<LBBlock> {
     final p = context.lb;
     final fg = LBBlock.foregroundOf(widget.kind, p);
     final r = BorderRadius.circular(widget.radius);
+    final pulsing = _syncPulse(context);
 
     Widget content = DefaultTextStyle.merge(
       style: TextStyle(color: fg, fontFamily: LB.font, fontFamilyFallback: LB.fontFallback),
@@ -133,8 +173,36 @@ class _LBBlockState extends State<LBBlock> {
         radius: widget.radius,
         selected: widget.selected,
         accent: widget.accent,
+        glow: !pulsing,
       ),
       child: ClipRRect(borderRadius: r, child: content),
+    );
+
+    // The breathing glow sits behind the block in its own layer, so a pulse
+    // frame redraws one cached image and nothing else. The Stack is always
+    // there (the glow slot is empty when not pulsing) so the block's subtree
+    // keeps its state when the pulse turns on or off.
+    content = Stack(
+      // Passthrough: the block lays out exactly as it did without the Stack
+      // (a loose fit would shrink stretched blocks to their content).
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: pulsing
+              ? RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _GlowPulsePainter(
+                      pulse: _pulseCurve!,
+                      color: widget.kind == LBBlockKind.fill ? (widget.accent ?? p.lime) : LB.gold,
+                      radius: widget.radius,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        content,
+      ],
     );
 
     content = Padding(
@@ -153,11 +221,9 @@ class _LBBlockState extends State<LBBlock> {
       label: widget.semanticLabel,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _setPressed(true),
-        onTapUp: (_) => _setPressed(false),
-        onTapCancel: () => _setPressed(false),
+      child: LBPressable(
+        dip: _filled ? 2 : 0,
+        minHitSize: widget.minHitSize,
         onTap: widget.onTap == null
             ? null
             : () {
@@ -167,30 +233,44 @@ class _LBBlockState extends State<LBBlock> {
         onLongPress: widget.onLongPress == null
             ? null
             : () {
-                _setPressed(false);
                 if (widget.feedback) LBFeedback.tap();
                 widget.onLongPress!();
               },
-        child: _hitArea(
-          AnimatedScale(
-            scale: _pressed ? .97 : 1,
-            duration: LB.tap,
-            curve: Curves.easeOut,
-            child: content,
-          ),
-        ),
+        child: content,
       ),
     );
   }
+}
 
-  Widget _hitArea(Widget child) {
-    final min = widget.minHitSize;
-    if (min == null) return child;
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: min, minHeight: min),
-      child: Center(widthFactor: 1, heightFactor: 1, child: child),
+/// The idle glow of a primary block, breathing between alpha
+/// [LBBlock.glowAlphaLow] and [LBBlock.glowAlphaHigh]. The glow image is
+/// rasterized once at the high alpha (LBGlowCache); each frame only changes
+/// the opacity it is drawn with.
+class _GlowPulsePainter extends CustomPainter {
+  _GlowPulsePainter({required this.pulse, required this.color, required this.radius})
+      : super(repaint: pulse);
+
+  final Animation<double> pulse;
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final alpha =
+        LBBlock.glowAlphaLow + (LBBlock.glowAlphaHigh - LBBlock.glowAlphaLow) * pulse.value;
+    LBGlowCache.drawRRectGlow(
+      canvas,
+      rrect: RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
+      color: color.withValues(alpha: LBBlock.glowAlphaHigh),
+      sigma: 15,
+      style: BlurStyle.outer,
+      opacity: alpha / LBBlock.glowAlphaHigh,
     );
   }
+
+  @override
+  bool shouldRepaint(_GlowPulsePainter old) =>
+      old.pulse != pulse || old.color != color || old.radius != radius;
 }
 
 class _BlockPainter extends CustomPainter {
@@ -200,6 +280,7 @@ class _BlockPainter extends CustomPainter {
     required this.radius,
     required this.selected,
     this.accent,
+    this.glow = true,
   });
 
   final LBBlockKind kind;
@@ -207,6 +288,10 @@ class _BlockPainter extends CustomPainter {
   final double radius;
   final bool selected;
   final Color? accent;
+
+  /// Draw the static glow of filled kinds. Off while [_GlowPulsePainter]
+  /// draws a breathing one instead.
+  final bool glow;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -233,13 +318,15 @@ class _BlockPainter extends CustomPainter {
         final base = kind == LBBlockKind.fill ? (accent ?? p.lime) : LB.gold;
         // Cached: a fresh 15-sigma blur every frame was one of the largest
         // raster costs on Living Board screens (see LBGlowCache).
-        LBGlowCache.drawRRectGlow(
-          canvas,
-          rrect: rr,
-          color: base.withValues(alpha: .38),
-          sigma: 15,
-          style: BlurStyle.outer,
-        );
+        if (glow) {
+          LBGlowCache.drawRRectGlow(
+            canvas,
+            rrect: rr,
+            color: base.withValues(alpha: .38),
+            sigma: 15,
+            style: BlurStyle.outer,
+          );
+        }
         // Miami Nights: primary blocks get the sunset gradient instead of
         // a flat fill (pink, then orange at the bottom right).
         final miami = kind == LBBlockKind.fill &&
@@ -328,5 +415,6 @@ class _BlockPainter extends CustomPainter {
       old.palette != palette ||
       old.radius != radius ||
       old.selected != selected ||
-      old.accent != accent;
+      old.accent != accent ||
+      old.glow != glow;
 }
