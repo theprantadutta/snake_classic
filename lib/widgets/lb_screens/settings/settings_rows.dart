@@ -89,7 +89,12 @@ class SettingsValueRow extends StatelessWidget {
             ),
             if (value != null) ...[
               const SizedBox(width: 10),
-              Flexible(
+              // Hug the right edge (justify-between). In a Flexible the
+              // value got half the row, so a short value sat mid-row.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * .42,
+                ),
                 child: Text(
                   value!.toUpperCase(),
                   maxLines: 1,
