@@ -912,7 +912,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           for (var i = 0; i < tiles.length; i++)
             Positioned.fromRect(
               rect: tileRect(i),
-              child: _tile(context, tiles[i], tall: tileHL > 3),
+              // Enters once (fade + rise, staggered); rebuilds don't replay it.
+              child: LBStaggerIn(index: i, child: _tile(context, tiles[i], tall: tileHL > 3)),
             ),
 
           if (showHintL)

@@ -3,6 +3,7 @@ import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_banner_slot.dart';
 import 'package:snake_classic/widgets/lb/lb_grid_background.dart';
 import 'package:snake_classic/widgets/lb/lb_header.dart';
+import 'package:snake_classic/widgets/lb/lb_stagger_in.dart';
 
 /// The page every Living Board screen uses (DESIGN_SPEC §2): the grid board,
 /// the header (back block, cell-font title, optional action, subtitle), a
@@ -50,14 +51,26 @@ class LBScaffold extends StatelessWidget {
     if (body != null) {
       content = body!;
     } else {
+      // Screen-open choreography: rows fade + rise in, staggered, once.
+      // The group's clock lives in this element, so rebuilds and rows that
+      // scroll into view later don't replay it.
       final kids = <Widget>[];
       for (var i = 0; i < children!.length; i++) {
         if (i > 0 && spacing > 0) kids.add(SizedBox(height: spacing));
-        kids.add(children![i]);
+        final child = children![i];
+        kids.add(LBStaggerIn(
+          // Lift the row's key to the wrapper so keyed rows still keep their
+          // state when the list reorders.
+          key: child.key == null ? null : ValueKey(child.key),
+          index: i,
+          child: child,
+        ));
       }
-      content = ListView(
-        padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * 1.5),
-        children: kids,
+      content = LBStaggerGroup(
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(g, context.lbCell * .9, g, context.lbCell * 1.5),
+          children: kids,
+        ),
       );
     }
     return Scaffold(

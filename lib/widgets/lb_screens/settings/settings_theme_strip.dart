@@ -127,8 +127,8 @@ class _Swatch extends StatelessWidget {
       selected: selected,
       label: locked ? l10n.lbThemeSwatchLocked(name) : name,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      // Presses like an LBBlock (it is a block-shaped surface, not one).
+      child: LBPressable(
         onTap: () {
           LBFeedback.tap();
           onTap();
