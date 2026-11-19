@@ -151,4 +151,30 @@ void main() {
       expect(EffectCurves.wallSweepDuration(0), LBMotion.cellStagger);
     });
   });
+
+  group('turn feedback', () {
+    test('head stretch starts at amp and is gone when the turn ends', () {
+      expect(EffectCurves.turnStretch(0), closeTo(.18, 1e-9));
+      expect(EffectCurves.turnStretch(1), 0);
+      expect(EffectCurves.turnStretch(-.1), 0);
+      expect(EffectCurves.turnStretch(.95).abs(), lessThan(.05));
+    });
+
+    test('chevrons glide outward and fade to nothing', () {
+      var last = -1.0;
+      for (var t = 0.0; t <= 1; t += .05) {
+        final d = EffectCurves.chevronTravel(t);
+        expect(d, greaterThanOrEqualTo(last));
+        last = d;
+      }
+      expect(EffectCurves.chevronAlpha(0), closeTo(.85, 1e-9));
+      expect(EffectCurves.chevronAlpha(1), 0);
+      expect(EffectCurves.chevronAlpha(.5), lessThan(EffectCurves.chevronAlpha(.2)));
+    });
+
+    test('the input stamp outlives the turn animation', () {
+      // GameCubit clears lastAcceptedInputAt after 400 ms.
+      expect(EffectCurves.turnDuration.inMilliseconds, lessThan(400));
+    });
+  });
 }

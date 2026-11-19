@@ -49,6 +49,26 @@ abstract class EffectCurves {
     return 1 - k * k;
   }
 
+  /// Turn feedback length: head squash-and-stretch + direction chevrons.
+  static const Duration turnDuration = Duration(milliseconds: 360);
+
+  /// Head stretch along the new direction at turn progress [t] (0..1):
+  /// jumps to [amp], springs back through a small opposite squash, 0 after.
+  static double turnStretch(double t, {double amp = .18}) {
+    if (t < 0 || t >= 1) return 0;
+    return amp * (1 - LBMotion.springSoft.transform(t));
+  }
+
+  /// Direction chevrons: distance ahead of the head in cells, and alpha.
+  static double chevronTravel(double t) =>
+      .7 + .9 * LBMotion.easeOutSoft.transform(t.clamp(0.0, 1.0));
+  static double chevronAlpha(double t) {
+    if (t <= 0) return .85;
+    if (t >= 1) return 0;
+    final k = 1 - t;
+    return .85 * k * k;
+  }
+
   /// Combo chip resting scale: grows 3% per streak step past the first
   /// (combo 2), capped at +12%.
   static double comboBaseScale(int combo) =>

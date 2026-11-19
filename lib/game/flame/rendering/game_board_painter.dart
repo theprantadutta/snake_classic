@@ -72,6 +72,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final Direction? recentInputDirection;
   final double recentInputShimmerAge; // 0.0 = fresh, 1.0 = stale
 
+  /// Turn feedback: the direction just accepted and its progress 0..1
+  /// (1 = idle). Drives the head squash-and-stretch and the chevrons.
+  final Direction? turnDirection;
+  final double turnAge;
+
   /// Optional sprite art for food/power-ups/effects. Null (or any null
   /// member) falls back to the procedural shapes.
   final BoardSprites? sprites;
@@ -108,6 +113,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.animationTimeMs = 0,
     this.recentInputDirection,
     this.recentInputShimmerAge = 1.0,
+    this.turnDirection,
+    this.turnAge = 1.0,
     this.sprites,
     this.crashElapsedSeconds,
     this.growRippleT,
@@ -454,7 +461,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         }
       }
       _snakeBodyPaint.color = color;
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, bodyRadius), _snakeBodyPaint);
+      canvas.drawRRect(_elbowRRect(rect, i, bodyRadius, cell), _snakeBodyPaint);
     }
 
     // Scene themes: an edge and a soft top highlight per segment. Strokes
@@ -484,13 +491,20 @@ class OptimizedGameBoardPainter extends CustomPainter {
       }
     }
 
-    final head = rects.first;
+    var head = rects.first;
     var headColor = crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
     // Eat flash: the head blinks bright for the first ~80 ms of the tick
     // after a bite (DESIGN_SPEC §6).
     final prev = previousGameState;
     if (!crashed && prev != null && gameState.score > prev.score && moveProgress < .4) {
       headColor = Color.lerp(headColor, Colors.white, (1 - moveProgress / .4) * .8)!;
+    }
+    // Turn: the head stretches toward the new direction and springs back.
+    final turn = turnDirection;
+    if (turn != null && turnAge < 1 && !crashed) {
+      final s = EffectCurves.turnStretch(turnAge);
+      if (s != 0) head = _stretchToward(head, turn, s);
+      _drawTurnChevrons(canvas, head, turn, cell, palette.head);
     }
     canvas.drawRRect(
       RRect.fromRectAndRadius(head.inflate(cell * .12), Radius.circular(cell * .3)),
@@ -538,6 +552,80 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     if (recentInputDirection != null && recentInputShimmerAge < 1.0) {
       _drawHeadIntentShimmer(canvas, head);
+    }
+  }
+
+  /// Body segment [i] as a rounded rect; where the body bends, the outer
+  /// corner gets a big radius so turns read as a smooth elbow.
+  RRect _elbowRRect(Rect r, int i, Radius base, double cell) {
+    final body = gameState.snake.body;
+    if (i <= 0 || i >= body.length - 1) return RRect.fromRectAndRadius(r, base);
+    final p = body[i], a = body[i - 1], b = body[i + 1];
+    final ax = a.x - p.x, ay = a.y - p.y, bx = b.x - p.x, by = b.y - p.y;
+    // Straight, or a wrap-around jump: plain segment.
+    if (ax.abs() + ay.abs() != 1 || bx.abs() + by.abs() != 1) {
+      return RRect.fromRectAndRadius(r, base);
+    }
+    if (ax == -bx && ay == -by) return RRect.fromRectAndRadius(r, base);
+    // The outer corner points away from both neighbours.
+    final ox = -(ax + bx), oy = -(ay + by);
+    final big = Radius.circular(cell * .45);
+    return RRect.fromRectAndCorners(
+      r,
+      topLeft: ox < 0 && oy < 0 ? big : base,
+      topRight: ox > 0 && oy < 0 ? big : base,
+      bottomLeft: ox < 0 && oy > 0 ? big : base,
+      bottomRight: ox > 0 && oy > 0 ? big : base,
+    );
+  }
+
+  /// [r] stretched by [s] (fraction) along [d], squashed half as much
+  /// across it, leading edge pushed forward.
+  Rect _stretchToward(Rect r, Direction d, double s) {
+    final c = r.center;
+    final horizontal = d == Direction.left || d == Direction.right;
+    final w = r.width * (horizontal ? 1 + s : 1 - s * .5);
+    final h = r.height * (horizontal ? 1 - s * .5 : 1 + s);
+    final shift = switch (d) {
+      Direction.right => Offset((w - r.width) / 2, 0),
+      Direction.left => Offset(-(w - r.width) / 2, 0),
+      Direction.down => Offset(0, (h - r.height) / 2),
+      Direction.up => Offset(0, -(h - r.height) / 2),
+    };
+    return Rect.fromCenter(center: c + shift, width: w, height: h);
+  }
+
+  /// Two soft chevrons gliding out ahead of the head in the new direction.
+  void _drawTurnChevrons(
+      Canvas canvas, Rect head, Direction d, double cell, Color color) {
+    final alpha = EffectCurves.chevronAlpha(turnAge);
+    if (alpha <= .02) return;
+    final (dx, dy) = switch (d) {
+      Direction.right => (1.0, 0.0),
+      Direction.left => (-1.0, 0.0),
+      Direction.down => (0.0, 1.0),
+      Direction.up => (0.0, -1.0),
+    };
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = cell * .11
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final half = cell * .2;
+    for (var k = 0; k < 2; k++) {
+      final dist = cell * (EffectCurves.chevronTravel(turnAge) + k * .45);
+      final tip = head.center + Offset(dx, dy) * dist;
+      // Arms trail back from the tip, spread across the direction.
+      final back = Offset(-dx, -dy) * half;
+      final side = Offset(-dy, dx) * half;
+      paint.color = color.withValues(alpha: alpha * (k == 0 ? 1 : .55));
+      canvas.drawPath(
+        Path()
+          ..moveTo((tip + back + side).dx, (tip + back + side).dy)
+          ..lineTo(tip.dx, tip.dy)
+          ..lineTo((tip + back - side).dx, (tip + back - side).dy),
+        paint,
+      );
     }
   }
 

@@ -81,12 +81,20 @@ class LegacyBoardComponent extends Component
     // (identical to the legacy widget's computation).
     Direction? shimmerDir;
     var shimmerAge = 1.0;
+    Direction? turnDir;
+    var turnAge = 1.0;
     final stamp = game.cubitState.lastAcceptedInputAt;
     if (stamp != null) {
       final ageMs = DateTime.now().difference(stamp).inMilliseconds;
       if (ageMs <= 140) {
         shimmerDir = game.cubitState.lastAcceptedDirection;
         shimmerAge = (ageMs / 140).clamp(0.0, 1.0);
+      }
+      // Turn feedback (head squash/stretch + chevrons) runs longer.
+      final turnMs = EffectCurves.turnDuration.inMilliseconds;
+      if (!game.reducedMotion && ageMs <= turnMs) {
+        turnDir = game.cubitState.lastAcceptedDirection;
+        turnAge = (ageMs / turnMs).clamp(0.0, 1.0);
       }
     }
 
@@ -121,6 +129,8 @@ class LegacyBoardComponent extends Component
       animationTimeMs: ms,
       recentInputDirection: shimmerDir,
       recentInputShimmerAge: shimmerAge,
+      turnDirection: turnDir,
+      turnAge: turnAge,
       sprites: game.boardSprites,
       crashElapsedSeconds: game.crashElapsedOrNull,
       growRippleT: game.growRippleT,
