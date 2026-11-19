@@ -214,6 +214,16 @@ A sunset-neon theme launched for the week of the big Nov 19 2026 game release. *
 - **Announcement:** `lib/widgets/event_theme_promo.dart`, step 2 of the Home prompt queue (after the walkthrough, so players need 3 started games first). Shown once per install (SharedPreferences `event_promo_miami_nights_seen`), only in the window and only if the player isn't on the theme. The first NOT NOW asks once more before closing. Analytics `theme_promo` (`promo_action`: `shown` / `second_ask` / `accepted` / `dismissed`); picks show in `theme_selected` as "Miami Nights".
 - **Owned-theme sync fix (same change):** the server reports owned themes as product ids (`crystal_theme`), but the client matched them against `GameTheme.name`, which is the display name ("Crystal"). Every individually bought theme dropped from state on each sync. `PremiumContent.themeProductIds` now maps them; every premium theme needs an entry (a test enforces it).
 
+### UI audit fixes and device rules (2026-11-19) (LOAD-BEARING)
+- **Landscape is real on tablets.** Android 16 ignores the portrait lock on >=600dp screens for apps targeting SDK 36. Home, game, Versus, game over and the replay viewer have landscape branches (`width > height * 1.25`); any new full-screen layout needs one too. Verify on the Tab A9+ with `settings put system accelerometer_rotation 0; settings put system user_rotation 1` and restore `accelerometer_rotation 1` after.
+- **60 Hz by default.** MainActivity sets `window.attributes.preferredRefreshRate = 60` on every onResume (native prefs `snake_display/cap60`); `preferredDisplayModeId` and the refresh_rate plugin's `disable()` do NOT work on Samsung (it lists only the active mode). High refresh is an opt-in in Settings, labelled with the panel's real max rate.
+- **Gameplay banner costs frames** (60 -> ~39 fps on the A24, issue googleads-mobile-flutter#1551, watched by a cloud routine). The owner chose to keep it. Do not re-investigate game rendering for that jank. `--dart-define=LB_AUTOPILOT=true` (self-playing snake + frame logs) and `LB_PROFILE_NO_BANNER=true` exist for profiling. `DisableMergedPlatformUIThread` crashes on Flutter 3.50.
+- **Text scale** is clamped to 0.9-1.6 (main.dart). Fixed-height surfaces use `LBFitHeight` or cap their own scale (`hudMaxTextScale` = 1.3 on the game HUD). `test/widgets/text_scale_test.dart` guards overflow at 1.6.
+- **Brightness tokens:** boards are 20% toward black (not 35%), `inkMuted` .74, `inkDim` .56 (AA on small text). Don't drop them back.
+- **Home gestures:** pans starting in the status-bar / gesture-bar strips are ignored, or pulling the notification shade steers the snake into Setup.
+- **Miami Nights** draws a solid dusk base under outlined/muted/gold blocks and an opaque header band (LBScaffold), so the scene never sits behind text.
+- **Shared test devices** (A24 RR8W901JDRL, Tab A9+ R83X309RLNR) are used by other Claude sessions (cosmo-strike, jadewell, ...): ask before taking one, check the foreground app before every tap, release with a message. Never restart adb.
+
 ## In-App Purchase Setup (RTDN)
 
 ### Google Play RTDN Setup
