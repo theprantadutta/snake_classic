@@ -1,5 +1,8 @@
 // Registers every theme scene. Each theme's art lives in its own file here.
+import 'package:snake_classic/design/scenes/classic.dart';
 import 'package:snake_classic/design/scenes/miami_nights.dart';
+import 'package:snake_classic/design/scenes/modern.dart';
+import 'package:snake_classic/design/scenes/retro.dart';
 import 'package:snake_classic/design/scenes/theme_scene.dart';
 import 'package:snake_classic/utils/constants.dart';
 
@@ -11,4 +14,7 @@ void registerThemeScenes() {
   if (_registered) return;
   _registered = true;
   ThemeScenes.register(GameTheme.miamiNights, const MiamiNightsThemeScene());
+  ThemeScenes.register(GameTheme.classic, const ClassicThemeScene());
+  ThemeScenes.register(GameTheme.modern, const ModernThemeScene());
+  ThemeScenes.register(GameTheme.retro, const RetroThemeScene());
 }
