@@ -362,7 +362,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsDisplayFooter =>
-      'Высокая частота обновления делает движение змейки и меню плавнее и немного больше расходует батарею. Snake Classic оставляет её включённой по умолчанию и никогда не отменяет энергосбережение вашего устройства.';
+      'Snake Classic работает на 60 Гц, пока вы не включите более высокую частоту в разделе «Звук и отклик». Высокая частота выглядит плавнее и расходует больше батареи, а энергосбережение устройства всегда в приоритете.';
 
   @override
   String get settingsDisplaySupportedTitle => 'ЭТОТ ЭКРАН';
@@ -983,6 +983,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get storePillOwned => 'КУПЛЕНО';
 
   @override
+  String storeCoinPrice(String coins) {
+    return '$coins¢';
+  }
+
+  @override
   String get storePillFree => 'БЕСПЛАТНО';
 
   @override
@@ -1099,7 +1104,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get storePowerUpsInfo =>
-      'Купите за монеты и зарядите одно через чип снаряжения на главном экране — оно активируется через 5 с после начала следующей игры.';
+      'Купите за монеты, затем зарядите одно в СНАРЯЖЕНИИ на экране настройки перед игрой — оно активируется через 5 с после старта.';
 
   @override
   String get storePowerUps => 'Усиления';
@@ -4667,6 +4672,14 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get lbGoCoinsBanked => 'добавлены к твоим монетам · играй дальше';
+
+  @override
+  String lbHomeDailySubShort(String time, String coins) {
+    return '$time · +$coins¢';
+  }
+
+  @override
   String dcDescMode(num target, Object mode) {
     String _temp0 = intl.Intl.pluralLogic(
       target,
@@ -5177,7 +5190,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Правила, управление, Версус и настройки — всё в этом меню.';
 
   @override
-  String get insOnPhone => 'На телефоне';
+  String get insOnPhone => 'На этом устройстве';
 
   @override
   String get insOnKeyboard => 'На клавиатуре';
@@ -6231,6 +6244,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbCrashReplaySub => 'сколько сыпать соль на рану';
 
   @override
+  String lbHighRefreshRate(String rate) {
+    return '$rate ГЦ';
+  }
+
+  @override
+  String get lbHighRefreshRateGeneric => 'ВЫСОКАЯ ЧАСТОТА ОБНОВЛЕНИЯ';
+
+  @override
+  String get settingsHighRefreshUnavailable => 'недоступно на этом экране';
+
+  @override
   String get lbTheme => 'ТЕМА';
 
   @override
@@ -6577,7 +6601,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lbReplaysSubtitle =>
-      'Хранятся на этом телефоне. Никуда не загружаются.';
+      'Хранятся на этом устройстве. Никуда не загружаются.';
 
   @override
   String get lbReplayTitle => 'ПОВТОР';

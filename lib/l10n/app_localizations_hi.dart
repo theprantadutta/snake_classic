@@ -362,7 +362,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settingsDisplayFooter =>
-      'ऊँची रिफ़्रेश रेट से साँप और मेन्यू ज़्यादा स्मूद लगते हैं, और बैटरी थोड़ी ज़्यादा खर्च होती है। Snake Classic इसे डिफ़ॉल्ट रूप से चालू रखता है और आपके डिवाइस की पावर सेविंग को कभी नहीं बदलता।';
+      'Snake Classic 60 Hz पर चलता है, जब तक आप साउंड और फ़ील में ऊँची रेट चालू नहीं करते। ऊँची रेट ज़्यादा स्मूद दिखती है और ज़्यादा बैटरी खर्च करती है, और आपके डिवाइस की पावर सेविंग हमेशा पहले आती है।';
 
   @override
   String get settingsDisplaySupportedTitle => 'यह डिस्प्ले';
@@ -986,6 +986,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get storePillOwned => 'आपके पास';
 
   @override
+  String storeCoinPrice(String coins) {
+    return '$coins¢';
+  }
+
+  @override
   String get storePillFree => 'मुफ़्त';
 
   @override
@@ -1106,7 +1111,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get storePowerUpsInfo =>
-      'सिक्कों से खरीदें, फिर होम स्क्रीन के लोडआउट चिप से एक तैयार करें — यह अगले गेम में 5 सेकंड बाद सक्रिय होगा।';
+      'सिक्कों से खरीदें, फिर खेल से पहले सेटअप स्क्रीन के लोडआउट में एक तैयार करें — यह गेम शुरू होने के 5 सेकंड बाद सक्रिय होगा।';
 
   @override
   String get storePowerUps => 'पावर-अप';
@@ -4637,12 +4642,20 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get lbGoCoinsBanked => 'आपके सिक्कों में जुड़ गए · खेलते रहिए';
+
+  @override
+  String lbHomeDailySubShort(String time, String coins) {
+    return '$time · +$coins¢';
+  }
+
+  @override
   String dcDescMode(num target, Object mode) {
     String _temp0 = intl.Intl.pluralLogic(
       target,
       locale: localeName,
-      other: '$mode मोड में $target गेम खेलें',
-      one: '$mode मोड में 1 गेम खेलें',
+      other: '$mode में $target गेम खेलें',
+      one: '$mode में 1 गेम खेलें',
     );
     return '$_temp0';
   }
@@ -5143,7 +5156,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'नियम, नियंत्रण, वर्सेस और सेटिंग्स — सब इसी मेन्यू में हैं।';
 
   @override
-  String get insOnPhone => 'आपके फ़ोन पर';
+  String get insOnPhone => 'इस डिवाइस पर';
 
   @override
   String get insOnKeyboard => 'कीबोर्ड पर';
@@ -6182,6 +6195,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get lbCrashReplaySub => 'कितनी देर ज़ख़्म पर नमक छिड़कें';
 
   @override
+  String lbHighRefreshRate(String rate) {
+    return '$rate Hz';
+  }
+
+  @override
+  String get lbHighRefreshRateGeneric => 'हाई रिफ़्रेश रेट';
+
+  @override
+  String get settingsHighRefreshUnavailable => 'इस स्क्रीन पर उपलब्ध नहीं';
+
+  @override
   String get lbTheme => 'थीम';
 
   @override
@@ -6527,7 +6551,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get lbReplaysSubtitle =>
-      'इसी फ़ोन पर रखे जाते हैं। कभी अपलोड नहीं होते।';
+      'इसी डिवाइस पर रखे जाते हैं। कभी अपलोड नहीं होते।';
 
   @override
   String get lbReplayTitle => 'रिप्ले';

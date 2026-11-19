@@ -6,7 +6,7 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**7.7.0+77** (bumped from 7.6.2+76 on 2026-11-18 for the Miami Nights theme; the App Store Connect version created as 7.6.2 must be renamed to 7.7.0 before the build is attached). The 7.6.0 notes are archived in release_notes_7.6.0.md.
+**7.7.1+78** (2026-11-19: 7.7.0+77 plus the UI audit fixes, tablet landscape, brightness and 60 Hz work; the App Store Connect version created as 7.6.2 must be renamed to 7.7.1 before the build is attached). The 7.6.0 notes are archived in release_notes_7.6.0.md.
 
 7.6.1+75 was built for Play on 2026-11-16 but 7.7.0 supersedes it on both
 stores (it includes everything 7.6.1 has). What 7.7.0 adds over 7.6.0:
@@ -136,7 +136,7 @@ es-419 and es-ES share the `es` text.
 </tr-TR>
 ```
 
-## App Store Connect — What's New (7.7.0)
+## App Store Connect — What's New (7.7.1)
 
 The App Store has 7.6.0 live, so this carries the 7.6.1 fixes too. The rate
 line uses each language's in-app row name (settingsRateApp). Promotional

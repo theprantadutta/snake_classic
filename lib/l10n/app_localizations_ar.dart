@@ -356,7 +356,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsDisplayFooter =>
-      'معدلات التحديث الأعلى تجعل الثعبان والقوائم أكثر سلاسة، وتستهلك قدرًا أكبر قليلًا من البطارية. يُبقي Snake Classic هذا الخيار مفعّلًا افتراضيًا ولا يتجاوز إعدادات توفير الطاقة في جهازك.';
+      'يعمل Snake Classic بمعدل 60 هرتز ما لم تفعّل المعدل الأعلى من قسم الصوت والإحساس. المعدلات الأعلى أكثر سلاسة وتستهلك بطارية أكثر، وتبقى إعدادات توفير الطاقة في جهازك صاحبة الأولوية دائمًا.';
 
   @override
   String get settingsDisplaySupportedTitle => 'هذه الشاشة';
@@ -973,6 +973,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get storePillOwned => 'مملوك';
 
   @override
+  String storeCoinPrice(String coins) {
+    return '$coins¢';
+  }
+
+  @override
   String get storePillFree => 'مجاني';
 
   @override
@@ -1089,7 +1094,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get storePowerUpsInfo =>
-      'اشترِ بالعملات ثم جهّز واحدًا من شريحة العتاد في الشاشة الرئيسية — يُفعَّل بعد 5 ثوانٍ من بدء لعبتك التالية.';
+      'اشترِ بالعملات، ثم جهّز واحدًا من «العتاد» في شاشة التجهيز قبل الجولة — يُفعَّل بعد 5 ثوانٍ من بدء اللعب.';
 
   @override
   String get storePowerUps => 'التعزيزات';
@@ -4627,16 +4632,24 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get lbGoCoinsBanked => 'أُضيفت إلى عملاتك · واصل اللعب';
+
+  @override
+  String lbHomeDailySubShort(String time, String coins) {
+    return '$time · +$coins¢';
+  }
+
+  @override
   String dcDescMode(num target, Object mode) {
     String _temp0 = intl.Intl.pluralLogic(
       target,
       locale: localeName,
-      other: 'العب $target لعبة في وضع $mode',
-      many: 'العب $target لعبة في وضع $mode',
-      few: 'العب $target ألعاب في وضع $mode',
-      two: 'العب لعبتين في وضع $mode',
-      one: 'العب لعبة واحدة في وضع $mode',
-      zero: 'لا ألعاب في وضع $mode',
+      other: 'العب $target لعبة في «$mode»',
+      many: 'العب $target لعبة في «$mode»',
+      few: 'العب $target ألعاب في «$mode»',
+      two: 'العب لعبتين في «$mode»',
+      one: 'العب لعبة واحدة في «$mode»',
+      zero: 'لا ألعاب في «$mode»',
     );
     return '$_temp0';
   }
@@ -5141,7 +5154,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'القواعد والتحكم والمواجهة والإعدادات، كلها في هذه القائمة.';
 
   @override
-  String get insOnPhone => 'على الهاتف';
+  String get insOnPhone => 'على هذا الجهاز';
 
   @override
   String get insOnKeyboard => 'على لوحة المفاتيح';
@@ -6207,6 +6220,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbCrashReplaySub => 'كم نُطيل الشماتة';
 
   @override
+  String lbHighRefreshRate(String rate) {
+    return '$rate هرتز';
+  }
+
+  @override
+  String get lbHighRefreshRateGeneric => 'معدل تحديث مرتفع';
+
+  @override
+  String get settingsHighRefreshUnavailable => 'غير متاح على هذه الشاشة';
+
+  @override
   String get lbTheme => 'السمة';
 
   @override
@@ -6552,7 +6576,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbTrendFlat => 'ثابت';
 
   @override
-  String get lbReplaysSubtitle => 'محفوظة على هذا الهاتف. لا تُرفع أبدًا.';
+  String get lbReplaysSubtitle => 'محفوظة على هذا الجهاز. لا تُرفع أبدًا.';
 
   @override
   String get lbReplayTitle => 'إعادة';

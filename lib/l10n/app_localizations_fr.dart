@@ -365,7 +365,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsDisplayFooter =>
-      'Des fréquences d’affichage plus élevées rendent le serpent et les menus plus fluides, et consomment un peu plus de batterie. Snake Classic laisse cette option activée par défaut et ne contourne jamais l’économie d’énergie de votre appareil.';
+      'Snake Classic tourne à 60 Hz, sauf si vous activez la fréquence plus élevée dans Son & sensations. Les fréquences plus élevées sont plus fluides et consomment plus de batterie, et l’économie d’énergie de votre appareil reste toujours prioritaire.';
 
   @override
   String get settingsDisplaySupportedTitle => 'CET ÉCRAN';
@@ -995,6 +995,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get storePillOwned => 'ACQUIS';
 
   @override
+  String storeCoinPrice(String coins) {
+    return '$coins¢';
+  }
+
+  @override
   String get storePillFree => 'GRATUIT';
 
   @override
@@ -1118,7 +1123,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get storePowerUpsInfo =>
-      'Achetez avec des pièces, puis armez-en un depuis la puce d\'équipement de l\'accueil — il s\'active 5 s après le début de votre prochaine partie.';
+      'Achetez avec des pièces, puis armez-en un dans ÉQUIPEMENT sur l\'écran Préparation avant une partie — il s\'active 5 s après le départ.';
 
   @override
   String get storePowerUps => 'Power-Ups';
@@ -4709,12 +4714,20 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get lbGoCoinsBanked => 'ajoutées à tes pièces · continue à jouer';
+
+  @override
+  String lbHomeDailySubShort(String time, String coins) {
+    return '$time · +$coins¢';
+  }
+
+  @override
   String dcDescMode(num target, Object mode) {
     String _temp0 = intl.Intl.pluralLogic(
       target,
       locale: localeName,
-      other: 'Jouez $target parties en mode $mode',
-      one: 'Jouez 1 partie en mode $mode',
+      other: 'Jouez $target parties en $mode',
+      one: 'Jouez 1 partie en $mode',
     );
     return '$_temp0';
   }
@@ -5223,7 +5236,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Règles, commandes, Versus et réglages : tout est dans ce menu.';
 
   @override
-  String get insOnPhone => 'Sur le téléphone';
+  String get insOnPhone => 'Sur cet appareil';
 
   @override
   String get insOnKeyboard => 'Au clavier';
@@ -6269,6 +6282,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbCrashReplaySub => 'à quel point on insiste';
 
   @override
+  String lbHighRefreshRate(String rate) {
+    return '$rate HZ';
+  }
+
+  @override
+  String get lbHighRefreshRateGeneric => 'TAUX DE RAFRAÎCHISSEMENT ÉLEVÉ';
+
+  @override
+  String get settingsHighRefreshUnavailable => 'indisponible sur cet écran';
+
+  @override
   String get lbTheme => 'THÈME';
 
   @override
@@ -6615,7 +6639,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get lbTrendFlat => 'STABLE';
 
   @override
-  String get lbReplaysSubtitle => 'Gardés sur ce téléphone. Jamais envoyés.';
+  String get lbReplaysSubtitle => 'Gardés sur cet appareil. Jamais envoyés.';
 
   @override
   String get lbReplayTitle => 'REPLAY';

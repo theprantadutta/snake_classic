@@ -745,7 +745,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDisplayFooter.
   ///
   /// In en, this message translates to:
-  /// **'Higher refresh rates make the snake and menus feel smoother, and use a little more battery. Snake Classic leaves this on by default and never overrides your device\'s power saving.'**
+  /// **'Snake Classic runs at 60 Hz unless you turn on the higher rate in Sound & Feel. Higher rates look smoother and use more battery, and your device\'s power saving always comes first.'**
   String get settingsDisplayFooter;
 
   /// No description provided for @settingsDisplaySupportedTitle.
@@ -1810,6 +1810,12 @@ abstract class AppLocalizations {
   /// **'OWNED'**
   String get storePillOwned;
 
+  /// A price in coins, e.g. a power-up bundle price; ¢ = coins. coins is already locale-formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins}¢'**
+  String storeCoinPrice(String coins);
+
   /// No description provided for @storePillFree.
   ///
   /// In en, this message translates to:
@@ -2017,7 +2023,7 @@ abstract class AppLocalizations {
   /// No description provided for @storePowerUpsInfo.
   ///
   /// In en, this message translates to:
-  /// **'Buy with coins, then arm one from the home screen loadout chip — it activates 5s into your next game.'**
+  /// **'Buy with coins, then arm one in the LOADOUT on the Setup screen before a run — it activates 5s into the game.'**
   String get storePowerUpsInfo;
 
   /// No description provided for @storePowerUps.
@@ -8404,10 +8410,22 @@ abstract class AppLocalizations {
   /// **'{target, plural, one{Play 1 game today} other{Play {target} games today}}'**
   String dcDescGames(num target);
 
-  /// No description provided for @dcDescMode.
+  /// Game over rewards block: the run earned coins (already added to the balance) but no challenge reward is claimable
   ///
   /// In en, this message translates to:
-  /// **'{target, plural, one{Play 1 game in {mode} mode} other{Play {target} games in {mode} mode}}'**
+  /// **'added to your coins · keep playing'**
+  String get lbGoCoinsBanked;
+
+  /// Home Daily tile subtitle, short form that fits a 360dp tile: time until reset, then coins left to earn; ¢ = coins
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · +{coins}¢'**
+  String lbHomeDailySubShort(String time, String coins);
+
+  /// Daily challenge: play N games of a mode. {mode} is the full localized mode name ('Zen Mode', 'Classic'), so do not add a word for 'mode' around it
+  ///
+  /// In en, this message translates to:
+  /// **'{target, plural, one{Play 1 game in {mode}} other{Play {target} games in {mode}}}'**
   String dcDescMode(num target, Object mode);
 
   /// No description provided for @wqTitleScoreEasy.
@@ -9313,7 +9331,7 @@ abstract class AppLocalizations {
   /// No description provided for @insOnPhone.
   ///
   /// In en, this message translates to:
-  /// **'On your phone'**
+  /// **'On this device'**
   String get insOnPhone;
 
   /// No description provided for @insOnKeyboard.
@@ -10966,6 +10984,24 @@ abstract class AppLocalizations {
   /// **'how long we rub it in'**
   String get lbCrashReplaySub;
 
+  /// High refresh rate toggle title: the screen's real top refresh rate, e.g. 90 HZ
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} HZ'**
+  String lbHighRefreshRate(String rate);
+
+  /// High refresh rate toggle title when the screen's top rate is unknown or 60 Hz
+  ///
+  /// In en, this message translates to:
+  /// **'HIGH REFRESH RATE'**
+  String get lbHighRefreshRateGeneric;
+
+  /// Subline of the disabled high refresh rate toggle on a single-rate screen
+  ///
+  /// In en, this message translates to:
+  /// **'not available on this screen'**
+  String get settingsHighRefreshUnavailable;
+
   /// Section label
   ///
   /// In en, this message translates to:
@@ -11569,7 +11605,7 @@ abstract class AppLocalizations {
   /// Replays screen subtitle (replays are device-local)
   ///
   /// In en, this message translates to:
-  /// **'Kept on this phone. Never uploaded.'**
+  /// **'Kept on this device. Never uploaded.'**
   String get lbReplaysSubtitle;
 
   /// Replay viewer title

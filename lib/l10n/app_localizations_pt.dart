@@ -363,7 +363,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsDisplayFooter =>
-      'Taxas de atualização mais altas deixam a cobra e os menus mais suaves e consomem um pouco mais de bateria. O Snake Classic deixa isso ativado por padrão e nunca sobrepõe a economia de energia do seu dispositivo.';
+      'O Snake Classic roda a 60 Hz, a menos que você ative a taxa mais alta em Som e vibração. Taxas mais altas ficam mais suaves e consomem mais bateria, e a economia de energia do seu dispositivo sempre tem prioridade.';
 
   @override
   String get settingsDisplaySupportedTitle => 'ESTA TELA';
@@ -990,6 +990,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get storePillOwned => 'SEU';
 
   @override
+  String storeCoinPrice(String coins) {
+    return '$coins¢';
+  }
+
+  @override
   String get storePillFree => 'GRÁTIS';
 
   @override
@@ -1114,7 +1119,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get storePowerUpsInfo =>
-      'Compre com moedas e depois equipe um no chip de equipamento da tela inicial — ele ativa 5s após o início do próximo jogo.';
+      'Compre com moedas e depois equipe um em EQUIPAMENTO na tela Preparar antes de jogar — ele ativa 5s após o início.';
 
   @override
   String get storePowerUps => 'Power-Ups';
@@ -4681,12 +4686,20 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get lbGoCoinsBanked => 'adicionadas às suas moedas · continue jogando';
+
+  @override
+  String lbHomeDailySubShort(String time, String coins) {
+    return '$time · +$coins¢';
+  }
+
+  @override
   String dcDescMode(num target, Object mode) {
     String _temp0 = intl.Intl.pluralLogic(
       target,
       locale: localeName,
-      other: 'Jogue $target partidas no modo $mode',
-      one: 'Jogue 1 partida no modo $mode',
+      other: 'Jogue $target partidas no $mode',
+      one: 'Jogue 1 partida no $mode',
     );
     return '$_temp0';
   }
@@ -5200,7 +5213,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Regras, controlos, Versus e definições estão todos neste menu.';
 
   @override
-  String get insOnPhone => 'No telemóvel';
+  String get insOnPhone => 'Neste dispositivo';
 
   @override
   String get insOnKeyboard => 'Com teclado';
@@ -6241,6 +6254,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lbCrashReplaySub => 'quanto tempo a gente esfrega na sua cara';
 
   @override
+  String lbHighRefreshRate(String rate) {
+    return '$rate HZ';
+  }
+
+  @override
+  String get lbHighRefreshRateGeneric => 'TAXA DE ATUALIZAÇÃO ALTA';
+
+  @override
+  String get settingsHighRefreshUnavailable => 'indisponível nesta tela';
+
+  @override
   String get lbTheme => 'TEMA';
 
   @override
@@ -6586,7 +6610,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lbTrendFlat => 'ESTÁVEL';
 
   @override
-  String get lbReplaysSubtitle => 'Guardados neste celular. Nunca enviados.';
+  String get lbReplaysSubtitle =>
+      'Guardados neste dispositivo. Nunca enviados.';
 
   @override
   String get lbReplayTitle => 'REPLAY';
