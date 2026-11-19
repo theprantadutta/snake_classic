@@ -343,12 +343,59 @@ class SettingsSection extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 2, right: 2, bottom: 4),
-              child: LBSectionLabel(label, trailing: aside),
+              child: aside == null
+                  ? LBSectionLabel(label)
+                  : _AsideLabel(label: label, aside: aside!),
             ),
             ...children,
           ],
         ),
       );
+}
+
+/// [LBSectionLabel] with a long aside (`MIAMI NIGHTS · 5 FREE · 6 PREMIUM`).
+/// The shared label splits the row in half and cuts the aside to one line;
+/// here the label keeps only what it needs (at most 45%) and the aside gets
+/// the rest of the row and a second line.
+class _AsideLabel extends StatelessWidget {
+  const _AsideLabel({required this.label, required this.aside});
+
+  final String label;
+  final String aside;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: LayoutBuilder(
+        builder: (context, box) => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * .45),
+              child: Text(
+                label.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: LBText.label(p),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                aside.toUpperCase(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: LBText.label(p, color: p.inkDim),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// `REPLAY TUTORIAL · PRIVACY · v7.0.0` under the last section.

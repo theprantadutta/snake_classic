@@ -471,10 +471,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         // DisplayCubit owns the device-local high-refresh-rate opt-in; it
-        // never syncs. Disabled (not hidden) on a single-rate panel.
+        // never syncs. Disabled (not hidden) on a single-rate panel, where
+        // DISPLAY below explains why; the title is the panel's real top rate.
         SettingsToggleRow(
-          title: l10n.lb120Hz,
-          subtitle: l10n.lb120HzSub,
+          title: settingsHighRefreshTitle(l10n, display),
+          subtitle: display.isSingleRate
+              ? l10n.settingsHighRefreshUnavailable
+              : l10n.lb120HzSub,
           value: display.highRefreshRateEnabled,
           onChanged: display.deviceSupportsHighRate
               ? (value) async {
@@ -492,17 +495,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             text: l10n.settingsDisplayBatteryNote,
             icon: LBIcon.bolt,
           ),
+        // Serious or worse only (see DisplayState.throttledByHeat).
         if (display.throttledByHeat)
           SettingsNote(
             text: l10n.settingsDisplayThermalNote,
             icon: LBIcon.flame,
           ),
-        // Only once we have actually read the panel — before that we would be
-        // telling a 120 Hz phone it is single-rate.
-        if (display.loaded &&
-            display.info != null &&
-            !display.deviceSupportsHighRate)
-          SettingsNote(text: l10n.settingsDisplaySingleRateNote),
       ],
     );
   }

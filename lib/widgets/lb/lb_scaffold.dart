@@ -64,41 +64,52 @@ class LBScaffold extends StatelessWidget {
       bottomNavigationBar: banner ? LBBannerSlot(topGap: bannerTopGap) : null,
       body: LBGridBackground(
         child: SafeArea(
+          top: false,
           bottom: !banner,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              LBHeader(
-                title: title,
-                subtitle: subtitle,
-                trailing: trailing,
-                onBack: onBack,
-                showBack: showBack,
+              _PinnedHeaderBand(
+                child: LBHeader(
+                  title: title,
+                  subtitle: subtitle,
+                  trailing: trailing,
+                  onBack: onBack,
+                  showBack: showBack,
+                ),
               ),
-              // Content scrolling up under the header fades out over a
-              // short band instead of butting hard against the subtitle.
+              // Content scrolling up under the header is clipped at the
+              // band's edge and fades out over a short strip that starts
+              // fully opaque, so nothing reads through under the subtitle.
               Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(child: content),
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: context.lbCell * .85,
-                      child: IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [context.lb.board, context.lb.board.withValues(alpha: 0)],
+                child: ClipRect(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: content),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: context.lbCell * .85,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                stops: const [0, .3, 1],
+                                colors: [
+                                  context.lb.board,
+                                  context.lb.board,
+                                  context.lb.board.withValues(alpha: 0),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               ?bottom,
@@ -107,5 +118,30 @@ class LBScaffold extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The pinned title/subtitle area, status-bar inset included, on an opaque
+/// background so scrolled content never shows through it.
+///
+/// On a flat board that background is the board itself (grid and all,
+/// painted by [LBGridBackground] behind it), so the band is left
+/// transparent and the grid lines keep running through the header. On a
+/// scene theme (Miami Nights) the scene is what would show, and the fade
+/// strip under the band starts in the flat board colour, so the band is
+/// painted solid board to match it and the two read as one surface.
+class _PinnedHeaderBand extends StatelessWidget {
+  const _PinnedHeaderBand({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final padded = Padding(
+      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+      child: child,
+    );
+    if (!LBGridBackground.paintsScene(context)) return padded;
+    return ColoredBox(color: context.lb.board, child: padded);
   }
 }

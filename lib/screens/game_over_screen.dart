@@ -720,6 +720,12 @@ class _ScoreRow extends StatelessWidget {
   }
 }
 
+/// [_ScoreRow] for the text-scale layout test; the screen itself is too
+/// dependency-heavy to pump whole.
+@visibleForTesting
+// ignore: library_private_types_in_public_api
+typedef GameOverScoreRowForTest = _ScoreRow;
+
 /// AGAIN / CONTINUE, rewards, 2× coins, replay and HOME. Owns the game-over
 /// ad slot exactly as before: AGAIN and HOME both run it, one press at a
 /// time, announced above the buttons, behind a 900 ms tap-arm guard.
@@ -1054,8 +1060,14 @@ class _GameOverActionsState extends State<_GameOverActions> {
                               ),
                           ],
                         ),
-                        const Spacer(),
-                        Text(
+                        // The block is a fixed five cells, beside AGAIN; at
+                        // large system text the sub-line shrinks to fit the
+                        // room left under the countdown instead of
+                        // overflowing it.
+                        Expanded(
+                          child: LBFitHeight(
+                            alignment: AlignmentDirectional.bottomStart,
+                            child: Text(
                           // Two whole lines ("1,500¢ or ad" / "keep len 3"),
                           // never a wrap that strands the number: every
                           // locale joins the halves with " · ".
@@ -1075,6 +1087,8 @@ class _GameOverActionsState extends State<_GameOverActions> {
                             p,
                             color: LB.gold.withValues(alpha: .75),
                             size: 11,
+                          ),
+                        ),
                           ),
                         ),
                       ],

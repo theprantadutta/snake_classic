@@ -17,13 +17,18 @@ class LBGridBackground extends StatelessWidget {
   /// Board colour override (e.g. the gameplay board's deeper tone).
   final Color? color;
 
+  /// Whether the board behind a screen is a painted scene (Miami Nights)
+  /// rather than the flat palette board colour.
+  static bool paintsScene(BuildContext context) =>
+      identical(context.lb, LBPalette.of(GameTheme.miamiNights));
+
   @override
   Widget build(BuildContext context) {
     final p = context.lb;
     final cell = LB.cell * context.uiScale;
     // Miami Nights paints its sunset scene behind the grid instead of the
     // flat board colour (screens that pass their own colour keep it).
-    if (color == null && identical(p, LBPalette.of(GameTheme.miamiNights))) {
+    if (color == null && paintsScene(context)) {
       return CustomPaint(
         painter: const _MiamiPainter(),
         isComplex: true,

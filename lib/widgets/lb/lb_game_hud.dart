@@ -10,6 +10,13 @@ import 'package:snake_classic/models/tournament.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
+/// Largest text scale the gameplay HUD bands take. They are fixed-height
+/// strips above and below the board (the board must never move), and their
+/// text is glanceable readouts already sized for play; past this the
+/// callouts and chips would spill onto the board. Everything off the
+/// gameplay screen follows the app-wide 1.6x cap instead.
+const double hudMaxTextScale = 1.3;
+
 /// Gameplay top bar (Living Board screens 04–05): `LV n` on the left, the
 /// combo chip in the middle (or the tournament badge when there is no
 /// combo), the pause block on the right.
@@ -35,7 +42,9 @@ class LBGameTopBar extends StatelessWidget {
     final playing = gameState.status == GameStatus.playing;
     return SizedBox(
       height: cell * 2.4,
-      child: Padding(
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: hudMaxTextScale,
+        child: Padding(
         padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
         child: Row(
           children: [
@@ -86,6 +95,7 @@ class LBGameTopBar extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -289,7 +299,9 @@ class _LBGameInfoRowState extends State<LBGameInfoRow> with SingleTickerProvider
     final gs = widget.gameState;
     return SizedBox(
       height: context.lbCell * 2,
-      child: Padding(
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: hudMaxTextScale,
+        child: Padding(
         padding: EdgeInsets.symmetric(horizontal: context.lbGutter),
         child: AnimatedBuilder(
           animation: Listenable.merge([_ticker, widget.callout]),
@@ -347,11 +359,13 @@ class _LBGameInfoRowState extends State<LBGameInfoRow> with SingleTickerProvider
                 ),
                 Text(
                   '${l10n.lbHudLen('${gs.snake.length}')} · ${speedLabel(l10n, gs.gameSpeed).toUpperCase()}',
+                  maxLines: 1,
                   style: LBText.label(p, color: p.inkMuted).copyWith(fontSize: 10.5, letterSpacing: 1.6),
                 ),
               ],
             );
           },
+        ),
         ),
       ),
     );

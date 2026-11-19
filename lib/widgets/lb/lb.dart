@@ -12,6 +12,7 @@ export 'lb_cells_bar.dart';
 export 'lb_choice_block.dart';
 export 'lb_controls.dart';
 export 'lb_feedback.dart';
+export 'lb_fit.dart';
 export 'lb_grid_background.dart';
 export 'lb_header.dart';
 export 'lb_pixel_icon.dart';

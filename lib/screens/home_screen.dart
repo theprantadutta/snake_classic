@@ -792,7 +792,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Best score in snake cells, coins on the right.
           Positioned.fromRect(
             rect: r(lc0, bestLabelRowL, lCols, 1),
-            child: Row(
+            // One grid row tall, with the score's dot-matrix digits right
+            // under it: past 1.2x the coin readout would spill onto them.
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.2,
+              child: Row(
               children: [
                 Expanded(
                   child: Text(
@@ -811,6 +815,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
           Positioned.fromRect(
@@ -1443,8 +1448,12 @@ class _HomeTile extends StatelessWidget {
       onTap: onTap,
       semanticLabel: '$title, $subtitle',
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      // The tile is a fixed patch of grid. At large system text the two
+      // lines can be taller than it, so the content shrinks to fit rather
+      // than overflowing the block (below that it lays out at full size).
+      child: LBFitHeight(
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -1477,10 +1486,17 @@ class _HomeTile extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
 }
+
+/// [_HomeTile] for the text-scale layout test; Home itself is too
+/// dependency-heavy to pump whole.
+@visibleForTesting
+// ignore: library_private_types_in_public_api
+typedef HomeTileForTest = _HomeTile;
 
 /// Localized name of a loadout inventory key. Shared with the run setup
 /// screen.

@@ -39,12 +39,21 @@ class DisplayState extends Equatable {
   bool get throttledByBattery => info?.isLowPowerMode ?? false;
 
   /// Likewise when the device is hot: the OS clamps the rate to cool down.
+  ///
+  /// Only from [ThermalState.serious] up. The plugin folds Android's LIGHT
+  /// and MODERATE statuses into [ThermalState.fair], and LIGHT is what a
+  /// phone reports while merely in use, so `fair` put "your device is warm"
+  /// on a cool phone. Serious (Android SEVERE, iOS serious) is the first
+  /// state where the OS actually holds the refresh rate down.
   bool get throttledByHeat {
-    final i = info;
-    if (i == null) return false;
-    return i.thermalState != ThermalState.nominal &&
-        i.thermalState != ThermalState.unknown;
+    final t = info?.thermalState;
+    return t == ThermalState.serious || t == ThermalState.critical;
   }
+
+  /// A real panel reading that offers nothing above its one rate. False
+  /// until the panel has been read, so a 120 Hz phone is never told it is
+  /// single-rate.
+  bool get isSingleRate => loaded && info != null && !deviceSupportsHighRate;
 
   /// Whether the big number is currently the result of our own request, as
   /// opposed to the platform default we never overrode.
