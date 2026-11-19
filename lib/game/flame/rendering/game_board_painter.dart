@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/game/effects/effect_curves.dart';
 import 'package:snake_classic/models/game_state.dart';
 import 'package:snake_classic/models/food.dart';
 import 'package:snake_classic/models/position.dart';
@@ -78,6 +79,10 @@ class OptimizedGameBoardPainter extends CustomPainter {
   /// impact-star flash at the crash cell.
   final double? crashElapsedSeconds;
 
+  /// Grow-ripple progress 0..1 after a bite (null = no ripple). A bright
+  /// band travels head to tail; see [EffectCurves.rippleIntensity].
+  final double? growRippleT;
+
   // Shared paint for sprite draws; filterQuality gives clean minification
   // from the 512px source art down to cell size.
   final Paint _spritePaint = Paint()
@@ -104,6 +109,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.recentInputShimmerAge = 1.0,
     this.sprites,
     this.crashElapsedSeconds,
+    this.growRippleT,
     // Cached paints from _GameBoardState
     Paint? cachedSnakeHeadPaint,
     Paint? cachedSnakeBodyPaint,
@@ -374,6 +380,24 @@ class OptimizedGameBoardPainter extends CustomPainter {
         _drawSnakeBody(canvas, segmentRects[i], i, snakeLength, isTail);
       }
     }
+
+    // Grow ripple over premium skins: a light wash per lit segment, one
+    // paint for the whole pass (and none at all when no ripple runs).
+    final ripple = growRippleT;
+    if (ripple != null) {
+      final wash = Paint()..isAntiAlias = true;
+      final radius = Radius.circular(cellWidth * .2);
+      for (var i = 1; i < snakeLength; i++) {
+        final k = EffectCurves.rippleIntensity(ripple, i, snakeLength);
+        if (k <= 0) continue;
+        wash.color = Colors.white.withValues(alpha: .35 * k);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+              segmentRects[i].inflate(cellWidth * .06 * k), radius),
+          wash,
+        );
+      }
+    }
   }
 
   /// True when no owned premium skin is selected — the classic skin, which
@@ -405,12 +429,25 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final bodyRadius = Radius.circular(cell * .15);
     // Miami Nights: the body runs pink -> sunset orange toward the tail.
     final sunsetBody = theme == GameTheme.miamiNights && !invincible;
+    final ripple = growRippleT;
     for (var i = n - 1; i >= 1; i--) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
-      _snakeBodyPaint.color = sunsetBody
+      var color = sunsetBody
           ? Color.lerp(bodyColor, theme.accentColor, t)!.withValues(alpha: 1 - .25 * t)
           : bodyColor.withValues(alpha: 1 - .4 * t);
-      canvas.drawRRect(RRect.fromRectAndRadius(rects[i], bodyRadius), _snakeBodyPaint);
+      var rect = rects[i];
+      // Grow ripple: the lit band brightens and swells each segment a
+      // touch as it passes (draw-only, no extra paints).
+      if (ripple != null) {
+        final k = EffectCurves.rippleIntensity(ripple, i, n);
+        if (k > 0) {
+          color = Color.lerp(color, Colors.white, .45 * k)!
+              .withValues(alpha: math.min(1.0, color.a + .3 * k));
+          rect = rect.inflate(cell * .07 * k);
+        }
+      }
+      _snakeBodyPaint.color = color;
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, bodyRadius), _snakeBodyPaint);
     }
 
     // Miami Nights: a neon edge (aqua on the sunset body) and a soft top

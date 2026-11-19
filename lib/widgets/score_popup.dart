@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:snake_classic/design/lb_motion.dart';
 
 /// A floating score popup that rises and fades out
 class ScorePopup extends StatefulWidget {
@@ -58,7 +59,7 @@ class _ScorePopupState extends State<ScorePopup>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: LBMotion.lingering,
     );
 
     final peak = _peakScale;
@@ -68,7 +69,7 @@ class _ScorePopupState extends State<ScorePopup>
         tween: Tween<double>(
           begin: 0.5,
           end: peak,
-        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        ).chain(CurveTween(curve: LBMotion.springPop)),
         weight: 30,
       ),
       TweenSequenceItem(
@@ -97,7 +98,7 @@ class _ScorePopupState extends State<ScorePopup>
     _rise = Tween<double>(
       begin: 0,
       end: 45,
-    ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(_controller);
+    ).chain(CurveTween(curve: LBMotion.easeOutSoft)).animate(_controller);
 
     _controller.forward().then((_) {
       widget.onComplete();
@@ -112,15 +113,18 @@ class _ScorePopupState extends State<ScorePopup>
 
   @override
   Widget build(BuildContext context) {
+    // Reduce motion: the points just appear and fade, no bounce or rise.
+    final reduced = LBMotion.reduced(context);
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         return Positioned(
           left: widget.position.dx - 20,
-          top: widget.position.dy - _rise.value,
+          top: widget.position.dy - (reduced ? 0 : _rise.value),
           child: Opacity(
             opacity: _opacity.value,
-            child: Transform.scale(scale: _scale.value, child: _buildBadge()),
+            child: Transform.scale(
+                scale: reduced ? 1.0 : _scale.value, child: _buildBadge()),
           ),
         );
       },

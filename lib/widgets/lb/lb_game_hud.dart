@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:snake_classic/design/lb_motion.dart';
+import 'package:snake_classic/game/effects/effect_curves.dart';
+import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -27,10 +30,16 @@ class LBGameTopBar extends StatelessWidget {
     required this.onPause,
     this.pauseButtonKey,
     this.tournamentMode,
+    this.tickEvents = const [],
   });
 
   final GameState gameState;
   final VoidCallback onPause;
+
+  /// The events of the tick that produced [gameState] (the cubit state's
+  /// `tickEvents`). The combo chip pops from these, never from diffing
+  /// two states.
+  final List<TickEvent> tickEvents;
   final Key? pauseButtonKey;
   final TournamentGameMode? tournamentMode;
 
@@ -64,17 +73,29 @@ class LBGameTopBar extends StatelessWidget {
             ),
             Expanded(
               child: Center(
-                child: gameState.currentCombo >= 2
-                    ? LBComboChip(gameState: gameState)
-                    : tournamentMode != null
-                        ? LBChip(
-                            label: '${l10n.hudTournamentBadge} · '
-                                '${tournamentMode!.localizedName(l10n).toUpperCase()}',
-                            kind: LBChipKind.gold,
-                            icon: LBIcon.trophy,
-                            height: 26,
-                          )
-                        : const SizedBox.shrink(),
+                // The chip springs in on its own (LBComboChip) and fades out
+                // here when the streak times out or breaks.
+                child: AnimatedSwitcher(
+                  duration: LBMotion.of(context, LBMotion.base),
+                  switchInCurve: LBMotion.easeOutSoft,
+                  switchOutCurve: LBMotion.exit,
+                  child: gameState.currentCombo >= 2
+                      ? LBComboChip(
+                          key: const ValueKey('combo'),
+                          gameState: gameState,
+                          tickEvents: tickEvents,
+                        )
+                      : tournamentMode != null
+                          ? LBChip(
+                              key: const ValueKey('tournament'),
+                              label: '${l10n.hudTournamentBadge} · '
+                                  '${tournamentMode!.localizedName(l10n).toUpperCase()}',
+                              kind: LBChipKind.gold,
+                              icon: LBIcon.trophy,
+                              height: 26,
+                            )
+                          : const SizedBox.shrink(key: ValueKey('none')),
+                ),
               ),
             ),
             SizedBox(
@@ -104,12 +125,22 @@ class LBGameTopBar extends StatelessWidget {
 
 /// The combo chip with its decay warning: `×3 HOT · KEEP EATING`, turning
 /// red with `EAT SOMETHING. NOW.` in the last 1.5 s before the streak
-/// breaks. Pops 1.08× when the streak grows. Self-ticking, because the
-/// decay clock advances between HUD rebuilds.
+/// breaks. Springs in (LBMotion.springPop over `gentle`), pops again on each
+/// streak step, and rests a little larger per step (capped at +12%, see
+/// [EffectCurves.comboBaseScale]). Self-ticking, because the decay clock
+/// advances between HUD rebuilds.
 class LBComboChip extends StatefulWidget {
-  const LBComboChip({super.key, required this.gameState});
+  const LBComboChip({
+    super.key,
+    required this.gameState,
+    this.tickEvents = const [],
+  });
 
   final GameState gameState;
+
+  /// Events of the tick behind [gameState]; a bite that grows the streak
+  /// pops the chip.
+  final List<TickEvent> tickEvents;
 
   @override
   State<LBComboChip> createState() => _LBComboChipState();
@@ -120,13 +151,29 @@ class _LBComboChipState extends State<LBComboChip> with TickerProviderStateMixin
   late final AnimationController _ticker =
       AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
   late final AnimationController _pop =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 180));
+      AnimationController(vsync: this, duration: LBMotion.gentle);
+
+  /// Where the current pop springs from: small on entrance, near full size
+  /// on a streak step.
+  double _popFrom = .6;
+
+  @override
+  void initState() {
+    super.initState();
+    _pop.forward(from: 0);
+  }
 
   @override
   void didUpdateWidget(LBComboChip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.gameState.currentCombo > oldWidget.gameState.currentCombo) {
-      _pop.forward(from: 0);
+    // Keyed on the tick (state identity), read from its events.
+    if (identical(widget.gameState, oldWidget.gameState)) return;
+    for (final e in widget.tickEvents) {
+      if (e is FoodEatenEvent && e.newCombo >= 2) {
+        _popFrom = .9;
+        _pop.forward(from: 0);
+        break;
+      }
     }
   }
 
@@ -154,6 +201,7 @@ class _LBComboChipState extends State<LBComboChip> with TickerProviderStateMixin
     final l10n = AppLocalizations.of(context)!;
     final combo = widget.gameState.currentCombo;
     final mult = '$combo';
+    final reduced = LBMotion.reduced(context);
     return AnimatedBuilder(
       animation: Listenable.merge([_ticker, _pop]),
       builder: (context, _) {
@@ -166,7 +214,12 @@ class _LBComboChipState extends State<LBComboChip> with TickerProviderStateMixin
                 : combo >= 3
                     ? l10n.lbComboHot(mult)
                     : l10n.lbComboWarm(mult);
-        final popScale = 1 + .08 * math.sin(_pop.value * math.pi);
+        final popScale = reduced
+            ? 1.0
+            : EffectCurves.comboBaseScale(combo) *
+                (_pop.isAnimating
+                    ? EffectCurves.comboPopScale(_pop.value, from: _popFrom)
+                    : 1.0);
         final shake = danger ? math.sin(_ticker.value * math.pi * 16) * 1.5 : 0.0;
         return Transform.translate(
           offset: Offset(shake, 0),
@@ -186,12 +239,22 @@ class _LBComboChipState extends State<LBComboChip> with TickerProviderStateMixin
 }
 
 /// The level-progress cell row that doubles as the board's top wall. A
-/// level-up sweeps the cells left→right (DESIGN_SPEC §6).
+/// level-up lights the cells one by one left→right (LBMotion.cellStagger
+/// each), then the wall flashes lime once (DESIGN_SPEC §6).
 class LBLevelWall extends StatefulWidget {
-  const LBLevelWall({super.key, required this.gameState, required this.width});
+  const LBLevelWall({
+    super.key,
+    required this.gameState,
+    required this.width,
+    this.tickEvents = const [],
+  });
 
   final GameState gameState;
   final double width;
+
+  /// Events of the tick behind [gameState]; a [LeveledUpEvent] starts the
+  /// sweep.
+  final List<TickEvent> tickEvents;
 
   @override
   State<LBLevelWall> createState() => _LBLevelWallState();
@@ -199,12 +262,21 @@ class LBLevelWall extends StatefulWidget {
 
 class _LBLevelWallState extends State<LBLevelWall> with SingleTickerProviderStateMixin {
   late final AnimationController _sweep =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 420), value: 1);
+      AnimationController(vsync: this, duration: _total, value: 1);
+
+  int get _count => math.min(widget.gameState.boardWidth, 20);
+  Duration get _sweepDuration => EffectCurves.wallSweepDuration(_count);
+  Duration get _total => _sweepDuration + LBMotion.base;
 
   @override
   void didUpdateWidget(LBLevelWall oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.gameState.level > oldWidget.gameState.level) _sweep.forward(from: 0);
+    // Keyed on the tick (state identity), read from its events.
+    if (identical(widget.gameState, oldWidget.gameState)) return;
+    if (!widget.tickEvents.any((e) => e is LeveledUpEvent)) return;
+    if (LBMotion.reduced(context)) return;
+    _sweep.duration = _total;
+    _sweep.forward(from: 0);
   }
 
   @override
@@ -217,8 +289,10 @@ class _LBLevelWallState extends State<LBLevelWall> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final p = context.lb;
     // One cell per board column, capped so dense boards keep readable cells.
-    final count = math.min(widget.gameState.boardWidth, 20);
+    final count = _count;
     final cell = widget.width / count;
+    final sweepMs = _sweepDuration.inMilliseconds;
+    final totalMs = sweepMs + LBMotion.base.inMilliseconds;
     return Semantics(
       label: AppLocalizations.of(context)!.lbLevelShort('${widget.gameState.level}'),
       child: SizedBox(
@@ -227,19 +301,38 @@ class _LBLevelWallState extends State<LBLevelWall> with SingleTickerProviderStat
         child: AnimatedBuilder(
           animation: _sweep,
           builder: (context, _) {
-            final sweeping = _sweep.value < 1;
-            return Column(
+            final elapsedMs = (_sweep.value * totalMs).round();
+            final running = _sweep.value < 1;
+            final sweeping = running && elapsedMs < sweepMs;
+            // The flash follows the sweep: one lime wash fading over `base`.
+            final flash = running && !sweeping
+                ? EffectCurves.fadeOut((elapsedMs - sweepMs) / LBMotion.base.inMilliseconds)
+                : 0.0;
+            final wall = Column(
               children: [
                 LBCellsBar(
                   count: count,
                   cell: cell,
-                  value: sweeping ? _sweep.value : widget.gameState.levelProgress,
+                  value: sweeping
+                      ? EffectCurves.wallLitCells(elapsedMs, count) / count
+                      : widget.gameState.levelProgress,
                   colorAt: (i) => sweeping
                       ? p.head
                       : Color.lerp(p.lime.withValues(alpha: .55), p.lime.withValues(alpha: .8), i / count)!,
                 ),
                 const SizedBox(height: 2),
-                Container(height: 1, color: p.wall),
+                Container(height: 1, color: flash > 0 ? Color.lerp(p.wall, p.head, flash) : p.wall),
+              ],
+            );
+            if (flash <= 0) return wall;
+            return Stack(
+              children: [
+                wall,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(color: p.head.withValues(alpha: .4 * flash)),
+                  ),
+                ),
               ],
             );
           },

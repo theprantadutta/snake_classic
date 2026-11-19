@@ -834,6 +834,9 @@ class _GameScreenState extends State<GameScreen>
                                                                   pauseButtonKey:
                                                                       GameTutorialKeys
                                                                           .pauseButtonKey,
+                                                                  tickEvents:
+                                                                      hudState
+                                                                          .tickEvents,
                                                                 );
                                                               },
                                                             ),
@@ -992,6 +995,7 @@ class _GameScreenState extends State<GameScreen>
                                                                                   builder: (context, wallState) => LBLevelWall(
                                                                                     gameState: wallState.gameState ?? gameState,
                                                                                     width: lw,
+                                                                                    tickEvents: wallState.tickEvents,
                                                                                   ),
                                                                                 ),
                                                                                 const SizedBox(height: 4),
@@ -1041,7 +1045,11 @@ class _GameScreenState extends State<GameScreen>
                                                                           builder: (
                                                                             context,
                                                                             wallState,
-                                                                          ) => LBLevelWall(gameState: wallState.gameState ?? gameState, width: boardW),
+                                                                          ) => LBLevelWall(
+                                                                            gameState: wallState.gameState ?? gameState,
+                                                                            width: boardW,
+                                                                            tickEvents: wallState.tickEvents,
+                                                                          ),
                                                                         ),
                                                                         const SizedBox(
                                                                           height:

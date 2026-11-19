@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/design/lb_motion.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -62,6 +63,9 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
     final snapMovement = context.select<GameSettingsCubit, bool>(
       (c) => c.state.snapMovementEnabled,
     );
+    // Reduce motion turns the board's motion effects off; the game reads
+    // the flag every frame.
+    final reducedMotion = LBMotion.reduced(context);
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
         return BlocBuilder<PremiumCubit, PremiumState>(
@@ -94,6 +98,7 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
                     initialSnapMovement: snapMovement,
                   );
                 }
+                _game.reducedMotion = reducedMotion;
                 _game.ghostScoreLabel =
                     AppLocalizations.of(context)!.lbScoreLabel;
                 _game.syncState(
