@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:snake_classic/services/ads/ad_config.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -15,7 +16,8 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 /// For non-Pro mobile users it **reserves the banner height from the very
 /// first frame** — before the SDK is ready and before any ad has filled — so the
 /// page never shifts when the ad pops in a moment later. The reserved box is
-/// empty until an ad loads, then the ad fills it in place.
+/// a quiet placeholder ([_EmptyBannerStrip]: hairline + faint wash) until an
+/// ad loads, then the ad fills it in place.
 ///
 /// For Pro users and non-mobile platforms it takes **zero space, from the first
 /// render** — and it reacts to premium status (via [BlocBuilder]) so a
@@ -345,7 +347,12 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
                       child: AdWidget(ad: ad),
                     ),
                   )
-                : const SizedBox.shrink(),
+                : _EmptyBannerStrip(
+                    // A policy gap already draws a hairline against the
+                    // banner; don't double it.
+                    divider: widget.topGap <= 0,
+                    atTop: widget.atTop,
+                  ),
           ),
         );
         if (widget.topGap <= 0) return banner;
@@ -365,6 +372,43 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           children: widget.atTop ? [banner, gap] : [gap, banner],
         );
       },
+    );
+  }
+}
+
+/// What the reserved banner box shows before (or without) an ad: a hairline
+/// on the edge facing the screen's content and a barely-there wash, so the
+/// strip reads as a deliberate footer instead of a dead band. Nothing that
+/// could pass for an ad or a button: no text, no boxed border, no tap
+/// target. Same footprint as the ad, so the layout never shifts when one
+/// arrives.
+class _EmptyBannerStrip extends StatelessWidget {
+  const _EmptyBannerStrip({required this.divider, required this.atTop});
+
+  final bool divider;
+  final bool atTop;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    // Half-strength blockStroke: the line colour every Living Board block
+    // uses, quiet enough to sit under the content.
+    final line = BorderSide(
+      color: p.blockStroke.withValues(alpha: p.blockStroke.a * .5),
+    );
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: p.lime.withValues(alpha: .03),
+          border: divider
+              ? Border(
+                  top: atTop ? BorderSide.none : line,
+                  bottom: atTop ? line : BorderSide.none,
+                )
+              : null,
+        ),
+        child: const SizedBox.expand(),
+      ),
     );
   }
 }

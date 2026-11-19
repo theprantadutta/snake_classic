@@ -377,6 +377,15 @@
   "storeAllThemesBundleSubtitle": "All 6 premium themes · save 33%",
   "storePillVerifying": "VERIFYING",
   "storePillOwned": "OWNED",
+  "storeCoinPrice": "{coins}¢",
+  "@storeCoinPrice": {
+    "description": "A price in coins, e.g. a power-up bundle price; ¢ = coins. coins is already locale-formatted.",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
   "storePillFree": "FREE",
   "storePillActive": "ACTIVE",
   "storePillApply": "APPLY",
@@ -441,7 +450,7 @@
   "puInvincibilityDesc": "Pass through walls and yourself for 6 seconds.",
   "puScoreMultiplierDesc": "Double points for 10 seconds.",
   "puSlowMotionDesc": "Slows the game for precision (8 seconds).",
-  "storePowerUpsInfo": "Buy with coins, then arm one from the home screen loadout chip — it activates 5s into your next game.",
+  "storePowerUpsInfo": "Buy with coins, then arm one in the LOADOUT on the Setup screen before a run — it activates 5s into the game.",
   "storePowerUps": "Power-Ups",
   "storePowerUpBundles": "Power-Up Bundles",
   "storeBundlesSubtitle": "Unlock multiple power-up types at a discount.",
