@@ -249,13 +249,13 @@ class _BlockPainter extends CustomPainter {
         _gridLines(canvas, rr, const Color(0x21000000));
       case LBBlockKind.gold:
         final c = accent ?? LB.gold;
-        canvas.drawRRect(rr, Paint()..color = c.withValues(alpha: .09));
-        _stroke(canvas, stroke, c.withValues(alpha: selected ? .9 : .5));
+        canvas.drawRRect(rr, Paint()..color = c.withValues(alpha: .12));
+        _stroke(canvas, stroke, c.withValues(alpha: selected ? .9 : .6));
       case LBBlockKind.danger:
         canvas.drawRRect(rr, Paint()..color = LB.bonkFill);
         _stroke(canvas, stroke, LB.bonkStroke);
       case LBBlockKind.muted:
-        canvas.drawRRect(rr, Paint()..color = p.lime.withValues(alpha: .03));
+        canvas.drawRRect(rr, Paint()..color = p.lime.withValues(alpha: .05));
         _stroke(canvas, stroke, p.cellOff);
       case LBBlockKind.dashed:
         _dashed(canvas, stroke, p.blockStroke);
@@ -270,8 +270,8 @@ class _BlockPainter extends CustomPainter {
         _stroke(canvas, stroke, p.blockStroke);
       case LBBlockKind.outline:
         final c = accent ?? p.lime;
-        canvas.drawRRect(rr, Paint()..color = c.withValues(alpha: selected ? .12 : .06));
-        _stroke(canvas, stroke, c.withValues(alpha: selected ? .95 : .32));
+        canvas.drawRRect(rr, Paint()..color = c.withValues(alpha: selected ? .15 : .09));
+        _stroke(canvas, stroke, c.withValues(alpha: selected ? .95 : .44));
     }
   }
 

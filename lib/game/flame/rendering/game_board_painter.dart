@@ -409,7 +409,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
       final t = n <= 1 ? 0.0 : i / (n - 1);
       _snakeBodyPaint.color = sunsetBody
           ? Color.lerp(bodyColor, theme.accentColor, t)!.withValues(alpha: 1 - .25 * t)
-          : bodyColor.withValues(alpha: 1 - .55 * t);
+          : bodyColor.withValues(alpha: 1 - .4 * t);
       canvas.drawRRect(RRect.fromRectAndRadius(rects[i], bodyRadius), _snakeBodyPaint);
     }
 

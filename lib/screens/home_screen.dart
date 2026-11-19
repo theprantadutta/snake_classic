@@ -744,9 +744,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onPanStart: (_) {
+      onPanStart: (d) {
         _panDelta = Offset.zero;
-        _panSteered = false;
+        // A drag that starts in the system gesture strips is the OS's
+        // (pulling the notification shade, going home), not a steer. It
+        // used to turn the snake into the mode row and open Setup.
+        // viewPadding, not padding: the status bar is hidden app-wide, so
+        // padding.top can be 0 while the shade still pulls from there.
+        final pad = MediaQuery.viewPaddingOf(context);
+        final screenH = MediaQuery.sizeOf(context).height;
+        final y = d.globalPosition.dy;
+        final topZone = math.max(pad.top, 24.0) + 32;
+        final bottomZone = math.max(pad.bottom, 16.0) + 24;
+        _panSteered = y < topZone || y > screenH - bottomZone;
       },
       onPanUpdate: (d) {
         if (_panSteered) return;
@@ -818,7 +828,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: LBAnimatedCellText(
                     '${settings.highScore}',
                     cell: bestRowsL * cell / 5,
-                    color: LB.gold.withValues(alpha: .34),
+                    color: LB.gold.withValues(alpha: .5),
                   ),
                 ),
               ),

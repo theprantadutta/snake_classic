@@ -19,8 +19,10 @@ abstract class LB {
   static const double margin = cell;
 
   // Core colours (Classic theme; other themes re-skin through LBPalette)
-  static const Color board = Color(0xFF08160B);
-  static const Color deep = Color(0xFF0C1F0F);
+  // Lifted from 0xFF08160B (2026-11-19): the near-black board made every
+  // screen read as dimmed.
+  static const Color board = Color(0xFF0D2112);
+  static const Color deep = Color(0xFF12301A);
   static const Color lime = Color(0xFFAEDC10);
   static const Color head = Color(0xFFD4F25A);
   static const Color ink = Color(0xFFE9F5C8);
@@ -110,7 +112,9 @@ class LBPalette extends ThemeExtension<LBPalette> {
     if (theme == GameTheme.classic) return classic;
     return _cache.putIfAbsent(theme, () {
       final lime = theme.snakeColor;
-      final board = Color.lerp(theme.backgroundColor, Colors.black, .35)!;
+      // 20% toward black (was 35%): enough depth for the lime to glow,
+      // without the whole screen looking unlit.
+      final board = Color.lerp(theme.backgroundColor, Colors.black, .2)!;
       return LBPalette(
         board: board,
         deep: Color.lerp(board, lime, .05)!,
@@ -123,13 +127,15 @@ class LBPalette extends ThemeExtension<LBPalette> {
   }
 
   // Derived alphas (DESIGN_SPEC palette.json "alpha").
-  Color get inkMuted => ink.withValues(alpha: .60);
-  Color get inkDim => ink.withValues(alpha: .40);
-  Color get gridLine => lime.withValues(alpha: .07);
-  Color get blockFill => lime.withValues(alpha: .06);
-  Color get blockStroke => lime.withValues(alpha: .32);
-  Color get cellOff => lime.withValues(alpha: .13);
-  Color get wall => lime.withValues(alpha: .45);
+  // Raised 2026-11-19 (were .60 / .40): .40 secondary text was 3.5:1 on
+  // the board, under AA, and ~180 labels used these two.
+  Color get inkMuted => ink.withValues(alpha: .74);
+  Color get inkDim => ink.withValues(alpha: .56);
+  Color get gridLine => lime.withValues(alpha: .085);
+  Color get blockFill => lime.withValues(alpha: .09);
+  Color get blockStroke => lime.withValues(alpha: .44);
+  Color get cellOff => lime.withValues(alpha: .17);
+  Color get wall => lime.withValues(alpha: .55);
 
   /// Text on a lime-filled block. Dark board tone keeps contrast on every theme.
   Color get onLime => Color.lerp(board, Colors.black, .4)!;
