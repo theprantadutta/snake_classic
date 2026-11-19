@@ -108,7 +108,11 @@ class CyberpunkThemeScene extends ThemeScene {
     _billboard(
         canvas,
         Rect.fromCenter(
-            center: menu ? Offset(w * .6, h * .2) : Offset(w * .3, h * .17),
+            // Phone menus: half off the right edge beside PLAY, so it
+            // never crosses the score.
+            center: menu
+                ? (h > w * 1.3 ? Offset(w * .98, h * .42) : Offset(w * .6, h * .2))
+                : Offset(w * .7, h * .14), // top-right: the ghost score is top-left
             width: s * (menu ? .34 : .24),
             height: s * (menu ? .18 : .13)),
         s,

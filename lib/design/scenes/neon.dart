@@ -42,13 +42,14 @@ class NeonThemeScene extends ThemeScene {
 
     // Sign positions as fractions of the size; the phone spreads them
     // down the whole wall so no band is left dead.
-    final ringF = tall ? const Offset(.73, .14) : const Offset(.74, .25);
-    final triF = tall ? const Offset(.25, .27) : const Offset(.24, .32);
-    final boltF = tall ? const Offset(.45, .1) : const Offset(.47, .14);
-    final chevF = tall ? const Offset(.12, .09) : const Offset(.08, .1);
+    // Signs hug the edges (half off-screen on phones) so the score and
+    // title band in the middle stays clean (owner review, 2026-11-19).
+    final ringF = tall ? const Offset(.99, .37) : const Offset(.95, .3);
+    final triF = tall ? const Offset(.01, .45) : const Offset(.04, .4);
+    final boltF = tall ? const Offset(.93, .56) : const Offset(.9, .62);
+    final chevF = tall ? const Offset(.08, .62) : const Offset(.06, .66);
     final snakeY = h * (tall ? .42 : .55);
-    final gemF = tall ? const Offset(.8, .58) : const Offset(.9, .5);
-    final arcF = tall ? const Offset(.2, .62) : const Offset(.08, .56);
+    final gemF = tall ? const Offset(.86, .68) : const Offset(.92, .48);
     Offset at(Offset f) => Offset(f.dx * w, f.dy * h);
 
     // Light spill from the signs onto the wall.
@@ -56,48 +57,36 @@ class NeonThemeScene extends ThemeScene {
     _wash(canvas, at(triF), s * .65, _pink, .24);
     _wash(canvas, Offset(w * .5, snakeY), s * .6, _lime, .1);
     _wash(canvas, at(gemF), s * .5, _violet, .2);
-    _wash(canvas, at(arcF), s * .45, _cyan, .12);
 
     final u = s * (tall ? 1 : .8);
+    const sa = .6; // menu signs glow at 60%: ambience, not content
     final ringC = at(ringF);
     _tube(canvas, Path()..addOval(Rect.fromCircle(center: ringC, radius: u * .15)),
-        _cyan, u * .011);
+        _cyan, u * .011, a: sa);
     _tube(
         canvas,
         Path()
           ..addArc(Rect.fromCircle(center: ringC, radius: u * .095), -2.6, 3.6),
         _pink,
-        u * .008);
+        u * .008, a: sa);
     final triC = at(triF);
-    _tube(canvas, _triangle(triC, u * .14, -.12), _pink, u * .011);
-    _tube(canvas, _bolt(at(boltF), u * .09), _lime, u * .009);
-    _tube(canvas, _chevrons(at(chevF), u * .035, 3), _cyan, u * .007);
+    _tube(canvas, _triangle(triC, u * .14, -.12), _pink, u * .011, a: sa);
+    _tube(canvas, _bolt(at(boltF), u * .09), _lime, u * .009, a: sa);
+    _tube(canvas, _chevrons(at(chevF), u * .035, 3), _cyan, u * .007, a: sa);
     // A diamond with an inner diamond.
     final gc = at(gemF);
-    _tube(canvas, _diamond(gc, u * .1), _violet, u * .009);
-    _tube(canvas, _diamond(gc, u * .05), _cyan, u * .006);
-    // Concentric arcs, like a signal.
-    final ac = at(arcF);
-    for (var i = 1; i <= 3; i++) {
-      _tube(
-          canvas,
-          Path()
-            ..addArc(Rect.fromCircle(center: ac, radius: u * .03 * i), -2.4, 1.6),
-          i.isOdd ? _cyan : _pink,
-          u * .005);
-    }
-    _tube(canvas, Path()..addOval(Rect.fromCircle(center: ac, radius: u * .008)),
-        _cyan, u * .005);
-    _tube(canvas, _plus(Offset(w * (tall ? .9 : .95), h * (tall ? .3 : .28)), u * .025), _pink,
-        u * .006);
+    _tube(canvas, _diamond(gc, u * .1), _violet, u * .009, a: sa);
+    _tube(canvas, _diamond(gc, u * .05), _cyan, u * .006, a: sa);
+        _tube(canvas, _plus(Offset(w * (tall ? .9 : .95), h * (tall ? .3 : .28)), u * .025), _pink,
+        u * .006, a: sa);
     _tube(canvas, _plus(Offset(w * .55, h * (tall ? .66 : .63)), u * .02), _lime,
-        u * .005);
+        u * .005, a: sa);
     // The neon snake: a wavy tube with an eye.
     final snake = _wave(Offset(w * .26, snakeY), w * .46, u * .035, 2.5);
-    _tube(canvas, snake, _lime, u * .012);
+    _tube(canvas, snake, _lime, u * .012, a: sa);
     _tube(canvas, Path()..addOval(Rect.fromCircle(
         center: Offset(w * .72 + u * .035, snakeY), radius: u * .013)),
-        _lime, u * .006);
+        _lime, u * .006, a: sa);
     _sparkles(canvas, size, rnd, 40, horizon);
 
     // Floor.

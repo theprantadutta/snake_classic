@@ -35,11 +35,16 @@ class ForestThemeScene extends ThemeScene {
     Color(0xFF030C0E),
   ];
 
-  static Offset _moonAt(Size size, bool menu) => Offset(
-      size.width * .74,
-      menu
-          ? math.max(size.height * .13, math.min(size.width, size.height) * .3)
-          : size.height * .17);
+  // On phone menus the moon sits at the left edge beside the PLAY block:
+  // the score and coin counter fill the top band (owner review 2026-11-19).
+  static Offset _moonAt(Size size, bool menu) => menu &&
+          size.height > size.width * 1.3
+      ? Offset(size.width * .07, size.height * .43)
+      : Offset(
+          size.width * .74,
+          menu
+              ? math.max(size.height * .13, math.min(size.width, size.height) * .3)
+              : size.height * .17);
 
   @override
   void paintBackdrop(Canvas canvas, Size size, {required bool menu}) {

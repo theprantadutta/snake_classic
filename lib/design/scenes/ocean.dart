@@ -43,7 +43,7 @@ class OceanThemeScene extends ThemeScene {
     final s = math.min(w, h);
     final rnd = math.Random(23);
     final full = Offset.zero & size;
-    final light = menu ? .6 : 1.0;
+    final light = menu ? .9 : 1.0;
 
     // 1. Depth gradient.
     canvas.drawRect(
@@ -312,7 +312,7 @@ class OceanThemeScene extends ThemeScene {
     }
     canvas.drawRect(
       full,
-      Paint()..color = Colors.black.withValues(alpha: menu ? .34 : .12),
+      Paint()..color = Colors.black.withValues(alpha: menu ? .22 : .12),
     );
   }
 

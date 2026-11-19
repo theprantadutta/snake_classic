@@ -74,7 +74,10 @@ class DesertThemeScene extends ThemeScene {
     }
 
     // 3. A thin crescent moon high on the left.
-    final mc = Offset(w * .2, menu ? math.max(hz * .26, s * .3) : hz * .16);
+    // Phone menus: at the right edge beside PLAY, clear of the score.
+    final mc = menu && h > w * 1.3
+        ? Offset(w * .93, h * .42)
+        : Offset(w * .2, menu ? math.max(hz * .26, s * .3) : hz * .16);
     final mr = s * .035;
     canvas.drawCircle(
       mc,
