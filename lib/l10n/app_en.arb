@@ -1695,8 +1695,25 @@
       "target": {}
     }
   },
-  "dcDescMode": "{target, plural, one{Play 1 game in {mode} mode} other{Play {target} games in {mode} mode}}",
+  "lbGoCoinsBanked": "added to your coins · keep playing",
+  "@lbGoCoinsBanked": {
+    "description": "Game over rewards block: the run earned coins (already added to the balance) but no challenge reward is claimable"
+  },
+  "lbHomeDailySubShort": "{time} · +{coins}¢",
+  "@lbHomeDailySubShort": {
+    "description": "Home Daily tile subtitle, short form that fits a 360dp tile: time until reset, then coins left to earn; ¢ = coins",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "dcDescMode": "{target, plural, one{Play 1 game in {mode}} other{Play {target} games in {mode}}}",
   "@dcDescMode": {
+    "description": "Daily challenge: play N games of a mode. {mode} is the full localized mode name ('Zen Mode', 'Classic'), so do not add a word for 'mode' around it",
     "placeholders": {
       "target": {},
       "mode": {}
@@ -1960,7 +1977,7 @@
   "hwVersusMsg": "Versus is online 1v1 Classic. Quick Match finds you an opponent, or create a private room and invite a friend.",
   "hwHelpTitle": "Anything else?",
   "hwHelpMsg": "Rules, controls, Versus and Settings all live in this menu.",
-  "insOnPhone": "On your phone",
+  "insOnPhone": "On this device",
   "insOnKeyboard": "On a keyboard",
   "settingsSectionYourGame": "YOUR GAME",
   "settingsStatisticsSubtitle": "Every run you have played, counted up",
@@ -3972,7 +3989,7 @@
   "@lbTrendFlat": {
     "description": "Score trend: stable"
   },
-  "lbReplaysSubtitle": "Kept on this phone. Never uploaded.",
+  "lbReplaysSubtitle": "Kept on this device. Never uploaded.",
   "@lbReplaysSubtitle": {
     "description": "Replays screen subtitle (replays are device-local)"
   },

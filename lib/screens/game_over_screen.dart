@@ -1107,8 +1107,12 @@ class _GameOverActionsState extends State<_GameOverActions> {
                       ),
                       const SizedBox(height: 5),
                       Text(
+                        // Coins from the run are already banked; "nothing
+                        // to claim" under "+2¢ EARNED" read as a contradiction.
                         widget.claimable.isEmpty
-                            ? l10n.lbGoNothingToClaim
+                            ? (widget.coinsEarned > 0
+                                ? l10n.lbGoCoinsBanked
+                                : l10n.lbGoNothingToClaim)
                             : l10n.lbGoRewardsLine(
                                 '${widget.claimable.length}',
                                 context.formatInt(claimCoins),

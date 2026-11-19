@@ -87,6 +87,15 @@ class AchievementService extends ChangeNotifier {
       ? 0.0
       : _achievements.where((a) => a.isUnlocked).length / _achievements.length;
 
+  /// Completion as a whole percent (2 of 147 -> 1). The one rounding rule
+  /// for every "N% COMPLETE" readout (Trophies and Statistics), so the two
+  /// screens can never disagree.
+  int get completionPercent => wholePercent(completionPercentage);
+
+  /// A 0..1 fraction as a whole percent, rounded half up and clamped.
+  static int wholePercent(double fraction) =>
+      (fraction.clamp(0.0, 1.0) * 100).round();
+
   Future<void> initialize() async {
     _achievements = Achievement.getDefaultAchievements();
     // Ensure the Drift achievements catalog has a row for every default

@@ -61,6 +61,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     final claimed = all.where((a) => a.rewardClaimed).length;
     final waiting = all.where((a) => a.isUnlocked && !a.rewardClaimed).length;
     final completion = _achievementService.completionPercentage;
+    final completionPct = _achievementService.completionPercent;
 
     return LBScaffold(
       title: l10n.lbTrophiesTitle,
@@ -98,12 +99,12 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 LBCellsBar(
                   count: 16,
                   value: completion,
-                  semanticsLabel: l10n.acPercentComplete((completion * 100).round()),
+                  semanticsLabel: l10n.acPercentComplete(completionPct),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   l10n.lbTrophiesSummary(
-                    '${(completion * 100).round()}',
+                    '$completionPct',
                     context.formatInt(claimed),
                     context.formatInt(waiting),
                   ),

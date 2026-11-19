@@ -6,6 +6,7 @@ import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/catalog_l10n.dart';
 import 'package:snake_classic/router/routes.dart';
+import 'package:snake_classic/services/achievement_service.dart';
 import 'package:snake_classic/services/app_data_cache.dart';
 import 'package:snake_classic/services/statistics_service.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
@@ -270,10 +271,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   List<Widget> _achievementProgress(AppLocalizations l10n) {
     final p = context.lb;
-    // achievementProgress arrives as a RAW 0..1 fraction (double) from
-    // getDisplayStatistics.
-    final progress = ((_displayStats['achievementProgress'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
-    final pct = l10n.stPercentComplete(context.formatPercent(progress));
+    // Same source and rounding as the Trophies screen: the live catalog in
+    // AchievementService. The stored statistic (a RAW 0..1 fraction from
+    // getDisplayStatistics) is only a fallback for before it has loaded.
+    final achievements = AchievementService();
+    final progress = achievements.achievements.isNotEmpty
+        ? achievements.completionPercentage
+        : ((_displayStats['achievementProgress'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 1.0);
+    final pct = l10n.stPercentComplete(
+      context.formatPercent(AchievementService.wholePercent(progress) / 100),
+    );
     return [
       LBSectionLabel(l10n.stAchievementProgress),
       LBBlock(
