@@ -216,6 +216,17 @@ class _BlockPainter extends CustomPainter {
     // Inner stroke: deflate by half the stroke so it sits inside the bounds.
     final stroke = rr.deflate(.5);
 
+    // Miami Nights paints a busy scene (palms, skyline, sun) behind every
+    // screen. Outlined cards were see-through, so text sat on the city.
+    // A dusk-violet base under the translucent kinds keeps the scene as
+    // atmosphere around the cards instead of behind the words.
+    if (kind != LBBlockKind.fill &&
+        kind != LBBlockKind.goldFill &&
+        kind != LBBlockKind.sheet &&
+        identical(p, LBPalette.of(GameTheme.miamiNights))) {
+      canvas.drawRRect(rr, Paint()..color = const Color(0xB8180629));
+    }
+
     switch (kind) {
       case LBBlockKind.fill:
       case LBBlockKind.goldFill:
