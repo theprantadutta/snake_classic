@@ -315,9 +315,9 @@ class GameConstants {
 
   // Colors - Space Theme
   static const Color spaceBackground = Color(0xFF0B0C2A); // Deep space blue
-  static const Color spaceSnake = Color(0xFF9932CC); // Dark orchid
-  static const Color spaceFood = Color(0xFF00CED1); // Dark turquoise
-  static const Color spaceAccent = Color(0xFF4169E1); // Royal blue
+  static const Color spaceSnake = Color(0xFFC07BFF); // Luminous orchid (was 0xFF9932CC: too dark on the nebula)
+  static const Color spaceFood = Color(0xFF3CF0E0); // Bright turquoise
+  static const Color spaceAccent = Color(0xFF5B8CFF); // Bright royal blue
 
   // Colors - Ocean Theme
   static const Color oceanBackground = Color(0xFF001B3D); // Deep ocean blue
