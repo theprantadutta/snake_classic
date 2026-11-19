@@ -1,5 +1,6 @@
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb/lb_crash_copy.dart';
+import 'package:snake_classic/widgets/lb_screens/game_over/game_over_beat_sheet.dart';
 import 'package:snake_classic/widgets/game_over_continue_sheet.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -89,8 +90,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     final spare = _viewportHeight - content.height;
     // Negative spare = the layout overflows: take rows away (rounding up so
     // the last block clears the banner), down to the minimum.
-    final extra = (spare >= 0 ? (spare / cellH).floor() : -((-spare) / cellH).ceil())
-        .clamp(_minChartRows - _baseChartRows, _maxChartRows - _baseChartRows);
+    final extra =
+        (spare >= 0 ? (spare / cellH).floor() : -((-spare) / cellH).ceil())
+            .clamp(
+              _minChartRows - _baseChartRows,
+              _maxChartRows - _baseChartRows,
+            );
     if (extra != 0) setState(() => _extraChartRows = extra);
   }
 
@@ -367,222 +372,276 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
       body: LBGridBackground(
         child: SafeArea(
           bottom: false,
-          child: LayoutBuilder(
-            builder: (context, viewport) {
-              _viewportHeight = viewport.maxHeight;
-              if (!_chartFitted) {
-                WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => _fitChart(),
-                );
-              }
-              // Two lists so landscape can put them side by side.
-              final summary = <Widget>[
-                      // × YOU BIT YOURSELF. WHY?            RUN 412
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.lbGameOverHeadline(
-                                crashCopy.line.toUpperCase(),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: LBText.button(
-                                p,
-                                color: LB.bonk,
-                                size: 12.5,
-                              ).copyWith(letterSpacing: 1.6),
+          // The reveal: one clock, beats authored in GameOverBeatSheet.
+          child: GameOverBeatSheet(
+            runKey: (
+              cubit.runNumber,
+              gameState.score,
+              gameState.snake.length,
+              bites.length,
+            ),
+            isNewBest: isHighScore,
+            onBeat: _onBeat,
+            builder: (context, reveal) => LayoutBuilder(
+              builder: (context, viewport) {
+                _viewportHeight = viewport.maxHeight;
+                if (!_chartFitted) {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _fitChart(),
+                  );
+                }
+                // Two lists so landscape can put them side by side.
+                final summary = <Widget>[
+                  // × YOU BIT YOURSELF. WHY?            RUN 412
+                  BeatIn(
+                    animation: reveal.headline,
+                    rise: -8,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.lbGameOverHeadline(
+                              crashCopy.line.toUpperCase(),
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: LBText.button(
+                              p,
+                              color: LB.bonk,
+                              size: 12.5,
+                            ).copyWith(letterSpacing: 1.6),
                           ),
-                          if (cubit.runNumber > 0) ...[
-                            const SizedBox(width: 10),
-                            Text(
-                              l10n.lbGoRun(context.formatInt(cubit.runNumber)),
-                              style: LBText.label(
-                                p,
-                                color: p.inkDim,
-                              ).copyWith(fontSize: 10.5),
-                            ),
-                          ],
+                        ),
+                        if (cubit.runNumber > 0) ...[
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.lbGoRun(context.formatInt(cubit.runNumber)),
+                            style: LBText.label(
+                              p,
+                              color: p.inkDim,
+                            ).copyWith(fontSize: 10.5),
+                          ),
                         ],
-                      ),
-                      if (gameCubitState.isTournamentMode &&
-                          gameCubitState.tournamentMode != null) ...[
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: LBChip(
-                            icon: LBIcon.trophy,
-                            height: 26,
-                            kind:
-                                gameCubitState.tournamentScoreSubmission ==
-                                    TournamentScoreSubmission.failed
-                                ? LBChipKind.danger
-                                : LBChipKind.gold,
-                            label: switch (gameCubitState
-                                .tournamentScoreSubmission) {
-                              TournamentScoreSubmission.submitted =>
-                                l10n.goRibbonTournamentSubmitted,
-                              TournamentScoreSubmission.failed =>
-                                l10n.goRibbonTournamentFailed,
-                              _ => l10n.goRibbonTournamentSubmitting,
-                            }.toUpperCase(),
-                          ),
-                        ),
                       ],
-                      SizedBox(height: cell),
-                      _ScoreRow(
-                        score: gameState.score,
-                        best: displayHighScore,
-                        isNewBest: isHighScore,
-                      ),
-                      SizedBox(height: cell * 1.2),
-                      LBSectionLabel(
-                        l10n.lbGoChartTitle,
-                        color: p.lime,
-                        trailing: l10n.lbGoChartStats(
-                          context.formatInt(bites.length),
-                          '${gameState.maxCombo}',
+                    ),
+                  ),
+                  if (gameCubitState.isTournamentMode &&
+                      gameCubitState.tournamentMode != null) ...[
+                    const SizedBox(height: 10),
+                    BeatIn(
+                      animation: reveal.ribbon,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: LBChip(
+                          icon: LBIcon.trophy,
+                          height: 26,
+                          kind:
+                              gameCubitState.tournamentScoreSubmission ==
+                                  TournamentScoreSubmission.failed
+                              ? LBChipKind.danger
+                              : LBChipKind.gold,
+                          label: switch (gameCubitState
+                              .tournamentScoreSubmission) {
+                            TournamentScoreSubmission.submitted =>
+                              l10n.goRibbonTournamentSubmitted,
+                            TournamentScoreSubmission.failed =>
+                              l10n.goRibbonTournamentFailed,
+                            _ => l10n.goRibbonTournamentSubmitting,
+                          }.toUpperCase(),
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      KeyedSubtree(
-                        key: _chartKey,
-                        child: bites.isEmpty
-                            // No food: an empty grid with a lone crash mark reads as
-                            // broken. Same footprint, said in words.
-                            ? LBBlock(
-                                kind: LBBlockKind.muted,
-                                height:
-                                    cell * (_baseChartRows + _extraChartRows) -
-                                    LB.inset * 2,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  l10n.lbGoNoBites,
-                                  textAlign: TextAlign.center,
-                                  style: LBText.body(
-                                    p,
-                                    color: p.inkMuted,
-                                    size: 12,
-                                  ),
+                    ),
+                  ],
+                  SizedBox(height: cell),
+                  _ScoreRow(
+                    score: gameState.score,
+                    best: displayHighScore,
+                    isNewBest: isHighScore,
+                    reveal: reveal,
+                  ),
+                  SizedBox(height: cell * 1.2),
+                  BeatIn(
+                    animation: reveal.chartLabel,
+                    child: LBSectionLabel(
+                      l10n.lbGoChartTitle,
+                      color: p.lime,
+                      trailing: l10n.lbGoChartStats(
+                        context.formatInt(bites.length),
+                        '${gameState.maxCombo}',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  KeyedSubtree(
+                    key: _chartKey,
+                    // Drawn in left to right; LBRunChart's own column
+                    // growth runs underneath, untouched.
+                    child: BeatClipReveal(
+                      animation: reveal.chart,
+                      child: bites.isEmpty
+                          // No food: an empty grid with a lone crash mark reads as
+                          // broken. Same footprint, said in words.
+                          ? LBBlock(
+                              kind: LBBlockKind.muted,
+                              height:
+                                  cell * (_baseChartRows + _extraChartRows) -
+                                  LB.inset * 2,
+                              alignment: Alignment.center,
+                              child: Text(
+                                l10n.lbGoNoBites,
+                                textAlign: TextAlign.center,
+                                style: LBText.body(
+                                  p,
+                                  color: p.inkMuted,
+                                  size: 12,
                                 ),
-                              )
-                            : LBRunChart(
-                                bites: bites,
-                                rows: _baseChartRows + _extraChartRows,
-                                crashed:
-                                    reason == LBEndReason.wall ||
-                                    reason == LBEndReason.self ||
-                                    reason == LBEndReason.stepped,
                               ),
+                            )
+                          : LBRunChart(
+                              bites: bites,
+                              rows: _baseChartRows + _extraChartRows,
+                              crashed:
+                                  reason == LBEndReason.wall ||
+                                  reason == LBEndReason.self ||
+                                  reason == LBEndReason.stepped,
+                            ),
+                    ),
+                  ),
+                  if (bites.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    BeatIn(
+                      animation: reveal.chartCaption,
+                      rise: 0,
+                      child: Text(
+                        l10n.lbGoChartCaption,
+                        style: LBText.label(
+                          p,
+                          color: p.inkDim,
+                        ).copyWith(fontSize: 9),
                       ),
-                      if (bites.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.lbGoChartCaption,
-                          style: LBText.label(
-                            p,
-                            color: p.inkDim,
-                          ).copyWith(fontSize: 9),
+                    ),
+                  ],
+                ];
+                final actions = <Widget>[
+                  SizedBox(height: cell * .8),
+                  // Inert until AGAIN has arrived: the tap that skips
+                  // the reveal must not press a row it was hiding.
+                  AbsorbPointer(
+                    absorbing: !reveal.actionsLive,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _GameOverActions(
+                          reveal: reveal,
+                          theme: theme,
+                          gameState: gameState,
+                          coinsEarned:
+                              gameCubitState.coinsEarnedThisGame *
+                              (_doubledCoins ? 2 : 1),
+                          claimable: claimable,
+                          claimingAll: _claimingAll,
+                          onClaimAll: () => _claimAllRewards(claimable),
+                          doubleCoins: _doubleCoinsAction(
+                            gameCubitState.coinsEarnedThisGame,
+                          ),
+                        ),
+                        if (_achievementsLoaded &&
+                            _recentAchievements.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          BeatIn(
+                            animation: reveal.action(
+                              _GameOverActions.trophyRow,
+                            ),
+                            child: LBRow(
+                              kind: LBBlockKind.gold,
+                              leading: const LBPixelIcon(
+                                LBIcon.trophy,
+                                cell: 3.4,
+                                color: LB.gold,
+                              ),
+                              title:
+                                  '${l10n.lbTrophies} · ${_recentAchievements.length}',
+                              subtitle: _recentAchievements
+                                  .map((a) => a.localizedTitle(l10n))
+                                  .join(' · '),
+                              trailing: Text(
+                                '→',
+                                style: LBText.button(p, color: LB.gold),
+                              ),
+                              onTap: () => context.push(AppRoutes.achievements),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ];
+                // Landscape (tablets, where Android 16 ignores the portrait
+                // lock): the run summary on the left, the actions on the
+                // right, so AGAIN is visible without scrolling.
+                if (viewport.maxWidth > viewport.maxHeight * 1.25) {
+                  // The portrait gutter centres a phone-width column on
+                  // tablets; landscape spends the full width on two columns.
+                  final lg = cell * 1.5;
+                  final usable = math.min(viewport.maxWidth - lg * 2, 1200.0);
+                  final half = (usable - lg) / 2;
+                  final side = (viewport.maxWidth - usable) / 2;
+                  return Padding(
+                    key: _contentKey,
+                    padding: EdgeInsets.fromLTRB(side, cell * .6, side, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: half,
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.only(bottom: cell),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: summary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: lg),
+                        SizedBox(
+                          width: half,
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.only(bottom: cell),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              // The actions start with a spacer meant for
+                              // under the chart; drop it at the top.
+                              children: actions.skip(1).toList(),
+                            ),
+                          ),
                         ),
                       ],
-              ];
-              final actions = <Widget>[
-                      SizedBox(height: cell * .8),
-                      _GameOverActions(
-                        theme: theme,
-                        gameState: gameState,
-                        coinsEarned:
-                            gameCubitState.coinsEarnedThisGame *
-                            (_doubledCoins ? 2 : 1),
-                        claimable: claimable,
-                        claimingAll: _claimingAll,
-                        onClaimAll: () => _claimAllRewards(claimable),
-                        doubleCoins: _doubleCoinsAction(
-                          gameCubitState.coinsEarnedThisGame,
-                        ),
-                      ),
-                      if (_achievementsLoaded &&
-                          _recentAchievements.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        LBRow(
-                          kind: LBBlockKind.gold,
-                          leading: const LBPixelIcon(
-                            LBIcon.trophy,
-                            cell: 3.4,
-                            color: LB.gold,
-                          ),
-                          title:
-                              '${l10n.lbTrophies} · ${_recentAchievements.length}',
-                          subtitle: _recentAchievements
-                              .map((a) => a.localizedTitle(l10n))
-                              .join(' · '),
-                          trailing: Text(
-                            '→',
-                            style: LBText.button(p, color: LB.gold),
-                          ),
-                          onTap: () => context.push(AppRoutes.achievements),
-                        ),
-                      ],
-              ];
-              // Landscape (tablets, where Android 16 ignores the portrait
-              // lock): the run summary on the left, the actions on the
-              // right, so AGAIN is visible without scrolling.
-              if (viewport.maxWidth > viewport.maxHeight * 1.25) {
-                // The portrait gutter centres a phone-width column on
-                // tablets; landscape spends the full width on two columns.
-                final lg = cell * 1.5;
-                final usable = math.min(viewport.maxWidth - lg * 2, 1200.0);
-                final half = (usable - lg) / 2;
-                final side = (viewport.maxWidth - usable) / 2;
-                return Padding(
-                  key: _contentKey,
-                  padding: EdgeInsets.fromLTRB(side, cell * .6, side, 0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: half,
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(bottom: cell),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: summary,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: lg),
-                      SizedBox(
-                        width: half,
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(bottom: cell),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            // The actions start with a spacer meant for
-                            // under the chart; drop it at the top.
-                            children: actions.skip(1).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
+                  );
+                }
+                return SingleChildScrollView(
+                  child: Padding(
+                    key: _contentKey,
+                    padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [...summary, ...actions],
+                    ),
                   ),
                 );
-              }
-              return SingleChildScrollView(
-                child: Padding(
-                  key: _contentKey,
-                  padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [...summary, ...actions],
-                  ),
-                ),
-              );
-            },
+              },
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// Light haptic as the score lands and as a new best pops. No sound: the
+  /// new-best fanfare already plays from GameCubit's post-game sync.
+  void _onBeat(GameOverBeat beat) {
+    if (!mounted) return;
+    HapticService().lightImpact();
   }
 
   /// "Watch to double your coins" — rewarded ad, once per game-over screen.
@@ -632,22 +691,117 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
 }
 
 /// SCORE in big snake cells; BEST and the gap (or NEW BEST) beside it.
+///
+/// On the beat sheet: SCORE fades in, the digits count up from 0 and land,
+/// then BEST fades in, or for a new best the gold NEW BEST flashes and the
+/// number pops. Without a [reveal] it is drawn at rest.
 class _ScoreRow extends StatelessWidget {
   const _ScoreRow({
     required this.score,
     required this.best,
     required this.isNewBest,
+    this.reveal,
   });
 
   final int score;
   final int best;
   final bool isNewBest;
+  final GameOverReveal? reveal;
+
+  /// Gold NEW BEST label: on, dip, on, as the number pops.
+  static double _flash(double t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    if (t < .25) return t / .25;
+    if (t < .5) return 1 - (t - .25) / .25 * .65;
+    return .35 + (t - .5) / .5 * .65;
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
     final cell = context.lbCell;
+    final r = reveal ?? GameOverReveal.settled;
+    final scoreColor = isNewBest ? LB.gold : p.lime;
+
+    final bestLabel = Text(
+      isNewBest ? l10n.lbGoNewBest : l10n.lbGoBest,
+      style: LBText.label(
+        p,
+        color: isNewBest ? LB.gold : p.inkMuted,
+      ).copyWith(fontSize: 10.5),
+    );
+    final bestValue = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(
+        context.formatInt(best),
+        style: LBText.value(p, color: LB.gold, size: 28),
+      ),
+    );
+    final bestLines = <Widget>[
+      if (isNewBest)
+        Text(l10n.lbGoNewBestLine, style: LBText.body(p, size: 11.5))
+      else if (best > score) ...[
+        Text(
+          l10n.lbGoBehind(context.formatInt(best - score)),
+          style: LBText.body(
+            p,
+            color: p.inkMuted,
+            size: 12,
+          ).copyWith(fontWeight: FontWeight.w700),
+        ),
+        Text(l10n.lbGoBehindLine, style: LBText.body(p, size: 11)),
+      ],
+    ];
+
+    final Widget bestColumn = isNewBest
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 14),
+              AnimatedBuilder(
+                animation: r.best,
+                child: bestLabel,
+                builder: (context, child) => Opacity(
+                  opacity: _flash(r.best.value.clamp(0.0, 1.0)),
+                  child: child,
+                ),
+              ),
+              const SizedBox(height: 4),
+              BeatPop(
+                animation: r.best,
+                alignment: AlignmentDirectional.centerStart,
+                child: bestValue,
+              ),
+              const SizedBox(height: 4),
+              BeatIn(
+                animation: r.best,
+                rise: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: bestLines,
+                ),
+              ),
+            ],
+          )
+        : BeatIn(
+            animation: r.best,
+            rise: 6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 14),
+                bestLabel,
+                const SizedBox(height: 4),
+                bestValue,
+                const SizedBox(height: 4),
+                ...bestLines,
+              ],
+            ),
+          );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -656,65 +810,43 @@ class _ScoreRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.lbScoreLabel,
-                style: LBText.label(p).copyWith(fontSize: 10.5),
+              BeatIn(
+                animation: r.scoreLabel,
+                rise: 0,
+                child: Text(
+                  l10n.lbScoreLabel,
+                  style: LBText.label(p).copyWith(fontSize: 10.5),
+                ),
               ),
               const SizedBox(height: 4),
               Semantics(
                 label: '${l10n.lbScoreLabel} $score',
                 excludeSemantics: true,
-                child: LBAnimatedCellText(
-                  '$score',
-                  cell: cell * .9,
-                  glow: true,
-                  color: isNewBest ? LB.gold : p.lime,
-                  duration: const Duration(milliseconds: 420),
+                child: RepaintBoundary(
+                  // Glow only once landed: the glow is a cached image per
+                  // string, and a dozen counting strings would churn it.
+                  child: BeatIn(
+                    animation: r.scoreLabel,
+                    rise: 0,
+                    child: BeatCount(
+                      animation: r.scoreCount,
+                      value: score,
+                      steps: 14,
+                      builder: (context, shown, landed) => LBCellText(
+                        '$shown',
+                        cell: cell * .9,
+                        glow: landed,
+                        color: scoreColor,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(width: 14),
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 14),
-              Text(
-                isNewBest ? l10n.lbGoNewBest : l10n.lbGoBest,
-                style: LBText.label(
-                  p,
-                  color: isNewBest ? LB.gold : p.inkMuted,
-                ).copyWith(fontSize: 10.5),
-              ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  context.formatInt(best),
-                  style: LBText.value(p, color: LB.gold, size: 28),
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (isNewBest)
-                Text(l10n.lbGoNewBestLine, style: LBText.body(p, size: 11.5))
-              else if (best > score) ...[
-                Text(
-                  l10n.lbGoBehind(context.formatInt(best - score)),
-                  style: LBText.body(
-                    p,
-                    color: p.inkMuted,
-                    size: 12,
-                  ).copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(l10n.lbGoBehindLine, style: LBText.body(p, size: 11)),
-              ],
-            ],
-          ),
-        ),
+        Expanded(flex: 2, child: RepaintBoundary(child: bestColumn)),
       ],
     );
   }
@@ -731,6 +863,7 @@ typedef GameOverScoreRowForTest = _ScoreRow;
 /// time, announced above the buttons, behind a 900 ms tap-arm guard.
 class _GameOverActions extends StatefulWidget {
   const _GameOverActions({
+    required this.reveal,
     required this.theme,
     required this.gameState,
     required this.coinsEarned,
@@ -747,6 +880,15 @@ class _GameOverActions extends StatefulWidget {
   final bool claimingAll;
   final VoidCallback onClaimAll;
   final VoidCallback? doubleCoins;
+  final GameOverReveal reveal;
+
+  // Rows in arrival order on the beat sheet (LBMotion.stagger apart). The
+  // coins block is not one of them: it pops on its own, earlier beat.
+  static const int noticeRow = 0;
+  static const int againRow = 1;
+  static const int smallRow = 2;
+  static const int homeRow = 3;
+  static const int trophyRow = 4;
 
   @override
   State<_GameOverActions> createState() => _GameOverActionsState();
@@ -944,6 +1086,7 @@ class _GameOverActionsState extends State<_GameOverActions> {
       (s, c) => s + c.coinReward,
     );
     final claimXp = widget.claimable.fold<int>(0, (s, c) => s + c.xpReward);
+    final reveal = widget.reveal;
 
     final again = LBBlock(
       kind: LBBlockKind.fill,
@@ -982,196 +1125,226 @@ class _GameOverActionsState extends State<_GameOverActions> {
           // Say so BEFORE the press. A rewarded ad is a bonus and reads as
           // one; a plain one is a toll the player at least agreed to.
           if (announced != GameOverAdFormat.none)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Semantics(
-                liveRegion: true,
-                child: Row(
-                  children: [
-                    LBPixelIcon(
-                      announced == GameOverAdFormat.rewarded
-                          ? LBIcon.coin
-                          : LBIcon.tv,
-                      cell: 2.6,
-                      color: announced == GameOverAdFormat.rewarded
-                          ? LB.gold
-                          : p.inkMuted,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+            BeatIn(
+              animation: reveal.action(_GameOverActions.noticeRow),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Row(
+                    children: [
+                      LBPixelIcon(
                         announced == GameOverAdFormat.rewarded
-                            ? l10n.goAdNoticeRewarded(AdService.freeCoinsPerAd)
-                            : l10n.goAdNoticeInterstitial,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LBText.body(
-                          p,
-                          color: announced == GameOverAdFormat.rewarded
-                              ? LB.gold
-                              : p.inkMuted,
-                          size: 11,
-                        ),
+                            ? LBIcon.coin
+                            : LBIcon.tv,
+                        cell: 2.6,
+                        color: announced == GameOverAdFormat.rewarded
+                            ? LB.gold
+                            : p.inkMuted,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (_continueOffered)
-            Row(
-              children: [
-                Expanded(flex: 5, child: again),
-                Expanded(
-                  flex: 3,
-                  child: LBBlock(
-                    kind: canContinue ? LBBlockKind.gold : LBBlockKind.muted,
-                    height: cell * 5,
-                    padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-                    semanticLabel: l10n.lbGoContinue,
-                    onTap: canContinue ? () => _continue(context) : null,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Text(
-                                  l10n.lbGoContinue,
-                                  style: LBText.button(
-                                    p,
-                                    color: LB.gold,
-                                    size: 13,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (canContinue)
-                              Text(
-                                '${secsLeft.ceil()}',
-                                style: LBText.value(
-                                  p,
-                                  color: LB.gold,
-                                  size: 22,
-                                ),
-                              ),
-                          ],
-                        ),
-                        // The block is a fixed five cells, beside AGAIN; at
-                        // large system text the sub-line shrinks to fit the
-                        // room left under the countdown instead of
-                        // overflowing it.
-                        Expanded(
-                          child: LBFitHeight(
-                            alignment: AlignmentDirectional.bottomStart,
-                            child: Text(
-                          // Two whole lines ("1,500¢ or ad" / "keep len 3"),
-                          // never a wrap that strands the number: every
-                          // locale joins the halves with " · ".
-                          (isPro
-                                  ? l10n.lbGoContinueProSub(
-                                      '${widget.gameState.snake.length}',
-                                    )
-                                  : l10n.lbGoContinueSub(
-                                      context.formatInt(
-                                        cubit.currentReviveCoinCost,
-                                      ),
-                                      '${widget.gameState.snake.length}',
-                                    ))
-                              .replaceFirst(' · ', '\n'),
-                          maxLines: 3,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          announced == GameOverAdFormat.rewarded
+                              ? l10n.goAdNoticeRewarded(
+                                  AdService.freeCoinsPerAd,
+                                )
+                              : l10n.goAdNoticeInterstitial,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: LBText.body(
                             p,
-                            color: LB.gold.withValues(alpha: .75),
+                            color: announced == GameOverAdFormat.rewarded
+                                ? LB.gold
+                                : p.inkMuted,
                             size: 11,
                           ),
                         ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          else
-            again,
-          LBBlock(
-            kind: LBBlockKind.outline,
-            onTap: widget.claimable.isEmpty || widget.claimingAll
-                ? null
-                : widget.onClaimAll,
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.lbGoEarned(context.formatInt(widget.coinsEarned)),
-                        style: LBText.button(
-                          p,
-                          color: p.head,
-                          size: 15,
-                        ).copyWith(letterSpacing: 1.8),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        // Coins from the run are already banked; "nothing
-                        // to claim" under "+2¢ EARNED" read as a contradiction.
-                        widget.claimable.isEmpty
-                            ? (widget.coinsEarned > 0
-                                ? l10n.lbGoCoinsBanked
-                                : l10n.lbGoNothingToClaim)
-                            : l10n.lbGoRewardsLine(
-                                '${widget.claimable.length}',
-                                context.formatInt(claimCoins),
-                                context.formatInt(claimXp),
-                              ),
-                        style: LBText.body(p, size: 11.5),
                       ),
                     ],
                   ),
                 ),
-                if (widget.claimable.isNotEmpty)
-                  Text(
-                    '${l10n.lbClaim} →',
-                    style: LBText.button(p, color: LB.gold, size: 13),
+              ),
+            ),
+          BeatIn(
+            animation: reveal.action(_GameOverActions.againRow),
+            child: RepaintBoundary(
+              child: _continueOffered
+                  ? Row(
+                      children: [
+                        Expanded(flex: 5, child: again),
+                        Expanded(
+                          flex: 3,
+                          child: LBBlock(
+                            kind: canContinue
+                                ? LBBlockKind.gold
+                                : LBBlockKind.muted,
+                            height: cell * 5,
+                            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                            semanticLabel: l10n.lbGoContinue,
+                            onTap: canContinue
+                                ? () => _continue(context)
+                                : null,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: Text(
+                                          l10n.lbGoContinue,
+                                          style: LBText.button(
+                                            p,
+                                            color: LB.gold,
+                                            size: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (canContinue)
+                                      Text(
+                                        '${secsLeft.ceil()}',
+                                        style: LBText.value(
+                                          p,
+                                          color: LB.gold,
+                                          size: 22,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                // The block is a fixed five cells, beside AGAIN; at
+                                // large system text the sub-line shrinks to fit the
+                                // room left under the countdown instead of
+                                // overflowing it.
+                                Expanded(
+                                  child: LBFitHeight(
+                                    alignment: AlignmentDirectional.bottomStart,
+                                    child: Text(
+                                      // Two whole lines ("1,500¢ or ad" / "keep len 3"),
+                                      // never a wrap that strands the number: every
+                                      // locale joins the halves with " · ".
+                                      (isPro
+                                              ? l10n.lbGoContinueProSub(
+                                                  '${widget.gameState.snake.length}',
+                                                )
+                                              : l10n.lbGoContinueSub(
+                                                  context.formatInt(
+                                                    cubit.currentReviveCoinCost,
+                                                  ),
+                                                  '${widget.gameState.snake.length}',
+                                                ))
+                                          .replaceFirst(' · ', '\n'),
+                                      maxLines: 3,
+                                      style: LBText.body(
+                                        p,
+                                        color: LB.gold.withValues(alpha: .75),
+                                        size: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : again,
+            ),
+          ),
+          RepaintBoundary(
+            child: BeatPop(
+              animation: reveal.coins,
+              from: .8,
+              child: LBBlock(
+                kind: LBBlockKind.outline,
+                onTap: widget.claimable.isEmpty || widget.claimingAll
+                    ? null
+                    : widget.onClaimAll,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          BeatCount(
+                            animation: reveal.coinsCount,
+                            value: widget.coinsEarned,
+                            builder: (context, shown, _) => Text(
+                              l10n.lbGoEarned(context.formatInt(shown)),
+                              style: LBText.button(
+                                p,
+                                color: p.head,
+                                size: 15,
+                              ).copyWith(letterSpacing: 1.8),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            // Coins from the run are already banked; "nothing
+                            // to claim" under "+2¢ EARNED" read as a contradiction.
+                            widget.claimable.isEmpty
+                                ? (widget.coinsEarned > 0
+                                      ? l10n.lbGoCoinsBanked
+                                      : l10n.lbGoNothingToClaim)
+                                : l10n.lbGoRewardsLine(
+                                    '${widget.claimable.length}',
+                                    context.formatInt(claimCoins),
+                                    context.formatInt(claimXp),
+                                  ),
+                            style: LBText.body(p, size: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (widget.claimable.isNotEmpty)
+                      Text(
+                        '${l10n.lbClaim} →',
+                        style: LBText.button(p, color: LB.gold, size: 13),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          BeatIn(
+            animation: reveal.action(_GameOverActions.smallRow),
+            child: Row(
+              children: [
+                if (widget.doubleCoins != null)
+                  Expanded(
+                    child: _SmallAction(
+                      kind: LBBlockKind.gold,
+                      icon: LBIcon.coin,
+                      label: l10n.lbGoDoubleCoins,
+                      onTap: widget.doubleCoins!,
+                    ),
                   ),
+                Expanded(
+                  child: _SmallAction(
+                    kind: LBBlockKind.outline,
+                    icon: LBIcon.film,
+                    label: l10n.lbGoWatchReplay,
+                    onTap: () => _replay(context),
+                  ),
+                ),
               ],
             ),
           ),
-          Row(
-            children: [
-              if (widget.doubleCoins != null)
-                Expanded(
-                  child: _SmallAction(
-                    kind: LBBlockKind.gold,
-                    icon: LBIcon.coin,
-                    label: l10n.lbGoDoubleCoins,
-                    onTap: widget.doubleCoins!,
-                  ),
-                ),
-              Expanded(
-                child: _SmallAction(
-                  kind: LBBlockKind.outline,
-                  icon: LBIcon.film,
-                  label: l10n.lbGoWatchReplay,
-                  onTap: () => _replay(context),
-                ),
-              ),
-            ],
-          ),
-          _SmallAction(
-            kind: LBBlockKind.outline,
-            icon: LBIcon.back,
-            label: l10n.lbHome,
-            onTap: () => _home(context, announced),
-            feedback: true,
+          BeatIn(
+            animation: reveal.action(_GameOverActions.homeRow),
+            child: _SmallAction(
+              kind: LBBlockKind.outline,
+              icon: LBIcon.back,
+              label: l10n.lbHome,
+              onTap: () => _home(context, announced),
+              feedback: true,
+            ),
           ),
         ],
       ),
