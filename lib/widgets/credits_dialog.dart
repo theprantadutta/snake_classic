@@ -1,6 +1,8 @@
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -83,11 +85,11 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      LBChip(label: l10n.crChipModes, icon: LBIcon.grid),
-                      LBChip(label: l10n.crChipAchievements, icon: LBIcon.trophy),
-                      LBChip(label: l10n.crChipDaily, icon: LBIcon.calendar),
-                      LBChip(label: l10n.crChipLeaderboards, icon: LBIcon.chart),
-                      LBChip(label: l10n.crChipCosmetics, icon: LBIcon.star),
+                      _FeatureChip(label: l10n.crChipModes, icon: LBIcon.grid, route: AppRoutes.runSetup),
+                      _FeatureChip(label: l10n.crChipAchievements, icon: LBIcon.trophy, route: AppRoutes.achievements),
+                      _FeatureChip(label: l10n.crChipDaily, icon: LBIcon.calendar, route: AppRoutes.dailyChallenges),
+                      _FeatureChip(label: l10n.crChipLeaderboards, icon: LBIcon.chart, route: AppRoutes.leaderboard),
+                      _FeatureChip(label: l10n.crChipCosmetics, icon: LBIcon.star, route: AppRoutes.store),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -148,4 +150,37 @@ Future<void> showCreditsDialog(BuildContext context, GameTheme theme) async {
       );
     },
   );
+}
+
+/// A feature pill in the About dialog. It is drawn like a button, so it acts
+/// like one: closes the dialog and opens that feature's screen.
+class _FeatureChip extends StatelessWidget {
+  const _FeatureChip({required this.label, required this.icon, required this.route});
+
+  final String label;
+  final LBIcon icon;
+  final String route;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      onTap: () => _open(context),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _open(context),
+        child: LBChip(label: label, icon: icon, height: 30),
+      ),
+    );
+  }
+
+  void _open(BuildContext context) {
+    LBFeedback.tap();
+    // Grab the router before the pop: this context goes with the dialog.
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.push(route);
+  }
 }

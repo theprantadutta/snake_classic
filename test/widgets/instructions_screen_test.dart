@@ -116,7 +116,7 @@ void main() {
     testWidgets('the controls split into touch and keyboard', (tester) async {
       await pump(tester);
 
-      expect(find.text('ON YOUR PHONE'), findsOneWidget);
+      expect(find.text('ON THIS DEVICE'), findsOneWidget);
       expect(find.text('ON A KEYBOARD'), findsOneWidget);
       expect(find.text('Arrow keys'), findsOneWidget);
       expect(find.text('Spacebar'), findsOneWidget);

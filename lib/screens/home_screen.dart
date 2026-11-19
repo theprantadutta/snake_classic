@@ -818,7 +818,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Semantics(
               button: true,
               label: '${l10n.lbYourBest} ${settings.highScore}',
+              // Opaque: the whole announced rect is the button, not just
+              // the digit cells. The steering pan above still wins a drag
+              // (it is an ancestor, so it joins the same gesture arena).
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   LBFeedback.tap();
                   context.push(AppRoutes.statistics);
@@ -1010,9 +1014,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   '${daily.completedCount}',
                   '${daily.totalCount}',
                 ),
+          // The short form fits a 360dp tile in every locale ("resets in"
+          // ellipsized the coins away); the screen reader keeps the full one.
           subtitle: coinsLeft > 0
-              ? l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft))
+              ? l10n.lbHomeDailySubShort(
+                  _hm(reset),
+                  context.formatInt(coinsLeft),
+                )
               : l10n.lbResetsIn(_hm(reset)),
+          semanticSubtitle: coinsLeft > 0
+              ? l10n.lbHomeDailySub(_hm(reset), context.formatInt(coinsLeft))
+              : null,
           kind: claimable ? LBBlockKind.gold : LBBlockKind.outline,
           onTap: go,
         );
@@ -1424,6 +1436,7 @@ class _HomeTile extends StatelessWidget {
     required this.onTap,
     this.kind = LBBlockKind.outline,
     this.tall = false,
+    this.semanticSubtitle,
   });
 
   /// Four grid rows instead of three: bigger type to fill the block.
@@ -1431,6 +1444,9 @@ class _HomeTile extends StatelessWidget {
   final LBIcon icon;
   final String title;
   final String subtitle;
+
+  /// Spoken in place of [subtitle] when the visible one is abbreviated.
+  final String? semanticSubtitle;
   final VoidCallback onTap;
   final LBBlockKind kind;
 
@@ -1441,7 +1457,7 @@ class _HomeTile extends StatelessWidget {
     return LBBlock(
       kind: kind,
       onTap: onTap,
-      semanticLabel: '$title, $subtitle',
+      semanticLabel: '$title, ${semanticSubtitle ?? subtitle}',
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1468,7 +1484,9 @@ class _HomeTile extends StatelessWidget {
           SizedBox(height: tall ? 9 : 5),
           Text(
             subtitle,
-            maxLines: 1,
+            // A tall (4-row) tile has room for a second line; a long
+            // translation wraps there instead of ellipsizing.
+            maxLines: tall ? 2 : 1,
             overflow: TextOverflow.ellipsis,
             style: LBText.body(
               p,
