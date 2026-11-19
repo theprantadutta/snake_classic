@@ -364,8 +364,10 @@ class LBDailyProgressBlock extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  l10n.lbDailyProgress(context.formatInt(done), context.formatInt(total)),
+                LBRollingNumber(
+                  done,
+                  format: (v) => l10n.lbDailyProgress(context.formatInt(v), context.formatInt(total)),
+                  maxLines: null,
                   style: LBText.button(p, color: p.ink, size: 13.5).copyWith(letterSpacing: 2),
                 ),
                 if (subline != null) ...[

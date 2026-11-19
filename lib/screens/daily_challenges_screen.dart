@@ -43,6 +43,11 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   Timer? _clock;
   bool _claimingAll = false;
 
+  /// Challenge blocks by id, and the CLAIM ALL block: claimed coins fly
+  /// from them (LBCoinFly).
+  final Map<String, GlobalKey> _blockKeys = {};
+  final GlobalKey _claimAllKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +69,8 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   }
 
   Future<void> _claimReward(DailyChallenge challenge) async {
+    final blockKey = _blockKeys[challenge.id];
+    final from = blockKey == null ? null : LBCoinFly.rectOf(blockKey);
     final success = await ref
         .read(dailyChallengesProvider.notifier)
         .claimReward(challenge.id);
@@ -75,6 +82,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       // only because the screen was empty whenever the backend was down.
       HapticService().mediumImpact();
       _audioService.playSound('coin_collect');
+      if (mounted && from != null && challenge.coinReward > 0) {
+        LBCoinFly.play(context, from: from, coins: LBCoinFly.coinsFor(challenge.coinReward));
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           arcadeSnackBar(
@@ -108,6 +118,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
   Future<void> _claimAllRewards({bool watchAdToDouble = false}) async {
     if (_claimingAll) return;
     setState(() => _claimingAll = true);
+    final from = LBCoinFly.rectOf(_claimAllKey);
     try {
       final totalClaimed = await ref
           .read(dailyChallengesProvider.notifier)
@@ -118,6 +129,9 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         // reward and stays.
         HapticService().heavyImpact();
         _audioService.playSound('coin_collect');
+        if (mounted && from != null) {
+          LBCoinFly.play(context, from: from, coins: LBCoinFly.coinsFor(totalClaimed));
+        }
         if (mounted) {
           // Offer a rewarded "2×" on the claimed total (see [_canDouble]).
           final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
@@ -263,6 +277,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         children: [
           if (challengesState.hasUnclaimedRewards)
             LBBlock(
+              key: _claimAllKey,
               kind: LBBlockKind.gold,
               height: context.lbCell * 2 - LB.inset * 2,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -460,7 +475,10 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
     } else {
       action = null;
     }
-    return LBQuestBlock(
+    return LBClaimPop(
+      key: _blockKeys.putIfAbsent(c.id, GlobalKey.new),
+      claimed: c.claimedReward,
+      child: LBQuestBlock(
       icon: _challengeIcon(c.type),
       title: _localizedChallengeTitle(c, l10n),
       description: _localizedChallengeDescription(c, l10n),
@@ -474,13 +492,16 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
         context.formatInt(c.xpReward),
       ),
       action: action,
+      ),
     );
   }
 
   Widget _bonusBlock(BuildContext context, AppLocalizations l10n, DailyChallengesState s) {
     final p = context.lb;
     final claimed = s.isBonusClaimed;
-    return LBRow(
+    return LBClaimPop(
+      claimed: claimed,
+      child: LBRow(
       kind: claimed ? LBBlockKind.muted : LBBlockKind.gold,
       leading: LBPixelIcon(
         claimed ? LBIcon.check : LBIcon.gift,
@@ -493,6 +514,7 @@ class _DailyChallengesScreenState extends ConsumerState<DailyChallengesScreen> {
       trailing: Text(
         l10n.lbCoinsReward(context.formatInt(s.bonusCoins)),
         style: LBText.value(p, color: claimed ? p.inkDim : LB.gold, size: 17),
+      ),
       ),
     );
   }

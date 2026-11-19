@@ -35,13 +35,14 @@ class SeasonHero extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
     final complete = state.currentTier >= maxTier;
-    final xpLine = complete
+    String xpLineFor(int xp) => complete
         ? l10n.bpSeasonCompleteUpper
         : l10n.lbXpToTier(
-            context.formatInt(state.currentXP),
+            context.formatInt(xp),
             context.formatInt(state.xpForNextTier),
             '${state.currentTier + 1}',
           );
+    final xpLine = xpLineFor(state.currentXP);
     return LBBlock(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
@@ -59,7 +60,7 @@ class SeasonHero extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    LBCellText('${state.currentTier}', cell: 11 * context.uiScale, glow: true),
+                    LBRollingNumber.cells(state.currentTier, cell: 11 * context.uiScale, glow: true),
                     const SizedBox(width: 10),
                     Text(
                       l10n.lbTierOf('$maxTier'),
@@ -89,8 +90,9 @@ class SeasonHero extends StatelessWidget {
                   semanticsLabel: xpLine,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  xpLine,
+                LBRollingNumber(
+                  state.currentXP,
+                  format: xpLineFor,
                   maxLines: 2,
                   style: LBText.label(p).copyWith(letterSpacing: 1.2),
                 ),
@@ -352,7 +354,11 @@ class SeasonClaimRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
-    return LBBlock(
+    // Pops gold the moment CLAIM is tapped; the row leaves the list once
+    // the claim lands, so this is its goodbye.
+    return LBClaimPop(
+      claimed: claiming,
+      child: LBBlock(
       kind: LBBlockKind.gold,
       padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
       child: Row(
@@ -384,6 +390,7 @@ class SeasonClaimRow extends StatelessWidget {
           const SizedBox(width: 8),
           SeasonClaimButton(claiming: claiming, onClaim: onClaim),
         ],
+      ),
       ),
     );
   }

@@ -178,9 +178,24 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
   // make the button inert while the claim is in flight.
   bool _isClaiming = false;
 
+  /// Today's reward block: the claimed coins fly from it to the Home coin
+  /// readout behind the dialog.
+  final GlobalKey _rewardKey = GlobalKey();
+
+  /// Launched before the claim runs, so the readout holds its old balance
+  /// and rolls up as the coins land (the dialog closes meanwhile; the
+  /// flight lives in the root overlay).
+  void _flyCoins() {
+    final coins = widget.status.todayReward?.coins ?? 0;
+    final from = LBCoinFly.rectOf(_rewardKey);
+    if (coins <= 0 || from == null) return;
+    LBCoinFly.play(context, from: from, coins: LBCoinFly.coinsFor(coins));
+  }
+
   Future<void> _handleClaim() async {
     if (_isClaiming) return;
     setState(() => _isClaiming = true);
+    _flyCoins();
     try {
       await widget.onClaim();
     } finally {
@@ -193,6 +208,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
   Future<void> _handleClaimDoubled() async {
     if (_isClaiming || widget.onClaimDoubled == null) return;
     setState(() => _isClaiming = true);
+    _flyCoins();
     try {
       await widget.onClaimDoubled!();
     } finally {
@@ -382,7 +398,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
   Widget _buildTodayReward(DailyBonusReward reward) {
     final p = context.lb;
     final l10n = AppLocalizations.of(context)!;
-    return LBBlock(
+    return LBClaimPop(
+      key: _rewardKey,
+      claimed: _isClaiming,
+      child: LBBlock(
       kind: LBBlockKind.gold,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Column(
@@ -413,6 +432,7 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
             LBChip(icon: LBIcon.gift, label: reward.bonusItem!.toUpperCase()),
           ],
         ],
+      ),
       ),
     ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.15, end: 0);
   }

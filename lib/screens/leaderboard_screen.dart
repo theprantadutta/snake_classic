@@ -379,6 +379,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         title: rank != null
             ? l10n.lbRanksYouRow(context.formatInt(rank), name)
             : l10n.lbRanksYouUnranked(name),
+        rank: rank,
+        rankTitle: (r) => l10n.lbRanksYouRow(context.formatInt(r), name),
         score: myScore,
         line: line,
       ),

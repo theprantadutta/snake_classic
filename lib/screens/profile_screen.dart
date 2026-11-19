@@ -629,8 +629,9 @@ class _Identity extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Text(
-                    l10n.lbLevelShort(context.formatInt(level)),
+                  LBRollingNumber(
+                    level,
+                    format: (v) => l10n.lbLevelShort(context.formatInt(v)),
                     style: LBText.button(p, size: 12.5),
                   ),
                   const SizedBox(width: 8),
@@ -648,8 +649,9 @@ class _Identity extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    '${context.formatInt(into)}/${context.formatInt(needed)}',
+                  LBRollingNumber(
+                    into,
+                    format: (v) => '${context.formatInt(v)}/${context.formatInt(needed)}',
                     style: LBText.body(p, size: 10.5).copyWith(fontWeight: FontWeight.w600),
                   ),
                 ],

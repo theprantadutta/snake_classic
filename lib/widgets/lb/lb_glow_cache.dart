@@ -40,12 +40,16 @@ abstract final class LBGlowCache {
   }
 
   /// Draws [rrect]'s glow with [style] (e.g. [BlurStyle.outer]).
+  ///
+  /// [opacity] fades the cached image as a whole, so a glow can flash in and
+  /// out without a new blur (or a saveLayer) per frame.
   static void drawRRectGlow(
     Canvas canvas, {
     required RRect rrect,
     required Color color,
     required double sigma,
     BlurStyle style = BlurStyle.normal,
+    double opacity = 1,
   }) {
     // Position-independent: cache the glow of the rrect at the origin.
     final local = rrect.shift(-rrect.outerRect.topLeft);
@@ -54,7 +58,7 @@ abstract final class LBGlowCache {
     _store(key, glow);
     canvas.save();
     canvas.translate(rrect.left, rrect.top);
-    glow.paint(canvas);
+    glow.paint(canvas, opacity: opacity);
     canvas.restore();
   }
 
@@ -95,10 +99,12 @@ class _Glow {
   final ui.Image image;
   final Rect bounds;
 
-  void paint(Canvas canvas) => canvas.drawImageRect(
+  void paint(Canvas canvas, {double opacity = 1}) => canvas.drawImageRect(
         image,
         Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
         bounds,
-        Paint()..filterQuality = FilterQuality.low,
+        Paint()
+          ..filterQuality = FilterQuality.low
+          ..color = Color.fromRGBO(0, 0, 0, opacity.clamp(0.0, 1.0)),
       );
 }

@@ -810,7 +810,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 BlocBuilder<CoinsCubit, CoinsState>(
                   builder: (context, coins) => _CoinReadout(
                     key: HomeWalkthrough.coinsKey,
-                    value: context.formatInt(coins.total),
+                    value: coins.total,
                     onTap: () => context.push(AppRoutes.store),
                   ),
                 ),
@@ -834,8 +834,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: LBAnimatedCellText(
-                    '${settings.highScore}',
+                  child: LBRollingNumber.cells(
+                    settings.highScore,
                     cell: bestRowsL * cell / 5,
                     color: LB.gold.withValues(alpha: .5),
                   ),
@@ -1332,7 +1332,7 @@ class _HomeHeader extends StatelessWidget {
 class _CoinReadout extends StatelessWidget {
   const _CoinReadout({super.key, required this.value, required this.onTap});
 
-  final String value;
+  final int value;
   final VoidCallback onTap;
 
   @override
@@ -1340,7 +1340,7 @@ class _CoinReadout extends StatelessWidget {
     final p = context.lb;
     return Semantics(
       button: true,
-      label: '${AppLocalizations.of(context)!.lbSnakeCoins} $value',
+      label: '${AppLocalizations.of(context)!.lbSnakeCoins} ${context.formatInt(value)}',
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1350,13 +1350,22 @@ class _CoinReadout extends StatelessWidget {
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const LBPixelIcon(LBIcon.coin, cell: 3, color: LB.gold),
-              const SizedBox(width: 7),
-              Text(value, style: LBText.value(p, color: LB.gold, size: 15)),
-            ],
+          // Rewards anywhere in the app fly their coins here (LBCoinFly):
+          // the number rolls up as they land and the coin pops.
+          child: LBCoinTarget(
+            value: value,
+            builder: (context, shown, icon) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                icon(const LBPixelIcon(LBIcon.coin, cell: 3, color: LB.gold)),
+                const SizedBox(width: 7),
+                LBRollingNumber(
+                  shown,
+                  format: context.formatInt,
+                  style: LBText.value(p, color: LB.gold, size: 15),
+                ),
+              ],
+            ),
           ),
         ),
       ),
