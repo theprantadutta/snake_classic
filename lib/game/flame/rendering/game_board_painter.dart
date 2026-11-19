@@ -413,6 +413,30 @@ class OptimizedGameBoardPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndRadius(rects[i], bodyRadius), _snakeBodyPaint);
     }
 
+    // Miami Nights: a neon edge (aqua on the sunset body) and a soft top
+    // highlight per segment. Strokes only, no blur, so it stays cheap.
+    if (sunsetBody) {
+      final edge = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = cell * .07;
+      final shine = Paint()..color = Colors.white.withValues(alpha: .22);
+      for (var i = n - 1; i >= 1; i--) {
+        final t = n <= 1 ? 0.0 : i / (n - 1);
+        final r = rects[i];
+        edge.color = theme.foodColor.withValues(alpha: .75 - .45 * t);
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(r.deflate(cell * .035), bodyRadius), edge);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r.left + r.width * .18, r.top + r.height * .14,
+                r.width * .64, r.height * .16),
+            Radius.circular(r.height * .08),
+          ),
+          shine,
+        );
+      }
+    }
+
     final head = rects.first;
     var headColor = crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
     // Eat flash: the head blinks bright for the first ~80 ms of the tick
@@ -1810,6 +1834,18 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // carry their own dark outline + rim glow so they read on every theme
     // (the procedural shapes below inherited theme.foodColor, which on some
     // themes matched the snake or vanished into the background).
+    // Miami Nights: a neon aqua ring so food pops on the sunset scene.
+    if (theme == GameTheme.miamiNights) {
+      canvas.drawCircle(
+        Offset(centerX, centerY),
+        cellSize * .58,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = cellSize * .07
+          ..color = theme.foodColor.withValues(alpha: .85),
+      );
+    }
+
     final sprite = sprites?.foodImage(food.type);
     if (sprite != null) {
       // The art has its own transparent margin (subject ≈80% of canvas plus

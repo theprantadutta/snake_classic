@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/widgets/lb/lb_glow_cache.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb_feedback.dart';
 
 /// Block kinds (DESIGN_SPEC §3). One [fill] per screen — "one loud thing".
@@ -228,7 +229,23 @@ class _BlockPainter extends CustomPainter {
           sigma: 15,
           style: BlurStyle.outer,
         );
-        canvas.drawRRect(rr, Paint()..color = base);
+        // Miami Nights: primary blocks get the sunset gradient instead of
+        // a flat fill (pink, then orange at the bottom right).
+        final miami = kind == LBBlockKind.fill &&
+            accent == null &&
+            identical(p, LBPalette.of(GameTheme.miamiNights));
+        canvas.drawRRect(
+          rr,
+          miami
+              ? (Paint()
+                ..shader = const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFF4FA3), Color(0xFFFF7A59), Color(0xFFFFB347)],
+                  stops: [0.0, 0.7, 1.0],
+                ).createShader(rect))
+              : (Paint()..color = base),
+        );
         _gridLines(canvas, rr, const Color(0x21000000));
       case LBBlockKind.gold:
         final c = accent ?? LB.gold;

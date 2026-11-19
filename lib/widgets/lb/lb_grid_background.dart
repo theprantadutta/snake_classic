@@ -71,7 +71,7 @@ class _MiamiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) =>
       // Darker and with a faint floor grid behind menus: text of every
       // weight (muted captions included) has to read on top of it.
-      MiamiNightsScene.paint(canvas, size, dim: .62, lines: .35, sun: .4, horizonVeil: .45);
+      MiamiNightsScene.paint(canvas, size, dim: .5, lines: .4, sun: .55, horizonVeil: .45);
 
   @override
   bool shouldRepaint(_MiamiPainter old) => false;

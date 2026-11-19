@@ -54,7 +54,14 @@ class LegacyBoardComponent extends Component
     canvas.drawRect(Offset.zero & size, _bgPaint);
     if (game.theme == GameTheme.miamiNights) {
       // Dimmed more than the menus: the snake and food must pop at speed.
-      MiamiNightsScene.paint(canvas, size, dim: .38);
+      MiamiNightsScene.paint(canvas, size, dim: .38, animatedFloor: true);
+      // The floor grid rolls toward the player: ~12 lines a frame.
+      MiamiNightsScene.paintFloorMotion(
+        canvas,
+        size,
+        DateTime.now().millisecondsSinceEpoch / 1000.0,
+        dim: .38,
+      );
     }
 
     // World-to-screen scale for the fixed-resolution camera: the world is
