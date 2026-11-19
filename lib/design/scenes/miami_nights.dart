@@ -40,11 +40,10 @@ class MiamiNightsThemeScene extends ThemeScene {
           GameConstants.miamiNightsSnake,
           GameConstants.miamiNightsAccent,
         ],
-        edge: GameConstants.miamiNightsFood,
-        shine: .22,
-        tailFade: .25,
+        // Clean gradient body: the aqua outline + white shine strip per
+        // segment read as noisy (owner, 2026-11-19).
+        tailFade: .22,
       );
 
-  @override
-  Color get foodRing => GameConstants.miamiNightsFood;
+  // No ring: the food sprite already has its outline and gold glow.
 }

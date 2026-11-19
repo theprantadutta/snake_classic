@@ -392,7 +392,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         final k = EffectCurves.rippleIntensity(ripple, i, snakeLength);
         if (k <= 0) continue;
         final kk = k * (1 - ripple * .5);
-        wash.color = LB.apple.withValues(alpha: .22 * kk);
+        wash.color = Colors.white.withValues(alpha: .18 * kk);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
               segmentRects[i].inflate(cellWidth * .1 * kk), radius),
@@ -446,7 +446,9 @@ class OptimizedGameBoardPainter extends CustomPainter {
         final k = EffectCurves.rippleIntensity(ripple, i, n) *
             (1 - ripple * .5);
         if (k > 0) {
-          color = Color.lerp(color, LB.apple, .28 * k)!
+          // Brighten, don't tint: a red tint went muddy on pink/orange
+          // bodies (Miami Nights).
+          color = Color.lerp(color, Colors.white, .22 * k)!
               .withValues(alpha: math.min(1.0, color.a + .2 * k));
           rect = rect.inflate(cell * .12 * k);
         }
