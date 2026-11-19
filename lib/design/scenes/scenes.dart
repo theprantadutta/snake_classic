@@ -2,9 +2,12 @@
 import 'package:snake_classic/design/scenes/classic.dart';
 import 'package:snake_classic/design/scenes/crystal.dart';
 import 'package:snake_classic/design/scenes/cyberpunk.dart';
+import 'package:snake_classic/design/scenes/desert.dart';
+import 'package:snake_classic/design/scenes/forest.dart';
 import 'package:snake_classic/design/scenes/miami_nights.dart';
 import 'package:snake_classic/design/scenes/modern.dart';
 import 'package:snake_classic/design/scenes/neon.dart';
+import 'package:snake_classic/design/scenes/ocean.dart';
 import 'package:snake_classic/design/scenes/retro.dart';
 import 'package:snake_classic/design/scenes/space.dart';
 import 'package:snake_classic/design/scenes/theme_scene.dart';
@@ -25,4 +28,7 @@ void registerThemeScenes() {
   ThemeScenes.register(GameTheme.cyberpunk, const CyberpunkThemeScene());
   ThemeScenes.register(GameTheme.space, const SpaceThemeScene());
   ThemeScenes.register(GameTheme.crystal, const CrystalThemeScene());
+  ThemeScenes.register(GameTheme.ocean, const OceanThemeScene());
+  ThemeScenes.register(GameTheme.forest, const ForestThemeScene());
+  ThemeScenes.register(GameTheme.desert, const DesertThemeScene());
 }

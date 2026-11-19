@@ -333,14 +333,18 @@ class GameConstants {
 
   // Colors - Forest Theme (rich emerald jungle — vivid green snake on
   // deep forest, distinct from Classic's pale Game Boy yellow-green).
-  static const Color forestBackground = Color(0xFF0D2818); // Dark forest floor
+  // Night-forest blue-green (was 0xFF0D2818): matches the moonlit scene
+  // backdrop, and the cooler tone lets the emerald snake stand out.
+  static const Color forestBackground = Color(0xFF0B1F22); // Moonlit forest night
   static const Color forestSnake = Color(0xFF2ECC71); // Vivid emerald
   static const Color forestFood = Color(0xFFDC143C); // Crimson berry
   static const Color forestAccent = Color(0xFFF1C40F); // Sunlit-canopy gold
 
   // Colors - Desert Theme (Southwestern — terracotta canyon with cactus
   // teal food, intentionally separated from Retro's arcade orange).
-  static const Color desertBackground = Color(0xFF3D1F0E); // Warm terracotta canyon
+  // Dusk plum (was terracotta 0xFF3D1F0E): matches the dune-dusk scene
+  // backdrop around the board, and golden sand pops harder on it.
+  static const Color desertBackground = Color(0xFF2C1828); // Desert dusk
   // Brightened from Peru brown (0xFFCD853F): brown-on-terracotta was the
   // muddiest snake/background pairing in the catalog — golden sand keeps
   // the identity and pops at speed.
