@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
+import 'package:snake_classic/game/effects/effect_curves.dart';
 import 'package:snake_classic/design/miami_nights_scene.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb_cell_text.dart';
@@ -125,6 +126,7 @@ class LegacyBoardComponent extends Component
       recentInputShimmerAge: shimmerAge,
       sprites: game.boardSprites,
       crashElapsedSeconds: game.crashElapsedOrNull,
+      growRippleT: game.growRippleT,
     ).paint(canvas, size);
 
     // Death flash: the body blinks white in the beat between the crash
@@ -189,6 +191,10 @@ class LegacyBoardComponent extends Component
     final oy = cw * 4;
 
     final progress = ((ms - _ghostChangedMs) / LB.reveal.inMilliseconds).clamp(0.0, 1.0);
+    // Score bump: the digits jump a touch and spring back on each increase
+    // (on top of the reveal). A canvas transform only, while it runs.
+    final bumpT = game.scoreBumpT;
+    final bump = bumpT == null ? 1.0 : EffectCurves.bumpScale(bumpT, amp: .06);
     final litCols = layout.columns * progress;
     final lit = Path();
     final dim = Path();
@@ -198,6 +204,16 @@ class LegacyBoardComponent extends Component
     // A scene backdrop (Miami Nights) is too busy for 12% cells: the score
     // gets a dark backing per cell and a light, stronger fill on top.
     final scene = game.theme == GameTheme.miamiNights;
+    final bumping = bump != 1.0;
+    if (bumping) {
+      final cx = ox + layout.columns * g / 2;
+      final cy = oy + LBCellLayout.rows * g / 2;
+      canvas
+        ..save()
+        ..translate(cx, cy)
+        ..scale(bump)
+        ..translate(-cx, -cy);
+    }
     if (scene) {
       _ghostPaint.color = Colors.black.withValues(alpha: .38);
       canvas.drawPath(lit, _ghostPaint);
@@ -212,6 +228,7 @@ class LegacyBoardComponent extends Component
       _ghostPaint.color = palette.lime.withValues(alpha: .05);
       canvas.drawPath(dim, _ghostPaint);
     }
+    if (bumping) canvas.restore();
 
     final label = game.ghostScoreLabel;
     final key = '$label|${g.toStringAsFixed(1)}|${palette.lime.toARGB32()}|$scene';

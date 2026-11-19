@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart'
     show BoardSprites;
+import 'package:snake_classic/design/lb_motion.dart';
+import 'package:snake_classic/game/flame/components/board_effects_component.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
 import 'package:snake_classic/game/flame/components/legacy_board_component.dart';
 import 'package:snake_classic/game/flame/components/snake_trail_component.dart';
@@ -113,6 +115,39 @@ class SnakeFlameGame extends FlameGame {
   model.GameState? _lastProcessed;
 
   GameParticlesComponent? _particles;
+  BoardEffectsComponent? _effects;
+
+  /// Reduce motion (the OS "remove animations" flag), set by the host
+  /// widget, which has the MediaQuery. Turns the motion effects off (eat
+  /// pop, grow ripple, pickup / crash rings, ghost score bump).
+  bool reducedMotion = false;
+
+  /// Seconds of rendered game time. Advances only while the engine runs
+  /// (it is stopped while paused), so every motion effect is timed from it
+  /// and freezes with the board.
+  double fxClock = 0;
+
+  static final double _rippleSeconds =
+      LBMotion.gentle.inMicroseconds / Duration.microsecondsPerSecond;
+  double _rippleStart = -1e9;
+
+  static final double _bumpSeconds =
+      LBMotion.base.inMicroseconds / Duration.microsecondsPerSecond;
+  double _scoreBumpStart = -1e9;
+
+  /// Ghost-score bump progress 0..1 after a bite, or null when idle.
+  double? get scoreBumpT {
+    if (reducedMotion) return null;
+    final t = (fxClock - _scoreBumpStart) / _bumpSeconds;
+    return t >= 0 && t < 1 ? t : null;
+  }
+
+  /// Grow-ripple progress 0..1 after a bite, or null when no ripple runs.
+  double? get growRippleT {
+    if (reducedMotion) return null;
+    final t = (fxClock - _rippleStart) / _rippleSeconds;
+    return t >= 0 && t < 1 ? t : null;
+  }
 
   /// Generated pickup/effect art, decoded once per game instance. Null until
   /// loaded (and stays null if loading fails) — the board painter falls back
@@ -133,10 +168,12 @@ class SnakeFlameGame extends FlameGame {
     await _loadBoardSprites();
 
     _particles = GameParticlesComponent();
+    _effects = BoardEffectsComponent();
     await world.addAll([
       LegacyBoardComponent(),
       SnakeTrailComponent(),
       _particles!,
+      _effects!,
     ]);
   }
 
@@ -240,15 +277,20 @@ class SnakeFlameGame extends FlameGame {
     for (final event in events) {
       switch (event) {
         case FoodEatenEvent():
-          particles.emitAt(
-            _cellCenter(event.food.position.x, event.food.position.y),
-            _foodConfig(event.food.type),
-          );
+          final at = _cellCenter(event.food.position.x, event.food.position.y);
+          particles.emitAt(at, _foodConfig(event.food.type));
+          if (!reducedMotion) {
+            _effects?.eatPop(at, fxClock);
+            _rippleStart = fxClock;
+            if (event.awardedPoints > 0) _scoreBumpStart = fxClock;
+          }
         case PowerUpCollectedEvent():
-          particles.emitAt(
-            _cellCenter(event.powerUp.position.x, event.powerUp.position.y),
-            _powerUpConfig(event.powerUp.type),
-          );
+          final at =
+              _cellCenter(event.powerUp.position.x, event.powerUp.position.y);
+          particles.emitAt(at, _powerUpConfig(event.powerUp.type));
+          if (!reducedMotion) {
+            _effects?.pickupRing(at, event.powerUp.type.color, fxClock);
+          }
         default:
           break;
       }
@@ -285,6 +327,7 @@ class SnakeFlameGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
+    fxClock += dt;
     final gs = gameState;
     if (gs == null) return;
 
