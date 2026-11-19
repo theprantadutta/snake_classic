@@ -31,6 +31,9 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
   bool _showAllTiers = false;
   final Set<String> _claiming = <String>{};
 
+  /// AVAILABLE NOW rows by claim key, so a coin reward can fly from its row.
+  final Map<String, GlobalKey> _claimRowKeys = {};
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +57,9 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
 
     // Captured before the await — the claim call is an async gap.
     final l10n = AppLocalizations.of(context)!;
+    // The row leaves the list once the claim lands, so measure it now.
+    final rowKey = _claimRowKeys[claimKey];
+    final from = rowKey == null ? null : LBCoinFly.rectOf(rowKey);
     try {
       final cubit = context.read<BattlePassCubit>();
       final ok = isPremium
@@ -63,6 +69,9 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
       if (!mounted) return;
       if (ok) {
         HapticService().mediumImpact();
+        if (reward.type == BattlePassRewardType.coins && from != null) {
+          LBCoinFly.play(context, from: from, coins: LBCoinFly.coinsFor(reward.quantity));
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           arcadeSnackBar(
             context,
@@ -353,6 +362,10 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
         LBSectionLabel(l10n.bpAvailableNow, trailing: '${available.length}', color: LB.gold),
         for (final entry in available)
           SeasonClaimRow(
+            key: _claimRowKeys.putIfAbsent(
+              '${entry.isPremium ? 'p' : 'f'}:${entry.tier}',
+              GlobalKey.new,
+            ),
             reward: entry.reward,
             tier: entry.tier,
             isPremium: entry.isPremium,

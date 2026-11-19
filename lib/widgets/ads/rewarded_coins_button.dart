@@ -19,6 +19,7 @@ Future<void> watchAdForCoins(
   BuildContext context,
   AdService ads, {
   required String placement,
+  void Function(int amount)? onGranted,
 }) async {
   final coins = context.read<CoinsCubit>();
   final messenger = ScaffoldMessenger.of(context);
@@ -27,6 +28,9 @@ Future<void> watchAdForCoins(
   final l10n = AppLocalizations.of(context)!;
   await ads.showRewardedForCoins(
     onCoins: (amount) {
+      // Before the credit, so a coin flight can hold the counter at the old
+      // balance and roll it up as the coins land.
+      onGranted?.call(amount);
       coins.earnCoins(
         CoinEarningSource.watchedAd,
         customAmount: amount,

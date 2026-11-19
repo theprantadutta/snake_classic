@@ -193,10 +193,22 @@ class RanksRow extends StatelessWidget {
 
 /// The pinned lime "YOU" row at the bottom of the board.
 class RanksYouRow extends StatelessWidget {
-  const RanksYouRow({super.key, required this.title, this.score, this.line});
+  const RanksYouRow({
+    super.key,
+    required this.title,
+    this.rank,
+    this.rankTitle,
+    this.score,
+    this.line,
+  });
 
   /// "#2,481 · YOU · name" or "YOU · name".
   final String title;
+
+  /// The player's rank, when known: with [rankTitle] (rank → the title
+  /// line) the "#rank" rolls when it changes.
+  final int? rank;
+  final String Function(int rank)? rankTitle;
 
   /// The player's own score for this board, when it is actually known.
   final int? score;
@@ -220,16 +232,28 @@ class RanksYouRow extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: .6),
-                  ),
+                  child: rank != null && rankTitle != null
+                      ? LBRollingNumber(
+                          rank!,
+                          format: rankTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: .6),
+                        )
+                      : Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LBText.button(p, color: fg, size: 13).copyWith(letterSpacing: .6),
+                        ),
                 ),
                 if (score != null) ...[
                   const SizedBox(width: 10),
-                  Text(context.formatInt(score!), style: LBText.value(p, color: fg, size: 18)),
+                  LBRollingNumber(
+                    score!,
+                    format: context.formatInt,
+                    style: LBText.value(p, color: fg, size: 18),
+                  ),
                 ],
               ],
             ),

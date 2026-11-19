@@ -69,9 +69,29 @@ mixin _RewardedCoinsAd<T extends StatefulWidget> on State<T> {
   Future<void> watch() async {
     final a = ads;
     if (a == null) return;
-    await watchAdForCoins(context, a, placement: placement);
+    await watchAdForCoins(
+      context,
+      a,
+      placement: placement,
+      onGranted: (amount) {
+        final from = LBCoinFly.rectOf(coinSourceKey);
+        if (!mounted || from == null) return;
+        LBCoinFly.play(
+          context,
+          from: from,
+          to: coinTargetKey,
+          coins: LBCoinFly.coinsFor(amount),
+        );
+      },
+    );
     if (mounted) setState(() {});
   }
+
+  /// The free-coins block the reward's coins fly from.
+  final GlobalKey coinSourceKey = GlobalKey();
+
+  /// The balance readout they land on.
+  final GlobalKey<LBCoinTargetState> coinTargetKey = GlobalKey<LBCoinTargetState>();
 
   /// False for Pro / web / no consent — the surface hides entirely.
   bool get adVisible {
@@ -114,9 +134,12 @@ class _StoreBalanceRowState extends State<StoreBalanceRow>
       kind: LBBlockKind.gold,
       height: h,
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(
+      child: LBCoinTarget(
+        key: coinTargetKey,
+        value: widget.balance,
+        builder: (context, shown, icon) => Row(
         children: [
-          LBPixelIcon(LBIcon.coin, cell: 5 * context.uiScale, color: LB.gold),
+          icon(LBPixelIcon(LBIcon.coin, cell: 5 * context.uiScale, color: LB.gold)),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -129,9 +152,9 @@ class _StoreBalanceRowState extends State<StoreBalanceRow>
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          context.formatInt(widget.balance),
-                          maxLines: 1,
+                        child: LBRollingNumber(
+                          shown,
+                          format: context.formatInt,
                           style: LBText.value(p, color: LB.gold, size: 24),
                         ),
                       ),
@@ -158,6 +181,7 @@ class _StoreBalanceRowState extends State<StoreBalanceRow>
           ),
         ],
       ),
+      ),
     );
 
     if (!showFree) return balance;
@@ -166,6 +190,7 @@ class _StoreBalanceRowState extends State<StoreBalanceRow>
     final free = Opacity(
       opacity: ready ? 1 : .5,
       child: LBBlock(
+        key: coinSourceKey,
         kind: LBBlockKind.fill,
         height: h,
         padding: const EdgeInsets.symmetric(horizontal: 8),
