@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/widgets/lb/lb_banner_slot.dart';
 import 'package:snake_classic/widgets/lb/lb_grid_background.dart';
@@ -154,7 +155,8 @@ class _PinnedHeaderBand extends StatelessWidget {
       padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
       child: child,
     );
-    if (!LBGridBackground.paintsScene(context)) return padded;
-    return ColoredBox(color: context.lb.board, child: padded);
+    final scene = ThemeScenes.ofPalette(context.lb);
+    if (scene == null) return padded;
+    return ColoredBox(color: scene.headerBand, child: padded);
   }
 }

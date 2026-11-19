@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
-import 'package:snake_classic/design/miami_nights_scene.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/responsive.dart';
 
@@ -17,20 +17,21 @@ class LBGridBackground extends StatelessWidget {
   /// Board colour override (e.g. the gameplay board's deeper tone).
   final Color? color;
 
-  /// Whether the board behind a screen is a painted scene (Miami Nights)
-  /// rather than the flat palette board colour.
+  /// Whether the board behind a screen is a painted theme scene rather
+  /// than the flat palette board colour.
   static bool paintsScene(BuildContext context) =>
-      identical(context.lb, LBPalette.of(GameTheme.miamiNights));
+      ThemeScenes.ofPalette(context.lb) != null;
 
   @override
   Widget build(BuildContext context) {
     final p = context.lb;
     final cell = LB.cell * context.uiScale;
-    // Miami Nights paints its sunset scene behind the grid instead of the
-    // flat board colour (screens that pass their own colour keep it).
-    if (color == null && paintsScene(context)) {
+    // Themes with a scene paint it behind the grid instead of the flat
+    // board colour (screens that pass their own colour keep it).
+    final sceneTheme = color == null ? ThemeScenes.themeOfPalette(p) : null;
+    if (sceneTheme != null && ThemeScenes.of(sceneTheme) != null) {
       return CustomPaint(
-        painter: const _MiamiPainter(),
+        painter: _ScenePainter(sceneTheme),
         isComplex: true,
         willChange: false,
         child: CustomPaint(
@@ -69,17 +70,18 @@ extension LBLayout on BuildContext {
   }
 }
 
-class _MiamiPainter extends CustomPainter {
-  const _MiamiPainter();
+class _ScenePainter extends CustomPainter {
+  const _ScenePainter(this.theme);
 
+  final GameTheme theme;
+
+  // The menu variant of the scene: calmer, since text sits on it.
   @override
   void paint(Canvas canvas, Size size) =>
-      // Darker and with a faint floor grid behind menus: text of every
-      // weight (muted captions included) has to read on top of it.
-      MiamiNightsScene.paint(canvas, size, dim: .5, lines: .4, sun: .55, horizonVeil: .45);
+      ThemeScenes.paint(canvas, size, theme, menu: true);
 
   @override
-  bool shouldRepaint(_MiamiPainter old) => false;
+  bool shouldRepaint(_ScenePainter old) => old.theme != theme;
 }
 
 class _GridPainter extends CustomPainter {

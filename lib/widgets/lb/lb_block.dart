@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/widgets/lb/lb_glow_cache.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
-import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/widgets/lb/lb_feedback.dart';
 import 'package:snake_classic/widgets/lb/lb_pressable.dart';
 import 'package:snake_classic/design/lb_motion.dart';
@@ -305,11 +305,12 @@ class _BlockPainter extends CustomPainter {
     // screen. Outlined cards were see-through, so text sat on the city.
     // A dusk-violet base under the translucent kinds keeps the scene as
     // atmosphere around the cards instead of behind the words.
-    if (kind != LBBlockKind.fill &&
+    final scene = ThemeScenes.ofPalette(p);
+    if (scene != null &&
+        kind != LBBlockKind.fill &&
         kind != LBBlockKind.goldFill &&
-        kind != LBBlockKind.sheet &&
-        identical(p, LBPalette.of(GameTheme.miamiNights))) {
-      canvas.drawRRect(rr, Paint()..color = const Color(0xB8180629));
+        kind != LBBlockKind.sheet) {
+      canvas.drawRRect(rr, Paint()..color = scene.cardBase);
     }
 
     switch (kind) {
@@ -327,21 +328,14 @@ class _BlockPainter extends CustomPainter {
             style: BlurStyle.outer,
           );
         }
-        // Miami Nights: primary blocks get the sunset gradient instead of
-        // a flat fill (pink, then orange at the bottom right).
-        final miami = kind == LBBlockKind.fill &&
-            accent == null &&
-            identical(p, LBPalette.of(GameTheme.miamiNights));
+        // Themes with a scene may dress primary blocks in a gradient.
+        final gradient = kind == LBBlockKind.fill && accent == null
+            ? scene?.primaryGradient
+            : null;
         canvas.drawRRect(
           rr,
-          miami
-              ? (Paint()
-                ..shader = const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFF4FA3), Color(0xFFFF7A59), Color(0xFFFFB347)],
-                  stops: [0.0, 0.7, 1.0],
-                ).createShader(rect))
+          gradient != null
+              ? (Paint()..shader = gradient.createShader(rect))
               : (Paint()..color = base),
         );
         _gridLines(canvas, rr, const Color(0x21000000));

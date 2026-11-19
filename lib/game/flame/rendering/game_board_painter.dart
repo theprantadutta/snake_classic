@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:material_ui/material_ui.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/effects/effect_curves.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -428,13 +429,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..shader = null
       ..maskFilter = null;
     final bodyRadius = Radius.circular(cell * .15);
-    // Miami Nights: the body runs pink -> sunset orange toward the tail.
-    final sunsetBody = theme == GameTheme.miamiNights && !invincible;
+    // Themes with a scene dress the body (gradient, edge, shine).
+    final style = invincible ? null : ThemeScenes.of(theme)?.snakeStyle;
     final ripple = growRippleT;
     for (var i = n - 1; i >= 1; i--) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
-      var color = sunsetBody
-          ? Color.lerp(bodyColor, theme.accentColor, t)!.withValues(alpha: 1 - .25 * t)
+      var color = style != null
+          ? style.bodyAt(t, bodyColor).withValues(alpha: 1 - style.tailFade * t)
           : bodyColor.withValues(alpha: 1 - .4 * t);
       var rect = rects[i];
       // Grow ripple: the lit band brightens and swells each segment a
@@ -454,19 +455,22 @@ class OptimizedGameBoardPainter extends CustomPainter {
       canvas.drawRRect(RRect.fromRectAndRadius(rect, bodyRadius), _snakeBodyPaint);
     }
 
-    // Miami Nights: a neon edge (aqua on the sunset body) and a soft top
-    // highlight per segment. Strokes only, no blur, so it stays cheap.
-    if (sunsetBody) {
+    // Scene themes: an edge and a soft top highlight per segment. Strokes
+    // only, no blur, so it stays cheap.
+    if (style != null && (style.edge != null || style.shine > 0)) {
       final edge = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = cell * .07;
-      final shine = Paint()..color = Colors.white.withValues(alpha: .22);
+      final shine = Paint()..color = Colors.white.withValues(alpha: style.shine);
       for (var i = n - 1; i >= 1; i--) {
         final t = n <= 1 ? 0.0 : i / (n - 1);
         final r = rects[i];
-        edge.color = theme.foodColor.withValues(alpha: .75 - .45 * t);
-        canvas.drawRRect(
-            RRect.fromRectAndRadius(r.deflate(cell * .035), bodyRadius), edge);
+        if (style.edge != null) {
+          edge.color = style.edge!.withValues(alpha: .75 - .45 * t);
+          canvas.drawRRect(
+              RRect.fromRectAndRadius(r.deflate(cell * .035), bodyRadius), edge);
+        }
+        if (style.shine <= 0) continue;
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromLTWH(r.left + r.width * .18, r.top + r.height * .14,
@@ -1875,15 +1879,16 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // carry their own dark outline + rim glow so they read on every theme
     // (the procedural shapes below inherited theme.foodColor, which on some
     // themes matched the snake or vanished into the background).
-    // Miami Nights: a neon aqua ring so food pops on the sunset scene.
-    if (theme == GameTheme.miamiNights) {
+    // Scene themes: a ring so food pops on the art.
+    final ring = ThemeScenes.of(theme)?.foodRing;
+    if (ring != null) {
       canvas.drawCircle(
         Offset(centerX, centerY),
         cellSize * .58,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = cellSize * .07
-          ..color = theme.foodColor.withValues(alpha: .85),
+          ..color = ring.withValues(alpha: .85),
       );
     }
 
