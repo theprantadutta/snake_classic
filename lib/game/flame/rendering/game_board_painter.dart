@@ -390,10 +390,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
       for (var i = 1; i < snakeLength; i++) {
         final k = EffectCurves.rippleIntensity(ripple, i, snakeLength);
         if (k <= 0) continue;
-        wash.color = Colors.white.withValues(alpha: .35 * k);
+        final kk = k * (1 - ripple * .5);
+        wash.color = LB.apple.withValues(alpha: .22 * kk);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-              segmentRects[i].inflate(cellWidth * .06 * k), radius),
+              segmentRects[i].inflate(cellWidth * .1 * kk), radius),
           wash,
         );
       }
@@ -439,11 +440,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
       // Grow ripple: the lit band brightens and swells each segment a
       // touch as it passes (draw-only, no extra paints).
       if (ripple != null) {
-        final k = EffectCurves.rippleIntensity(ripple, i, n);
+        // The swallowed bite: a soft lump that swells the segment and
+        // warms it toward the food colour, fading out near the tail.
+        final k = EffectCurves.rippleIntensity(ripple, i, n) *
+            (1 - ripple * .5);
         if (k > 0) {
-          color = Color.lerp(color, Colors.white, .45 * k)!
-              .withValues(alpha: math.min(1.0, color.a + .3 * k));
-          rect = rect.inflate(cell * .07 * k);
+          color = Color.lerp(color, LB.apple, .28 * k)!
+              .withValues(alpha: math.min(1.0, color.a + .2 * k));
+          rect = rect.inflate(cell * .12 * k);
         }
       }
       _snakeBodyPaint.color = color;

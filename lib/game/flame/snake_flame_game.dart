@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/widgets.dart';
+import 'package:snake_classic/game/effects/effect_curves.dart';
 import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart'
     show BoardSprites;
@@ -128,7 +129,8 @@ class SnakeFlameGame extends FlameGame {
   double fxClock = 0;
 
   static final double _rippleSeconds =
-      LBMotion.gentle.inMicroseconds / Duration.microsecondsPerSecond;
+      EffectCurves.swallowDuration.inMicroseconds /
+          Duration.microsecondsPerSecond;
   double _rippleStart = -1e9;
 
   static final double _bumpSeconds =
@@ -278,8 +280,11 @@ class SnakeFlameGame extends FlameGame {
       switch (event) {
         case FoodEatenEvent():
           final at = _cellCenter(event.food.position.x, event.food.position.y);
-          particles.emitAt(at, _foodConfig(event.food.type));
-          if (!reducedMotion) {
+          // No particle burst or sparks (owner: too fast, distracting). The
+          // food is gulped at the mouth and a lump travels down the body.
+          if (reducedMotion) {
+            particles.emitAt(at, _foodConfig(event.food.type));
+          } else {
             _effects?.eatPop(at, fxClock);
             _rippleStart = fxClock;
             if (event.awardedPoints > 0) _scoreBumpStart = fxClock;

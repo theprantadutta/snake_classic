@@ -67,8 +67,15 @@ void main() {
 
     test('band half-width is clamped', () {
       expect(EffectCurves.rippleHalfWidth(2), .35);
-      expect(EffectCurves.rippleHalfWidth(100), .12);
-      expect(EffectCurves.rippleHalfWidth(20), closeTo(.15, 1e-9));
+      expect(EffectCurves.rippleHalfWidth(100), .06);
+      expect(EffectCurves.rippleHalfWidth(20), closeTo(.07, 1e-9));
+    });
+
+    test('gulp shrinks the food into the mouth, then is gone', () {
+      expect(EffectCurves.gulpScale(0), 1);
+      expect(EffectCurves.gulpScale(EffectCurves.gulpFraction / 2), closeTo(.75, 1e-9));
+      expect(EffectCurves.gulpScale(EffectCurves.gulpFraction), 0);
+      expect(EffectCurves.swallowDuration.inMilliseconds, greaterThan(1000));
     });
   });
 

@@ -29,8 +29,25 @@ abstract class EffectCurves {
     return k * k * (3 - 2 * k);
   }
 
+  /// The swallowed lump is about one segment wide (it reads as one bite
+  /// going down, not a flash along the body).
   static double rippleHalfWidth(int length) =>
-      length <= 0 ? .35 : (3.0 / length).clamp(.12, .35);
+      length <= 0 ? .35 : (1.4 / length).clamp(.06, .35);
+
+  /// How long the swallowed lump takes to travel head to tail. Owner,
+  /// 2026-11-19: the 400 ms spark + flash was too fast and distracting;
+  /// the bite should be seen going down the belly and vanishing.
+  static const Duration swallowDuration = Duration(milliseconds: 1400);
+
+  /// Gulp at the mouth: the eaten food shrinks into the head (1 -> 0) over
+  /// the first [gulpFraction] of the swallow, easing in.
+  static const double gulpFraction = .2;
+  static double gulpScale(double t) {
+    if (t <= 0) return 1;
+    if (t >= gulpFraction) return 0;
+    final k = t / gulpFraction;
+    return 1 - k * k;
+  }
 
   /// Combo chip resting scale: grows 3% per streak step past the first
   /// (combo 2), capped at +12%.

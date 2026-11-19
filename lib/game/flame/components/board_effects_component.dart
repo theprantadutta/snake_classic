@@ -24,9 +24,7 @@ class BoardEffectsComponent extends Component
   BoardEffectsComponent() : super(priority: 3);
 
   static const int _slots = 6;
-  static const int _sparkCount = 6;
 
-  static final double _popSeconds = _s(LBMotion.gentle);
   static final double _pickupSeconds = _s(LBMotion.slow);
   static final double _crashSeconds = _s(LBMotion.base);
 
@@ -43,13 +41,17 @@ class BoardEffectsComponent extends Component
     ..style = PaintingStyle.stroke
     ..isAntiAlias = true;
   final Paint _fill = Paint()..isAntiAlias = true;
-  final Paint _cellFill = Paint()..isAntiAlias = false;
 
   static const double _cell = GameConstants.cellSize;
 
-  /// Gold pop ring + spark cells at a just-eaten food cell (world pixels).
+  /// Gulp at a just-eaten food cell (world pixels): the food shrinks into
+  /// the snake's mouth. The lump that follows is drawn by the board painter.
   void eatPop(Offset at, double now) =>
-      _start(_FxKind.eat, at, LB.gold, now, _popSeconds);
+      _start(_FxKind.eat, at, LB.apple, now, _gulpSeconds);
+
+  static final double _gulpSeconds = EffectCurves.swallowDuration.inMicroseconds /
+      Duration.microsecondsPerSecond *
+      EffectCurves.gulpFraction;
 
   /// Ring pulse at a power-up pickup cell, in the power-up's colour.
   void pickupRing(Offset at, Color color, double now) =>
@@ -91,24 +93,11 @@ class BoardEffectsComponent extends Component
   }
 
   void _drawEat(Canvas canvas, _Fx fx, double t) {
-    final alpha = EffectCurves.fadeOut(t);
-    final c = Offset(fx.x, fx.y);
-    _ring
-      ..strokeWidth = _cell * (.16 - .1 * t)
-      ..color = fx.color.withValues(alpha: .85 * alpha);
-    canvas.drawCircle(c, _cell * EffectCurves.popRingRadius(t), _ring);
-
-    // LED spark cells: small squares flying out and shrinking.
-    final d = _cell * EffectCurves.sparkDistance(t);
-    final half = _cell * .11 * (1 - .5 * t);
-    _cellFill.color = LB.goldHead.withValues(alpha: alpha);
-    for (var i = 0; i < _sparkCount; i++) {
-      final a = fx.spin + i * (math.pi * 2 / _sparkCount);
-      final px = fx.x + math.cos(a) * d;
-      final py = fx.y + math.sin(a) * d;
-      canvas.drawRect(
-          Rect.fromLTRB(px - half, py - half, px + half, py + half), _cellFill);
-    }
+    // t runs over the gulp only; the food shrinks into the head.
+    final s = EffectCurves.gulpScale(t * EffectCurves.gulpFraction);
+    if (s <= 0) return;
+    _fill.color = fx.color.withValues(alpha: .9 * s);
+    canvas.drawCircle(Offset(fx.x, fx.y), _cell * .32 * s, _fill);
   }
 
   void _drawPickup(Canvas canvas, _Fx fx, double t) {
