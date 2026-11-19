@@ -955,6 +955,72 @@ class _GameScreenState extends State<GameScreen>
                                                                           aspect;
                                                                     }
 
+                                                                    // Landscape (tablets, where Android 16 ignores the portrait
+                                                                    // lock): the board takes the full height and the control zone
+                                                                    // becomes a column on the right, instead of a small board above
+                                                                    // a wide strip.
+                                                                    if (boardConstraints.maxWidth > boardConstraints.maxHeight * 1.25) {
+                                                                      final cell = context.lbCell;
+                                                                      final zoneW = math.max(
+                                                                        240 * context.uiScale,
+                                                                        boardConstraints.maxWidth * .3,
+                                                                      );
+                                                                      final availW =
+                                                                          boardConstraints.maxWidth - zoneW - sideMargin * 3;
+                                                                      // Height left after the level wall (one wall cell is
+                                                                      // boardW / min(cols, 20)), its gaps and the info row.
+                                                                      final fixedH = topGap + 7 + cell * 2;
+                                                                      final wallPerH = aspect / math.min(gameState.boardWidth, 20);
+                                                                      var lh = (boardConstraints.maxHeight - fixedH) / (1 + wallPerH);
+                                                                      var lw = lh * aspect;
+                                                                      if (lw > availW) {
+                                                                        lw = availW;
+                                                                        lh = lw / aspect;
+                                                                      }
+                                                                      return Row(
+                                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                                        children: [
+                                                                          SizedBox(width: sideMargin),
+                                                                          Expanded(
+                                                                            child: Column(
+                                                                              children: [
+                                                                                SizedBox(height: topGap),
+                                                                                BlocBuilder<GameCubit, GameCubitState>(
+                                                                                  buildWhen: (a, b) =>
+                                                                                      a.gameState?.level != b.gameState?.level ||
+                                                                                      a.gameState?.score != b.gameState?.score,
+                                                                                  builder: (context, wallState) => LBLevelWall(
+                                                                                    gameState: wallState.gameState ?? gameState,
+                                                                                    width: lw,
+                                                                                  ),
+                                                                                ),
+                                                                                const SizedBox(height: 4),
+                                                                                SizedBox(
+                                                                                  width: lw,
+                                                                                  height: lh,
+                                                                                  child: SwipeDetector(
+                                                                                    onSwipe: _handleSwipe,
+                                                                                    child: FlameGameBoard(
+                                                                                      gameState: gameState,
+                                                                                      isTournamentMode: gameCubitState.isTournamentMode,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                                _boardInfoRow(gameState, lw),
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width: zoneW,
+                                                                            child: Padding(
+                                                                              padding: EdgeInsets.fromLTRB(0, topGap, sideMargin, sideMargin),
+                                                                              child: _controlZone(gameState, theme, isSmallScreen),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      );
+                                                                    }
+
                                                                     // Swipe recognition lives on the board's exact rectangle
                                                                     // (and on the swipe pad in the zone), not on the column
                                                                     // around them, so a drag that starts on the HUD can never

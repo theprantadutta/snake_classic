@@ -582,6 +582,63 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         final myScore = me?.score ?? 0;
         final rivalScore = opponent?.score ?? 0;
 
+        // Landscape (tablets, where Android 16 ignores the portrait lock):
+        // board at full height on the left, controls in a column on the
+        // right, same as single-player.
+        if (c.maxWidth > c.maxHeight * 1.25) {
+          final zoneW = math.max(240 * context.uiScale, c.maxWidth * .3);
+          var ls = (c.maxHeight - topGap - statusH - 8) / (1 + 1 / splitCells);
+          ls = math.min(ls, c.maxWidth - zoneW - cell * 1.5);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: cell * .5),
+              Expanded(
+                child: Column(
+                  children: [
+                    SizedBox(height: topGap),
+                    SizedBox(
+                      width: ls,
+                      child: VersusSplitBar(
+                        myScore: myScore,
+                        rivalScore: rivalScore,
+                        count: splitCells,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: ls,
+                      height: ls,
+                      child: SwipeDetector(
+                        onSwipe: _handleSwipe,
+                        child: MultiplayerFlameBoard(
+                          snapshot: snapshot,
+                          boardSize: multiplayerState.boardSize,
+                          currentUserId: currentUserId,
+                          prediction: multiplayerState.localPrediction,
+                          onLocalFoodEaten: _onLocalFoodShown,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: ls,
+                      height: statusH,
+                      child: _statusRow(snapshot, currentUserId, me, opponent),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: zoneW,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(0, topGap, cell * .5, cell * .5),
+                  child: _controlZone(theme),
+                ),
+              ),
+            ],
+          );
+        }
+
         return Column(
           children: [
             SizedBox(height: topGap),

@@ -635,22 +635,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final tilesTop = modeRow + 1 + gaps[2] + gaps[0];
     final hintRow = tilesTop + tileH * 3;
 
+    // Content columns per group. Portrait: one stack, all the same.
+    var hc0 = c0, hCols = contentCols; // header row
+    var lc0 = c0, lCols = contentCols; // best + PLAY + mode
+    var tc0 = c0, tCols = contentCols; // destination tiles
+    var bestLabelRowL = bestLabelRow, bestRowL = bestRow, bestRowsL = bestRows;
+    var playR0L = playR0, playHL = playH, playWL = playW, playC0L = playC0;
+    var modeBarRowL = modeBarRow, modeRowL = modeRow;
+    var tilesTopL = tilesTop, tileHL = tileH, hintRowL = hintRow;
+    var showHintL = showHint;
+
+    // Landscape (tablets, where Android 16 ignores the portrait lock): the
+    // portrait stack runs off the bottom. Header across the top, best +
+    // PLAY + mode on the left, the six tiles in a column on the right.
+    final landscape = w > h && cols >= 36;
+    if (landscape) {
+      final usable = math.min(cols - 2, 60);
+      final u0 = (cols - usable) ~/ 2;
+      hc0 = u0;
+      hCols = usable;
+      lc0 = u0;
+      lCols = ((usable - 2) * .5).floor();
+      tc0 = u0 + lCols + 2;
+      tCols = usable - lCols - 2;
+      final avail = rows - 1 - top;
+      bestRowsL = 5;
+      playHL = 6;
+      int leftRows() => 3 + 1 + bestRowsL + 2 + playHL + 1 + 1 + 1;
+      if (leftRows() > avail) bestRowsL = 3;
+      while (leftRows() > avail && playHL > 4) {
+        playHL--;
+      }
+      bestLabelRowL = top + 3;
+      bestRowL = bestLabelRowL + 1;
+      playR0L = bestRowL + bestRowsL + 2;
+      modeBarRowL = playR0L + playHL + 1;
+      modeRowL = modeBarRowL + 1;
+      playWL = math.min(lCols - 6, 14);
+      if ((lCols - playWL).isOdd) playWL -= 1;
+      playC0L = lc0 + (lCols - playWL) ~/ 2;
+      tilesTopL = top + 3;
+      showHintL = avail - 3 >= 3 * 3 + 1;
+      tileHL = ((avail - 3 - (showHintL ? 1 : 0)) / 3).floor().clamp(3, 5);
+      hintRowL = tilesTopL + tileHL * 3;
+    }
+
     final settings = context.watch<GameSettingsCubit>().state;
     final modes = GameMode.values;
     final modeIndex = modes.indexOf(settings.gameMode);
 
     // ── Snake: loop one cell outside PLAY, clockwise from the top-left ──
-    final ringL = playC0 - 1,
-        ringR = playC0 + playW,
-        ringT = playR0 - 1,
-        ringB = playR0 + playH;
+    final ringL = playC0L - 1,
+        ringR = playC0L + playWL,
+        ringT = playR0L - 1,
+        ringB = playR0L + playHL;
     final loop = <HomeCell>[
       for (var x = ringL; x <= ringR; x++) (x, ringT),
       for (var y = ringT + 1; y <= ringB; y++) (ringR, y),
       for (var x = ringR - 1; x >= ringL; x--) (x, ringB),
       for (var y = ringB - 1; y > ringT; y--) (ringL, y),
     ];
-    final half = contentCols / 2;
+    final half = tCols / 2;
     final tiles = <String>[
       'versus',
       'daily',
@@ -662,37 +707,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Rect tileRect(int i) {
       final col = i % 2, row = i ~/ 2;
       return r(
-        c0 + (col == 0 ? 0 : half),
-        tilesTop + row * tileH,
-        col == 0 ? half : contentCols - half,
-        tileH,
+        tc0 + (col == 0 ? 0 : half),
+        tilesTopL + row * tileHL,
+        col == 0 ? half : tCols - half,
+        tileHL,
       );
     }
 
     final targets = <HomeSnakeTarget>[
-      HomeSnakeTarget('play', playC0, playR0, playC0 + playW, playR0 + playH),
+      HomeSnakeTarget(
+          'play', playC0L, playR0L, playC0L + playWL, playR0L + playHL),
       HomeSnakeTarget(
         'best',
-        c0,
-        bestLabelRow,
-        c0 + contentCols,
-        bestRow + bestRows,
+        lc0,
+        bestLabelRowL,
+        lc0 + lCols,
+        bestRowL + bestRowsL,
       ),
       HomeSnakeTarget(
         'menu',
-        c0 + contentCols - 2,
+        hc0 + hCols - 2,
         headerRow,
-        c0 + contentCols,
+        hc0 + hCols,
         headerRow + 2,
       ),
-      HomeSnakeTarget('setup', c0, modeBarRow, c0 + contentCols, modeRow + 1),
+      HomeSnakeTarget('setup', lc0, modeBarRowL, lc0 + lCols, modeRowL + 1),
       for (var i = 0; i < tiles.length; i++)
         HomeSnakeTarget(
           tiles[i],
-          c0 + (i.isEven ? 0 : half.floor()),
-          tilesTop + (i ~/ 2) * tileH,
-          i.isEven ? c0 + half.ceil() : c0 + contentCols,
-          tilesTop + (i ~/ 2) * tileH + tileH,
+          tc0 + (i.isEven ? 0 : half.floor()),
+          tilesTopL + (i ~/ 2) * tileHL,
+          i.isEven ? tc0 + half.ceil() : tc0 + tCols,
+          tilesTopL + (i ~/ 2) * tileHL + tileHL,
         ),
     ];
 
@@ -716,7 +762,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // Header: mark + name + greeting, menu block on the right.
           Positioned.fromRect(
-            rect: r(c0, headerRow, contentCols - 2, 2),
+            rect: r(hc0, headerRow, hCols - 2, 2),
             child: _HomeHeader(
               player: context.watch<AuthCubit>().state.publicLabel,
               photoUrl: context.watch<AuthCubit>().state.photoURL,
@@ -724,7 +770,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Positioned.fromRect(
-            rect: r(c0 + contentCols - 2, headerRow, 2, 2),
+            rect: r(hc0 + hCols - 2, headerRow, 2, 2),
             child: LBIconBlock(
               key: HomeWalkthrough.helpKey,
               icon: LBIcon.grid,
@@ -735,7 +781,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Best score in snake cells, coins on the right.
           Positioned.fromRect(
-            rect: r(c0, bestLabelRow, contentCols, 1),
+            rect: r(lc0, bestLabelRowL, lCols, 1),
             child: Row(
               children: [
                 Expanded(
@@ -758,7 +804,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Positioned.fromRect(
-            rect: r(c0, bestRow, contentCols, bestRows),
+            rect: r(lc0, bestRowL, lCols, bestRowsL),
             child: Semantics(
               button: true,
               label: '${l10n.lbYourBest} ${settings.highScore}',
@@ -771,7 +817,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   alignment: AlignmentDirectional.centerStart,
                   child: LBAnimatedCellText(
                     '${settings.highScore}',
-                    cell: bestRows * cell / 5,
+                    cell: bestRowsL * cell / 5,
                     color: LB.gold.withValues(alpha: .34),
                   ),
                 ),
@@ -781,7 +827,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // PLAY — the one loud thing.
           Positioned.fromRect(
-            rect: r(playC0, playR0, playW, playH),
+            rect: r(playC0L, playR0L, playWL, playHL),
             child: LBBlock(
               key: HomeWalkthrough.playButtonKey,
               kind: LBBlockKind.fill,
@@ -796,7 +842,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   LBCellText(
                     l10n.lbPlay,
-                    cell: (7 + (playH - 4) * 1.5) * context.uiScale,
+                    cell: (7 + (playHL - 4) * 1.5) * context.uiScale,
                     color: p.onLime,
                   ),
                   SizedBox(height: 8 * context.uiScale),
@@ -817,7 +863,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Mode indicator cells + cycler.
           Positioned.fromRect(
-            rect: r(playC0 + (playW - 8) / 2, modeBarRow, 8, 1),
+            rect: r(playC0L + (playWL - 8) / 2, modeBarRowL, 8, 1),
             child: LBCellsBar(
               count: modes.length,
               value: 1,
@@ -826,7 +872,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Positioned.fromRect(
-            rect: r(c0, modeRow, contentCols, 1).inflate(6),
+            rect: r(lc0, modeRowL, lCols, 1).inflate(6),
             child: _ModeCycler(
               label: l10n.lbModeRow(
                 '${modeIndex + 1}',
@@ -847,12 +893,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           for (var i = 0; i < tiles.length; i++)
             Positioned.fromRect(
               rect: tileRect(i),
-              child: _tile(context, tiles[i], tall: tileH > 3),
+              child: _tile(context, tiles[i], tall: tileHL > 3),
             ),
 
-          if (showHint)
+          if (showHintL)
             Positioned.fromRect(
-              rect: r(c0, hintRow, contentCols, 1),
+              rect: r(tc0, hintRowL, tCols, 1),
               child: Center(
                 child: Text(
                   l10n.lbHomeHint,

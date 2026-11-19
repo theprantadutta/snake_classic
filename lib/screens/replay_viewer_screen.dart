@@ -144,18 +144,51 @@ class _ReplayViewerScreenState extends State<ReplayViewerScreen> {
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(g, cell * .9, g, cell * .6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildGameInfo(l10n),
-          SizedBox(height: cell * .4),
-          Expanded(child: Center(child: _buildGameBoard(l10n))),
-          SizedBox(height: cell * .4),
-          _buildPlaybackControls(l10n),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Landscape (tablets, where Android 16 ignores the portrait lock):
+        // stacking info, board and controls left the board a thumbnail.
+        // Board on the left at full height, info and controls on the right.
+        if (box.maxWidth > box.maxHeight * 1.25) {
+          final side = cell * 1.5;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(side, cell * .6, side, cell * .6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: Center(child: _buildGameBoard(l10n))),
+                SizedBox(width: side),
+                SizedBox(
+                  width: math.min(box.maxWidth * .42, 520.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildGameInfo(l10n),
+                        SizedBox(height: cell),
+                        _buildPlaybackControls(l10n),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return Padding(
+          padding: EdgeInsets.fromLTRB(g, cell * .9, g, cell * .6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildGameInfo(l10n),
+              SizedBox(height: cell * .4),
+              Expanded(child: Center(child: _buildGameBoard(l10n))),
+              SizedBox(height: cell * .4),
+              _buildPlaybackControls(l10n),
+            ],
+          ),
+        );
+      },
     );
   }
 

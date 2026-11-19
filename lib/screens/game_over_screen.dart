@@ -375,13 +375,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                   (_) => _fitChart(),
                 );
               }
-              return SingleChildScrollView(
-                child: Padding(
-                  key: _contentKey,
-                  padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+              // Two lists so landscape can put them side by side.
+              final summary = <Widget>[
                       // × YOU BIT YOURSELF. WHY?            RUN 412
                       Row(
                         children: [
@@ -491,6 +486,8 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                           ).copyWith(fontSize: 9),
                         ),
                       ],
+              ];
+              final actions = <Widget>[
                       SizedBox(height: cell * .8),
                       _GameOverActions(
                         theme: theme,
@@ -527,7 +524,57 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                           onTap: () => context.push(AppRoutes.achievements),
                         ),
                       ],
+              ];
+              // Landscape (tablets, where Android 16 ignores the portrait
+              // lock): the run summary on the left, the actions on the
+              // right, so AGAIN is visible without scrolling.
+              if (viewport.maxWidth > viewport.maxHeight * 1.25) {
+                // The portrait gutter centres a phone-width column on
+                // tablets; landscape spends the full width on two columns.
+                final lg = cell * 1.5;
+                final usable = math.min(viewport.maxWidth - lg * 2, 1200.0);
+                final half = (usable - lg) / 2;
+                final side = (viewport.maxWidth - usable) / 2;
+                return Padding(
+                  key: _contentKey,
+                  padding: EdgeInsets.fromLTRB(side, cell * .6, side, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: half,
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(bottom: cell),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: summary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: lg),
+                      SizedBox(
+                        width: half,
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(bottom: cell),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            // The actions start with a spacer meant for
+                            // under the chart; drop it at the top.
+                            children: actions.skip(1).toList(),
+                          ),
+                        ),
+                      ),
                     ],
+                  ),
+                );
+              }
+              return SingleChildScrollView(
+                child: Padding(
+                  key: _contentKey,
+                  padding: EdgeInsets.fromLTRB(g, cell * .6, g, cell),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [...summary, ...actions],
                   ),
                 ),
               );
