@@ -224,6 +224,14 @@ A sunset-neon theme launched for the week of the big Nov 19 2026 game release. *
 - **Miami Nights** draws a solid dusk base under outlined/muted/gold blocks and an opaque header band (LBScaffold), so the scene never sits behind text.
 - **Shared test devices** (A24 RR8W901JDRL, Tab A9+ R83X309RLNR) are used by other Claude sessions (cosmo-strike, jadewell, ...): ask before taking one, check the foreground app before every tap, release with a message. Never restart adb.
 
+### Motion system (feature/motion, 2026-11-19)
+- **One rhythm:** every duration/curve comes from `LBMotion` (`lib/design/lb_motion.dart`); the spec and per-interaction table are in `docs/MOTION_SPEC.md`. Never hard-code timings. Reduce motion = `LBMotion.reduced(context)` (OS flag) -> fade or instant.
+- **Building blocks:** `LBPressable` (press sink/spring, used by LBBlock), `LBStaggerIn`/`LBStaggerGroup` (screen entrances, once per screen), `LBRollingNumber` (odometer digits, text and cell font), `LBCoinFly` + `LBCoinTarget` (coins fly to a counter), `LBClaimPop`, `LBToggle` cell slide, `LBCellsBar` cell-by-cell fill, idle glow pulse on primary blocks (cached glow, opacity only).
+- **Game over** is one beat sheet (`lib/widgets/lb_screens/game_over/game_over_beat_sheet.dart`): beats table at the top; tap skips; returning to the same run shows the end state; the existing TapArmGuard still gates AGAIN.
+- **In-game** effects (`board_effects_component.dart`, `effect_curves.dart`) trigger only from tick events, use the game clock (freeze on pause) and a fixed slot pool. Measured on the A24 with autopilot + no banner: 60.0 fps, 0 late frames.
+- **Tests:** `test/flutter_test_config.dart` turns the infinite idle glow pulse off (`LBBlock.idleGlowPulse = false`) or `pumpAndSettle` hangs. Keep it if you add your own test config.
+- When testing on a release build, never tap blind during game over / ad flows: a live ad can be clicked by accident (AdMob policy risk).
+
 ## In-App Purchase Setup (RTDN)
 
 ### Google Play RTDN Setup
