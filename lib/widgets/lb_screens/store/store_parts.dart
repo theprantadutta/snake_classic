@@ -9,9 +9,10 @@ import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Living Board pieces for the store (screens 14/15). Presentation only:
 /// every purchase, equip and restore decision stays in the screen that hosts
-/// these widgets. The two rewarded-coin surfaces below are the exception —
-/// they carry the SAME ad flow [RewardedCoinsPill] / [RewardedCoinsButton]
-/// ran (same gating, same [watchAdForCoins] call, same placement labels).
+/// these widgets. The rewarded-coin block in [StoreBalanceRow] is the
+/// exception — it carries the SAME ad flow [RewardedCoinsPill] ran (same
+/// gating, same [watchAdForCoins] call, same placement label). It is the
+/// store's only free-coins offer; the Coins tab used to repeat it as a row.
 
 /// Five swatch colours sampled from a cosmetic palette, as the grid blocks
 /// show them. One colour alternates with a darker shade of itself, two
@@ -35,8 +36,8 @@ List<Color> storeSwatch(List<Color> palette, Color fallback, {int count = 5}) {
 // Balance + free coins
 // ---------------------------------------------------------------------------
 
-/// The rewarded-coins plumbing shared by the balance block and the Coins tab
-/// row. Mirrors [RewardedCoinsPill]: preload on mount, rebuild the moment an
+/// The rewarded-coins plumbing behind the balance block's free-coins half.
+/// Mirrors [RewardedCoinsPill]: preload on mount, rebuild the moment an
 /// ad becomes ready or ads are switched off (Pro), dim when nothing is
 /// loaded, and grant through [watchAdForCoins].
 mixin _RewardedCoinsAd<T extends StatefulWidget> on State<T> {
@@ -206,68 +207,19 @@ class _StoreBalanceRowState extends State<StoreBalanceRow>
   }
 }
 
-/// Full-width "watch an ad for coins" row on the Coins tab. Same flow as
-/// [RewardedCoinsButton] (placement `store_free_coins`); hides for Pro.
-class StoreRewardedCoinsRow extends StatefulWidget {
-  const StoreRewardedCoinsRow({super.key});
-
-  @override
-  State<StoreRewardedCoinsRow> createState() => _StoreRewardedCoinsRowState();
-}
-
-class _StoreRewardedCoinsRowState extends State<StoreRewardedCoinsRow>
-    with _RewardedCoinsAd<StoreRewardedCoinsRow> {
-  @override
-  String get placement => 'store_free_coins';
-
-  @override
-  Widget build(BuildContext context) {
-    if (!adVisible) return const SizedBox.shrink();
-    final l10n = AppLocalizations.of(context)!;
-    final p = context.lb;
-    final ready = adReady;
-    return Opacity(
-      opacity: ready ? 1 : .5,
-      child: LBBlock(
-        kind: LBBlockKind.gold,
-        feedback: false,
-        onTap: ready ? watch : null,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            LBPixelIcon(LBIcon.tv, cell: 4, color: LB.gold),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.rcWatchAd(AdService.freeCoinsPerAd).toUpperCase(),
-                    style: LBText.button(p, color: LB.gold, size: 12.5),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    ready ? l10n.raOptIn : l10n.rcNoAd,
-                    style: LBText.body(p, size: 11),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Tabs
 // ---------------------------------------------------------------------------
 
 /// PRO · COINS · THEMES · SKINS · TRAILS · POWER-UPS as text tabs with a lime
 /// underline (screen 14). Drives the screen's existing [TabController].
-class StoreTabStrip extends StatelessWidget {
+///
+/// Six tabs don't fit a 360 dp phone (longer in most locales), so the row
+/// scrolls. A fade on whichever edge still has tabs past it says so, and
+/// [TabBar] itself scrolls the selected tab into view (deep links to
+/// Power-Ups land with it visible). When everything fits — tablets — no
+/// edge has more and no fade is drawn.
+class StoreTabStrip extends StatefulWidget {
   const StoreTabStrip({
     super.key,
     required this.controller,
@@ -277,8 +229,71 @@ class StoreTabStrip extends StatelessWidget {
   final TabController controller;
   final List<String> labels;
 
+  /// Width of the edge fade.
+  static const double fadeWidth = 28;
+
+  @override
+  State<StoreTabStrip> createState() => StoreTabStripState();
+}
+
+/// Public so tests can read which edges are faded.
+class StoreTabStripState extends State<StoreTabStrip> {
+  /// More tabs past the leading / trailing edge (in reading direction).
+  bool moreBefore = false;
+  bool moreAfter = false;
+
+  bool _onMetrics(ScrollMetrics m) {
+    if (m.axis != Axis.horizontal) return false;
+    // A pixel of slack so rounding never leaves a phantom fade.
+    final before = m.extentBefore > 1;
+    final after = m.extentAfter > 1;
+    if (before != moreBefore || after != moreAfter) {
+      setState(() {
+        moreBefore = before;
+        moreAfter = after;
+      });
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    // extentBefore/After follow the scroll axis, which a horizontal TabBar
+    // reverses under RTL, so they already mean "reading start / end".
+    // Map them to physical left/right for the gradient.
+    final fadeLeft = rtl ? moreAfter : moreBefore;
+    final fadeRight = rtl ? moreBefore : moreAfter;
+    final bar = NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) => _onMetrics(n.metrics),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) => _onMetrics(n.metrics),
+        child: _buildBar(context),
+      ),
+    );
+    if (!fadeLeft && !fadeRight) return bar;
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (bounds) {
+        final w = bounds.width;
+        final f = w <= 0 ? 0.0 : (StoreTabStrip.fadeWidth / w).clamp(0.0, .5);
+        return LinearGradient(
+          colors: [
+            fadeLeft ? Colors.transparent : Colors.black,
+            Colors.black,
+            Colors.black,
+            fadeRight ? Colors.transparent : Colors.black,
+          ],
+          stops: [0, f, 1 - f, 1],
+        ).createShader(bounds);
+      },
+      child: bar,
+    );
+  }
+
+  Widget _buildBar(BuildContext context) {
+    final controller = widget.controller;
+    final labels = widget.labels;
     final p = context.lb;
     final g = context.lbGutter;
     final style = LBText.button(p, size: 12.5).copyWith(letterSpacing: 1.2);

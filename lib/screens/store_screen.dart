@@ -686,8 +686,8 @@ class _StoreScreenState extends State<StoreScreen>
       for (final option in options) _buildCoinPackRow(option, theme),
       const SizedBox(height: 16),
       LBSectionLabel(l10n.storeEarnFreeCoins),
-      // Rewarded ad — self-hides for Pro / when no ad is available.
-      const StoreRewardedCoinsRow(),
+      // No rewarded-ad row here: the balance block above already offers
+      // the same +25 coins ad, and showing it twice read as two offers.
       _buildEarnMethodRow(
         l10n.storeEarnPlay,
         l10n.storeEarnPlayReward,
@@ -1871,7 +1871,9 @@ class _StoreScreenState extends State<StoreScreen>
             padding: EdgeInsets.zero,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 220 * context.uiScale,
-              mainAxisExtent: 26 * context.uiScale + 104 * textScale,
+              // Tall enough for a three-line description (Invincibility
+              // wraps to three in most locales at 360 dp).
+              mainAxisExtent: 26 * context.uiScale + 122 * textScale,
             ),
             children: [
               for (final item in powerUps)
@@ -1938,7 +1940,7 @@ class _StoreScreenState extends State<StoreScreen>
               const SizedBox(height: 2),
               Text(
                 item.description,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: LBText.body(p, size: 10.5).copyWith(height: 1.3),
               ),
@@ -2065,7 +2067,9 @@ class _StoreScreenState extends State<StoreScreen>
             children: [
               if (bundle.originalPrice > bundle.bundlePrice) ...[
                 Text(
-                  l10n.storeCoinsAmount(bundle.originalPrice.toInt()),
+                  l10n.storeCoinPrice(
+                    context.formatInt(bundle.originalPrice.toInt()),
+                  ),
                   style: LBText.body(p, color: p.inkDim, size: 11).copyWith(
                     decoration: TextDecoration.lineThrough,
                     decorationColor: p.inkDim,
@@ -2075,7 +2079,9 @@ class _StoreScreenState extends State<StoreScreen>
               ],
               Flexible(
                 child: Text(
-                  l10n.storeCoinsAmount(bundle.bundlePrice.toInt()),
+                  l10n.storeCoinPrice(
+                    context.formatInt(bundle.bundlePrice.toInt()),
+                  ),
                   style: LBText.value(p, color: LB.gold, size: 15),
                 ),
               ),
