@@ -6,7 +6,7 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**7.7.3+80** (2026-11-19: 7.7.0+77 plus the UI audit fixes, tablet landscape, brightness, 60 Hz work the motion system and the calmer eating animation; the App Store Connect version created as 7.6.2 must be renamed to 7.7.3 before the build is attached). The 7.6.0 notes are archived in release_notes_7.6.0.md.
+**7.7.3+80** (2026-11-19: 7.7.0+77 plus the UI audit fixes, tablet landscape, brightness, 60 Hz work, the motion system and the calmer eating animation; the App Store Connect version created as 7.6.2 must be renamed to 7.7.3 before the build is attached). The 7.6.0 notes are archived in release_notes_7.6.0.md.
 
 7.6.1+75 was built for Play on 2026-11-16 but 7.7.0 supersedes it on both
 stores (it includes everything 7.6.1 has). What 7.7.0 adds over 7.6.0:
