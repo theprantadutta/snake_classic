@@ -145,7 +145,7 @@
   "settingsDisplayBatteryNote": "Battery saver is on, so your display may stay at its standard rate until you turn it off.",
   "settingsDisplayThermalNote": "Your device is warm. It may hold a lower rate for a while to cool down, which is normal.",
   "settingsDisplaySingleRateNote": "This screen runs at a single refresh rate, so there is nothing to unlock here. The game is already as smooth as it gets on this device.",
-  "settingsDisplayFooter": "Higher refresh rates make the snake and menus feel smoother, and use a little more battery. Snake Classic leaves this on by default and never overrides your device's power saving.",
+  "settingsDisplayFooter": "Snake Classic runs at 60 Hz unless you turn on the higher rate in Sound & Feel. Higher rates look smoother and use more battery, and your device's power saving always comes first.",
   "settingsDisplaySupportedTitle": "THIS DISPLAY",
   "settingsNotifDailyReminder": "Daily Reminder",
   "settingsNotifTournament": "Tournament Alerts",
@@ -3507,6 +3507,23 @@
   "lbCrashReplaySub": "how long we rub it in",
   "@lbCrashReplaySub": {
     "description": "Crash replay subline"
+  },
+  "lbHighRefreshRate": "{rate} HZ",
+  "@lbHighRefreshRate": {
+    "description": "High refresh rate toggle title: the screen's real top refresh rate, e.g. 90 HZ",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "lbHighRefreshRateGeneric": "HIGH REFRESH RATE",
+  "@lbHighRefreshRateGeneric": {
+    "description": "High refresh rate toggle title when the screen's top rate is unknown or 60 Hz"
+  },
+  "settingsHighRefreshUnavailable": "not available on this screen",
+  "@settingsHighRefreshUnavailable": {
+    "description": "Subline of the disabled high refresh rate toggle on a single-rate screen"
   },
   "lbTheme": "THEME",
   "@lbTheme": {

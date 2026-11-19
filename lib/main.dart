@@ -843,8 +843,11 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
       // text scale here in one place:
       //  - Tablets get a modest base bump so text grows with the
       //    larger UI (phones use 1.0 → unchanged).
-      //  - The OS accessibility factor is respected but clamped so an
-      //    extreme system font setting can't break the fixed layout.
+      //  - The OS accessibility factor is respected up to 1.6x. Below
+      //    that the layouts reflow (rows wrap, decorative labels scale
+      //    down, the fixed-height gameplay HUD caps its own text); above
+      //    it the grid-locked screens run out of room, so the largest
+      //    system settings read as 1.6x.
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
         final baseScale = context.responsive<double>(
@@ -852,7 +855,7 @@ class _SnakeClassicAppState extends State<SnakeClassicApp>
           tablet: 1.12,
           largeTablet: 1.18,
         );
-        final osScale = mediaQuery.textScaler.scale(1.0).clamp(0.9, 1.2);
+        final osScale = mediaQuery.textScaler.scale(1.0).clamp(0.9, 1.6);
         return MediaQuery(
           data: mediaQuery.copyWith(
             textScaler: TextScaler.linear(baseScale * osScale),
