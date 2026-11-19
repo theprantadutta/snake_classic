@@ -1969,18 +1969,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // carry their own dark outline + rim glow so they read on every theme
     // (the procedural shapes below inherited theme.foodColor, which on some
     // themes matched the snake or vanished into the background).
-    // Scene themes: a ring so food pops on the art.
-    final ring = ThemeScenes.of(theme)?.foodRing;
-    if (ring != null) {
-      canvas.drawCircle(
-        Offset(centerX, centerY),
-        cellSize * .58,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = cellSize * .07
-          ..color = ring.withValues(alpha: .85),
-      );
-    }
+    // No ring around food on any theme (owner, 2026-11-19: "I still don't
+    // like that round circle over food"). Food keeps only its own glow.
 
     final sprite = sprites?.foodImage(food.type);
     if (sprite != null) {
