@@ -188,13 +188,26 @@ class LegacyBoardComponent extends Component
     for (final (c, r) in layout.lit) {
       (c < litCols ? lit : dim).addRRect(lbCellRect(ox + c * g, oy + r * g, g));
     }
-    _ghostPaint.color = palette.lime.withValues(alpha: .12);
-    canvas.drawPath(lit, _ghostPaint);
-    _ghostPaint.color = palette.lime.withValues(alpha: .05);
-    canvas.drawPath(dim, _ghostPaint);
+    // A scene backdrop (Miami Nights) is too busy for 12% cells: the score
+    // gets a dark backing per cell and a light, stronger fill on top.
+    final scene = game.theme == GameTheme.miamiNights;
+    if (scene) {
+      _ghostPaint.color = Colors.black.withValues(alpha: .38);
+      canvas.drawPath(lit, _ghostPaint);
+      canvas.drawPath(dim, _ghostPaint);
+      _ghostPaint.color = palette.head.withValues(alpha: .42);
+      canvas.drawPath(lit, _ghostPaint);
+      _ghostPaint.color = palette.head.withValues(alpha: .14);
+      canvas.drawPath(dim, _ghostPaint);
+    } else {
+      _ghostPaint.color = palette.lime.withValues(alpha: .12);
+      canvas.drawPath(lit, _ghostPaint);
+      _ghostPaint.color = palette.lime.withValues(alpha: .05);
+      canvas.drawPath(dim, _ghostPaint);
+    }
 
     final label = game.ghostScoreLabel;
-    final key = '$label|${g.toStringAsFixed(1)}|${palette.lime.toARGB32()}';
+    final key = '$label|${g.toStringAsFixed(1)}|${palette.lime.toARGB32()}|$scene';
     if (_ghostLabelKey != key) {
       _ghostLabelKey = key;
       _ghostLabel = TextPainter(
@@ -206,7 +219,12 @@ class LegacyBoardComponent extends Component
             fontSize: g * .55,
             fontWeight: FontWeight.w800,
             letterSpacing: g * .22,
-            color: palette.lime.withValues(alpha: .28),
+            color: scene
+                ? palette.head.withValues(alpha: .7)
+                : palette.lime.withValues(alpha: .28),
+            shadows: scene
+                ? const [Shadow(color: Color(0xCC000000), blurRadius: 4)]
+                : null,
           ),
         ),
         textDirection: TextDirection.ltr,

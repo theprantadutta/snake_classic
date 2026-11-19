@@ -37,6 +37,8 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 /// - When the backoff is exhausted it does not stay dead: [AdService] bumps
 ///   [AdService.rearmListenable] when the device regains internet (or consent
 ///   changes), and this widget starts over.
+const bool _profileNoBanner = bool.fromEnvironment('LB_PROFILE_NO_BANNER');
+
 class SnakeBannerAd extends StatefulWidget {
   const SnakeBannerAd({super.key, this.topGap = 0, this.atTop = false});
 
@@ -333,7 +335,9 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
           child: SizedBox(
             width: double.infinity,
             height: reservedHeight,
-            child: (_loaded && ad != null)
+            // Profiling A/B only: --dart-define=LB_PROFILE_NO_BANNER=true
+            // keeps the reserved space but never mounts the native ad view.
+            child: (_loaded && ad != null && !_profileNoBanner)
                 ? Center(
                     child: SizedBox(
                       width: ad.size.width.toDouble(),

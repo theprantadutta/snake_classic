@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:flutter/services.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -86,20 +89,45 @@ class DisplayCubit extends Cubit<DisplayState> {
   /// mode when the app is backgrounded, so without this the game quietly
   /// falls back to 60 Hz after a task switch.
   Future<void> apply() async {
+    final high = state.highRefreshRateEnabled;
+    // The 60 Hz cap goes first and does not wait on the plugin: on the A24
+    // the plugin's disable() future never completed, so a cap queued after
+    // it never ran and the game stayed on the system's 90 Hz.
+    if (!high) await _cap60(true);
     try {
-      // Awaited: since refresh_rate 2.0 these return futures, and a
-      // failure left unawaited would escape this try as an uncaught error.
-      if (state.highRefreshRateEnabled) {
-        await RefreshRate.enable();
-        await RefreshRate.preferMax();
+      // Awaited (with a timeout): since refresh_rate 2.0 these return
+      // futures, and a failure left unawaited would escape this try.
+      const limit = Duration(seconds: 2);
+      if (high) {
+        await _cap60(false);
+        await RefreshRate.enable().timeout(limit);
+        await RefreshRate.preferMax().timeout(limit);
       } else {
-        await RefreshRate.disable();
+        await RefreshRate.disable().timeout(limit);
       }
     } catch (e, s) {
       // An unsupported device is not a failure worth bothering anyone about.
       AppLogger.error('Could not set the refresh rate', e, s);
     }
+    // Again afterwards, in case the plugin's release rewrote the window's
+    // preferred mode.
+    if (!high) await _cap60(true);
     await refreshInfo();
+  }
+
+  static const _displayChannel = MethodChannel('snake_classic/display');
+
+  /// Android only (MainActivity): prefer the 60 Hz display mode, or release
+  /// that preference. Other platforms have no handler, which is fine.
+  Future<void> _cap60(bool cap) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _displayChannel.invokeMethod<double>('cap60', cap);
+    } on MissingPluginException {
+      // Older embedding / tests: nothing to do.
+    } catch (e, s) {
+      AppLogger.error('Could not cap the display at 60 Hz', e, s);
+    }
   }
 
   /// Re-read what the display is actually doing right now.

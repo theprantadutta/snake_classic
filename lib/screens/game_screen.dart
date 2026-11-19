@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/debug/autopilot.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb/lb_game_hud.dart';
 import 'package:go_router/go_router.dart';
@@ -110,7 +111,15 @@ class _GameScreenState extends State<GameScreen>
       _keyboardFocusNode.requestFocus();
       _bootstrapGame();
     });
+
+    // Profiling only (--dart-define=LB_AUTOPILOT=true): self-steering snake
+    // plus frame-timing logs. A no-op otherwise.
+    if (Autopilot.enabled) {
+      _autopilot = Autopilot(context.read<GameCubit>())..start();
+    }
   }
+
+  Autopilot? _autopilot;
 
   /// Starts the game. Runs once per GameScreen mount.
   ///
@@ -225,6 +234,7 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   void dispose() {
+    _autopilot?.stop();
     WidgetsBinding.instance.removeObserver(this);
     getIt<AdService>().setGameActive(false);
     _keyboardFocusNode.dispose();

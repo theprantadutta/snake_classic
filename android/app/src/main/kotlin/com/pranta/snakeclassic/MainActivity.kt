@@ -163,6 +163,79 @@ class MainActivity : FlutterFragmentActivity() {
                 result.notImplemented()
             }
         }
+
+        // 60 Hz by default (owner, 2026-11-19): the game is built and tuned
+        // for 60, and a higher rate is the player's opt-in in Settings.
+        // Leaving the choice to the system ran it at 90 Hz on Samsung's
+        // default "adaptive" setting, and Surface.setFrameRate(60) hints
+        // (the refresh_rate plugin's matchContent) did not move it. Picking
+        // the 60 Hz display mode for the window does. DisplayCubit calls
+        // this on every apply(), including resume, because Android drops
+        // window display preferences when the app is backgrounded.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "snake_classic/display"
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "cap60") {
+                val cap = call.arguments as? Boolean ?: true
+                // Remembered natively so onResume re-applies it before any
+                // Dart runs; 60 Hz is the default for a fresh install.
+                getSharedPreferences(DISPLAY_PREFS, MODE_PRIVATE).edit()
+                    .putBoolean(KEY_CAP60, cap).apply()
+                result.success(applyCap60(cap))
+            } else {
+                result.notImplemented()
+            }
+        }
+    }
+
+    // Android drops the window's display preference while backgrounded, and
+    // the Dart side may not run before the first frames, so the 60 Hz
+    // default is asserted here on every resume.
+    override fun onResume() {
+        super.onResume()
+        applyCap60(getSharedPreferences(DISPLAY_PREFS, MODE_PRIVATE).getBoolean(KEY_CAP60, true))
+    }
+
+    /** Returns the refresh rate of the mode now preferred (0 = system's choice). */
+    private fun applyCap60(cap: Boolean): Double {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return 0.0
+        val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay
+        } ?: return 0.0
+        val params = window.attributes
+        if (!cap) {
+            params.preferredDisplayModeId = 0
+            params.preferredRefreshRate = 0f
+            window.attributes = params
+            android.util.Log.i("SnakeDisplay", "cap60: released")
+            return 0.0
+        }
+        val current = display.mode
+        val sixty = display.supportedModes
+            .filter {
+                it.physicalWidth == current.physicalWidth &&
+                    it.physicalHeight == current.physicalHeight &&
+                    it.refreshRate in 59.0f..61.0f
+            }
+            .firstOrNull()
+        // Some builds (Samsung One UI on the A24) list only the active mode
+        // to apps, so a mode id isn't always available. preferredRefreshRate
+        // asks for 60 without needing the list; set both when we can.
+        params.preferredRefreshRate = 60f
+        if (sixty == null) {
+            window.attributes = params
+            android.util.Log.i("SnakeDisplay", "cap60: preferredRefreshRate=60 (modes seen: " +
+                display.supportedModes.joinToString { "${it.modeId}:${it.refreshRate}" } + ")")
+            return 60.0
+        }
+        params.preferredDisplayModeId = sixty.modeId
+        window.attributes = params
+        android.util.Log.i("SnakeDisplay", "cap60: preferring mode ${sixty.modeId} (${sixty.refreshRate} Hz)")
+        return sixty.refreshRate.toDouble()
     }
 
     // https://github.com/firebase/flutterfire/issues/1327#issuecomment-623399564
@@ -197,5 +270,7 @@ class MainActivity : FlutterFragmentActivity() {
         const val INITIALIZATION_ARGS = "initialization_args"
         // FlutterShellArgs.ARG_DISABLE_IMPELLER.
         const val DISABLE_IMPELLER = "--enable-impeller=false"
+        const val DISPLAY_PREFS = "snake_display"
+        const val KEY_CAP60 = "cap60"
     }
 }
