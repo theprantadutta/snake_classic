@@ -2,9 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // Ad mediation SDKs that are not on Maven Central (AdMob's Flutter
-        // mediation guides for Pangle and Mintegral).
-        maven { url = uri("https://artifact.bytedance.com/repository/pangle") }
+        // Mintegral's mediation SDK is not on Maven Central (AdMob's Flutter
+        // mediation guide for Mintegral).
         maven { url = uri("https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea") }
     }
 }

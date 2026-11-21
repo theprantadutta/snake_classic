@@ -621,6 +621,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  gma_mediation_inmobi:
+    dependency: "direct main"
+    description:
+      name: gma_mediation_inmobi
+      sha256: "6814ada7f789b1f2e76260bd71a00fe66e0310378ecd9b8dd72fd5afe91da60b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
   gma_mediation_liftoffmonetize:
     dependency: "direct main"
     description:
@@ -645,14 +653,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  gma_mediation_pangle:
-    dependency: "direct main"
-    description:
-      name: gma_mediation_pangle
-      sha256: e95ff3a8c2a8259765bf655cac87800b3cd4396a3aca2141b13b03c9605fbefb
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.3.0"
   gma_mediation_unity:
     dependency: "direct main"
     description:
