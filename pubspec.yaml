@@ -96,9 +96,10 @@ dependencies:
   # Ads (AdMob). Bundles the UMP consent SDK. Pro/trial users never see ads.
   google_mobile_ads: ^9.2.0
   # Mediation adapters: Unity Ads, Liftoff Monetize, Meta Audience Network,
-  # Mintegral and Pangle bid in the AdMob auction (Nov 2026 audit: AdMob
+  # Mintegral and InMobi bid in the AdMob auction (Nov 2026 audit: AdMob
   # Network was the only bidder). AppLovin is left out: its publisher
-  # account is disabled (see CLAUDE.md). No
+  # account is disabled (see CLAUDE.md). Pangle is left out: it only
+  # accepts registered companies, not individual developers. No
   # Dart code: the adapters register themselves and read the UMP/TCF
   # consent signal. Each must match the google_mobile_ads version it was
   # built against (see its CHANGELOG) or the build can break, so bump them
@@ -108,7 +109,7 @@ dependencies:
   gma_mediation_liftoffmonetize: ^1.5.7
   gma_mediation_meta: ^1.7.2
   gma_mediation_mintegral: ^2.2.0
-  gma_mediation_pangle: ^4.3.0
+  gma_mediation_inmobi: ^2.4.1
   # iOS App Tracking Transparency prompt (required alongside UMP on iOS 14+).
   app_tracking_transparency: ^2.0.7
 
