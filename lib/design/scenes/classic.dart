@@ -48,8 +48,8 @@ class ClassicThemeScene extends ThemeScene {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            _backlight.withValues(alpha: menu ? .085 : .11),
-            _backlight.withValues(alpha: menu ? .035 : .05),
+            _backlight.withValues(alpha: menu ? .085 : .16),
+            _backlight.withValues(alpha: menu ? .035 : .07),
             _backlight.withValues(alpha: 0),
           ],
           stops: const [0, .45, 1],
@@ -73,15 +73,19 @@ class ClassicThemeScene extends ThemeScene {
           dot);
     }
 
-    // 4. The LCD screen door: dark hairlines between the dots.
-    final door = Paint()
-      ..color = Colors.black.withValues(alpha: menu ? .1 : .15)
-      ..strokeWidth = math.max(.5, pitch * .22);
-    for (var x = x0; x <= w; x += pitch) {
-      canvas.drawLine(Offset(x, 0), Offset(x, h), door);
-    }
-    for (var y = 0.0; y <= h; y += pitch) {
-      canvas.drawLine(Offset(0, y), Offset(w, y), door);
+    // 4. The LCD screen door: dark hairlines between the dots. Menus only:
+    // at board scale the mesh is a line every few pixels and turned the
+    // green olive (A24 review 2026-11-21).
+    if (menu) {
+      final door = Paint()
+        ..color = Colors.black.withValues(alpha: .1)
+        ..strokeWidth = math.max(.5, pitch * .22);
+      for (var x = x0; x <= w; x += pitch) {
+        canvas.drawLine(Offset(x, 0), Offset(x, h), door);
+      }
+      for (var y = 0.0; y <= h; y += pitch) {
+        canvas.drawLine(Offset(0, y), Offset(w, y), door);
+      }
     }
 
     // 5. Ghosted pixel snake (menus): curls in from the bottom-right corner
@@ -110,8 +114,8 @@ class ClassicThemeScene extends ThemeScene {
 
     // 7. Bezel: a dark inner shadow on every edge plus corner falloff, and
     // a faint lime lip just inside it.
-    final edge = s * (menu ? .07 : .09);
-    final shade = Colors.black.withValues(alpha: menu ? .34 : .45);
+    final edge = s * (menu ? .07 : .06);
+    final shade = Colors.black.withValues(alpha: menu ? .34 : .26);
     final clear = Colors.black.withValues(alpha: 0);
     void strip(Rect r, Alignment from, Alignment to) => canvas.drawRect(
           r,
@@ -130,7 +134,7 @@ class ClassicThemeScene extends ThemeScene {
       Paint()
         ..shader = RadialGradient(
           radius: .9,
-          colors: [clear, Colors.black.withValues(alpha: menu ? .3 : .36)],
+          colors: [clear, Colors.black.withValues(alpha: menu ? .3 : .18)],
           stops: const [.6, 1],
         ).createShader(full),
     );
