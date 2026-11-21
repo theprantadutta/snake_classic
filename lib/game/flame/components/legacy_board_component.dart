@@ -52,16 +52,6 @@ class LegacyBoardComponent extends Component
     final palette = LBPalette.of(game.theme);
     _bgPaint.color = palette.board;
     canvas.drawRect(Offset.zero & size, _bgPaint);
-    final scene = ThemeScenes.of(game.theme);
-    if (scene != null) {
-      // The board variant: the snake and food must pop at speed.
-      ThemeScenes.paint(canvas, size, game.theme, menu: false);
-      if (scene.hasMotion && !game.reducedMotion) {
-        scene.paintMotion(
-            canvas, size, DateTime.now().millisecondsSinceEpoch / 1000.0);
-      }
-    }
-
     // World-to-screen scale for the fixed-resolution camera: the world is
     // `board * cellSize` units and gets fitted into the viewport, so anything
     // that should measure a fixed number of SCREEN pixels (hairlines) has to
@@ -71,6 +61,18 @@ class LegacyBoardComponent extends Component
     final scale = game.size.x <= 0 || game.size.y <= 0
         ? 1.0
         : math.min(game.size.x / size.width, game.size.y / size.height);
+
+    final scene = ThemeScenes.of(game.theme);
+    if (scene != null) {
+      // The board variant: the snake and food must pop at speed. Baked at
+      // device resolution (world units -> logical px -> device px).
+      ThemeScenes.paint(canvas, size, game.theme,
+          menu: false, pixelRatio: scale * ThemeScenes.devicePixelRatio);
+      if (scene.hasMotion && !game.reducedMotion) {
+        scene.paintMotion(
+            canvas, size, DateTime.now().millisecondsSinceEpoch / 1000.0);
+      }
+    }
     // Clamped to a proportional band so dense boards keep a hairline and
     // small boards on tablets don't get a heavy line.
     final hairline = scale <= 0 ? 1.0 : (1.0 / scale).clamp(0.5, 1.5);

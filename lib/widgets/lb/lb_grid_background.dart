@@ -77,8 +77,9 @@ class _ScenePainter extends CustomPainter {
 
   // The menu variant of the scene: calmer, since text sits on it.
   @override
-  void paint(Canvas canvas, Size size) =>
-      ThemeScenes.paint(canvas, size, theme, menu: true);
+  void paint(Canvas canvas, Size size) => ThemeScenes.paint(
+      canvas, size, theme,
+      menu: true, pixelRatio: ThemeScenes.devicePixelRatio);
 
   @override
   bool shouldRepaint(_ScenePainter old) => old.theme != theme;
