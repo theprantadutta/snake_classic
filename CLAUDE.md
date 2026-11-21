@@ -232,6 +232,16 @@ A sunset-neon theme launched for the week of the big Nov 19 2026 game release. *
 - **Tests:** `test/flutter_test_config.dart` turns the infinite idle glow pulse off (`LBBlock.idleGlowPulse = false`) or `pumpAndSettle` hangs. Keep it if you add your own test config.
 - When testing on a release build, never tap blind during game over / ad flows: a live ad can be clicked by accident (AdMob policy risk).
 
+### Theme scenes (feature/theme-scenes, merged 2026-11-21) (LOAD-BEARING)
+Every theme has a painted scene behind the menus and the game board, not just a palette.
+- **Where:** `lib/design/scenes/`, one file per theme. `theme_scene.dart` holds the `ThemeScene` interface: `paintBackdrop(menu:)`, an optional cheap `paintMotion`, `cardBase`, `headerBand`, `primaryGradient`, `SnakeStyle` and `busyBoard`. `scenes.dart` registers them (`registerThemeScenes()` in main.dart). LBGridBackground, LBScaffold (header band), LBBlock (card base, primary gradient), LegacyBoardComponent (board backdrop + motion) and the board painter (snake style) read the registry. Never add `theme == GameTheme.x` checks for scene looks.
+- **Performance:** `ThemeScenes.paint` bakes each backdrop ONCE into a GPU image (`Picture.toImageSync` at device pixel ratio) and blits it every frame. Replaying the recorded Picture per frame cost Space 38 ms of raster (26 fps) on the A24. After the change all 11 themes measure raster p50 ~5 ms and 0–1.3% late frames. Keep `paintMotion` to a few dozen primitives: no blur, no saveLayer, no allocations.
+- **Phone menus:** the Home score band (roughly 14–29% of the height) and the coin counter must stay clear of scene art. Put art at the edges or beside the PLAY block (see the `h > w * 1.3` branches).
+- **No ring around food**, on any theme (the owner rejected it twice).
+- The image cache survives hot reload: use hot restart (R) after editing a scene.
+- **Debug only:** `--dart-define=LB_ALL_THEMES=true` unlocks every theme for tuning (compiled out of release builds). Preview renders: `flutter test tools/render_scenes_{a,b,c}_test.dart` (PNGs in `build/`).
+- **Turn feedback:** head stretch + two chevrons (`EffectCurves.turnDuration`, 360 ms) + rounded elbows. The board re-syncs on `lastAcceptedInputAt` (FlameGameBoard buildWhen), and the cubit keeps the stamp 400 ms.
+
 ## In-App Purchase Setup (RTDN)
 
 ### Google Play RTDN Setup
