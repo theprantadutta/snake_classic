@@ -43,6 +43,17 @@ dashboards' "integrate the SDK" steps). The only app-side work still planned is 
 Meta / Mintegral / Pangle adapters (see "SDK networks"), after the 2026-11-20
 revenue check. Unity and Liftoff adapters already ship in Snake Classic 7.6.x.
 
+**Check on 2026-11-21** (AdMob → Mediation → Bidding sources; Gmail since 11-18):
+PubMatic, Unity, Liftoff Active. Equativ, OpenX, InMobi Exchange, Smaato, Verve Group
+and Index Exchange still **Pending partnership**; no new emails from any of them
+(Equativ re-sent its app-ads lines on 11-19, already on all sites). Last-7-day
+mediation report (to 11-20, Snake): Unity banner 937 imps / $0.18, rewarded 406 /
+$14.57, interstitial 110 / $6.12 (≈ $6.80, 28% of revenue); Liftoff banner 1,370 /
+$0.15, rewarded 14 / $18.89, App Open 3, interstitial 3 (≈ $0.60); PubMatic banner
+108 / $0.08, interstitial 2 (≈ $0.01). Totals vs the 2026-11-12 audit baseline:
+revenue $24.10 (was $20.23), match rate 59.11% (56.38%), eCPM $1.54 ($1.09),
+requests 65.5K (79K), impressions 15.7K (18.5K). Next check ~2026-11-27.
+
 **AdMob statuses on 2026-11-18** (Add bidding ad source dialog): PubMatic Active;
 OpenX, Verve Group, Smaato, InMobi Exchange, Index Exchange Pending (IX shows Pending
 even though IX emailed a rejection); Magnite DV+ and Media.net Rejected; Equativ
