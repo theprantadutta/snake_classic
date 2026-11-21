@@ -170,6 +170,7 @@ Added 2026-11-13 after the November audit found AdMob Network was the only bidde
 
 #### macOS session: 8.0.1 for the App Store (written 2026-11-21) — DO THIS FIRST
 (Android shipped as **8.0.1+82**: 8.0.0+81 was refused by Play because the InMobi adapter's CHANGE_WIFI_STATE made Wi-Fi a required feature; the manifest now declares `android.hardware.wifi` optional. Build iOS as 8.0.1 too.)
+**Done on macOS 2026-11-21:** steps 1, 2, 4 and 5 (results in `docs/AD_MEDIATION_PARTNERS.md`, "iOS verification on macOS (2026-11-21)"); IPA 8.0.1 (82) built with symbols uploaded. Step 3 (real iPhone) is still open. App Store Connect version 8.0.1 holds the trimmed iOS What's New (7.7.0 was already live on iOS).
 The owner asked for this on 2026-11-21. Android 8.0.0+81 is built on Windows. It adds **three new mediation adapters**, so iOS must be checked before an IPA ships:
 - **New in 8.0.0:** `gma_mediation_meta` (Meta Audience Network), `gma_mediation_mintegral` and `gma_mediation_inmobi`, next to Unity and Liftoff. Pangle was tried and removed (companies only). None of the three new networks has an AdMob mapping yet (Meta: owner's account on hold; Mintegral: account in review; InMobi: waiting for SDK-bidding access), so on iOS they must **initialise without crashing** but will not fill.
 - Also in 8.0.0: HCPP is Android-only (no iOS effect). The large anchored adaptive banner and the 11 redesigned themes apply on iOS too: check the banner fits and the game screen still fits on a small iPhone (SE / mini).

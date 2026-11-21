@@ -258,6 +258,33 @@ The CLAUDE.md macOS checklist, step by step:
    four adapter frameworks in the IPA, Apple Distribution signature valid) and
    uploaded its Dart symbols and dSYMs to Sentry.
 
+## iOS verification on macOS (2026-11-21, for 8.0.1+82)
+
+1. **Sync and build:** Flutter 3.50.0, `flutter clean` + `pub get`, simulator
+   debug build OK. Swift Package Manager resolved the three new adapters with no
+   errors. `Runner.app/Frameworks` holds `FBAudienceNetwork` + `MetaAdapter`,
+   `MTGSDK*` (8 frameworks) + `MintegralAdapter`, `InMobiSDK` + `InMobiAdapter`,
+   next to `UnityAds`/`UnityAdapter` and `VungleAdsSDK`/`LiftoffMonetizeAdapter`.
+   Both `Package.resolved` files updated and committed.
+2. **SKAdNetwork IDs:** re-downloaded Unity's (76), Liftoff's (155) and Google's
+   (50) lists; every ID is already in `Info.plist` (171). Meta's
+   (`v9wttpbfk9`, `n38lu8286q`) and Mintegral's (`kbd757ywx3`) are in too.
+   InMobi's own list was not checked.
+3. **Simulator smoke test (iPhone 17e, debug, Google test ads):** launch, consent
+   explainer, Home, a game, game over, a rewarded 2x-coins test ad (played, closed,
+   reward granted), Pause, Restart's new "Restart game?" dialog, and
+   background/foreground (same process, banner still there): no crash, no
+   exception. The large banner loads on Home, the game screen and game over, and
+   the game screen still fits the small phone. On the game screen the slot keeps
+   the large height, so a smaller creative (320x50, 468x60) shows black bars
+   above and below it.
+4. **Adapter status** (temporary debug-only log of `MobileAds.initialize()`'s
+   `adapterStatuses`, removed afterwards): `GADMobileAds`, `GADMediationAdapterUnity`
+   and `GADMediationAdapterVungle` all **Ready**. Meta, Mintegral and InMobi are not
+   listed at all: the SDK only starts adapters that have an AdMob mapping, and
+   none of the three has one yet. Expected; recheck once they are mapped.
+5. **Real device / consent:** not done (no iPhone connected).
+
 ## Open Bidding exchanges (no SDK, no app update)
 
 AdMob lists 42 bidding sources under Mediation → Bidding sources → **Set up ad
