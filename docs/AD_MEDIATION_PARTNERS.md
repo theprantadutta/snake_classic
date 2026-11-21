@@ -35,7 +35,9 @@ never by an agent.
 | Equativ | Open Bidding (no SDK) | **Linked 2026-11-18** (redone from AdMob's View & sign; owner submitted + acknowledged). AdMob: Pending partnership. **In all 6 banner/interstitial/rewarded groups** | none |
 | TripleLift | Open Bidding | Not offered in this AdMob account's list | — |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | **Owner decided to stop here (2026-11-16)**; small extras listed below if ever wanted | none |
-| Meta Audience Network, Mintegral, Pangle | SDK bidding | **Planned next** (owner agreed 2026-11-16) | one adapter each |
+| Mintegral | SDK bidding | **Signed up 2026-11-21** (dev.mintegral.com, Personal, mediation AdMob, Snake Play link); account **under Mintegral review**, dashboard locked until approved | `gma_mediation_mintegral` 2.2.0 (in the app since 024154e) |
+| Pangle | SDK bidding | **Signed up 2026-11-21** (pangleglobal.com, ID 5046188, agreements accepted). **Blocked:** adding a live app needs "Company info" with corporate qualification (company name, registration number, documents). Pangle states it does **not accept individual developers / sole proprietorships**. Owner decision needed | `gma_mediation_pangle` 4.3.0 (in the app) |
+| Meta Audience Network | SDK bidding | **On hold (owner, 2026-11-21):** their Meta account has problems; do nothing until the owner says so, but remind them | `gma_mediation_meta` 1.7.2 (in the app) |
 
 **SDK work:** none for the Open Bidding exchanges: they bid through Google's
 servers and need no adapter, app release or InMobi/Media.net SDK (ignore those
