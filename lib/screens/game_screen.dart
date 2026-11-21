@@ -745,7 +745,11 @@ class _GameScreenState extends State<GameScreen>
                                 // the bottom it was hidden for d-pad players,
                                 // because Google names ads next to game
                                 // controls as an accidental-click placement.)
-                                const LBBannerSlot(topGap: 12, atTop: true),
+                                const LBBannerSlot(
+                                  topGap: 12,
+                                  atTop: true,
+                                  gameplay: true,
+                                ),
                                 Expanded(
                                   // Shake scoped to the play area (HUD + board +
                                   // controls) — wrapping the whole Scaffold

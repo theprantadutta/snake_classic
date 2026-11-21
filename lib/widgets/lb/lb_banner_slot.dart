@@ -10,12 +10,20 @@ import 'package:snake_classic/widgets/ads/banner_ad_widget.dart';
 /// (where the banner sits at the TOP, [atTop], the gap is under it), 20 dp
 /// on game over. See admob_ad_list.md.
 class LBBannerSlot extends StatelessWidget {
-  const LBBannerSlot({super.key, this.topGap = 0, this.atTop = false});
+  const LBBannerSlot({
+    super.key,
+    this.topGap = 0,
+    this.atTop = false,
+    this.gameplay = false,
+  });
 
   final double topGap;
   final bool atTop;
 
+  /// The in-game slot: large banner only on tall portrait screens.
+  final bool gameplay;
+
   @override
   Widget build(BuildContext context) =>
-      SnakeBannerAd(topGap: topGap, atTop: atTop);
+      SnakeBannerAd(topGap: topGap, atTop: atTop, gameplay: gameplay);
 }

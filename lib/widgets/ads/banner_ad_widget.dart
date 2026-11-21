@@ -41,12 +41,32 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 ///   changes), and this widget starts over.
 const bool _profileNoBanner = bool.fromEnvironment('LB_PROFILE_NO_BANNER');
 
-/// Profiling only: request the "large anchored adaptive" banner (up to
-/// ~100 dp tall) instead of the classic anchored adaptive one.
-const bool _profileLargeBanner = bool.fromEnvironment('LB_LARGE_BANNER');
+/// Gameplay uses the large banner only when the screen is at least this tall
+/// (logical px, portrait). Below it the extra ~50 dp would come out of the
+/// board, so gameplay keeps the classic size there.
+const double kLargeGameplayBannerMinHeight = 780;
+
+/// Whether a banner placement uses the large anchored adaptive size: always
+/// off the game screen; in gameplay only on a portrait screen at least
+/// [kLargeGameplayBannerMinHeight] tall (the A24 is 384×832).
+bool useLargeBanner({required bool gameplay, required Size screen}) =>
+    !gameplay ||
+    (screen.height > screen.width &&
+        screen.height >= kLargeGameplayBannerMinHeight);
 
 class SnakeBannerAd extends StatefulWidget {
-  const SnakeBannerAd({super.key, this.topGap = 0, this.atTop = false});
+  const SnakeBannerAd({
+    super.key,
+    this.topGap = 0,
+    this.atTop = false,
+    this.gameplay = false,
+  });
+
+  /// The gameplay placement: large only on tall portrait screens
+  /// ([kLargeGameplayBannerMinHeight]); every other placement is always the
+  /// large anchored adaptive banner (AdMob, Nov 2026: up to 100 dp, unlocks
+  /// video demand, ~10–15% eCPM uplift). HCPP keeps either at 60 fps.
+  final bool gameplay;
 
   /// Clear space (with a hairline) between the banner and the screen's
   /// content: above a bottom banner, below a top one ([atTop]). Use it where
@@ -81,10 +101,13 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
   // a running app (a foldable folding, split screen, DeX), and a size cached
   // from the wider window then made every request fail with "Ad size will
   // not fit on screen. a_w=800 … s_w=360" (Nov 2026).
-  static AnchoredAdaptiveBannerAdSize? _adaptiveSize;
-  static int? _adaptiveSizeWidth;
-  static Future<void>? _adaptiveSizeResolving;
-  static int? _adaptiveSizeResolvingWidth;
+  //
+  // Two caches: the large and the classic size resolve independently.
+  static final _sizes = {true: _SizeCache(true), false: _SizeCache(false)};
+
+  /// Whether this placement shows the large banner (fixed at first build).
+  bool _large = true;
+  AnchoredAdaptiveBannerAdSize? get _adaptiveSize => _sizes[_large]!.size;
 
   BannerAd? _ad;
   bool _loaded = false;
@@ -110,8 +133,10 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     super.didChangeDependencies();
     if (_sizeRequested) return;
     _sizeRequested = true;
-    final width = MediaQuery.sizeOf(context).width.truncate();
-    unawaited(_ensureAdaptiveSize(width).then((_) {
+    final screen = MediaQuery.sizeOf(context);
+    final width = screen.width.truncate();
+    _large = useLargeBanner(gameplay: widget.gameplay, screen: screen);
+    unawaited(_sizes[_large]!.ensure(width).then((_) {
       if (!mounted) return;
       setState(() {}); // reserve the exact height once known
       // Tell the service what size to keep warm. On the first banner of the
@@ -127,40 +152,6 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     _failedAttempts = 0;
     _retryTimer?.cancel();
     _maybeLoad();
-  }
-
-  /// Resolve the anchored adaptive size once per session (deduped across all
-  /// banner instances). Falls back to the fixed 320×50 [AdSize.banner] when
-  /// the platform can't provide one.
-  static Future<void> _ensureAdaptiveSize(int width) {
-    if (_adaptiveSizeWidth == width) return Future.value();
-    final inFlight = _adaptiveSizeResolving;
-    if (inFlight != null && _adaptiveSizeResolvingWidth == width) {
-      return inFlight;
-    }
-    _adaptiveSizeResolvingWidth = width;
-    return _adaptiveSizeResolving = () async {
-      AnchoredAdaptiveBannerAdSize? size;
-      try {
-        // The non-deprecated replacement is the "Large" anchored adaptive
-        // variant, which may grow up to 15% of screen height — unacceptable
-        // for a banner anchored over gameplay. The classic anchored adaptive
-        // size is the right fit here; the deprecation is accepted knowingly.
-        size = _profileLargeBanner
-            ? await AdSize.getLargeAnchoredAdaptiveBannerAdSizeWithOrientation(
-                Orientation.portrait, width)
-            : await AdSize
-                // ignore: deprecated_member_use
-                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
-      } catch (_) {
-        size = null; // fall back to AdSize.banner
-      }
-      // A newer width may have started resolving meanwhile; it wins.
-      if (_adaptiveSizeResolvingWidth != width) return;
-      _adaptiveSize = size;
-      _adaptiveSizeWidth = width;
-      _adaptiveSizeResolving = null;
-    }();
   }
 
   void _onAdsEnabledChanged() {
@@ -380,6 +371,47 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         );
       },
     );
+  }
+}
+
+/// One anchored adaptive size (large or classic), resolved once per window
+/// width and shared by every banner of that kind, deduped while in flight.
+/// Falls back to null (the fixed 320×50 [AdSize.banner]) when the platform
+/// can't provide one.
+class _SizeCache {
+  _SizeCache(this.large);
+
+  final bool large;
+  AnchoredAdaptiveBannerAdSize? size;
+  int? _width;
+  Future<void>? _resolving;
+  int? _resolvingWidth;
+
+  Future<void> ensure(int width) {
+    if (_width == width) return Future.value();
+    final inFlight = _resolving;
+    if (inFlight != null && _resolvingWidth == width) return inFlight;
+    _resolvingWidth = width;
+    return _resolving = () async {
+      AnchoredAdaptiveBannerAdSize? s;
+      try {
+        s = large
+            ? await AdSize.getLargeAnchoredAdaptiveBannerAdSizeWithOrientation(
+                Orientation.portrait, width)
+            // The classic size is deprecated in favour of the large one; it
+            // stays for gameplay on short screens, knowingly.
+            : await AdSize
+                // ignore: deprecated_member_use
+                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+      } catch (_) {
+        s = null;
+      }
+      // A newer width may have started resolving meanwhile; it wins.
+      if (_resolvingWidth != width) return;
+      size = s;
+      _width = width;
+      _resolving = null;
+    }();
   }
 }
 
