@@ -39,6 +39,8 @@ es-419 and es-ES share the `es` text.
 
 ```
 <en-US>
+A fresh coat of paint.
+
 • All 11 themes redesigned with painted scenes, plus a new limited theme, Miami Nights: free until Dec 7.
 • Smoother gameplay: a steady 60 fps, no more flicker, new turn and eating animations.
 • Redesigned pause screen. Restart now asks before ending your run.
@@ -47,6 +49,8 @@ es-419 and es-ES share the `es` text.
 • Zen Mode no longer shows a wall glow.
 </en-US>
 <ar>
+حلة جديدة بالكامل.
+
 • إعادة تصميم كل الثيمات الـ11 بمشاهد مرسومة، وثيم جديد لفترة محدودة، ليالي ميامي: مجاني حتى 7 ديسمبر.
 • لعب أكثر سلاسة: 60 إطارًا ثابتة، بلا وميض، وحركات جديدة للالتفاف والأكل.
 • شاشة إيقاف مؤقت جديدة. إعادة البدء تسأل قبل إنهاء جولتك.
@@ -55,6 +59,8 @@ es-419 and es-ES share the `es` text.
 • لم يعد وضع الاسترخاء يُظهر توهج الجدران.
 </ar>
 <es-419>
+Una mano de pintura nueva.
+
 • Los 11 temas, rediseñados con escenas pintadas, y un tema por tiempo limitado, Noches de Miami: gratis hasta el 7 de dic.
 • Juego más fluido: 60 fps estables, sin parpadeos, nuevas animaciones al girar y comer.
 • Nueva pantalla de pausa. Reiniciar ahora pide confirmación.
@@ -63,6 +69,8 @@ es-419 and es-ES share the `es` text.
 • El Modo Zen ya no muestra el brillo de pared.
 </es-419>
 <es-ES>
+Una mano de pintura nueva.
+
 • Los 11 temas, rediseñados con escenas pintadas, y un tema por tiempo limitado, Noches de Miami: gratis hasta el 7 de dic.
 • Juego más fluido: 60 fps estables, sin parpadeos, nuevas animaciones al girar y comer.
 • Nueva pantalla de pausa. Reiniciar ahora pide confirmación.
@@ -71,6 +79,8 @@ es-419 and es-ES share the `es` text.
 • El Modo Zen ya no muestra el brillo de pared.
 </es-ES>
 <fr-FR>
+Un vrai coup de neuf.
+
 • Les 11 thèmes redessinés avec des décors peints, et un thème limité, Nuits de Miami : gratuit jusqu'au 7 déc.
 • Jeu plus fluide : 60 fps stables, plus de scintillement, nouvelles animations de virage et de repas.
 • Nouvel écran de pause. Recommencer demande confirmation.
@@ -79,6 +89,8 @@ es-419 and es-ES share the `es` text.
 • Le Mode Zen n'affiche plus la lueur des murs.
 </fr-FR>
 <hi-IN>
+बिल्कुल नया रूप।
+
 • सभी 11 थीम नए पेंटेड दृश्यों के साथ, और नई लिमिटेड थीम मियामी नाइट्स: 7 दिसंबर तक मुफ़्त।
 • और स्मूद गेमप्ले: लगातार 60 fps, कोई झिलमिलाहट नहीं, मुड़ने और खाने के नए एनिमेशन।
 • नई पॉज़ स्क्रीन। रीस्टार्ट अब राउंड खत्म करने से पहले पूछता है।
@@ -87,6 +99,8 @@ es-419 and es-ES share the `es` text.
 • ज़ेन मोड में अब दीवार की चमक नहीं दिखती।
 </hi-IN>
 <it-IT>
+Una mano di vernice nuova.
+
 • Tutti gli 11 temi ridisegnati con scenari dipinti, più un tema a tempo, Notti di Miami: gratis fino al 7 dic.
 • Gioco più fluido: 60 fps stabili, niente sfarfallio, nuove animazioni di svolta e pasto.
 • Nuova schermata di pausa. Ricomincia ora chiede conferma.
@@ -95,6 +109,8 @@ es-419 and es-ES share the `es` text.
 • La Modalità Zen non mostra più il bagliore dei muri.
 </it-IT>
 <pl-PL>
+Zupełnie nowa odsłona.
+
 • Wszystkie 11 motywów z nowymi malowanymi scenami i motyw na krótko, Noce Miami: za darmo do 7 grudnia.
 • Płynniejsza gra: stałe 60 fps, bez migotania, nowe animacje skrętu i jedzenia.
 • Nowy ekran pauzy. Restart pyta przed zakończeniem rundy.
@@ -103,6 +119,8 @@ es-419 and es-ES share the `es` text.
 • Tryb Zen nie pokazuje już poświaty ścian.
 </pl-PL>
 <pt-BR>
+Cara nova.
+
 • Os 11 temas redesenhados com cenários pintados, e um tema por tempo limitado, Noites de Miami: grátis até 7 de dez.
 • Jogo mais fluido: 60 fps estáveis, sem tremulação, novas animações de curva e de comer.
 • Nova tela de pausa. Reiniciar agora pede confirmação.
@@ -111,6 +129,8 @@ es-419 and es-ES share the `es` text.
 • O Modo Zen não mostra mais o brilho das paredes.
 </pt-BR>
 <ru-RU>
+Совершенно новый вид.
+
 • Все 11 тем перерисованы с новыми сценами, и временная тема «Ночи Майами»: бесплатно до 7 декабря.
 • Плавнее игра: стабильные 60 fps, без мерцания, новые анимации поворота и еды.
 • Новый экран паузы. «Заново» теперь спрашивает подтверждение.
@@ -119,6 +139,8 @@ es-419 and es-ES share the `es` text.
 • В режиме «Дзен» больше нет подсветки стен.
 </ru-RU>
 <tr-TR>
+Baştan sona yenilendi.
+
 • 11 temanın tamamı yeni boyalı sahnelerle yenilendi; sınırlı süreli yeni tema Miami Geceleri 7 Aralık'a kadar ücretsiz.
 • Daha akıcı oyun: sabit 60 fps, titreme yok, yeni dönüş ve yeme animasyonları.
 • Yeni duraklatma ekranı. Yeniden başlat artık önce soruyor.
