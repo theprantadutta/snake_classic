@@ -72,6 +72,15 @@
             </intent-filter>
         </activity>
         
+        <!-- Hybrid Composition++: platform views (the AdMob banner) are
+             composited by SurfaceFlinger instead of being copied into
+             Flutter's frame. Suggested on googleads-mobile-flutter#1551.
+             Application-level: FlutterLoader reads engine flags from the
+             application's meta-data, not the activity's. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableHcpp"
+            android:value="true" />
+
         <!-- Firebase Cloud Messaging default channel ID -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

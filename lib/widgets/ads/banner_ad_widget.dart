@@ -41,6 +41,10 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 ///   changes), and this widget starts over.
 const bool _profileNoBanner = bool.fromEnvironment('LB_PROFILE_NO_BANNER');
 
+/// Profiling only: request the "large anchored adaptive" banner (up to
+/// ~100 dp tall) instead of the classic anchored adaptive one.
+const bool _profileLargeBanner = bool.fromEnvironment('LB_LARGE_BANNER');
+
 class SnakeBannerAd extends StatefulWidget {
   const SnakeBannerAd({super.key, this.topGap = 0, this.atTop = false});
 
@@ -142,9 +146,12 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         // variant, which may grow up to 15% of screen height — unacceptable
         // for a banner anchored over gameplay. The classic anchored adaptive
         // size is the right fit here; the deprecation is accepted knowingly.
-        size = await AdSize
-            // ignore: deprecated_member_use
-            .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+        size = _profileLargeBanner
+            ? await AdSize.getLargeAnchoredAdaptiveBannerAdSizeWithOrientation(
+                Orientation.portrait, width)
+            : await AdSize
+                // ignore: deprecated_member_use
+                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
       } catch (_) {
         size = null; // fall back to AdSize.banner
       }
