@@ -467,6 +467,21 @@ class _GameScreenState extends State<GameScreen>
         });
   }
 
+  /// Pause > Restart asks first: a restart throws the current run away, and
+  /// a stray tap used to do it with no warning (owner, 2026-11-21). The game
+  /// is already paused behind the overlay, so Cancel just leaves it paused.
+  void _confirmRestart(BuildContext context) {
+    if (_exitDialogOpen) return;
+    final gameCubit = context.read<GameCubit>();
+    _exitDialogOpen = true;
+    showRestartGameDialog(context).then((confirmed) {
+      if (confirmed == true) gameCubit.startGame();
+    }).whenComplete(() {
+      _exitDialogOpen = false;
+      _restoreGameplayFocus();
+    });
+  }
+
   /// Give the keyboard back to the board after a modal takes it away.
   ///
   /// A dialog route steals focus and does not return it on dismissal, so on
@@ -1162,11 +1177,8 @@ class _GameScreenState extends State<GameScreen>
                                             onResume: () => context
                                                 .read<GameCubit>()
                                                 .resumeGame(),
-                                            onRestart: () {
-                                              context
-                                                  .read<GameCubit>()
-                                                  .startGame();
-                                            },
+                                            onRestart: () =>
+                                                _confirmRestart(context),
                                             onHome: () =>
                                                 _showExitConfirmation(context),
                                             onShowTutorial: () =>

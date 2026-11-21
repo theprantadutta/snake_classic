@@ -4436,6 +4436,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get xgExit => 'Wyjdź';
 
   @override
+  String get rgTitle => 'Zacząć od Nowa?';
+
+  @override
+  String get rgBody =>
+      'Na pewno chcesz zacząć od nowa? Obecna runda zostanie utracona.';
+
+  @override
+  String get rgRestart => 'Od nowa';
+
+  @override
   String get ccTitle => 'Jak chcesz grać?';
 
   @override

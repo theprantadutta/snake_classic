@@ -9,6 +9,26 @@ import 'package:snake_classic/widgets/lb/lb.dart';
 /// owns the pause-on-open, resume-on-cancel and navigation side effects.
 Future<bool?> showExitGameDialog(BuildContext context, GameTheme theme) {
   final l10n = AppLocalizations.of(context)!;
+  return _showRunConfirmDialog(
+      context, l10n.xgTitle, l10n.xgBody, l10n.xgExit);
+}
+
+/// "Restart game?" from the pause menu: a restart throws the current run
+/// away, so it asks first, like Exit does. Same results as
+/// [showExitGameDialog]: `true` confirm, `false` cancel.
+Future<bool?> showRestartGameDialog(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  return _showRunConfirmDialog(
+      context, l10n.rgTitle, l10n.rgBody, l10n.rgRestart);
+}
+
+Future<bool?> _showRunConfirmDialog(
+  BuildContext context,
+  String title,
+  String body,
+  String confirm,
+) {
+  final l10n = AppLocalizations.of(context)!;
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -31,13 +51,13 @@ Future<bool?> showExitGameDialog(BuildContext context, GameTheme theme) {
                 Semantics(
                   header: true,
                   child: Text(
-                    l10n.xgTitle.toUpperCase(),
+                    title.toUpperCase(),
                     style: LBText.button(p, color: p.head, size: 15).copyWith(letterSpacing: 2.2),
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  l10n.xgBody,
+                  body,
                   style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12.5),
                 ),
                 const SizedBox(height: 18),
@@ -61,7 +81,7 @@ Future<bool?> showExitGameDialog(BuildContext context, GameTheme theme) {
                         alignment: Alignment.center,
                         onTap: () => Navigator.of(dialogContext).pop(true),
                         child: Text(
-                          l10n.xgExit.toUpperCase(),
+                          confirm.toUpperCase(),
                           style: LBText.button(p, color: LB.bonk, size: 13).copyWith(letterSpacing: 2),
                         ),
                       ),

@@ -4396,6 +4396,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get xgExit => 'خروج';
 
   @override
+  String get rgTitle => 'إعادة اللعبة؟';
+
+  @override
+  String get rgBody => 'هل تريد البدء من جديد فعلًا؟ ستُلغى جولتك الحالية.';
+
+  @override
+  String get rgRestart => 'إعادة';
+
+  @override
   String get ccTitle => 'كيف تريد اللعب؟';
 
   @override

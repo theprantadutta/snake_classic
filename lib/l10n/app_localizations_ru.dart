@@ -4433,6 +4433,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get xgExit => 'Выйти';
 
   @override
+  String get rgTitle => 'Начать заново?';
+
+  @override
+  String get rgBody =>
+      'Вы уверены, что хотите начать заново? Текущий забег будет потерян.';
+
+  @override
+  String get rgRestart => 'Заново';
+
+  @override
   String get ccTitle => 'Как вы хотите играть?';
 
   @override

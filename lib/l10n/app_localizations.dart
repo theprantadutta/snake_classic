@@ -8020,6 +8020,24 @@ abstract class AppLocalizations {
   /// **'Exit'**
   String get xgExit;
 
+  /// No description provided for @rgTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Game?'**
+  String get rgTitle;
+
+  /// No description provided for @rgBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to start over? Your current run will be scrapped.'**
+  String get rgBody;
+
+  /// No description provided for @rgRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get rgRestart;
+
   /// No description provided for @ccTitle.
   ///
   /// In en, this message translates to:

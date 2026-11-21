@@ -4405,6 +4405,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get xgExit => 'बाहर निकलें';
 
   @override
+  String get rgTitle => 'गेम फिर से शुरू करें?';
+
+  @override
+  String get rgBody =>
+      'क्या आप वाक़ई नए सिरे से शुरू करना चाहते हैं? आपका मौजूदा राउंड खत्म हो जाएगा।';
+
+  @override
+  String get rgRestart => 'फिर से शुरू करें';
+
+  @override
   String get ccTitle => 'आप कैसे खेलना चाहेंगे?';
 
   @override

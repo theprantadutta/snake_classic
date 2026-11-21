@@ -4411,6 +4411,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get xgExit => 'Exit';
 
   @override
+  String get rgTitle => 'Restart Game?';
+
+  @override
+  String get rgBody =>
+      'Are you sure you want to start over? Your current run will be scrapped.';
+
+  @override
+  String get rgRestart => 'Restart';
+
+  @override
   String get ccTitle => 'How do you want to play?';
 
   @override

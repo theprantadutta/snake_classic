@@ -4458,6 +4458,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get xgExit => 'Esci';
 
   @override
+  String get rgTitle => 'Ricominciare la Partita?';
+
+  @override
+  String get rgBody =>
+      'Vuoi davvero ricominciare? La partita in corso andrà persa.';
+
+  @override
+  String get rgRestart => 'Ricomincia';
+
+  @override
   String get ccTitle => 'Come vuoi giocare?';
 
   @override

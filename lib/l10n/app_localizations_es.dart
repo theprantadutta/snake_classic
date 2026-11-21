@@ -4456,6 +4456,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get xgExit => 'Salir';
 
   @override
+  String get rgTitle => '¿Reiniciar el Juego?';
+
+  @override
+  String get rgBody =>
+      '¿Seguro que quieres empezar de nuevo? Perderás la partida actual.';
+
+  @override
+  String get rgRestart => 'Reiniciar';
+
+  @override
   String get ccTitle => '¿Cómo quieres jugar?';
 
   @override

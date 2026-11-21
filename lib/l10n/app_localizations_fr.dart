@@ -4473,6 +4473,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get xgExit => 'Quitter';
 
   @override
+  String get rgTitle => 'Recommencer la Partie ?';
+
+  @override
+  String get rgBody =>
+      'Voulez-vous vraiment recommencer ? La partie en cours sera perdue.';
+
+  @override
+  String get rgRestart => 'Recommencer';
+
+  @override
   String get ccTitle => 'Comment voulez-vous jouer ?';
 
   @override
