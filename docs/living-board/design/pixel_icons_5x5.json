@@ -99,6 +99,13 @@
    "xxx..",
    "x...."
   ],
+  "restart": [
+   ".xxxx",
+   "x..xx",
+   "x....",
+   "x...x",
+   ".xxx."
+  ],
   "pause": [
    "xx.xx",
    "xx.xx",

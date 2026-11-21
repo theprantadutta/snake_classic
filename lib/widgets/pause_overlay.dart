@@ -204,7 +204,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       ),
                       const SizedBox(height: 10),
                       _PauseRow(
-                        icon: LBIcon.bolt,
+                        icon: LBIcon.restart,
                         title: l10n.lbRestart,
                         aside: l10n.lbRestartSub,
                         onTap: widget.onRestart,

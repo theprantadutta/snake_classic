@@ -86,6 +86,7 @@ const Map<String, List<String>> lbPixelIconData = {
   'pause': ['xx.xx', 'xx.xx', 'xx.xx', 'xx.xx', 'xx.xx'],
   'play': ['x....', 'xxx..', 'xxxxx', 'xxx..', 'x....'],
   'plus': ['..x..', '..x..', 'xxxxx', '..x..', '..x..'],
+  'restart': ['.xxxx', 'x..xx', 'x....', 'x...x', '.xxx.'],
   'shield': ['xxxxx', 'xxxxx', 'xxxxx', '.xxx.', '..x..'],
   'skull': ['.xxx.', 'x.x.x', 'xxxxx', '.xxx.', '.x.x.'],
   'sound': ['..x..', '.xx.x', 'xxx..', '.xx.x', '..x..'],

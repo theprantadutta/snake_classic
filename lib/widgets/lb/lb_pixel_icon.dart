@@ -31,6 +31,7 @@ enum LBIcon {
   pause,
   play,
   plus,
+  restart,
   shield,
   skull,
   sound,
