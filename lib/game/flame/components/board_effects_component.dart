@@ -44,14 +44,8 @@ class BoardEffectsComponent extends Component
 
   static const double _cell = GameConstants.cellSize;
 
-  /// Gulp at a just-eaten food cell (world pixels): the food shrinks into
-  /// the snake's mouth. The lump that follows is drawn by the board painter.
-  void eatPop(Offset at, Color color, double now) =>
-      _start(_FxKind.eat, at, color, now, _gulpSeconds);
-
-  static final double _gulpSeconds = EffectCurves.swallowDuration.inMicroseconds /
-      Duration.microsecondsPerSecond *
-      EffectCurves.gulpFraction;
+  // Eating has no effect here: the board painter keeps the eaten food on
+  // its cell, shrinks it into the mouth and shows it slipping into the neck.
 
   /// Ring pulse at a power-up pickup cell, in the power-up's colour.
   void pickupRing(Offset at, Color color, double now) =>
@@ -82,22 +76,12 @@ class BoardEffectsComponent extends Component
         final t = (now - fx.start) / fx.duration;
         if (t < 0 || t >= 1) continue;
         switch (fx.kind) {
-          case _FxKind.eat:
-            _drawEat(canvas, fx, t);
           case _FxKind.pickup:
             _drawPickup(canvas, fx, t);
         }
       }
     }
     _drawCrashFlash(canvas);
-  }
-
-  void _drawEat(Canvas canvas, _Fx fx, double t) {
-    // t runs over the gulp only; the food shrinks into the head.
-    final s = EffectCurves.gulpScale(t * EffectCurves.gulpFraction);
-    if (s <= 0) return;
-    _fill.color = fx.color.withValues(alpha: .9 * s);
-    canvas.drawCircle(Offset(fx.x, fx.y), _cell * .32 * s, _fill);
   }
 
   void _drawPickup(Canvas canvas, _Fx fx, double t) {
@@ -140,10 +124,10 @@ class BoardEffectsComponent extends Component
   }
 }
 
-enum _FxKind { eat, pickup }
+enum _FxKind { pickup }
 
 class _Fx {
-  _FxKind kind = _FxKind.eat;
+  _FxKind kind = _FxKind.pickup;
   double x = 0;
   double y = 0;
   Color color = LB.gold;

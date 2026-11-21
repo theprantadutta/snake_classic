@@ -129,9 +129,10 @@ class SnakeFlameGame extends FlameGame {
   /// and freezes with the board.
   double fxClock = 0;
 
-  /// Swallow length for the current bite (set per bite from body length).
-  double _rippleSeconds = EffectCurves.swallowDuration.inMicroseconds /
-      Duration.microsecondsPerSecond;
+  /// Swallow length: the food slips into the neck and is gone.
+  static final double _rippleSeconds =
+      EffectCurves.swallowDuration.inMicroseconds /
+          Duration.microsecondsPerSecond;
   double _rippleStart = -1e9;
 
   /// Tick duration of the state being synced (for timing the swallow to
@@ -308,10 +309,6 @@ class SnakeFlameGame extends FlameGame {
                 : (cubitStateTickMs ?? current.gameSpeed) / 1000.0;
             swallowColor = _swallowColorOf(event.food.type);
             _rippleStart = fxClock + glide;
-            // Paced to the body: the food travels ~14 segments a second,
-            // so it can be followed on a long snake (1.4 s flat was a blur).
-            _rippleSeconds =
-                (.5 + current.snake.length / 14).clamp(1.2, 3.0).toDouble();
             if (event.awardedPoints > 0) _scoreBumpStart = fxClock + glide;
           }
         case PowerUpCollectedEvent():

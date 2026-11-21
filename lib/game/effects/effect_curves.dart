@@ -34,42 +34,47 @@ abstract class EffectCurves {
   static double rippleHalfWidth(int length) =>
       length <= 0 ? .35 : (1.4 / length).clamp(.06, .35);
 
-  /// How long the swallowed lump takes to travel head to tail. Owner,
-  /// 2026-11-19: the 400 ms spark + flash was too fast and distracting;
-  /// the bite should be seen going down the belly and vanishing.
-  static const Duration swallowDuration = Duration(milliseconds: 1400);
+  /// The swallow after a bite: the food slips into the neck and is gone.
+  /// Owner, 2026-11-21: only show that it went inside, not a trip down the
+  /// whole snake.
+  static const Duration swallowDuration = Duration(milliseconds: 600);
 
-  /// Gulp at the mouth: the eaten food shrinks into the head (1 -> 0) over
-  /// the first [gulpFraction] of the swallow, easing in.
-  static const double gulpFraction = .2;
-  static double gulpScale(double t) {
+  /// The mouth closes over the first [mouthCloseFraction] of the swallow,
+  /// i.e. only after the head has fully covered the food.
+  static const double mouthCloseFraction = .2;
+  static double mouthAfterBite(double t) {
     if (t <= 0) return 1;
-    if (t >= gulpFraction) return 0;
-    final k = t / gulpFraction;
+    if (t >= mouthCloseFraction) return 0;
+    final k = t / mouthCloseFraction;
     return 1 - k * k;
   }
 
-  /// Where the swallowed food is, as a fraction of the body (0 = neck,
-  /// 1 = tail) at swallow progress [t]: the same front [rippleIntensity]
-  /// bulges around, clamped to the body.
-  static double swallowFront(double t, int length) {
-    final w = rippleHalfWidth(length);
-    return (t * (1 + 2 * w) - w).clamp(0.0, 1.0);
+  /// Where the swallowed food is, in segments behind the head (0 = head,
+  /// 1 = neck): from just behind the mouth to about two segments in,
+  /// easing out.
+  static double swallowSegment(double t) {
+    final k = t.clamp(0.0, 1.0);
+    return .55 + 1.6 * (1 - (1 - k) * (1 - k));
   }
 
-  /// Opacity of the food seen inside the body: fades in as it enters the
-  /// neck, holds, and fades out over the last stretch (digested at the
-  /// tail). No flashes: everything is a slow ramp.
+  /// Bulge of body segment [index] around the swallowed food (0..1).
+  static double swallowBulge(double t, int index) {
+    final d = (index - swallowSegment(t)).abs();
+    if (d >= 1.1) return 0;
+    return (1 - d / 1.1) * swallowDotAlpha(t);
+  }
+
+  /// Opacity of the food seen inside the neck: fades in as it passes the
+  /// mouth, then fades out (it's gone). Slow ramps only, no flashes.
   static double swallowDotAlpha(double t) {
     if (t <= 0 || t >= 1) return 0;
-    if (t < .1) return t / .1;
-    if (t > .75) return (1 - t) / .25;
+    if (t < .15) return t / .15;
+    if (t > .45) return (1 - t) / .55;
     return 1;
   }
 
-  /// Size of the food seen inside the body (fraction of a cell): it shrinks
-  /// as it is digested.
-  static double swallowDotRadius(double t) => .27 - .12 * t.clamp(0.0, 1.0);
+  /// Size of the food seen inside the neck (fraction of a cell).
+  static double swallowDotRadius(double t) => .26 - .1 * t.clamp(0.0, 1.0);
 
   /// Chomp: the head squeezes once as it bites (0 = none, 1 = deepest),
   /// over the first [chompFraction] of the swallow.

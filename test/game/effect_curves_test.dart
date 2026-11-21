@@ -71,11 +71,20 @@ void main() {
       expect(EffectCurves.rippleHalfWidth(20), closeTo(.07, 1e-9));
     });
 
-    test('gulp shrinks the food into the mouth, then is gone', () {
-      expect(EffectCurves.gulpScale(0), 1);
-      expect(EffectCurves.gulpScale(EffectCurves.gulpFraction / 2), closeTo(.75, 1e-9));
-      expect(EffectCurves.gulpScale(EffectCurves.gulpFraction), 0);
-      expect(EffectCurves.swallowDuration.inMilliseconds, greaterThan(1000));
+    test('the mouth is fully open at the bite and closes after it', () {
+      expect(EffectCurves.mouthAfterBite(0), 1);
+      expect(EffectCurves.mouthAfterBite(EffectCurves.mouthCloseFraction), 0);
+      expect(EffectCurves.mouthAfterBite(EffectCurves.mouthCloseFraction / 2),
+          closeTo(.75, 1e-9));
+    });
+
+    test('the food only slips into the neck, then is gone', () {
+      expect(EffectCurves.swallowSegment(1), lessThan(2.5));
+      expect(EffectCurves.swallowSegment(0), lessThan(1));
+      expect(EffectCurves.swallowDotAlpha(0), 0);
+      expect(EffectCurves.swallowDotAlpha(1), 0);
+      expect(EffectCurves.swallowBulge(.5, 10), 0); // far down the body
+      expect(EffectCurves.swallowDuration.inMilliseconds, lessThan(1000));
     });
   });
 
