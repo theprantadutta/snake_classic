@@ -36,7 +36,8 @@ never by an agent.
 | TripleLift | Open Bidding | Not offered in this AdMob account's list | — |
 | Other Open Bidding exchanges | Open Bidding (no SDK) | **Owner decided to stop here (2026-11-16)**; small extras listed below if ever wanted | none |
 | Mintegral | SDK bidding | **Signed up 2026-11-21** (dev.mintegral.com, Personal, mediation AdMob, Snake Play link); account **under Mintegral review**, dashboard locked until approved | `gma_mediation_mintegral` 2.2.0 (in the app since 024154e) |
-| Pangle | SDK bidding | **Signed up 2026-11-21** (pangleglobal.com, ID 5046188, agreements accepted). **Blocked:** adding a live app needs "Company info" with corporate qualification (company name, registration number, documents). Pangle states it does **not accept individual developers / sole proprietorships**. Owner decision needed | `gma_mediation_pangle` 4.3.0 (in the app) |
+| Pangle | SDK bidding | **Dropped 2026-11-21.** Account exists (pangleglobal.com, ID 5046188) but a live app needs a registered company; Pangle does **not accept individual developers / sole proprietorships**, and the owner is an indie developer | removed (7af384b) |
+| InMobi (SDK) | SDK bidding | **Adapter in the app 2026-11-21** (replaces Pangle). InMobi app created: "Snake Classic: Retro Arcade (Android)", **App Key 10000258325**, not child-directed, location off, political/gambling/alcohol blocked. **Blocked on placements:** AdMob bidding needs partner "Google SDK Bidding", but the account only offers "Google Open Bidding"; Google's guide says to ask the InMobi account manager for bidding access. No placements created yet | `gma_mediation_inmobi` 2.4.1 |
 | Meta Audience Network | SDK bidding | **On hold (owner, 2026-11-21):** their Meta account has problems; do nothing until the owner says so, but remind them | `gma_mediation_meta` 1.7.2 (in the app) |
 
 **SDK work:** none for the Open Bidding exchanges: they bid through Google's
