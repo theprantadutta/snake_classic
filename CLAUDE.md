@@ -240,7 +240,10 @@ Every theme has a painted scene behind the menus and the game board, not just a 
 - **No ring around food**, on any theme (the owner rejected it twice).
 - The image cache survives hot reload: use hot restart (R) after editing a scene.
 - **Debug only:** `--dart-define=LB_ALL_THEMES=true` unlocks every theme for tuning (compiled out of release builds). Preview renders: `flutter test tools/render_scenes_{a,b,c}_test.dart` (PNGs in `build/`).
-- **Turn feedback:** head stretch + two chevrons (`EffectCurves.turnDuration`, 360 ms) + rounded elbows. The board re-syncs on `lastAcceptedInputAt` (FlameGameBoard buildWhen), and the cubit keeps the stamp 400 ms.
+- **Turn feedback:** two faint chevrons (`EffectCurves.turnDuration`, 360 ms). The board re-syncs on `lastAcceptedInputAt` (FlameGameBoard buildWhen), and the cubit keeps the stamp 400 ms. **No head stretch:** it jerked sideways mid-glide. **Rounded elbows only with snap movement:** with the glide they hopped a segment every move and flickered.
+- **Smooth-glide snake (owner: it "flickers a lot", eyes watering):** bend cells get a fixed square so corners stay solid, and segment colours are pre-blended to opaque so overlaps at bends don't double up. Never flash the body: no white eat flash, brighten or wash.
+- **Eating:** the game removes the food one glide before the drawn head reaches it, so the painter keeps it (`_drawEatenFood`) and shrinks it into the mouth as it closes. The swallow (`growRippleT`) starts when the glide ends: a food-coloured dot with a dark rim travels down the body inside a soft bulge, paced to body length.
+- **`GameCubitState.copyWith` keeps `tickEvents` when the game state is unchanged.** Dropping them lost every bite whose tick shared a frame with an input emit, because the board only builds the latest state.
 
 ## In-App Purchase Setup (RTDN)
 
