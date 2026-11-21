@@ -69,7 +69,8 @@ class GameCubitState extends Equatable {
   /// truth for "what happened this tick". Consumers (screen juice, Flame
   /// particles) key off `identical(gameState)` changes and read these
   /// instead of re-deriving events by diffing states (which used to exist
-  /// in three parallel implementations). Empty on non-tick emits.
+  /// in three parallel implementations). Kept by emits that leave
+  /// [gameState] alone, dropped by ones that replace it without events.
   final List<TickEvent> tickEvents;
 
   const GameCubitState({
@@ -141,10 +142,16 @@ class GameCubitState extends Equatable {
           ? TournamentScoreSubmission.none
           : (tournamentScoreSubmission ?? this.tournamentScoreSubmission),
       tickDurationMs: tickDurationMs ?? this.tickDurationMs,
-      // Events are transient: they describe exactly one tick, so a copy
-      // that doesn't explicitly carry new ones drops the old list instead
-      // of replaying it alongside an unrelated emit.
-      tickEvents: tickEvents ?? const [],
+      // Events describe the tick that produced [gameState]. A copy that
+      // replaces the game state without new events drops them; a copy that
+      // keeps the same game state (an input stamp, a revive offer) keeps
+      // them, because they still describe that state. Dropping them there
+      // lost every bite whose tick shared a frame with an accepted input:
+      // the board only builds the latest state, so the gulp, swallow and
+      // effects never started and the food just vanished (2026-11-21).
+      // Consumers key off identical(gameState), so nothing replays.
+      tickEvents:
+          tickEvents ?? (gameState == null ? this.tickEvents : const []),
     );
   }
 
