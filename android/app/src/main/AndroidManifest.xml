@@ -8,6 +8,12 @@
 
     <uses-permission android:name="com.android.vending.BILLING" />
 
+    <!-- The InMobi mediation adapter adds CHANGE_WIFI_STATE, from which Play
+         infers that the app REQUIRES Wi-Fi hardware and blocks installs on
+         devices without it (Play Console flagged 8.0.0+81). Wi-Fi is never
+         needed: declare it optional. -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+
     <!-- AdMob / Google Mobile Ads advertising ID. Required on Android 13+ for
          the SDK to read the advertising ID used to serve and measure ads.
          Recent google_mobile_ads versions no longer auto-declare this (Play
