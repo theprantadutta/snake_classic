@@ -6,7 +6,7 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**8.0.0+81** (2026-11-21). The 7.7.x builds were never uploaded, so this text
+**8.0.1+82** (2026-11-21; 8.0.0+81 was built but refused by Play over a Wi-Fi feature flag, same content). The 7.7.x builds were never uploaded, so this text
 covers everything since the live 7.6.x: the 7.7.3 notes (archived in
 release_notes_7.7.3.md) plus the 8.0 work below.
 
