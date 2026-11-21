@@ -136,6 +136,8 @@ class LegacyBoardComponent extends Component
       sprites: game.boardSprites,
       crashElapsedSeconds: game.crashElapsedOrNull,
       growRippleT: game.growRippleT,
+      swallowColor: game.swallowColor,
+      snapMovement: game.snapMovement,
     ).paint(canvas, size);
 
     // Death flash: the body blinks white in the beat between the crash

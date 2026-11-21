@@ -46,8 +46,8 @@ class BoardEffectsComponent extends Component
 
   /// Gulp at a just-eaten food cell (world pixels): the food shrinks into
   /// the snake's mouth. The lump that follows is drawn by the board painter.
-  void eatPop(Offset at, double now) =>
-      _start(_FxKind.eat, at, LB.apple, now, _gulpSeconds);
+  void eatPop(Offset at, Color color, double now) =>
+      _start(_FxKind.eat, at, color, now, _gulpSeconds);
 
   static final double _gulpSeconds = EffectCurves.swallowDuration.inMicroseconds /
       Duration.microsecondsPerSecond *

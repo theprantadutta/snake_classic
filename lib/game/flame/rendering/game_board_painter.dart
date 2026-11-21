@@ -89,6 +89,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
   /// band travels head to tail; see [EffectCurves.rippleIntensity].
   final double? growRippleT;
 
+  /// Colour of the food being swallowed (seen inside the body while
+  /// [growRippleT] runs).
+  final Color swallowColor;
+
+  /// Snap movement (cell by cell, no glide). Elbows are only rounded then.
+  final bool snapMovement;
+
   // Shared paint for sprite draws; filterQuality gives clean minification
   // from the 512px source art down to cell size.
   final Paint _spritePaint = Paint()
@@ -118,6 +125,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.sprites,
     this.crashElapsedSeconds,
     this.growRippleT,
+    this.swallowColor = LB.apple,
+    this.snapMovement = false,
     // Cached paints from _GameBoardState
     Paint? cachedSnakeHeadPaint,
     Paint? cachedSnakeBodyPaint,
@@ -389,25 +398,40 @@ class OptimizedGameBoardPainter extends CustomPainter {
       }
     }
 
-    // Grow ripple over premium skins: a light wash per lit segment, one
-    // paint for the whole pass (and none at all when no ripple runs).
+    // Premium skins: the swallowed food travels inside the body too (no
+    // white wash: the owner found the old flash distracting).
     final ripple = growRippleT;
     if (ripple != null) {
-      final wash = Paint()..isAntiAlias = true;
-      final radius = Radius.circular(cellWidth * .2);
-      for (var i = 1; i < snakeLength; i++) {
-        final k = EffectCurves.rippleIntensity(ripple, i, snakeLength);
-        if (k <= 0) continue;
-        final kk = k * (1 - ripple * .5);
-        wash.color = Colors.white.withValues(alpha: .18 * kk);
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              segmentRects[i].inflate(cellWidth * .1 * kk), radius),
-          wash,
-        );
-      }
+      _drawSwallowedFood(canvas, segmentRects, cellWidth, ripple, null);
     }
   }
+
+  /// The eaten food seen inside the body: a dot in the food's colour,
+  /// blended into the body so it reads as "inside", travelling neck to
+  /// tail, shrinking as it goes, fading out at the tail. One circle a
+  /// frame; no flashes, no brightness change.
+  void _drawSwallowedFood(Canvas canvas, List<Rect> rects, double cell,
+      double t, Color? body) {
+    final n = rects.length;
+    if (n < 2) return;
+    final alpha = EffectCurves.swallowDotAlpha(t);
+    if (alpha <= .01) return;
+    // Position along the body (segments 1..n-1; the head is index 0).
+    final f = 1 + EffectCurves.swallowFront(t, n) * (n - 2);
+    final i0 = f.floor().clamp(1, n - 1);
+    final i1 = math.min(i0 + 1, n - 1);
+    final c = Offset.lerp(rects[i0].center, rects[i1].center, f - i0)!;
+    final r = cell * EffectCurves.swallowDotRadius(t);
+    // A dark rim (a shadow seen through the skin) then the food itself, so
+    // it reads on any body colour, including a red body eating a red apple.
+    final rim = Color.lerp(body ?? swallowColor, const Color(0xFF000000), .45)!;
+    canvas.drawCircle(
+        c, r * 1.25, _swallowPaint..color = rim.withValues(alpha: .6 * alpha));
+    canvas.drawCircle(
+        c, r, _swallowPaint..color = swallowColor.withValues(alpha: .95 * alpha));
+  }
+
+  static final Paint _swallowPaint = Paint()..isAntiAlias = true;
 
   /// True when no owned premium skin is selected — the classic skin, which
   /// the Living Board redraws.
@@ -439,26 +463,51 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // Themes with a scene dress the body (gradient, edge, shine).
     final style = invincible ? null : ThemeScenes.of(theme)?.snakeStyle;
     final ripple = growRippleT;
-    for (var i = n - 1; i >= 1; i--) {
+    // Segment colour, faded toward the tail but OPAQUE (the fade is
+    // pre-blended with the board): translucent squares overlapping at a
+    // bend doubled up into a bright patch that jumped every move.
+    Color segColor(int i) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
-      var color = style != null
+      final c = style != null
           ? style.bodyAt(t, bodyColor).withValues(alpha: 1 - style.tailFade * t)
           : bodyColor.withValues(alpha: 1 - .4 * t);
+      return Color.alphaBlend(c, palette.board);
+    }
+
+    // Smooth glide: a fixed square on every bend cell. Mid-move the square
+    // entering a bend and the one leaving it slide at right angles, so the
+    // corner flipped between a solid L and a notched stagger on every move,
+    // at every bend (owner, 2026-11-21: "the snake itself flickers").
+    if (!snapMovement && moveProgress < 1 && n > 2) {
+      final body = gameState.snake.body;
+      final pad = cell * .05;
+      for (var i = 1; i < n - 1 && i < body.length - 1; i++) {
+        final p = body[i], a = body[i - 1], b = body[i + 1];
+        final ax = a.x - p.x, ay = a.y - p.y, bx = b.x - p.x, by = b.y - p.y;
+        if (ax.abs() + ay.abs() != 1 || bx.abs() + by.abs() != 1) continue;
+        if (ax == -bx && ay == -by) continue; // straight
+        _snakeBodyPaint.color = segColor(i);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(p.x * cell + pad, p.y * cell + pad, cell - pad * 2,
+                cell - pad * 2),
+            bodyRadius,
+          ),
+          _snakeBodyPaint,
+        );
+      }
+    }
+
+    for (var i = n - 1; i >= 1; i--) {
+      var color = segColor(i);
       var rect = rects[i];
-      // Grow ripple: the lit band brightens and swells each segment a
-      // touch as it passes (draw-only, no extra paints).
+      // Swallow: the body swells softly around the food as it passes,
+      // easing off toward the tail. Shape only: the colour never changes
+      // (the old brighten read as a flash, owner 2026-11-21).
       if (ripple != null) {
-        // The swallowed bite: a soft lump that swells the segment and
-        // warms it toward the food colour, fading out near the tail.
         final k = EffectCurves.rippleIntensity(ripple, i, n) *
-            (1 - ripple * .5);
-        if (k > 0) {
-          // Brighten, don't tint: a red tint went muddy on pink/orange
-          // bodies (Miami Nights).
-          color = Color.lerp(color, Colors.white, .22 * k)!
-              .withValues(alpha: math.min(1.0, color.a + .2 * k));
-          rect = rect.inflate(cell * .12 * k);
-        }
+            (1 - ripple * .35);
+        if (k > 0) rect = rect.inflate(cell * .2 * k);
       }
       _snakeBodyPaint.color = color;
       canvas.drawRRect(_elbowRRect(rect, i, bodyRadius, cell), _snakeBodyPaint);
@@ -491,19 +540,27 @@ class OptimizedGameBoardPainter extends CustomPainter {
       }
     }
 
-    var head = rects.first;
-    var headColor = crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
-    // Eat flash: the head blinks bright for the first ~80 ms of the tick
-    // after a bite (DESIGN_SPEC §6).
-    final prev = previousGameState;
-    if (!crashed && prev != null && gameState.score > prev.score && moveProgress < .4) {
-      headColor = Color.lerp(headColor, Colors.white, (1 - moveProgress / .4) * .8)!;
+    // The food inside the body, over the segments and under the head.
+    if (ripple != null && !crashed) {
+      _drawSwallowedFood(canvas, rects, cell, ripple,
+          style?.bodyAt(.5, bodyColor) ?? bodyColor);
     }
-    // Turn: the head stretches toward the new direction and springs back.
+
+    var head = rects.first;
+    final headColor =
+        crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
+    // Chomp: the head squeezes once as it bites. Replaces the white eat
+    // flash (owner: the old eating animation was "flashing").
+    if (ripple != null && !crashed) {
+      final c = EffectCurves.chomp(ripple);
+      if (c > 0) head = head.deflate(cell * .07 * c);
+    }
+    // Turn: faint chevrons ahead of the head. No head stretch: the head is
+    // still gliding the old way for the rest of the move, so stretching it
+    // toward the new direction read as a sideways jerk on every turn
+    // (owner, 2026-11-21: "the direction change isn't smooth").
     final turn = turnDirection;
     if (turn != null && turnAge < 1 && !crashed) {
-      final s = EffectCurves.turnStretch(turnAge);
-      if (s != 0) head = _stretchToward(head, turn, s);
       _drawTurnChevrons(canvas, head, turn, cell, palette.head);
     }
     canvas.drawRRect(
@@ -557,8 +614,14 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
   /// Body segment [i] as a rounded rect; where the body bends, the outer
   /// corner gets a big radius so turns read as a smooth elbow.
+  ///
+  /// Snap movement only. With the smooth glide every segment slides between
+  /// cells, and the rounded corner hopped to the next segment on every
+  /// tick: a pop at each bend, the whole length of the snake, worst right
+  /// after a turn (owner, 2026-11-21: "the snake itself flickers a lot").
   RRect _elbowRRect(Rect r, int i, Radius base, double cell) {
     final body = gameState.snake.body;
+    if (!snapMovement) return RRect.fromRectAndRadius(r, base);
     if (i <= 0 || i >= body.length - 1) return RRect.fromRectAndRadius(r, base);
     final p = body[i], a = body[i - 1], b = body[i + 1];
     final ax = a.x - p.x, ay = a.y - p.y, bx = b.x - p.x, by = b.y - p.y;
@@ -577,22 +640,6 @@ class OptimizedGameBoardPainter extends CustomPainter {
       bottomLeft: ox < 0 && oy > 0 ? big : base,
       bottomRight: ox > 0 && oy > 0 ? big : base,
     );
-  }
-
-  /// [r] stretched by [s] (fraction) along [d], squashed half as much
-  /// across it, leading edge pushed forward.
-  Rect _stretchToward(Rect r, Direction d, double s) {
-    final c = r.center;
-    final horizontal = d == Direction.left || d == Direction.right;
-    final w = r.width * (horizontal ? 1 + s : 1 - s * .5);
-    final h = r.height * (horizontal ? 1 - s * .5 : 1 + s);
-    final shift = switch (d) {
-      Direction.right => Offset((w - r.width) / 2, 0),
-      Direction.left => Offset(-(w - r.width) / 2, 0),
-      Direction.down => Offset(0, (h - r.height) / 2),
-      Direction.up => Offset(0, -(h - r.height) / 2),
-    };
-    return Rect.fromCenter(center: c + shift, width: w, height: h);
   }
 
   /// Two soft chevrons gliding out ahead of the head in the new direction.
@@ -618,7 +665,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
       // Arms trail back from the tip, spread across the direction.
       final back = Offset(-dx, -dy) * half;
       final side = Offset(-dy, dx) * half;
-      paint.color = color.withValues(alpha: alpha * (k == 0 ? 1 : .55));
+      // Faint: a hint that the turn registered, not an event.
+      paint.color = color.withValues(alpha: .55 * alpha * (k == 0 ? 1 : .55));
       canvas.drawPath(
         Path()
           ..moveTo((tip + back + side).dx, (tip + back + side).dy)
@@ -839,12 +887,16 @@ class OptimizedGameBoardPainter extends CustomPainter {
   double _mouthOpenAmount() {
     if (gameState.status != GameStatus.playing) return 0.0;
 
-    // Chomp: the score bump / power-up pickup landed on this tick's state.
+    // Chomp: the bite landed on this tick's state, but the drawn head is
+    // still gliding onto it. Stay wide open, then close on the same curve
+    // the food shrinks into the mouth (_drawEatenFood), so the mouth shuts
+    // ON the food, not a cell before it (owner, 2026-11-21).
     final prev = previousGameState;
     if (prev != null &&
         (gameState.score > prev.score ||
             (prev.powerUp != null && gameState.powerUp == null))) {
-      return (1.0 - (moveProgress / 0.35)).clamp(0.0, 1.0);
+      final k = ((moveProgress - .45) / .55).clamp(0.0, 1.0);
+      return 1.0 - k * k;
     }
 
     final head = gameState.snake.head;
@@ -1932,14 +1984,47 @@ class OptimizedGameBoardPainter extends CustomPainter {
     for (final extra in gameState.foods) {
       _drawSingleFood(canvas, cellWidth, cellHeight, extra);
     }
+    _drawEatenFood(canvas, cellWidth, cellHeight);
+  }
+
+  /// The food eaten on this tick. The game removes it the moment the head's
+  /// CELL reaches it, but the drawn head is still gliding there, so it used
+  /// to vanish a cell ahead of the mouth (owner, 2026-11-21). It stays put
+  /// at full size, then shrinks into the mouth as the head slides over it
+  /// (the head is drawn on top, so it disappears inside).
+  void _drawEatenFood(Canvas canvas, double cellWidth, double cellHeight) {
+    final prev = previousGameState;
+    if (prev == null || moveProgress >= 1) return;
+    final head = gameState.snake.head;
+    for (final f in [?prev.food, ...prev.foods]) {
+      if (f.position != head) continue;
+      final k = ((moveProgress - .45) / .55).clamp(0.0, 1.0);
+      final scale = 1 - k * k;
+      if (scale <= .02) return;
+      _drawSingleFood(canvas, cellWidth, cellHeight, f, scale: scale);
+      return;
+    }
   }
 
   void _drawSingleFood(
     Canvas canvas,
     double cellWidth,
     double cellHeight,
-    Food food,
-  ) {
+    Food food, {
+    double scale = 1,
+  }) {
+    if (scale != 1) {
+      final c = Offset(food.position.x * cellWidth + cellWidth / 2,
+          food.position.y * cellHeight + cellHeight / 2);
+      canvas
+        ..save()
+        ..translate(c.dx, c.dy)
+        ..scale(scale)
+        ..translate(-c.dx, -c.dy);
+      _drawSingleFood(canvas, cellWidth, cellHeight, food);
+      canvas.restore();
+      return;
+    }
     // Force square food by using the smaller dimension
     final cellSize = math.min(cellWidth, cellHeight);
     final padding = _getFoodPadding(cellSize, food.type);

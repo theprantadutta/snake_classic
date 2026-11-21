@@ -9,6 +9,7 @@ import 'package:snake_classic/game/engine/tick_result.dart';
 import 'package:snake_classic/game/flame/rendering/game_board_painter.dart'
     show BoardSprites;
 import 'package:snake_classic/design/lb_motion.dart';
+import 'package:snake_classic/design/lb_tokens.dart' show LB;
 import 'package:snake_classic/game/flame/components/board_effects_component.dart';
 import 'package:snake_classic/game/flame/components/game_particles_component.dart';
 import 'package:snake_classic/game/flame/components/legacy_board_component.dart';
@@ -128,10 +129,14 @@ class SnakeFlameGame extends FlameGame {
   /// and freezes with the board.
   double fxClock = 0;
 
-  static final double _rippleSeconds =
-      EffectCurves.swallowDuration.inMicroseconds /
-          Duration.microsecondsPerSecond;
+  /// Swallow length for the current bite (set per bite from body length).
+  double _rippleSeconds = EffectCurves.swallowDuration.inMicroseconds /
+      Duration.microsecondsPerSecond;
   double _rippleStart = -1e9;
+
+  /// Tick duration of the state being synced (for timing the swallow to
+  /// the end of the head's glide).
+  int? cubitStateTickMs;
 
   static final double _bumpSeconds =
       LBMotion.base.inMicroseconds / Duration.microsecondsPerSecond;
@@ -143,6 +148,15 @@ class SnakeFlameGame extends FlameGame {
     final t = (fxClock - _scoreBumpStart) / _bumpSeconds;
     return t >= 0 && t < 1 ? t : null;
   }
+
+  /// Colour of the food being swallowed (seen travelling inside the body).
+  Color swallowColor = LB.apple;
+
+  static Color _swallowColorOf(FoodType type) => switch (type) {
+        FoodType.normal => LB.apple,
+        FoodType.bonus => LB.gold,
+        FoodType.special => const Color(0xFFB98CFF),
+      };
 
   /// Grow-ripple progress 0..1 after a bite, or null when no ripple runs.
   double? get growRippleT {
@@ -227,6 +241,7 @@ class SnakeFlameGame extends FlameGame {
 
     final incoming = newState.gameState;
     if (!identical(incoming, _lastProcessed)) {
+      cubitStateTickMs = newState.tickDurationMs;
       _emitEventParticles(newState.tickEvents, _lastProcessed, incoming);
       _lastProcessed = incoming;
       // Restart the inter-tick interpolation clock ONLY when a new tick
@@ -285,9 +300,19 @@ class SnakeFlameGame extends FlameGame {
           if (reducedMotion) {
             particles.emitAt(at, _foodConfig(event.food.type));
           } else {
-            _effects?.eatPop(at, fxClock);
-            _rippleStart = fxClock;
-            if (event.awardedPoints > 0) _scoreBumpStart = fxClock;
+            // The drawn head reaches the food one glide later (the painter
+            // keeps the food there and shrinks it into the mouth meanwhile),
+            // so the swallow starts when the mouth actually closes on it.
+            final glide = snapMovement
+                ? 0.0
+                : (cubitStateTickMs ?? current.gameSpeed) / 1000.0;
+            swallowColor = _swallowColorOf(event.food.type);
+            _rippleStart = fxClock + glide;
+            // Paced to the body: the food travels ~14 segments a second,
+            // so it can be followed on a long snake (1.4 s flat was a blur).
+            _rippleSeconds =
+                (.5 + current.snake.length / 14).clamp(1.2, 3.0).toDouble();
+            if (event.awardedPoints > 0) _scoreBumpStart = fxClock + glide;
           }
         case PowerUpCollectedEvent():
           final at =

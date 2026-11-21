@@ -49,6 +49,36 @@ abstract class EffectCurves {
     return 1 - k * k;
   }
 
+  /// Where the swallowed food is, as a fraction of the body (0 = neck,
+  /// 1 = tail) at swallow progress [t]: the same front [rippleIntensity]
+  /// bulges around, clamped to the body.
+  static double swallowFront(double t, int length) {
+    final w = rippleHalfWidth(length);
+    return (t * (1 + 2 * w) - w).clamp(0.0, 1.0);
+  }
+
+  /// Opacity of the food seen inside the body: fades in as it enters the
+  /// neck, holds, and fades out over the last stretch (digested at the
+  /// tail). No flashes: everything is a slow ramp.
+  static double swallowDotAlpha(double t) {
+    if (t <= 0 || t >= 1) return 0;
+    if (t < .1) return t / .1;
+    if (t > .75) return (1 - t) / .25;
+    return 1;
+  }
+
+  /// Size of the food seen inside the body (fraction of a cell): it shrinks
+  /// as it is digested.
+  static double swallowDotRadius(double t) => .27 - .12 * t.clamp(0.0, 1.0);
+
+  /// Chomp: the head squeezes once as it bites (0 = none, 1 = deepest),
+  /// over the first [chompFraction] of the swallow.
+  static const double chompFraction = .14;
+  static double chomp(double t) {
+    if (t <= 0 || t >= chompFraction) return 0;
+    return math.sin(math.pi * t / chompFraction);
+  }
+
   /// Turn feedback length: head squash-and-stretch + direction chevrons.
   static const Duration turnDuration = Duration(milliseconds: 360);
 
