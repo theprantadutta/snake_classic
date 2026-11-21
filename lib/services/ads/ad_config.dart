@@ -58,7 +58,12 @@ class AdConfig {
   static const _rewardedInterstitialIos =
       'ca-app-pub-9242904787767394/3391193437';
 
-  static String get bannerUnitId => kDebugMode
+  /// Profiling only: use Google's test banner unit in a profile build, to
+  /// separate the AdWidget's own cost from real (mediated) creatives.
+  static const bool _profileTestBanner =
+      bool.fromEnvironment('LB_TEST_BANNER');
+
+  static String get bannerUnitId => kDebugMode || _profileTestBanner
       ? (_isIos ? _testBannerIos : _testBannerAndroid)
       : (_isIos ? _bannerIos : _bannerAndroid);
 
