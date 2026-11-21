@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:material_ui/material_ui.dart';
@@ -103,137 +104,164 @@ class _PauseOverlayState extends State<PauseOverlay> {
         ),
       );
     } else {
-      content = Center(
-        child: SingleChildScrollView(
-          // Two extra cells each side cost a 360 dp phone ~72 dp and cut
-          // "QUIT TO MENU" to "QUIT TO M…" (Realme RMX3771). One extra on
-          // narrow phones; wider phones and tablets keep two.
+      // Three groups spread over the real screen height (header + run card,
+      // actions, footer) instead of one block floating in the middle with a
+      // dead third below it (owner review 2026-11-21). Scrolls when short.
+      content = LayoutBuilder(
+        builder: (context, box) => SingleChildScrollView(
+          // Full width between the standard gutters (owner: "take more
+          // width"); tablets cap the column at 480 dp below.
           padding: EdgeInsets.symmetric(
-            horizontal:
-                context.lbGutter +
-                cell * (MediaQuery.sizeOf(context).width < 380 ? 1 : 2),
-            vertical: 24,
+            horizontal: context.lbGutter,
+            vertical: 20,
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Semantics(
-                    header: true,
-                    child: LBCellText(
-                      l10n.lbPauseTitle,
-                      cell: 11 * context.uiScale,
-                      glow: true,
-                    ),
-                  ),
+            constraints: BoxConstraints(
+              minHeight: math.max(0, box.maxHeight - 40),
+            ),
+            child: Center(
+              // Center loosens constraints, so the min height is restated
+              // here or the spacers have nothing to fill.
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 480,
+                  minHeight: math.max(0, box.maxHeight - 40),
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  l10n.lbPauseLine,
-                  textAlign: TextAlign.center,
-                  style: LBText.body(
-                    p,
-                    color: p.ink.withValues(alpha: .7),
-                    size: 13,
-                  ),
-                ),
-                SizedBox(height: cell * 1.6),
-                LBBlock(
-                  kind: LBBlockKind.fill,
-                  height: cell * 3.6,
-                  alignment: Alignment.center,
-                  semanticLabel: l10n.lbResume,
-                  onTap: _startResume,
+                child: IntrinsicHeight(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        l10n.lbResume,
-                        style: LBText.button(
-                          p,
-                          color: p.onLime,
-                          size: 17,
-                        ).copyWith(letterSpacing: 4),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        l10n.lbResumeSub,
-                        style: LBText.label(
-                          p,
-                          color: p.onLime.withValues(alpha: .65),
+                      // One block, sitting a little above centre; the
+                      // footer links pin to the bottom.
+                      const Spacer(flex: 2),
+                      Center(
+                        child: Semantics(
+                          header: true,
+                          child: LBCellText(
+                            l10n.lbPauseTitle,
+                            cell: 11 * context.uiScale,
+                            glow: true,
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        l10n.lbPauseLine,
+                        textAlign: TextAlign.center,
+                        style: LBText.body(
+                          p,
+                          color: p.ink.withValues(alpha: .75),
+                          size: 13,
+                        ),
+                      ),
+                      if (gs != null) ...[
+                        SizedBox(height: cell * 1.2),
+                        _RunCard(
+                          score: context.formatInt(gs.score),
+                          length: '${gs.snake.length}',
+                          time: _elapsed(gs),
+                          scoreLabel: l10n.lbScoreLabel,
+                          lengthLabel: l10n.lbLength,
+                          timeLabel: l10n.rvTime.toUpperCase(),
+                        ),
+                      ],
+                      SizedBox(height: cell * 1.6),
+                      LBBlock(
+                        kind: LBBlockKind.fill,
+                        height: cell * 4.4,
+                        alignment: Alignment.center,
+                        semanticLabel: l10n.lbResume,
+                        onTap: _startResume,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            LBPixelIcon(LBIcon.play, cell: 4, color: p.onLime),
+                            const SizedBox(width: 16),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.lbResume,
+                                  style: LBText.button(
+                                    p,
+                                    color: p.onLime,
+                                    size: 18,
+                                  ).copyWith(letterSpacing: 4),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  l10n.lbResumeSub,
+                                  style: LBText.label(
+                                    p,
+                                    color: p.onLime.withValues(alpha: .7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _PauseRow(
+                        icon: LBIcon.bolt,
+                        title: l10n.lbRestart,
+                        aside: l10n.lbRestartSub,
+                        onTap: widget.onRestart,
+                      ),
+                      const SizedBox(height: 8),
+                      _PauseRow(
+                        icon: LBIcon.gear,
+                        title: l10n.lbPauseSettings,
+                        aside: l10n.lbPauseSettingsSub,
+                        onTap: () => _openSettings(context),
+                      ),
+                      const SizedBox(height: 8),
+                      _PauseRow(
+                        icon: LBIcon.back,
+                        title: l10n.lbQuit,
+                        aside: l10n.lbQuitSub,
+                        kind: LBBlockKind.danger,
+                        onTap: widget.onHome,
+                      ),
+                      // A downloaded Play update waiting for a restart. Only
+                      // ever visible once the download has landed.
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            InAppUpdateService().updateReadyToInstall,
+                        builder: (context, ready, _) => ready
+                            ? _PauseRow(
+                                icon: LBIcon.gift,
+                                title: l10n.poUpdateReady,
+                                kind: LBBlockKind.gold,
+                                onTap: () =>
+                                    InAppUpdateService().completeUpdate(),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      const Spacer(flex: 3),
+                      SizedBox(height: cell * .8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _TextLink(
+                            label: l10n.poStore,
+                            onTap: () => context.push(AppRoutes.store),
+                          ),
+                          Text('  ·  ',
+                              style: LBText.label(p, color: p.inkDim)),
+                          _TextLink(
+                            label: l10n.lbGoPro,
+                            color: LB.gold,
+                            onTap: () =>
+                                context.push(AppRoutes.premiumBenefits),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                _PauseRow(
-                  title: l10n.lbRestart,
-                  aside: l10n.lbRestartSub,
-                  onTap: widget.onRestart,
-                ),
-                _PauseRow(
-                  title: l10n.lbPauseSettings,
-                  aside: l10n.lbPauseSettingsSub,
-                  onTap: () => _openSettings(context),
-                ),
-                _PauseRow(
-                  title: l10n.lbQuit,
-                  aside: l10n.lbQuitSub,
-                  kind: LBBlockKind.danger,
-                  onTap: widget.onHome,
-                ),
-                // A downloaded Play update waiting for a restart. Only ever
-                // visible once the download has landed.
-                ValueListenableBuilder<bool>(
-                  valueListenable: InAppUpdateService().updateReadyToInstall,
-                  builder: (context, ready, _) => ready
-                      ? _PauseRow(
-                          title: l10n.poUpdateReady,
-                          kind: LBBlockKind.gold,
-                          onTap: () => InAppUpdateService().completeUpdate(),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                if (gs != null) ...[
-                  SizedBox(height: cell),
-                  // One line: wrapped, it split "· 0:57" off on its own.
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      l10n.lbPauseSoFar(
-                        context.formatInt(gs.score),
-                        '${gs.snake.length}',
-                        _elapsed(gs),
-                      ),
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      style: LBText.label(
-                        p,
-                        color: p.inkDim,
-                      ).copyWith(fontSize: 10),
-                    ),
-                  ),
-                ],
-                SizedBox(height: cell * .8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _TextLink(
-                      label: l10n.poStore,
-                      onTap: () => context.push(AppRoutes.store),
-                    ),
-                    Text('  ·  ', style: LBText.label(p, color: p.inkDim)),
-                    _TextLink(
-                      label: l10n.lbGoPro,
-                      color: LB.gold,
-                      onTap: () => context.push(AppRoutes.premiumBenefits),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -241,7 +269,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
     }
 
     // Blur the board behind the overlay so the pause visibly disengages the
-    // world while it stays faintly readable underneath.
+    // world. Lighter than before (.78 -> .62): the theme's board should still
+    // read underneath, not turn into a black void.
     // Clipped: a BackdropFilter blurs everything painted behind it up to
     // its nearest clip, which without one is the whole screen. That is
     // what blurred the banner above the play area along with the board.
@@ -249,7 +278,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
         child: ColoredBox(
-          color: p.board.withValues(alpha: .78),
+          color: p.board.withValues(alpha: .62),
           child: SafeArea(child: content),
         ),
       ),
@@ -389,14 +418,79 @@ class _PauseOverlayState extends State<PauseOverlay> {
   }
 }
 
+/// The run so far: SCORE, LENGTH and TIME as big readouts in one card
+/// (it used to be a single 10 pt dim line).
+class _RunCard extends StatelessWidget {
+  const _RunCard({
+    required this.score,
+    required this.length,
+    required this.time,
+    required this.scoreLabel,
+    required this.lengthLabel,
+    required this.timeLabel,
+  });
+
+  final String score, length, time;
+  final String scoreLabel, lengthLabel, timeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.lb;
+    Widget stat(String label, String value, Color color) => Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: LBText.value(p, color: color, size: 24),
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: LBText.label(p, color: p.inkMuted),
+                ),
+              ),
+            ],
+          ),
+        );
+    Widget divider() => Container(
+          width: 1,
+          height: context.lbCell * 1.6,
+          color: p.lime.withValues(alpha: .18),
+        );
+    return LBBlock(
+      kind: LBBlockKind.outline,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      child: Row(
+        children: [
+          stat(scoreLabel, score, LB.gold),
+          divider(),
+          stat(lengthLabel, length, p.head),
+          divider(),
+          stat(timeLabel, time, p.ink),
+        ],
+      ),
+    );
+  }
+}
+
 class _PauseRow extends StatelessWidget {
   const _PauseRow({
+    required this.icon,
     required this.title,
     required this.onTap,
     this.aside,
     this.kind = LBBlockKind.outline,
   });
 
+  final LBIcon icon;
   final String title;
   final String? aside;
   final VoidCallback onTap;
@@ -408,48 +502,51 @@ class _PauseRow extends StatelessWidget {
     final fg = LBBlock.foregroundOf(kind, p);
     return LBBlock(
       kind: kind,
-      height: context.lbCell * 3,
+      height: context.lbCell * 3.5,
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      // The title is the action; the aside is a hint. So the title keeps
-      // its width and the aside gives way (it ellipsizes first), the
-      // opposite of before, when "QUIT TO MENU" was the one cut.
+      // Icon, then the title with its hint UNDER it (side by side, the hint
+      // was cut to "controls · …" / "run ends he…"), then an arrow.
       child: Row(
         children: [
-          Flexible(
-            flex: 3,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                title,
-                maxLines: 1,
-                style: LBText.button(
-                  p,
-                  color: fg,
-                  size: 14,
-                ).copyWith(letterSpacing: 2.4),
-              ),
+          LBPixelIcon(icon, cell: 3.6, color: fg),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    style: LBText.button(
+                      p,
+                      color: fg,
+                      size: 14,
+                    ).copyWith(letterSpacing: 2.4),
+                  ),
+                ),
+                if (aside != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    aside!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LBText.body(
+                      p,
+                      color: fg.withValues(alpha: .72),
+                      size: 11,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (aside != null) ...[
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: Text(
-                aside!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: LBText.body(
-                  p,
-                  color: fg.withValues(alpha: .7),
-                  size: 11,
-                ),
-              ),
-            ),
-          ] else
-            const Spacer(),
+          const SizedBox(width: 10),
+          LBPixelIcon(LBIcon.next, cell: 2.4, color: fg.withValues(alpha: .7)),
         ],
       ),
     );
