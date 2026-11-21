@@ -144,16 +144,6 @@ void _boardMocks(Canvas c, Size size, ThemeScene scene, LBPalette p) {
   // Food at (15,6) and one near the bottom-left art (3,17).
   for (final f in const [Offset(15.5, 6.5), Offset(3.5, 17.5), Offset(16.5, 3.5)]) {
     final fc = f * cell;
-    final ring = scene.foodRing;
-    if (ring != null) {
-      c.drawCircle(
-          fc,
-          cell * .58,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = cell * .07
-            ..color = ring.withValues(alpha: .85));
-    }
     c.drawCircle(fc, cell * .36, Paint()..color = p.food);
     c.drawCircle(fc + Offset(-cell * .1, -cell * .1), cell * .1,
         Paint()..color = Colors.white.withValues(alpha: .6));

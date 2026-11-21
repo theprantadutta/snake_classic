@@ -547,7 +547,4 @@ class DesertThemeScene extends ThemeScene {
         shine: .22,
         tailFade: .26,
       );
-
-  @override
-  Color get foodRing => const Color(0xFFB9FFF7);
 }

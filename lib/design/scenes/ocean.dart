@@ -743,7 +743,4 @@ class OceanThemeScene extends ThemeScene {
         shine: .2,
         tailFade: .3,
       );
-
-  @override
-  Color get foodRing => const Color(0xFFFFC2A8);
 }

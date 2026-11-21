@@ -516,7 +516,4 @@ class NeonThemeScene extends ThemeScene {
         shine: .28,
         tailFade: .3,
       );
-
-  @override
-  Color get foodRing => _pink;
 }

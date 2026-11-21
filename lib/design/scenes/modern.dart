@@ -257,8 +257,5 @@ class ModernThemeScene extends ThemeScene {
       );
 
   @override
-  Color get foodRing => GameConstants.modernFood;
-
-  @override
   bool get busyBoard => false;
 }

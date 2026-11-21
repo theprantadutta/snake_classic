@@ -77,10 +77,7 @@ abstract class ThemeScene {
   /// The snake's dress on the board.
   SnakeStyle get snakeStyle => const SnakeStyle();
 
-  /// UNUSED: the board no longer draws a ring around food (the owner
-  /// disliked it, 2026-11-19). Kept so scene files still compile; remove
-  /// with the per-scene overrides.
-  Color? get foodRing => null;
+  // No food ring: the owner rejected rings around food (2026-11-19).
 
   /// The in-game ghost score needs a dark backing on busy scenes.
   bool get busyBoard => true;

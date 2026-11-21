@@ -134,16 +134,6 @@ void _snake(Canvas c, Size size, ThemeScene scene, LBPalette p, int cells) {
       Paint()
         ..color = p.food.withValues(alpha: .5)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, cell * .3));
-  final ring = scene.foodRing;
-  if (ring != null) {
-    c.drawCircle(
-        fc,
-        cell * .58,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = cell * .07
-          ..color = ring.withValues(alpha: .85));
-  }
   c.drawCircle(fc, cell * .36, Paint()..color = p.food);
 }
 

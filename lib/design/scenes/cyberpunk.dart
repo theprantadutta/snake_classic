@@ -428,7 +428,9 @@ class CyberpunkThemeScene extends ThemeScene {
     }
     // Holo blade sign jutting from the inner face, and a round one lower.
     final sx = left ? innerX + s * .01 : innerX - s * .04;
-    _bladeSign(canvas, Rect.fromLTWH(sx, h * .14, s * .03, h * .16), s,
+    // Phone menus: below the score band (it clipped the outer digits).
+    final signTop = h > w * 1.3 ? h * .32 : h * .14;
+    _bladeSign(canvas, Rect.fromLTWH(sx, signTop, s * .03, h * .16), s,
         left ? _yellow : _magenta);
     final c = Offset(left ? innerX + s * .055 : innerX - s * .055, h * .52);
     _bloomCircle(canvas, c, s * .035, left ? _magenta : _cyan, s);
@@ -603,7 +605,4 @@ class CyberpunkThemeScene extends ThemeScene {
         shine: .22,
         tailFade: .28,
       );
-
-  @override
-  Color get foodRing => _yellow;
 }

@@ -483,7 +483,4 @@ class SpaceThemeScene extends ThemeScene {
         shine: .24,
         tailFade: .3,
       );
-
-  @override
-  Color get foodRing => GameConstants.spaceFood;
 }

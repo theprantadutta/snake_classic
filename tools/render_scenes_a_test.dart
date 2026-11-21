@@ -141,13 +141,6 @@ void _board(Canvas c, ThemeScene scene, LBPalette p) {
   // Food at (14, 6), plus one near the edge at (1, 2).
   for (final (fx, fy) in const [(14, 6), (1, 2)]) {
     final fc = Offset(fx * 20.0 + 10, fy * 20.0 + 10);
-    final ring = scene.foodRing;
-    if (ring != null) {
-      c.drawCircle(fc, 9.5, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
-        ..color = ring.withValues(alpha: .8));
-    }
     c.drawCircle(fc, 7, Paint()..color = p.food);
     c.drawCircle(fc + const Offset(-2, -2), 2, Paint()..color = Colors.white70);
   }

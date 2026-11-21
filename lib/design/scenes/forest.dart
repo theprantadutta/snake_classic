@@ -526,7 +526,4 @@ class ForestThemeScene extends ThemeScene {
         shine: .2,
         tailFade: .28,
       );
-
-  @override
-  Color get foodRing => const Color(0xFFFFD86B);
 }

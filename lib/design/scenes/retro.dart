@@ -387,7 +387,4 @@ class RetroThemeScene extends ThemeScene {
         shine: .18,
         tailFade: .22,
       );
-
-  @override
-  Color get foodRing => GameConstants.retroFood;
 }

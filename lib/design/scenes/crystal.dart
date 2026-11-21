@@ -466,7 +466,4 @@ class CrystalThemeScene extends ThemeScene {
         shine: .3,
         tailFade: .28,
       );
-
-  @override
-  Color get foodRing => GameConstants.crystalFood;
 }
