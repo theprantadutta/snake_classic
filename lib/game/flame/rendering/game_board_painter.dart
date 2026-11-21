@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:material_ui/material_ui.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/effects/effect_curves.dart';
 import 'package:snake_classic/models/game_state.dart';
@@ -71,6 +72,11 @@ class OptimizedGameBoardPainter extends CustomPainter {
   final Direction? recentInputDirection;
   final double recentInputShimmerAge; // 0.0 = fresh, 1.0 = stale
 
+  /// Turn feedback: the direction just accepted and its progress 0..1
+  /// (1 = idle). Drives the head squash-and-stretch and the chevrons.
+  final Direction? turnDirection;
+  final double turnAge;
+
   /// Optional sprite art for food/power-ups/effects. Null (or any null
   /// member) falls back to the procedural shapes.
   final BoardSprites? sprites;
@@ -107,6 +113,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     this.animationTimeMs = 0,
     this.recentInputDirection,
     this.recentInputShimmerAge = 1.0,
+    this.turnDirection,
+    this.turnAge = 1.0,
     this.sprites,
     this.crashElapsedSeconds,
     this.growRippleT,
@@ -391,7 +399,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
         final k = EffectCurves.rippleIntensity(ripple, i, snakeLength);
         if (k <= 0) continue;
         final kk = k * (1 - ripple * .5);
-        wash.color = LB.apple.withValues(alpha: .22 * kk);
+        wash.color = Colors.white.withValues(alpha: .18 * kk);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
               segmentRects[i].inflate(cellWidth * .1 * kk), radius),
@@ -428,13 +436,13 @@ class OptimizedGameBoardPainter extends CustomPainter {
       ..shader = null
       ..maskFilter = null;
     final bodyRadius = Radius.circular(cell * .15);
-    // Miami Nights: the body runs pink -> sunset orange toward the tail.
-    final sunsetBody = theme == GameTheme.miamiNights && !invincible;
+    // Themes with a scene dress the body (gradient, edge, shine).
+    final style = invincible ? null : ThemeScenes.of(theme)?.snakeStyle;
     final ripple = growRippleT;
     for (var i = n - 1; i >= 1; i--) {
       final t = n <= 1 ? 0.0 : i / (n - 1);
-      var color = sunsetBody
-          ? Color.lerp(bodyColor, theme.accentColor, t)!.withValues(alpha: 1 - .25 * t)
+      var color = style != null
+          ? style.bodyAt(t, bodyColor).withValues(alpha: 1 - style.tailFade * t)
           : bodyColor.withValues(alpha: 1 - .4 * t);
       var rect = rects[i];
       // Grow ripple: the lit band brightens and swells each segment a
@@ -445,28 +453,33 @@ class OptimizedGameBoardPainter extends CustomPainter {
         final k = EffectCurves.rippleIntensity(ripple, i, n) *
             (1 - ripple * .5);
         if (k > 0) {
-          color = Color.lerp(color, LB.apple, .28 * k)!
+          // Brighten, don't tint: a red tint went muddy on pink/orange
+          // bodies (Miami Nights).
+          color = Color.lerp(color, Colors.white, .22 * k)!
               .withValues(alpha: math.min(1.0, color.a + .2 * k));
           rect = rect.inflate(cell * .12 * k);
         }
       }
       _snakeBodyPaint.color = color;
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, bodyRadius), _snakeBodyPaint);
+      canvas.drawRRect(_elbowRRect(rect, i, bodyRadius, cell), _snakeBodyPaint);
     }
 
-    // Miami Nights: a neon edge (aqua on the sunset body) and a soft top
-    // highlight per segment. Strokes only, no blur, so it stays cheap.
-    if (sunsetBody) {
+    // Scene themes: an edge and a soft top highlight per segment. Strokes
+    // only, no blur, so it stays cheap.
+    if (style != null && (style.edge != null || style.shine > 0)) {
       final edge = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = cell * .07;
-      final shine = Paint()..color = Colors.white.withValues(alpha: .22);
+      final shine = Paint()..color = Colors.white.withValues(alpha: style.shine);
       for (var i = n - 1; i >= 1; i--) {
         final t = n <= 1 ? 0.0 : i / (n - 1);
         final r = rects[i];
-        edge.color = theme.foodColor.withValues(alpha: .75 - .45 * t);
-        canvas.drawRRect(
-            RRect.fromRectAndRadius(r.deflate(cell * .035), bodyRadius), edge);
+        if (style.edge != null) {
+          edge.color = style.edge!.withValues(alpha: .75 - .45 * t);
+          canvas.drawRRect(
+              RRect.fromRectAndRadius(r.deflate(cell * .035), bodyRadius), edge);
+        }
+        if (style.shine <= 0) continue;
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromLTWH(r.left + r.width * .18, r.top + r.height * .14,
@@ -478,13 +491,20 @@ class OptimizedGameBoardPainter extends CustomPainter {
       }
     }
 
-    final head = rects.first;
+    var head = rects.first;
     var headColor = crashed ? LB.bonk : (invincible ? LB.goldHead : palette.head);
     // Eat flash: the head blinks bright for the first ~80 ms of the tick
     // after a bite (DESIGN_SPEC §6).
     final prev = previousGameState;
     if (!crashed && prev != null && gameState.score > prev.score && moveProgress < .4) {
       headColor = Color.lerp(headColor, Colors.white, (1 - moveProgress / .4) * .8)!;
+    }
+    // Turn: the head stretches toward the new direction and springs back.
+    final turn = turnDirection;
+    if (turn != null && turnAge < 1 && !crashed) {
+      final s = EffectCurves.turnStretch(turnAge);
+      if (s != 0) head = _stretchToward(head, turn, s);
+      _drawTurnChevrons(canvas, head, turn, cell, palette.head);
     }
     canvas.drawRRect(
       RRect.fromRectAndRadius(head.inflate(cell * .12), Radius.circular(cell * .3)),
@@ -532,6 +552,80 @@ class OptimizedGameBoardPainter extends CustomPainter {
 
     if (recentInputDirection != null && recentInputShimmerAge < 1.0) {
       _drawHeadIntentShimmer(canvas, head);
+    }
+  }
+
+  /// Body segment [i] as a rounded rect; where the body bends, the outer
+  /// corner gets a big radius so turns read as a smooth elbow.
+  RRect _elbowRRect(Rect r, int i, Radius base, double cell) {
+    final body = gameState.snake.body;
+    if (i <= 0 || i >= body.length - 1) return RRect.fromRectAndRadius(r, base);
+    final p = body[i], a = body[i - 1], b = body[i + 1];
+    final ax = a.x - p.x, ay = a.y - p.y, bx = b.x - p.x, by = b.y - p.y;
+    // Straight, or a wrap-around jump: plain segment.
+    if (ax.abs() + ay.abs() != 1 || bx.abs() + by.abs() != 1) {
+      return RRect.fromRectAndRadius(r, base);
+    }
+    if (ax == -bx && ay == -by) return RRect.fromRectAndRadius(r, base);
+    // The outer corner points away from both neighbours.
+    final ox = -(ax + bx), oy = -(ay + by);
+    final big = Radius.circular(cell * .45);
+    return RRect.fromRectAndCorners(
+      r,
+      topLeft: ox < 0 && oy < 0 ? big : base,
+      topRight: ox > 0 && oy < 0 ? big : base,
+      bottomLeft: ox < 0 && oy > 0 ? big : base,
+      bottomRight: ox > 0 && oy > 0 ? big : base,
+    );
+  }
+
+  /// [r] stretched by [s] (fraction) along [d], squashed half as much
+  /// across it, leading edge pushed forward.
+  Rect _stretchToward(Rect r, Direction d, double s) {
+    final c = r.center;
+    final horizontal = d == Direction.left || d == Direction.right;
+    final w = r.width * (horizontal ? 1 + s : 1 - s * .5);
+    final h = r.height * (horizontal ? 1 - s * .5 : 1 + s);
+    final shift = switch (d) {
+      Direction.right => Offset((w - r.width) / 2, 0),
+      Direction.left => Offset(-(w - r.width) / 2, 0),
+      Direction.down => Offset(0, (h - r.height) / 2),
+      Direction.up => Offset(0, -(h - r.height) / 2),
+    };
+    return Rect.fromCenter(center: c + shift, width: w, height: h);
+  }
+
+  /// Two soft chevrons gliding out ahead of the head in the new direction.
+  void _drawTurnChevrons(
+      Canvas canvas, Rect head, Direction d, double cell, Color color) {
+    final alpha = EffectCurves.chevronAlpha(turnAge);
+    if (alpha <= .02) return;
+    final (dx, dy) = switch (d) {
+      Direction.right => (1.0, 0.0),
+      Direction.left => (-1.0, 0.0),
+      Direction.down => (0.0, 1.0),
+      Direction.up => (0.0, -1.0),
+    };
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = cell * .11
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final half = cell * .2;
+    for (var k = 0; k < 2; k++) {
+      final dist = cell * (EffectCurves.chevronTravel(turnAge) + k * .45);
+      final tip = head.center + Offset(dx, dy) * dist;
+      // Arms trail back from the tip, spread across the direction.
+      final back = Offset(-dx, -dy) * half;
+      final side = Offset(-dy, dx) * half;
+      paint.color = color.withValues(alpha: alpha * (k == 0 ? 1 : .55));
+      canvas.drawPath(
+        Path()
+          ..moveTo((tip + back + side).dx, (tip + back + side).dy)
+          ..lineTo(tip.dx, tip.dy)
+          ..lineTo((tip + back - side).dx, (tip + back - side).dy),
+        paint,
+      );
     }
   }
 
@@ -1875,17 +1969,8 @@ class OptimizedGameBoardPainter extends CustomPainter {
     // carry their own dark outline + rim glow so they read on every theme
     // (the procedural shapes below inherited theme.foodColor, which on some
     // themes matched the snake or vanished into the background).
-    // Miami Nights: a neon aqua ring so food pops on the sunset scene.
-    if (theme == GameTheme.miamiNights) {
-      canvas.drawCircle(
-        Offset(centerX, centerY),
-        cellSize * .58,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = cellSize * .07
-          ..color = theme.foodColor.withValues(alpha: .85),
-      );
-    }
+    // No ring around food on any theme (owner, 2026-11-19: "I still don't
+    // like that round circle over food"). Food keeps only its own glow.
 
     final sprite = sprites?.foodImage(food.type);
     if (sprite != null) {

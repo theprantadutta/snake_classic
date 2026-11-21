@@ -79,9 +79,12 @@ class _FlameGameBoardState extends State<FlameGameBoard> {
             return BlocBuilder<GameCubit, GameCubitState>(
               // Rebuild only when the committed tick state changes (not on the
               // intra-tick interpolation, which the game advances itself).
+              // Accepted-input stamps also sync, so the turn animation
+              // starts on the swipe, not on the next tick.
               buildWhen: (prev, next) =>
                   !identical(prev.gameState, next.gameState) ||
-                  !identical(prev.previousGameState, next.previousGameState),
+                  !identical(prev.previousGameState, next.previousGameState) ||
+                  prev.lastAcceptedInputAt != next.lastAcceptedInputAt,
               builder: (context, cubitState) {
                 final gs = cubitState.gameState;
                 // Board dimensions can change between runs (settings); the

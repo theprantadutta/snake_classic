@@ -293,13 +293,12 @@ class GameConstants {
   static const Color classicFood = Color(0xFFF5C518);
   static const Color classicBorder = Color(0xFFBFEA3A);
 
-  // Colors - Modern Theme (Improved Contrast)
-  static const Color modernBackground = Color(0xFF1a1a2e);
-  static const Color modernSnake = Color(0xFF4fc3f7); // Bright cyan-blue
-  static const Color modernFood = Color(0xFFe94560); // Kept - good contrast
-  static const Color modernAccent = Color(
-    0xFF64b5f6,
-  ); // Light blue for better visibility
+  // Colors - Modern Theme: deep navy under an aurora mesh (ThemeScene),
+  // cyan snake, coral food, violet accent (2026-11).
+  static const Color modernBackground = Color(0xFF0E1633);
+  static const Color modernSnake = Color(0xFF4FC8F7); // Bright cyan-blue
+  static const Color modernFood = Color(0xFFFF6B6B); // Coral
+  static const Color modernAccent = Color(0xFF8C7CFF); // Aurora violet
 
   // Colors - Neon Theme (Enhanced)
   static const Color neonBackground = Color(0xFF0a0a0a);
@@ -309,16 +308,16 @@ class GameConstants {
 
   // Colors - Retro Theme (80s arcade — bright neon-orange on near-black,
   // intentionally distinct from Desert's earthy palette).
-  static const Color retroBackground = Color(0xFF1A0808); // Almost-black with red undertone
+  static const Color retroBackground = Color(0xFF170914); // Plum-black CRT night
   static const Color retroSnake = Color(0xFFFF6A00); // Bright neon orange
-  static const Color retroFood = Color(0xFFFFFF00); // Pure arcade yellow
+  static const Color retroFood = Color(0xFFFFE81A); // Arcade yellow
   static const Color retroAccent = Color(0xFFFF1F4F); // Hot pink — arcade marquee glow
 
   // Colors - Space Theme
   static const Color spaceBackground = Color(0xFF0B0C2A); // Deep space blue
-  static const Color spaceSnake = Color(0xFF9932CC); // Dark orchid
-  static const Color spaceFood = Color(0xFF00CED1); // Dark turquoise
-  static const Color spaceAccent = Color(0xFF4169E1); // Royal blue
+  static const Color spaceSnake = Color(0xFFC07BFF); // Luminous orchid (was 0xFF9932CC: too dark on the nebula)
+  static const Color spaceFood = Color(0xFF3CF0E0); // Bright turquoise
+  static const Color spaceAccent = Color(0xFF5B8CFF); // Bright royal blue
 
   // Colors - Ocean Theme
   static const Color oceanBackground = Color(0xFF001B3D); // Deep ocean blue
@@ -334,14 +333,18 @@ class GameConstants {
 
   // Colors - Forest Theme (rich emerald jungle — vivid green snake on
   // deep forest, distinct from Classic's pale Game Boy yellow-green).
-  static const Color forestBackground = Color(0xFF0D2818); // Dark forest floor
+  // Night-forest blue-green (was 0xFF0D2818): matches the moonlit scene
+  // backdrop, and the cooler tone lets the emerald snake stand out.
+  static const Color forestBackground = Color(0xFF0B1F22); // Moonlit forest night
   static const Color forestSnake = Color(0xFF2ECC71); // Vivid emerald
   static const Color forestFood = Color(0xFFDC143C); // Crimson berry
   static const Color forestAccent = Color(0xFFF1C40F); // Sunlit-canopy gold
 
   // Colors - Desert Theme (Southwestern — terracotta canyon with cactus
   // teal food, intentionally separated from Retro's arcade orange).
-  static const Color desertBackground = Color(0xFF3D1F0E); // Warm terracotta canyon
+  // Dusk plum (was terracotta 0xFF3D1F0E): matches the dune-dusk scene
+  // backdrop around the board, and golden sand pops harder on it.
+  static const Color desertBackground = Color(0xFF2C1828); // Desert dusk
   // Brightened from Peru brown (0xFFCD853F): brown-on-terracotta was the
   // muddiest snake/background pairing in the catalog — golden sand keeps
   // the identity and pops at speed.

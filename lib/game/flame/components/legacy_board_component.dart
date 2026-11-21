@@ -4,8 +4,7 @@ import 'package:flame/components.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/game/effects/effect_curves.dart';
-import 'package:snake_classic/design/miami_nights_scene.dart';
-import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/widgets/lb/lb_cell_text.dart';
 import 'package:snake_classic/game/flame/snake_flame_game.dart';
 import 'package:snake_classic/models/snake.dart';
@@ -53,18 +52,6 @@ class LegacyBoardComponent extends Component
     final palette = LBPalette.of(game.theme);
     _bgPaint.color = palette.board;
     canvas.drawRect(Offset.zero & size, _bgPaint);
-    if (game.theme == GameTheme.miamiNights) {
-      // Dimmed more than the menus: the snake and food must pop at speed.
-      MiamiNightsScene.paint(canvas, size, dim: .38, animatedFloor: true);
-      // The floor grid rolls toward the player: ~12 lines a frame.
-      MiamiNightsScene.paintFloorMotion(
-        canvas,
-        size,
-        DateTime.now().millisecondsSinceEpoch / 1000.0,
-        dim: .38,
-      );
-    }
-
     // World-to-screen scale for the fixed-resolution camera: the world is
     // `board * cellSize` units and gets fitted into the viewport, so anything
     // that should measure a fixed number of SCREEN pixels (hairlines) has to
@@ -74,6 +61,18 @@ class LegacyBoardComponent extends Component
     final scale = game.size.x <= 0 || game.size.y <= 0
         ? 1.0
         : math.min(game.size.x / size.width, game.size.y / size.height);
+
+    final scene = ThemeScenes.of(game.theme);
+    if (scene != null) {
+      // The board variant: the snake and food must pop at speed. Baked at
+      // device resolution (world units -> logical px -> device px).
+      ThemeScenes.paint(canvas, size, game.theme,
+          menu: false, pixelRatio: scale * ThemeScenes.devicePixelRatio);
+      if (scene.hasMotion && !game.reducedMotion) {
+        scene.paintMotion(
+            canvas, size, DateTime.now().millisecondsSinceEpoch / 1000.0);
+      }
+    }
     // Clamped to a proportional band so dense boards keep a hairline and
     // small boards on tablets don't get a heavy line.
     final hairline = scale <= 0 ? 1.0 : (1.0 / scale).clamp(0.5, 1.5);
@@ -84,12 +83,20 @@ class LegacyBoardComponent extends Component
     // (identical to the legacy widget's computation).
     Direction? shimmerDir;
     var shimmerAge = 1.0;
+    Direction? turnDir;
+    var turnAge = 1.0;
     final stamp = game.cubitState.lastAcceptedInputAt;
     if (stamp != null) {
       final ageMs = DateTime.now().difference(stamp).inMilliseconds;
       if (ageMs <= 140) {
         shimmerDir = game.cubitState.lastAcceptedDirection;
         shimmerAge = (ageMs / 140).clamp(0.0, 1.0);
+      }
+      // Turn feedback (head squash/stretch + chevrons) runs longer.
+      final turnMs = EffectCurves.turnDuration.inMilliseconds;
+      if (!game.reducedMotion && ageMs <= turnMs) {
+        turnDir = game.cubitState.lastAcceptedDirection;
+        turnAge = (ageMs / turnMs).clamp(0.0, 1.0);
       }
     }
 
@@ -124,6 +131,8 @@ class LegacyBoardComponent extends Component
       animationTimeMs: ms,
       recentInputDirection: shimmerDir,
       recentInputShimmerAge: shimmerAge,
+      turnDirection: turnDir,
+      turnAge: turnAge,
       sprites: game.boardSprites,
       crashElapsedSeconds: game.crashElapsedOrNull,
       growRippleT: game.growRippleT,
@@ -203,7 +212,7 @@ class LegacyBoardComponent extends Component
     }
     // A scene backdrop (Miami Nights) is too busy for 12% cells: the score
     // gets a dark backing per cell and a light, stronger fill on top.
-    final scene = game.theme == GameTheme.miamiNights;
+    final scene = ThemeScenes.of(game.theme)?.busyBoard ?? false;
     final bumping = bump != 1.0;
     if (bumping) {
       final cx = ox + layout.columns * g / 2;

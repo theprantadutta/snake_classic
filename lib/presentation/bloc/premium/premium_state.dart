@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/services/purchase_service.dart' show ProductIds;
 import 'package:snake_classic/utils/constants.dart';
@@ -248,7 +249,13 @@ class PremiumState extends Equatable {
 
   /// Check if a theme is unlocked (free themes always unlocked, premium needs purchase or subscription)
   bool isThemeUnlocked(GameTheme theme) =>
+      _debugAllThemes ||
       !PremiumContent.isPremiumTheme(theme) || hasPremium || ownedThemes.contains(theme);
+
+  /// Debug-only: `--dart-define=LB_ALL_THEMES=true` unlocks every theme so
+  /// theme art can be tuned without owning it. Compiled out of release.
+  static const bool _debugAllThemes =
+      kDebugMode && bool.fromEnvironment('LB_ALL_THEMES');
 
   /// Check if a skin is owned. Strict set-membership only — used by the
   /// purchase-pending reconciler (`_isProductOwned`) where we need to know

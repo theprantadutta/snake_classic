@@ -768,14 +768,15 @@ class GameCubit extends Cubit<GameCubitState> {
       _inputsAcceptedThisGame++;
       _hapticService.selectionClick();
       // Emit timestamp + direction so the edge bloom and snake-head intent
-      // shimmer can fire. Clears after 300ms.
+      // shimmer and the turn animation can fire. Clears after 400ms (the
+      // turn feedback runs EffectCurves.turnDuration = 360ms).
       final stamp = DateTime.now();
       emit(state.copyWith(
         lastAcceptedInputAt: stamp,
         lastAcceptedDirection: newDirection,
       ));
       _acceptedInputClearTimer?.cancel();
-      _acceptedInputClearTimer = Timer(const Duration(milliseconds: 300), () {
+      _acceptedInputClearTimer = Timer(const Duration(milliseconds: 400), () {
         if (state.lastAcceptedInputAt == stamp) {
           emit(state.copyWith(clearAcceptedInput: true));
         }

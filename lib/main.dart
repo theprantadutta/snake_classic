@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' as riverpod;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:snake_classic/design/scenes/scenes.dart';
 import 'package:snake_classic/services/menu_music_route_observer.dart';
 import 'package:snake_classic/design/lb_tokens.dart';
 import 'package:snake_classic/core/di/injection.dart';
@@ -96,6 +97,7 @@ Future<void> _bootstrapOnce() {
 void main() async {
   // Ensure Flutter is initialized and preserve splash screen
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  registerThemeScenes();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // BEFORE SentryFlutter.init, not after.
