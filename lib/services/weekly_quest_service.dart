@@ -10,6 +10,8 @@ import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/models/weekly_quest.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
+import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -298,6 +300,14 @@ class WeeklyQuestService extends ChangeNotifier {
       );
       _quests[i] = updated;
       changed.add(updated);
+      // The loop skips quests already completed, so this fires once each.
+      if (isNowCompleted && GetIt.I.isRegistered<AnalyticsFacade>()) {
+        unawaited(
+          GetIt.I<AnalyticsFacade>().trackWeeklyQuestCompleted(
+            questId: quest.id,
+          ),
+        );
+      }
     }
     return changed;
   }
@@ -318,6 +328,11 @@ class WeeklyQuestService extends ChangeNotifier {
     );
     _quests[index] = claimed;
     await _persistClaim(claimed);
+    if (GetIt.I.isRegistered<AnalyticsFacade>()) {
+      unawaited(
+        GetIt.I<AnalyticsFacade>().trackWeeklyQuestClaimed(questId: questId),
+      );
+    }
 
     // Optimistic credit — the backend's /weekly-quests/claim endpoint is
     // the authoritative source for the actual coin transfer, but we

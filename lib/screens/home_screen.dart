@@ -31,6 +31,7 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/providers/daily_challenges_provider.dart';
 import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/analytics/analytics_values.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -323,7 +324,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _checkDailyBonus() async {
     if (_dailyBonusChecked) return;
     _dailyBonusChecked = true;
+    await _openDailyBonus(surface: 'popup');
+  }
 
+  /// The daily bonus popup, from the prompt queue ([surface] `popup`) or the
+  /// Home pill (`home`). The pill exists because the popup alone came
+  /// roughly three Home visits after onboarding, so most new players never
+  /// saw it (retention plan 2026-11, C2).
+  Future<void> _openDailyBonus({required String surface}) async {
     if (!mounted) return;
 
     // Wait for CoinsCubit to have read Drift before trusting its answer.
@@ -392,6 +400,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final bonusCoins = status.todayReward?.coins ?? 0;
       final ads = getIt.isRegistered<AdService>() ? getIt<AdService>() : null;
       final canDouble = ads != null && ads.adsEnabled;
+      final claimDay = status.todayReward?.day ?? 1;
+      // A claim landing on day 1 after an earlier claim means the streak
+      // broke (a day was missed).
+      final previousStreak = coinsCubit.state.dailyBonusCurrentStreak;
+      final hadClaimed = coinsCubit.state.dailyBonusLastClaimUtcMs != null;
+      void logClaim({required bool doubled}) {
+        final analytics = getIt<AnalyticsFacade>();
+        analytics.trackDailyBonusCollected();
+        unawaited(
+          analytics.trackDailyBonusClaimed(
+            day: claimDay,
+            streak: coinsCubit.state.dailyBonusCurrentStreak,
+            doubled: doubled,
+            surface: surface,
+          ),
+        );
+        if (hadClaimed && claimDay == 1 && previousStreak > 1) {
+          unawaited(
+            analytics.trackStreakBroken(previousStreak: previousStreak),
+          );
+        }
+      }
 
       await DailyBonusPopup.show(
         context: context,
@@ -406,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final snackTheme = context.read<ThemeCubit>().state.currentTheme;
           final success = await context.read<CoinsCubit>().collectDailyBonus();
           if (success) {
-            getIt<AnalyticsFacade>().trackDailyBonusCollected();
+            logClaim(doubled: false);
           } else {
             // The Drift gate refused — the bonus was already claimed today
             // and no coins were granted. Say so. The popup closes on tap
@@ -432,7 +462,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final l10n = AppLocalizations.of(context)!;
                 final ok = await coins.collectDailyBonus();
                 if (!ok) return;
-                getIt<AnalyticsFacade>().trackDailyBonusCollected();
+                logClaim(doubled: true);
                 // Grant the same amount again on ad completion → 2× total.
                 final outcome = await ads.showRewardedOrWait(
                   placement: 'daily_bonus_2x',
@@ -808,10 +838,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 BlocBuilder<CoinsCubit, CoinsState>(
-                  builder: (context, coins) => _CoinReadout(
-                    key: HomeWalkthrough.coinsKey,
-                    value: coins.total,
-                    onTap: () => context.push(AppRoutes.store),
+                  builder: (context, coins) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Today's login bonus, one tap away. Only once Drift
+                      // has loaded: before that "never claimed" is a guess.
+                      if (coins.status == CoinsStatus.ready &&
+                          coins.canCollectDailyBonus) ...[
+                        _DailyBonusPill(
+                          day: coins.nextClaimDay,
+                          onTap: () => _openDailyBonus(surface: 'home'),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      _CoinReadout(
+                        key: HomeWalkthrough.coinsKey,
+                        value: coins.total,
+                        onTap: () => context.push(AppRoutes.store),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1004,8 +1049,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final coinsLeft = daily.challenges
             .where((c) => !c.claimedReward)
             .fold<int>(0, (sum, c) => sum + c.coinReward);
-        final now = DateTime.now();
-        final reset = DateTime(
+        // Daily challenges are generated at 00:00 UTC (the backend's
+        // DailyChallengeJobService), not at local midnight.
+        final now = DateTime.now().toUtc();
+        final reset = DateTime.utc(
           now.year,
           now.month,
           now.day + 1,
@@ -1050,6 +1097,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   : l10n.lbHomeSeasonSubNone,
           // Gold like the daily tile when something is waiting.
           kind: toClaim > 0 ? LBBlockKind.gold : LBBlockKind.outline,
+          progress: bp.isActive && bp.currentTier < bp.maxTier
+              ? bp.tierProgress
+              : null,
           onTap: go,
         );
       case 'ranks':
@@ -1374,6 +1424,39 @@ class _CoinReadout extends StatelessWidget {
   }
 }
 
+/// Gold "gift · D3" pill beside the coins while today's login bonus is
+/// unclaimed. Opens the same daily bonus popup as the prompt queue.
+class _DailyBonusPill extends StatelessWidget {
+  const _DailyBonusPill({required this.day, required this.onTap});
+
+  final int day;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Semantics(
+      button: true,
+      label: '${l10n.dbTitle}, ${l10n.dbDayChip(day)}',
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          LBFeedback.tap();
+          onTap();
+        },
+        child: LBChip(
+          icon: LBIcon.gift,
+          kind: LBChipKind.gold,
+          height: 20,
+          label: l10n.dbDayChip(day),
+        ),
+      ),
+    );
+  }
+}
+
 /// `‹ MODE 1/8 · CLASSIC ›` — arrows cycle the mode, the label opens setup.
 class _ModeCycler extends StatelessWidget {
   const _ModeCycler({
@@ -1452,7 +1535,13 @@ class _HomeTile extends StatelessWidget {
     this.kind = LBBlockKind.outline,
     this.tall = false,
     this.semanticSubtitle,
+    this.progress,
   });
+
+  /// A thin cell bar under the subtitle (0–1), for tiles whose next reward
+  /// is a distance to cover: Season XP to the next tier, dailies done.
+  /// Retention plan 2026-11, C4: progress was invisible from Home.
+  final double? progress;
 
   /// Four grid rows instead of three: bigger type to fill the block.
   final bool tall;
@@ -1513,6 +1602,15 @@ class _HomeTile extends StatelessWidget {
               size: 10.5,
             ),
           ),
+          if (progress != null) ...[
+            SizedBox(height: tall ? 7 : 5),
+            LBCellsBar(
+              count: 12,
+              value: progress!.clamp(0.0, 1.0),
+              color: fg,
+              offColor: fg.withValues(alpha: .14),
+            ),
+          ],
         ],
         ),
       ),
