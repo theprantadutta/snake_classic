@@ -1963,5 +1963,16 @@
   "lbHomeFreePowerUp": "POWER-UP",
   "lbHomeFreePowerUpSub": "gratuit · pub courte",
   "lbHomePowerUps": "POWER-UPS",
-  "lbHomePowerUpsSub": "{count} prêts · arme-en un"
+  "lbHomePowerUpsSub": "{count} prêts · arme-en un",
+  "controlsHintSwipe": "Glisse pour tourner",
+  "controlsHintButtons": "Touche les flèches pour tourner",
+  "controlsHintTurn": "Touche gauche ou droite pour tourner",
+  "goNextUp": "ENSUITE",
+  "goNextSeasonTier": "Saison · palier {tier}",
+  "goNextSeasonXp": "+{xp} XP",
+  "goNextTomorrow": "Demain · jour {day} · +{coins}¢",
+  "goNextBonusReady": "Ton bonus du jour t'attend à l'accueil · +{coins}¢",
+  "goRemindTitle": "Rappelle-moi demain",
+  "goRemindBody": "Un rappel pour battre {score}. C'est tout.",
+  "goRemindSet": "Rappel prévu pour demain"
 }

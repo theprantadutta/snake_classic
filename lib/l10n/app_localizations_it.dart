@@ -6767,4 +6767,47 @@ class AppLocalizationsIt extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return '$count pronti · armane uno';
   }
+
+  @override
+  String get controlsHintSwipe => 'Scorri per girare';
+
+  @override
+  String get controlsHintButtons => 'Tocca le frecce per girare';
+
+  @override
+  String get controlsHintTurn => 'Tocca sinistra o destra per girare';
+
+  @override
+  String get goNextUp => 'PROSSIMO';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'Stagione · livello $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'Domani · giorno $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'Il bonus di oggi ti aspetta in Home · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'Ricordamelo domani';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'Un promemoria per battere $score. Tutto qui.';
+  }
+
+  @override
+  String get goRemindSet => 'Promemoria impostato per domani';
 }

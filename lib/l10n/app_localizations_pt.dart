@@ -6761,4 +6761,47 @@ class AppLocalizationsPt extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return '$count prontos · equipe um';
   }
+
+  @override
+  String get controlsHintSwipe => 'Deslize para virar';
+
+  @override
+  String get controlsHintButtons => 'Toque nas setas para virar';
+
+  @override
+  String get controlsHintTurn => 'Toque à esquerda ou à direita para virar';
+
+  @override
+  String get goNextUp => 'A SEGUIR';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'Temporada · nível $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'Amanhã · dia $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'Seu bônus de hoje está esperando no Início · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'Me lembre amanhã';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'Um lembrete para bater $score. Só isso.';
+  }
+
+  @override
+  String get goRemindSet => 'Lembrete marcado para amanhã';
 }

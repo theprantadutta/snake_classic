@@ -6729,4 +6729,47 @@ class AppLocalizationsAr extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return 'جاهزة: $count · جهّز واحدًا';
   }
+
+  @override
+  String get controlsHintSwipe => 'اسحب للالتفاف';
+
+  @override
+  String get controlsHintButtons => 'اضغط على الأسهم للالتفاف';
+
+  @override
+  String get controlsHintTurn => 'اضغط يسارًا أو يمينًا للالتفاف';
+
+  @override
+  String get goNextUp => 'التالي';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'الموسم · المستوى $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'غدًا · اليوم $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'مكافأة اليوم بانتظارك في الرئيسية · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'ذكّرني غدًا';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'تذكير واحد لتتجاوز $score. هذا كل شيء.';
+  }
+
+  @override
+  String get goRemindSet => 'تم ضبط التذكير لغدٍ';
 }

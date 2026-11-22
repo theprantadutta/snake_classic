@@ -1963,5 +1963,16 @@
   "lbHomeFreePowerUp": "WZMOCNIENIE",
   "lbHomeFreePowerUpSub": "za darmo · krótka reklama",
   "lbHomePowerUps": "WZMOCNIENIA",
-  "lbHomePowerUpsSub": "gotowe: {count} · uzbrój jedno"
+  "lbHomePowerUpsSub": "gotowe: {count} · uzbrój jedno",
+  "controlsHintSwipe": "Przesuń, aby skręcić",
+  "controlsHintButtons": "Dotknij strzałek, aby skręcić",
+  "controlsHintTurn": "Dotknij w lewo lub w prawo, aby skręcić",
+  "goNextUp": "DALEJ",
+  "goNextSeasonTier": "Sezon · poziom {tier}",
+  "goNextSeasonXp": "+{xp} XP",
+  "goNextTomorrow": "Jutro · dzień {day} · +{coins}¢",
+  "goNextBonusReady": "Dzisiejszy bonus czeka na ekranie głównym · +{coins}¢",
+  "goRemindTitle": "Przypomnij mi jutro",
+  "goRemindBody": "Jedno przypomnienie, żeby pobić {score}. Nic więcej.",
+  "goRemindSet": "Przypomnienie ustawione na jutro"
 }

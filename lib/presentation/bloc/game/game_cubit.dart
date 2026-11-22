@@ -762,6 +762,9 @@ class GameCubit extends Cubit<GameCubitState> {
   /// The screen feeds the answer to [changeDirection] like any swipe,
   /// which keeps one owner for acceptance, haptics and the indicators.
   /// The control scheme in force, as the analytics see it.
+  /// `swipe`, `dpad`, `turn_buttons` or `joystick`.
+  String get controlSchemeName => _controlSchemeName;
+
   String get _controlSchemeName {
     final settings = _settingsCubit.state;
     if (!settings.dPadEnabled) return 'swipe';

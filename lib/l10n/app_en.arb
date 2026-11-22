@@ -4224,5 +4224,31 @@
         "type": "String"
       }
     }
-  }
+  },
+  "controlsHintSwipe": "Swipe to turn",
+  "controlsHintButtons": "Tap the arrows to turn",
+  "controlsHintTurn": "Tap left or right to turn",
+  "goNextUp": "NEXT UP",
+  "goNextSeasonTier": "Season · tier {tier}",
+  "@goNextSeasonTier": {
+    "placeholders": { "tier": {} }
+  },
+  "goNextSeasonXp": "+{xp} XP",
+  "@goNextSeasonXp": {
+    "placeholders": { "xp": {} }
+  },
+  "goNextTomorrow": "Tomorrow · day {day} · +{coins}¢",
+  "@goNextTomorrow": {
+    "placeholders": { "day": {}, "coins": {} }
+  },
+  "goNextBonusReady": "Today's bonus is waiting on Home · +{coins}¢",
+  "@goNextBonusReady": {
+    "placeholders": { "coins": {} }
+  },
+  "goRemindTitle": "Remind me tomorrow",
+  "goRemindBody": "One nudge to beat {score}. That's it.",
+  "@goRemindBody": {
+    "placeholders": { "score": {} }
+  },
+  "goRemindSet": "Reminder set for tomorrow"
 }

@@ -1963,5 +1963,16 @@
   "lbHomeFreePowerUp": "УСИЛЕНИЕ",
   "lbHomeFreePowerUpSub": "даром · короткая реклама",
   "lbHomePowerUps": "УСИЛЕНИЯ",
-  "lbHomePowerUpsSub": "готово: {count} · выбери одно"
+  "lbHomePowerUpsSub": "готово: {count} · выбери одно",
+  "controlsHintSwipe": "Проведи, чтобы повернуть",
+  "controlsHintButtons": "Нажимай стрелки, чтобы повернуть",
+  "controlsHintTurn": "Нажимай влево или вправо, чтобы повернуть",
+  "goNextUp": "ДАЛЬШЕ",
+  "goNextSeasonTier": "Сезон · уровень {tier}",
+  "goNextSeasonXp": "+{xp} XP",
+  "goNextTomorrow": "Завтра · день {day} · +{coins}¢",
+  "goNextBonusReady": "Сегодняшний бонус ждёт на главном экране · +{coins}¢",
+  "goRemindTitle": "Напомни завтра",
+  "goRemindBody": "Одно напоминание побить {score}. И всё.",
+  "goRemindSet": "Напоминание на завтра готово"
 }

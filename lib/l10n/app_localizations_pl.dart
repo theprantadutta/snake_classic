@@ -6760,4 +6760,47 @@ class AppLocalizationsPl extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return 'gotowe: $count · uzbrój jedno';
   }
+
+  @override
+  String get controlsHintSwipe => 'Przesuń, aby skręcić';
+
+  @override
+  String get controlsHintButtons => 'Dotknij strzałek, aby skręcić';
+
+  @override
+  String get controlsHintTurn => 'Dotknij w lewo lub w prawo, aby skręcić';
+
+  @override
+  String get goNextUp => 'DALEJ';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'Sezon · poziom $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'Jutro · dzień $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'Dzisiejszy bonus czeka na ekranie głównym · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'Przypomnij mi jutro';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'Jedno przypomnienie, żeby pobić $score. Nic więcej.';
+  }
+
+  @override
+  String get goRemindSet => 'Przypomnienie ustawione na jutro';
 }

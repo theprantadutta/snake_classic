@@ -11853,6 +11853,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} ready · arm one'**
   String lbHomePowerUpsSub(String count);
+
+  /// No description provided for @controlsHintSwipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to turn'**
+  String get controlsHintSwipe;
+
+  /// No description provided for @controlsHintButtons.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the arrows to turn'**
+  String get controlsHintButtons;
+
+  /// No description provided for @controlsHintTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap left or right to turn'**
+  String get controlsHintTurn;
+
+  /// No description provided for @goNextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'NEXT UP'**
+  String get goNextUp;
+
+  /// No description provided for @goNextSeasonTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Season · tier {tier}'**
+  String goNextSeasonTier(Object tier);
+
+  /// No description provided for @goNextSeasonXp.
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP'**
+  String goNextSeasonXp(Object xp);
+
+  /// No description provided for @goNextTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow · day {day} · +{coins}¢'**
+  String goNextTomorrow(Object day, Object coins);
+
+  /// No description provided for @goNextBonusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s bonus is waiting on Home · +{coins}¢'**
+  String goNextBonusReady(Object coins);
+
+  /// No description provided for @goRemindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me tomorrow'**
+  String get goRemindTitle;
+
+  /// No description provided for @goRemindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'One nudge to beat {score}. That\'s it.'**
+  String goRemindBody(Object score);
+
+  /// No description provided for @goRemindSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder set for tomorrow'**
+  String get goRemindSet;
 }
 
 class _AppLocalizationsDelegate

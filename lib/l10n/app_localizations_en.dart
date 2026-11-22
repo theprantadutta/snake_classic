@@ -6702,4 +6702,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return '$count ready · arm one';
   }
+
+  @override
+  String get controlsHintSwipe => 'Swipe to turn';
+
+  @override
+  String get controlsHintButtons => 'Tap the arrows to turn';
+
+  @override
+  String get controlsHintTurn => 'Tap left or right to turn';
+
+  @override
+  String get goNextUp => 'NEXT UP';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'Season · tier $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'Tomorrow · day $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'Today\'s bonus is waiting on Home · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'Remind me tomorrow';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'One nudge to beat $score. That\'s it.';
+  }
+
+  @override
+  String get goRemindSet => 'Reminder set for tomorrow';
 }

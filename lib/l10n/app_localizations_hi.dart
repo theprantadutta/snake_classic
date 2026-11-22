@@ -6701,4 +6701,47 @@ class AppLocalizationsHi extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return '$count तैयार · एक चुनें';
   }
+
+  @override
+  String get controlsHintSwipe => 'मुड़ने के लिए स्वाइप करें';
+
+  @override
+  String get controlsHintButtons => 'मुड़ने के लिए तीरों पर टैप करें';
+
+  @override
+  String get controlsHintTurn => 'मुड़ने के लिए बाएँ या दाएँ टैप करें';
+
+  @override
+  String get goNextUp => 'आगे';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'सीज़न · टियर $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'कल · दिन $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'आज का बोनस होम पर इंतज़ार कर रहा है · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'कल याद दिलाना';
+
+  @override
+  String goRemindBody(Object score) {
+    return '$score को हराने के लिए एक याद दिलावा। बस इतना ही।';
+  }
+
+  @override
+  String get goRemindSet => 'कल के लिए रिमाइंडर सेट हो गया';
 }

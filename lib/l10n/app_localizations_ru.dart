@@ -6753,4 +6753,47 @@ class AppLocalizationsRu extends AppLocalizations {
   String lbHomePowerUpsSub(String count) {
     return 'готово: $count · выбери одно';
   }
+
+  @override
+  String get controlsHintSwipe => 'Проведи, чтобы повернуть';
+
+  @override
+  String get controlsHintButtons => 'Нажимай стрелки, чтобы повернуть';
+
+  @override
+  String get controlsHintTurn => 'Нажимай влево или вправо, чтобы повернуть';
+
+  @override
+  String get goNextUp => 'ДАЛЬШЕ';
+
+  @override
+  String goNextSeasonTier(Object tier) {
+    return 'Сезон · уровень $tier';
+  }
+
+  @override
+  String goNextSeasonXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String goNextTomorrow(Object day, Object coins) {
+    return 'Завтра · день $day · +$coins¢';
+  }
+
+  @override
+  String goNextBonusReady(Object coins) {
+    return 'Сегодняшний бонус ждёт на главном экране · +$coins¢';
+  }
+
+  @override
+  String get goRemindTitle => 'Напомни завтра';
+
+  @override
+  String goRemindBody(Object score) {
+    return 'Одно напоминание побить $score. И всё.';
+  }
+
+  @override
+  String get goRemindSet => 'Напоминание на завтра готово';
 }

@@ -19,6 +19,7 @@ import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/first_run_service.dart';
+import 'package:snake_classic/widgets/game/controls_hint.dart';
 import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
@@ -1181,6 +1182,26 @@ class _GameScreenState extends State<GameScreen>
                                         // or while the Time-Attack bonus offer — which
                                         // freezes the run via the same paused status —
                                         // is on screen).
+                                        // First games: "swipe to turn" until
+                                        // the first accepted turn. Its own
+                                        // builder, since this tree only
+                                        // rebuilds on structural changes.
+                                        BlocBuilder<GameCubit, GameCubitState>(
+                                          buildWhen: (a, b) =>
+                                              a.status != b.status ||
+                                              a.lastAcceptedInputAt !=
+                                                  b.lastAcceptedInputAt,
+                                          builder: (context, _) {
+                                            final gc =
+                                                context.read<GameCubit>();
+                                            return gc.showControlsHint
+                                                ? ControlsHint(
+                                                    controlScheme:
+                                                        gc.controlSchemeName,
+                                                  )
+                                                : const SizedBox.shrink();
+                                          },
+                                        ),
                                         if (gameState.status ==
                                                 GameStatus.paused &&
                                             !_tutorialActive &&

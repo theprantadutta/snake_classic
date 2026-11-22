@@ -1963,5 +1963,16 @@
   "lbHomeFreePowerUp": "تعزيز",
   "lbHomeFreePowerUpSub": "مجانًا · إعلان قصير",
   "lbHomePowerUps": "التعزيزات",
-  "lbHomePowerUpsSub": "جاهزة: {count} · جهّز واحدًا"
+  "lbHomePowerUpsSub": "جاهزة: {count} · جهّز واحدًا",
+  "controlsHintSwipe": "اسحب للالتفاف",
+  "controlsHintButtons": "اضغط على الأسهم للالتفاف",
+  "controlsHintTurn": "اضغط يسارًا أو يمينًا للالتفاف",
+  "goNextUp": "التالي",
+  "goNextSeasonTier": "الموسم · المستوى {tier}",
+  "goNextSeasonXp": "+{xp} XP",
+  "goNextTomorrow": "غدًا · اليوم {day} · +{coins}¢",
+  "goNextBonusReady": "مكافأة اليوم بانتظارك في الرئيسية · +{coins}¢",
+  "goRemindTitle": "ذكّرني غدًا",
+  "goRemindBody": "تذكير واحد لتتجاوز {score}. هذا كل شيء.",
+  "goRemindSet": "تم ضبط التذكير لغدٍ"
 }
