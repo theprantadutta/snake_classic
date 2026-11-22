@@ -13,6 +13,7 @@ import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb_screens/ranks/lb_list_bits.dart';
 import 'package:snake_classic/widgets/lb_screens/season/season_widgets.dart';
+import 'package:snake_classic/widgets/xp_boost_chip.dart';
 
 /// Season (Living Board screen 11): the tier hero, NEXT UP, the rewarded
 /// +50 XP row, anything claimable right now, and the FREE / PRO tier table
@@ -169,6 +170,7 @@ class _BattlePassScreenState extends State<BattlePassScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     SeasonHero(state: bpState, maxTier: maxTier),
+                    XpBoostChip(padding: EdgeInsets.only(top: cell * .5)),
                     _buildNextUp(context, bpState, season),
                     SeasonXpAdRow(
                       label: l10n.lbXpAd('50'),

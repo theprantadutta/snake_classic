@@ -1078,6 +1078,39 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get dbItemSpeedBoost => 'Ускорение';
+
+  @override
+  String get dbItemXpBoost => '×2 опыта сезона · 24 ч';
+
+  @override
+  String get dbItemThemeDay => 'Премиум-тема · 1 день';
+
+  @override
+  String get storeTrialStart => '1 день бесплатно · 2 рекламы';
+
+  @override
+  String get storeTrialOneLeft => '1 день бесплатно · ещё 1 реклама';
+
+  @override
+  String get storeTrialHalfToast => 'Ещё одна реклама — и это твоё на день.';
+
+  @override
+  String storeTrialUnlockedToast(String name) {
+    return '$name — твоё на 24 часа!';
+  }
+
+  @override
+  String storeTrialEndsIn(int hours) {
+    return 'Твоё ещё $hours ч · купи, чтобы оставить';
+  }
+
+  @override
+  String bpXpBoostActive(int hours) {
+    return '×2 опыта · осталось $hoursч';
+  }
+
+  @override
   String get storeFreeSpeedBoostInventory =>
       '🎉 Бесплатное ускорение добавлено в инвентарь!';
 

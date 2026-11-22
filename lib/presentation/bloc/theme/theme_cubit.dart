@@ -70,8 +70,11 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  /// Set the current theme
-  Future<void> setTheme(GameTheme theme) async {
+  /// Set the current theme.
+  ///
+  /// [pushToBackend] is false for a theme worn on a temporary unlock (daily
+  /// bonus, ad trial): the backend keeps the last theme the account owns.
+  Future<void> setTheme(GameTheme theme, {bool pushToBackend = true}) async {
     if (state.currentTheme == theme) return;
 
     emit(state.copyWith(currentTheme: theme));
@@ -82,7 +85,9 @@ class ThemeCubit extends Cubit<ThemeState> {
     // Premium themes are the typical case worth syncing, but we sync all
     // applied themes (including free ones) for simplicity — the value is
     // tiny and the API call is fire-and-forget.
-    unawaited(ApiService().setEquippedCosmetics(themeId: theme.name));
+    if (pushToBackend) {
+      unawaited(ApiService().setEquippedCosmetics(themeId: theme.name));
+    }
   }
 
   /// Apply a theme from the backend ONLY if the local choice is still the

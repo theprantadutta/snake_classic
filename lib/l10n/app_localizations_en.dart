@@ -1081,6 +1081,39 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dbItemSpeedBoost => 'Speed Boost';
+
+  @override
+  String get dbItemXpBoost => '2× Season XP · 24 h';
+
+  @override
+  String get dbItemThemeDay => 'Premium theme · 1 day';
+
+  @override
+  String get storeTrialStart => 'Try 1 day · 2 ads';
+
+  @override
+  String get storeTrialOneLeft => 'Try 1 day · 1 more ad';
+
+  @override
+  String get storeTrialHalfToast => 'One more ad and it\'s yours for a day.';
+
+  @override
+  String storeTrialUnlockedToast(String name) {
+    return '$name is yours for 24 hours!';
+  }
+
+  @override
+  String storeTrialEndsIn(int hours) {
+    return 'Yours for $hours more h · buy it to keep it';
+  }
+
+  @override
+  String bpXpBoostActive(int hours) {
+    return '2× XP · $hours h left';
+  }
+
+  @override
   String get storeFreeSpeedBoostInventory =>
       '🎉 Free Speed Boost added to your inventory!';
 

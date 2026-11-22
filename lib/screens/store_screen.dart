@@ -8,6 +8,8 @@ import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/models/temporary_grant.dart';
+import 'package:snake_classic/widgets/lb_screens/store/cosmetic_trial_button.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
@@ -1000,6 +1002,23 @@ class _StoreScreenState extends State<StoreScreen>
         productId != null && _pendingProductIds.contains(productId);
     final pal = LBPalette.of(target);
 
+    Widget buyAction(String productId) {
+      final price = PurchaseService().getStorePriceOrDefault(
+        productId,
+        1.99,
+        localeTag: Localizations.localeOf(context).toLanguageTag(),
+      );
+      return StoreActionBlock(
+        label: l10n.lbBuyPrice(price),
+        kind: LBBlockKind.goldFill,
+        feedback: false,
+        onTap: () {
+          setState(() => _focusTheme = target);
+          _purchaseThemeProduct(productId, target.name);
+        },
+      );
+    }
+
     final Widget action;
     if (isPending) {
       action = StoreActionBlock(
@@ -1023,23 +1042,42 @@ class _StoreScreenState extends State<StoreScreen>
         },
       );
     } else if (productId != null) {
-      final price = PurchaseService().getStorePriceOrDefault(
-        productId,
-        1.99,
-        localeTag: Localizations.localeOf(context).toLanguageTag(),
-      );
-      action = StoreActionBlock(
-        label: l10n.lbBuyPrice(price),
-        kind: LBBlockKind.goldFill,
-        feedback: false,
-        onTap: () {
-          setState(() => _focusTheme = target);
-          _purchaseThemeProduct(productId, target.name);
-        },
-      );
+      action = buyAction(productId);
     } else {
       action = const SizedBox.shrink();
     }
+
+    // Temporary unlock (daily bonus / ad trial): keep the buy button so
+    // the player can keep it. Locked: offer the two-ad trial.
+    final isTemporary =
+        isOwned && !premiumState.isThemePermanentlyUnlocked(target);
+    final grantId = TemporaryGrant.themeGrantId(target);
+    Widget featuredAction = action;
+    if (!isPending && isTemporary && productId != null) {
+      featuredAction = _stackActions(action, buyAction(productId));
+    } else if (!isPending &&
+        !isOwned &&
+        productId != null &&
+        cosmeticTrialAvailable()) {
+      featuredAction = _stackActions(
+        action,
+        CosmeticTrialButton(
+          key: ValueKey('trial-theme-$grantId'),
+          kind: TemporaryGrantKind.theme,
+          id: grantId,
+          displayName: target.localizedName(l10n),
+        ),
+      );
+    }
+    final trialFootnote = isTemporary
+        ? temporaryUnlockFootnote(
+            l10n,
+            premiumState,
+            TemporaryGrantKind.theme,
+            grantId,
+            permanentlyOwned: false,
+          )
+        : null;
 
     return StoreFeaturedCard(
       preview: StoreCellSnake(
@@ -1050,8 +1088,9 @@ class _StoreScreenState extends State<StoreScreen>
       title: target.localizedName(l10n),
       titleColor: isOwned ? null : LB.gold,
       line: _shortThemeDescription(target),
-      action: action,
-      footnote: PremiumContent.isEventFree(target)
+      action: featuredAction,
+      footnote: trialFootnote ??
+          (PremiumContent.isEventFree(target)
           ? l10n.storeThemeFreeUntil(
               AppFormats.monthDay(
                 PremiumContent.miamiNightsLastFreeDay,
@@ -1060,9 +1099,17 @@ class _StoreScreenState extends State<StoreScreen>
             )
           : !isOwned && productId != null && !premiumState.hasPremium
           ? l10n.lbOrFreeWithPro
-          : null,
+          : null),
     );
   }
+
+  /// A featured card's main action with a second one under it (buy under
+  /// a trial's EQUIP, the two-ad trial under BUY).
+  Widget _stackActions(Widget first, Widget second) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [first, const SizedBox(height: 8), second],
+      );
 
   StoreItemBlock _buildThemeBlock(
     GameTheme target,
@@ -1148,7 +1195,8 @@ class _StoreScreenState extends State<StoreScreen>
     }
     for (final t in GameTheme.values) {
       if (_productIdForTheme(t) == productId) {
-        return premiumState.isThemeUnlocked(t);
+        // Not isThemeUnlocked: a theme on a temporary unlock isn't bought.
+        return premiumState.isThemePermanentlyUnlocked(t);
       }
     }
     // Skins: store ID is `${prefix}skin_<id>`
@@ -1477,6 +1525,19 @@ class _StoreScreenState extends State<StoreScreen>
     final isSelected = premiumState.selectedSkinId == skin.id;
     final productId = ProductIds.skinStoreId(skin.id);
     final isPending = _pendingProductIds.contains(productId);
+    final buyAction = StoreActionBlock(
+      label: l10n.lbBuyPrice(_skinPrice(skin, l10n)),
+      kind: LBBlockKind.goldFill,
+      feedback: false,
+      onTap: () {
+        setState(() => _focusSkin = skin);
+        _purchaseCosmetic(
+          productId: productId,
+          displayName: skin.localizedName(l10n),
+          fallbackPrice: skin.price,
+        );
+      },
+    );
 
     final Widget action;
     if (isPending) {
@@ -1496,18 +1557,30 @@ class _StoreScreenState extends State<StoreScreen>
         onTap: () => _equipSkin(skin),
       );
     } else {
-      action = StoreActionBlock(
-        label: l10n.lbBuyPrice(_skinPrice(skin, l10n)),
-        kind: LBBlockKind.goldFill,
-        feedback: false,
-        onTap: () {
-          setState(() => _focusSkin = skin);
-          _purchaseCosmetic(
-            productId: productId,
-            displayName: skin.localizedName(l10n),
-            fallbackPrice: skin.price,
-          );
-        },
+      action = buyAction;
+    }
+
+    // Worn on a temporary unlock: keep the buy button. Locked: offer the
+    // two-ad trial under it.
+    final isTemporary = isUnlocked &&
+        skin.isPremium &&
+        !premiumState.hasPremium &&
+        !premiumState.isSkinOwned(skin.id);
+    Widget featuredAction = action;
+    if (!isPending && isTemporary) {
+      featuredAction = _stackActions(action, buyAction);
+    } else if (!isPending &&
+        !isUnlocked &&
+        skin.isPremium &&
+        cosmeticTrialAvailable()) {
+      featuredAction = _stackActions(
+        action,
+        CosmeticTrialButton(
+          key: ValueKey('trial-skin-${skin.id}'),
+          kind: TemporaryGrantKind.skin,
+          id: skin.id,
+          displayName: skin.localizedName(l10n),
+        ),
       );
     }
 
@@ -1519,8 +1592,16 @@ class _StoreScreenState extends State<StoreScreen>
       title: skin.localizedName(l10n),
       titleColor: isUnlocked ? null : LB.gold,
       line: _skinTagline(skin, l10n),
-      action: action,
-      footnote: !isUnlocked && !premiumState.hasPremium
+      action: featuredAction,
+      footnote: isTemporary
+          ? temporaryUnlockFootnote(
+              l10n,
+              premiumState,
+              TemporaryGrantKind.skin,
+              skin.id,
+              permanentlyOwned: false,
+            )
+          : !isUnlocked && !premiumState.hasPremium
           ? l10n.lbOrFreeWithPro
           : null,
     );
@@ -1641,6 +1722,19 @@ class _StoreScreenState extends State<StoreScreen>
     final isSelected = premiumState.selectedTrailId == trail.id;
     final productId = ProductIds.withPrefix(trail.id);
     final isPending = _pendingProductIds.contains(productId);
+    final buyAction = StoreActionBlock(
+      label: l10n.lbBuyPrice(_trailPrice(trail, l10n)),
+      kind: LBBlockKind.goldFill,
+      feedback: false,
+      onTap: () {
+        setState(() => _focusTrail = trail);
+        _purchaseCosmetic(
+          productId: productId,
+          displayName: trail.localizedName(l10n),
+          fallbackPrice: trail.price,
+        );
+      },
+    );
 
     final Widget action;
     if (isPending) {
@@ -1660,18 +1754,30 @@ class _StoreScreenState extends State<StoreScreen>
         onTap: () => _equipTrail(trail),
       );
     } else {
-      action = StoreActionBlock(
-        label: l10n.lbBuyPrice(_trailPrice(trail, l10n)),
-        kind: LBBlockKind.goldFill,
-        feedback: false,
-        onTap: () {
-          setState(() => _focusTrail = trail);
-          _purchaseCosmetic(
-            productId: productId,
-            displayName: trail.localizedName(l10n),
-            fallbackPrice: trail.price,
-          );
-        },
+      action = buyAction;
+    }
+
+    // Worn on a temporary unlock: keep the buy button. Locked: offer the
+    // two-ad trial under it.
+    final isTemporary = isUnlocked &&
+        trail.isPremium &&
+        !premiumState.hasPremium &&
+        !premiumState.isTrailOwned(trail.id);
+    Widget featuredAction = action;
+    if (!isPending && isTemporary) {
+      featuredAction = _stackActions(action, buyAction);
+    } else if (!isPending &&
+        !isUnlocked &&
+        trail.isPremium &&
+        cosmeticTrialAvailable()) {
+      featuredAction = _stackActions(
+        action,
+        CosmeticTrialButton(
+          key: ValueKey('trial-trail-${trail.id}'),
+          kind: TemporaryGrantKind.trail,
+          id: trail.id,
+          displayName: trail.localizedName(l10n),
+        ),
       );
     }
 
@@ -1683,8 +1789,16 @@ class _StoreScreenState extends State<StoreScreen>
       title: trail.localizedName(l10n),
       titleColor: isUnlocked ? null : LB.gold,
       line: trail.localizedDescription(l10n),
-      action: action,
-      footnote: !isUnlocked && !premiumState.hasPremium
+      action: featuredAction,
+      footnote: isTemporary
+          ? temporaryUnlockFootnote(
+              l10n,
+              premiumState,
+              TemporaryGrantKind.trail,
+              trail.id,
+              permanentlyOwned: false,
+            )
+          : !isUnlocked && !premiumState.hasPremium
           ? l10n.lbOrFreeWithPro
           : null,
     );

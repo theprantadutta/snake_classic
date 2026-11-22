@@ -1972,6 +1972,60 @@ abstract class AppLocalizations {
   /// **'{name} equipped'**
   String storeEquippedToast(Object name);
 
+  /// Daily login bonus item (day 3): one Speed Boost power-up
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Boost'**
+  String get dbItemSpeedBoost;
+
+  /// Daily login bonus item (day 5): Season (battle pass) XP doubled for 24 hours
+  ///
+  /// In en, this message translates to:
+  /// **'2× Season XP · 24 h'**
+  String get dbItemXpBoost;
+
+  /// Daily login bonus item (day 7): a premium theme unlocked for one day
+  ///
+  /// In en, this message translates to:
+  /// **'Premium theme · 1 day'**
+  String get dbItemThemeDay;
+
+  /// Store button under a locked skin/trail/theme: watch two rewarded ads to use it for 24 hours
+  ///
+  /// In en, this message translates to:
+  /// **'Try 1 day · 2 ads'**
+  String get storeTrialStart;
+
+  /// Same button after the first of the two ads was watched
+  ///
+  /// In en, this message translates to:
+  /// **'Try 1 day · 1 more ad'**
+  String get storeTrialOneLeft;
+
+  /// Toast after the first of the two trial ads
+  ///
+  /// In en, this message translates to:
+  /// **'One more ad and it\'s yours for a day.'**
+  String get storeTrialHalfToast;
+
+  /// Toast after the second trial ad: the cosmetic is unlocked and equipped for 24 hours
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is yours for 24 hours!'**
+  String storeTrialUnlockedToast(String name);
+
+  /// Store footnote on a cosmetic worn on a temporary unlock; hours left, rounded up
+  ///
+  /// In en, this message translates to:
+  /// **'Yours for {hours} more h · buy it to keep it'**
+  String storeTrialEndsIn(int hours);
+
+  /// Season screen chip while the daily-bonus 2x XP boost runs
+  ///
+  /// In en, this message translates to:
+  /// **'2× XP · {hours} h left'**
+  String bpXpBoostActive(int hours);
+
   /// No description provided for @storeFreeSpeedBoostInventory.
   ///
   /// In en, this message translates to:

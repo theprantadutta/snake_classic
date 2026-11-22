@@ -285,4 +285,25 @@ abstract class AnalyticsClient {
   /// A GA4 user property (null clears it). Typed wrappers in
   /// `retention_events.dart`.
   Future<void> setUserProperty(String name, String? value);
+
+  // ==================== Daily-bonus items & cosmetic trials ====================
+  // (retention-cosmetics, 2026-11)
+
+  /// A daily login bonus item was actually granted. [item] is
+  /// `speed_boost`, `xp_boost` or `theme_day`; [day] is the bonus day (1-7).
+  Future<void> trackDailyBonusItemGranted({
+    required String item,
+    required int day,
+  });
+
+  /// "Watch 2 ads, wear it for a day". [stage] is `ad_1_done`, `unlocked`
+  /// or `expired`; [cosmeticType] is `theme`, `skin` or `trail`.
+  Future<void> trackCosmeticTrial({
+    required String stage,
+    required String cosmeticType,
+    required String cosmeticId,
+  });
+
+  /// The daily-bonus 2x Season XP boost. [stage] is `activated` or `expired`.
+  Future<void> trackXpBoost({required String stage});
 }

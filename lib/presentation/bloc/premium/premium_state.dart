@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/models/temporary_grant.dart';
 import 'package:snake_classic/services/purchase_service.dart' show ProductIds;
 import 'package:snake_classic/utils/constants.dart';
 
@@ -113,6 +114,12 @@ class PremiumState extends Equatable {
   final DateTime? promoExpiresAt;
   final String? promoSource;
 
+  /// Active temporary cosmetic unlocks (daily-bonus theme, ad trials) as
+  /// [TemporaryGrant.key] -> expiry. Device-local: never part of the owned
+  /// sets above, never synced. PremiumCubit drops entries the moment they
+  /// expire, so membership alone means "active".
+  final Map<String, DateTime> temporaryUnlocks;
+
   const PremiumState({
     this.status = PremiumStatus.initial,
     this.tier = PremiumTier.free,
@@ -134,6 +141,7 @@ class PremiumState extends Equatable {
     this.isOnPromo = false,
     this.promoExpiresAt,
     this.promoSource,
+    this.temporaryUnlocks = const {},
   });
 
   /// Initial state
@@ -164,6 +172,7 @@ class PremiumState extends Equatable {
     DateTime? promoExpiresAt,
     String? promoSource,
     bool clearPromo = false,
+    Map<String, DateTime>? temporaryUnlocks,
   }) {
     return PremiumState(
       status: status ?? this.status,
@@ -192,6 +201,7 @@ class PremiumState extends Equatable {
       promoExpiresAt:
           clearPromo ? null : (promoExpiresAt ?? this.promoExpiresAt),
       promoSource: clearPromo ? null : (promoSource ?? this.promoSource),
+      temporaryUnlocks: temporaryUnlocks ?? this.temporaryUnlocks,
     );
   }
 
@@ -249,8 +259,39 @@ class PremiumState extends Equatable {
 
   /// Check if a theme is unlocked (free themes always unlocked, premium needs purchase or subscription)
   bool isThemeUnlocked(GameTheme theme) =>
+      isThemePermanentlyUnlocked(theme) || hasTemporaryTheme(theme);
+
+  /// [isThemeUnlocked] without temporary grants: owned, free or Pro. The
+  /// purchase reconciler uses this so a theme on trial doesn't read as bought.
+  bool isThemePermanentlyUnlocked(GameTheme theme) =>
       _debugAllThemes ||
       !PremiumContent.isPremiumTheme(theme) || hasPremium || ownedThemes.contains(theme);
+
+  /// Whether [kind]/[id] is temporarily unlocked right now.
+  bool hasTemporaryUnlock(TemporaryGrantKind kind, String id) =>
+      temporaryUnlocks.containsKey(TemporaryGrant.keyFor(kind, id));
+
+  /// When the temporary unlock of [kind]/[id] ends, or null if there is none.
+  DateTime? temporaryUnlockExpiry(TemporaryGrantKind kind, String id) =>
+      temporaryUnlocks[TemporaryGrant.keyFor(kind, id)];
+
+  bool hasTemporaryTheme(GameTheme theme) => hasTemporaryUnlock(
+        TemporaryGrantKind.theme,
+        TemporaryGrant.themeGrantId(theme),
+      );
+
+  /// Whether the skin [skinId] may be equipped and drawn: owned (Pro's
+  /// skins are in the owned set too) or temporarily unlocked. Renderers and
+  /// the equip guard use this; [isSkinOwned] stays strict for the
+  /// purchase reconciler.
+  bool isSkinUsable(String skinId) =>
+      isSkinOwned(skinId) ||
+      hasTemporaryUnlock(TemporaryGrantKind.skin, skinId);
+
+  /// Trail equivalent of [isSkinUsable].
+  bool isTrailUsable(String trailId) =>
+      isTrailOwned(trailId) ||
+      hasTemporaryUnlock(TemporaryGrantKind.trail, trailId);
 
   /// Debug-only: `--dart-define=LB_ALL_THEMES=true` unlocks every theme so
   /// theme art can be tuned without owning it. Compiled out of release.
@@ -270,12 +311,18 @@ class PremiumState extends Equatable {
   /// subscription (Pro bundles all premium cosmetics, mirroring the theme
   /// fast-path). Use this in UI gating (store equip buttons, paint logic).
   bool isSkinUnlocked(SnakeSkinType skin) =>
-      !skin.isPremium || hasPremium || ownedSkins.contains(skin.id);
+      !skin.isPremium ||
+      hasPremium ||
+      ownedSkins.contains(skin.id) ||
+      hasTemporaryUnlock(TemporaryGrantKind.skin, skin.id);
 
   /// Check if a trail is usable by the player. Same Pro-bundle fast-path
   /// as [isSkinUnlocked].
   bool isTrailUnlocked(TrailEffectType trail) =>
-      !trail.isPremium || hasPremium || ownedTrails.contains(trail.id);
+      !trail.isPremium ||
+      hasPremium ||
+      ownedTrails.contains(trail.id) ||
+      hasTemporaryUnlock(TemporaryGrantKind.trail, trail.id);
 
   /// Check if a power-up is unlocked
   bool isPowerUpUnlocked(String powerUpId) => ownedPowerUps.contains(powerUpId);
@@ -333,5 +380,6 @@ class PremiumState extends Equatable {
     isOnPromo,
     promoExpiresAt,
     promoSource,
+    temporaryUnlocks,
   ];
 }

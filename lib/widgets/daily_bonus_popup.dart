@@ -2,8 +2,19 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
+import 'package:snake_classic/models/snake_coins.dart' show DailyBonusItem;
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
+
+/// The localized name of a daily bonus item label (the reward templates
+/// carry English labels). Unknown labels are shown as they are.
+String dailyBonusItemLabel(AppLocalizations l10n, String label) =>
+    switch (DailyBonusItem.fromLabel(label)) {
+      DailyBonusItem.speedBoost => l10n.dbItemSpeedBoost,
+      DailyBonusItem.xpBoost => l10n.dbItemXpBoost,
+      DailyBonusItem.themeDay => l10n.dbItemThemeDay,
+      null => label,
+    };
 
 /// Data class for daily bonus reward
 class DailyBonusReward {
@@ -429,7 +440,10 @@ class _DailyBonusPopupState extends State<DailyBonusPopup>
           ),
           if (reward.bonusItem != null) ...[
             const SizedBox(height: 12),
-            LBChip(icon: LBIcon.gift, label: reward.bonusItem!.toUpperCase()),
+            LBChip(
+              icon: LBIcon.gift,
+              label: dailyBonusItemLabel(l10n, reward.bonusItem!).toUpperCase(),
+            ),
           ],
         ],
       ),

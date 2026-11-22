@@ -499,4 +499,32 @@ class AnalyticsFacade implements AnalyticsClient {
   @override
   Future<void> setUserProperty(String name, String? value) async =>
       _fire((c) => c.setUserProperty(name, value));
+
+  // ==================== Daily-bonus items & cosmetic trials ====================
+  // (retention-cosmetics, 2026-11)
+
+  @override
+  Future<void> trackDailyBonusItemGranted({
+    required String item,
+    required int day,
+  }) async =>
+      _fire((c) => c.trackDailyBonusItemGranted(item: item, day: day));
+
+  @override
+  Future<void> trackCosmeticTrial({
+    required String stage,
+    required String cosmeticType,
+    required String cosmeticId,
+  }) async =>
+      _fire(
+        (c) => c.trackCosmeticTrial(
+          stage: stage,
+          cosmeticType: cosmeticType,
+          cosmeticId: cosmeticId,
+        ),
+      );
+
+  @override
+  Future<void> trackXpBoost({required String stage}) async =>
+      _fire((c) => c.trackXpBoost(stage: stage));
 }

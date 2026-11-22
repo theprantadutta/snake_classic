@@ -7,6 +7,7 @@ import 'package:snake_classic/data/daos/store_dao.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/snake_coins.dart';
 import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/daily_bonus_item_granter.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -40,7 +41,11 @@ export 'coins_state.dart';
 /// gate is multi-device consistent. The legacy keys are cleared by a
 /// one-shot migration in [initialize].
 class CoinsCubit extends Cubit<CoinsState> {
-  CoinsCubit() : super(CoinsState.initial());
+  /// [dailyBonusItemGranter] is resolved lazily: the granter depends on
+  /// PremiumCubit, which depends on this cubit.
+  CoinsCubit({this._dailyBonusItemGranter}) : super(CoinsState.initial());
+
+  final DailyBonusItemGranter Function()? _dailyBonusItemGranter;
 
   SharedPreferences? _prefs;
 
@@ -908,6 +913,10 @@ class CoinsCubit extends Cubit<CoinsState> {
               '${reward.day}',
             );
           }
+          // Days 3 / 5 / 7 also advertise an item. The Drift gate above
+          // makes this run once per claimed day, whatever surface claimed.
+          final itemGranter = _dailyBonusItemGranter?.call();
+          if (itemGranter != null) await itemGranter.grant(reward);
           AppLogger.info(
             'Collected daily bonus: day=${reward.day} '
             '(streak=${claimed.newStreak}) → ${reward.coins} coins',

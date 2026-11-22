@@ -1068,6 +1068,39 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get dbItemSpeedBoost => 'تعزيز سرعة';
+
+  @override
+  String get dbItemXpBoost => 'خبرة الموسم ×2 · 24 س';
+
+  @override
+  String get dbItemThemeDay => 'سمة مميزة · يوم واحد';
+
+  @override
+  String get storeTrialStart => 'جرّبه يومًا · إعلانان';
+
+  @override
+  String get storeTrialOneLeft => 'جرّبه يومًا · إعلان واحد آخر';
+
+  @override
+  String get storeTrialHalfToast => 'إعلان واحد آخر ويصبح لك ليوم كامل.';
+
+  @override
+  String storeTrialUnlockedToast(String name) {
+    return '$name لك لمدة 24 ساعة!';
+  }
+
+  @override
+  String storeTrialEndsIn(int hours) {
+    return 'لك لمدة $hours س أخرى · اشترِه لتحتفظ به';
+  }
+
+  @override
+  String bpXpBoostActive(int hours) {
+    return 'خبرة ×2 · بقي $hours س';
+  }
+
+  @override
   String get storeFreeSpeedBoostInventory =>
       '🎉 أُضيف تعزيز السرعة المجاني إلى مخزونك!';
 

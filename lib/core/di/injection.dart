@@ -22,6 +22,8 @@ import 'package:snake_classic/services/daily_challenge_service.dart';
 import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
+import 'package:snake_classic/services/daily_bonus_item_granter.dart';
+import 'package:snake_classic/services/temporary_grants_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
@@ -215,8 +217,27 @@ Future<void> configureDependencies() async {
     () => GameSettingsCubit(getIt<StorageService>()),
   );
 
+  // Device-local temporary unlocks: daily-bonus XP boost / theme day and
+  // the "watch 2 ads, wear it for a day" trials. Never synced.
+  getIt.registerLazySingleton<TemporaryGrantsService>(
+    () => TemporaryGrantsService(analytics: getIt<AnalyticsFacade>()),
+  );
+
+  getIt.registerLazySingleton<DailyBonusItemGranter>(
+    () => DailyBonusItemGranter(
+      powerUps: getIt<PowerUpCubit>(),
+      premium: getIt<PremiumCubit>(),
+      grants: getIt<TemporaryGrantsService>(),
+      analytics: getIt<AnalyticsFacade>(),
+    ),
+  );
+
   // Register CoinsCubit as singleton so it can be shared across game sessions
-  getIt.registerLazySingleton<CoinsCubit>(() => CoinsCubit());
+  getIt.registerLazySingleton<CoinsCubit>(
+    () => CoinsCubit(
+      dailyBonusItemGranter: () => getIt<DailyBonusItemGranter>(),
+    ),
+  );
 
   // The one end-of-game rewards/stats/achievements pipeline, shared by the
   // single-player GameCubit and the MultiplayerCubit so economy rules live
@@ -285,6 +306,7 @@ Future<void> configureDependencies() async {
       storageService: getIt<StorageService>(),
       coinsCubit: getIt<CoinsCubit>(),
       analytics: getIt<AnalyticsFacade>(),
+      temporaryGrants: getIt<TemporaryGrantsService>(),
     ),
   );
 
@@ -294,6 +316,7 @@ Future<void> configureDependencies() async {
       premiumCubit: getIt<PremiumCubit>(),
       analytics: getIt<AnalyticsFacade>(),
       progressionService: getIt<ProgressionService>(),
+      temporaryGrants: getIt<TemporaryGrantsService>(),
     ),
   );
 

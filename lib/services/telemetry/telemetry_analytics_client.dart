@@ -341,4 +341,23 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
 
   @override
   Future<void> setUserProperty(String name, String? value) async {}
+
+  // ==================== Daily-bonus items & cosmetic trials ====================
+  // (retention-cosmetics, 2026-11) GA4 only, not counted in telemetry.
+
+  @override
+  Future<void> trackDailyBonusItemGranted({
+    required String item,
+    required int day,
+  }) async {}
+
+  @override
+  Future<void> trackCosmeticTrial({
+    required String stage,
+    required String cosmeticType,
+    required String cosmeticId,
+  }) async {}
+
+  @override
+  Future<void> trackXpBoost({required String stage}) async {}
 }

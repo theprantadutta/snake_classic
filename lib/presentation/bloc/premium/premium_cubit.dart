@@ -13,7 +13,9 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/models/temporary_grant.dart';
 import 'package:snake_classic/models/tournament_entry_ledger.dart';
+import 'package:snake_classic/services/temporary_grants_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/logger.dart';
 
@@ -38,11 +40,18 @@ class PremiumCubit extends Cubit<PremiumState> {
   StreamSubscription<db.PremiumStatusData?>? _premiumStatusWatch;
   bool _reloadingFromDrift = false;
 
+  /// Device-local temporary unlocks (daily-bonus theme, ad trials). Null in
+  /// tests / builds that don't wire it: temporary unlocks are then off.
+  final TemporaryGrantsService? _temporaryGrants;
+  StreamSubscription<TemporaryGrantLedger>? _grantChangesSub;
+  StreamSubscription<List<TemporaryGrant>>? _grantExpirySub;
+
   PremiumCubit({
     required this._purchaseService,
     required this._storageService,
     this._coinsCubit,
     required this._analytics,
+    this._temporaryGrants,
   }) : super(PremiumState.initial());
 
   /// Initialize premium status
@@ -143,6 +152,10 @@ class PremiumCubit extends Cubit<PremiumState> {
       // server reconcile that lands AFTER this init flips the local
       // entitlement state without a screen rebuild.
       _wireDriftWatch();
+
+      // Temporary unlocks: hydrate, and fall back from any that ran out
+      // while the app was closed.
+      await _wireTemporaryGrants();
 
       // Backend reconcile (which is what catches server-side Pro
       // revocations) is no longer fired here — AuthCubit triggers it
@@ -413,7 +426,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// Pushes the choice to the backend so it survives reinstall/device-switch.
   Future<void> selectSkin(String skinId) async {
     if (state.selectedSkinId == skinId) return;
-    if (skinId != 'classic' && !state.isSkinOwned(skinId)) {
+    if (skinId != 'classic' && !state.isSkinUsable(skinId)) {
       AppLogger.warning('Attempted to select unowned skin: $skinId');
       return;
     }
@@ -421,14 +434,18 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(selectedSkinId: skinId));
     await _storageService.setSelectedSkinId(skinId);
     _analytics.trackCosmeticEquipped(cosmeticType: 'skin', cosmeticId: skinId);
-    unawaited(ApiService().setEquippedCosmetics(skinId: skinId));
+    // A skin worn on a temporary unlock is not the account's to restore
+    // on another device, so the backend keeps the last owned pick.
+    if (skinId == 'classic' || state.isSkinOwned(skinId)) {
+      unawaited(ApiService().setEquippedCosmetics(skinId: skinId));
+    }
   }
 
   /// Select trail (validates ownership — 'none' is always allowed).
   /// Pushes the choice to the backend so it survives reinstall/device-switch.
   Future<void> selectTrail(String trailId) async {
     if (state.selectedTrailId == trailId) return;
-    if (trailId != 'none' && !state.isTrailOwned(trailId)) {
+    if (trailId != 'none' && !state.isTrailUsable(trailId)) {
       AppLogger.warning('Attempted to select unowned trail: $trailId');
       return;
     }
@@ -436,7 +453,9 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(selectedTrailId: trailId));
     await _storageService.setSelectedTrailId(trailId);
     _analytics.trackCosmeticEquipped(cosmeticType: 'trail', cosmeticId: trailId);
-    unawaited(ApiService().setEquippedCosmetics(trailId: trailId));
+    if (trailId == 'none' || state.isTrailOwned(trailId)) {
+      unawaited(ApiService().setEquippedCosmetics(trailId: trailId));
+    }
   }
 
   /// Push the currently-applied theme to the backend so it survives
@@ -593,8 +612,8 @@ class PremiumCubit extends Cubit<PremiumState> {
 
   // Convenience checker methods (delegate to state)
   bool isThemeUnlocked(GameTheme theme) => state.isThemeUnlocked(theme);
-  bool isSkinUnlocked(String skinId) => state.isSkinOwned(skinId);
-  bool isTrailUnlocked(String trailId) => state.isTrailOwned(trailId);
+  bool isSkinUnlocked(String skinId) => state.isSkinUsable(skinId);
+  bool isTrailUnlocked(String trailId) => state.isTrailUsable(trailId);
   bool isPowerUpUnlocked(String powerUpId) =>
       state.isPowerUpUnlocked(powerUpId);
   bool isBundleOwned(String bundleId) => state.isBundleOwned(bundleId);
@@ -658,6 +677,9 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// the explicit emit below makes the downgrade take effect immediately.
   Future<void> recheckLocalExpiry() async {
     if (state.status != PremiumStatus.ready) return;
+    // Temporary unlocks that ran out while the app was in the background.
+    // Their fallback runs from the expirations listener.
+    await _temporaryGrants?.pruneExpired();
     if (state.tier != PremiumTier.pro) return;
     final stillActive = await _storageService.isPremiumActive();
     if (!stillActive && state.tier == PremiumTier.pro) {
@@ -876,14 +898,17 @@ class PremiumCubit extends Cubit<PremiumState> {
     // keep rendering a paid item they shouldn't have. Pro subscribers
     // implicitly own all premium themes, so the theme fallback only
     // applies to free-tier users.
+    // Temporary unlocks count: they are device-local and never in the
+    // server's owned sets, so a strict check would strip a trial skin on
+    // every sync.
     if (state.selectedSkinId != 'classic' &&
-        !state.isSkinOwned(state.selectedSkinId)) {
+        !state.isSkinUsable(state.selectedSkinId)) {
       AppLogger.info(
           'Equipped skin "${state.selectedSkinId}" no longer owned — falling back to classic');
       await selectSkin('classic');
     }
     if (state.selectedTrailId != 'none' &&
-        !state.isTrailOwned(state.selectedTrailId)) {
+        !state.isTrailUsable(state.selectedTrailId)) {
       AppLogger.info(
           'Equipped trail "${state.selectedTrailId}" no longer owned — falling back to none');
       await selectTrail('none');
@@ -937,6 +962,181 @@ class PremiumCubit extends Cubit<PremiumState> {
     AppLogger.info('Absorbed server tournament-entry grants: $changes');
   }
 
+  // ==================== Temporary unlocks ====================
+  //
+  // The daily-bonus premium theme and the "watch 2 ads, wear it for a day"
+  // trials. They live in TemporaryGrantsService (device-local, never
+  // synced) and are projected into state.temporaryUnlocks, which the
+  // isXUnlocked / isXUsable checks read. They never touch ownedThemes /
+  // ownedSkins / ownedTrails, the UnlockedItems table or the outbox.
+
+  Future<void> _wireTemporaryGrants() async {
+    final grants = _temporaryGrants;
+    if (grants == null) return;
+    _grantChangesSub ??= grants.changes.listen(_projectGrants);
+    _grantExpirySub ??= grants.expirations.listen((expired) {
+      unawaited(
+        _fallBackFromExpired(expired).catchError((Object e) {
+          AppLogger.warning('Temporary unlock fallback failed: $e');
+        }),
+      );
+    });
+    // load() announces grants that ran out while the app was closed on
+    // the expirations stream, so they fall back like any other expiry.
+    await grants.load();
+    _projectGrants(grants.ledger);
+  }
+
+  void _projectGrants(TemporaryGrantLedger ledger) {
+    final grants = _temporaryGrants;
+    if (grants == null || isClosed) return;
+    emit(state.copyWith(temporaryUnlocks: ledger.cosmeticUnlocks(grants.now())));
+  }
+
+  /// Put back what the player had before an expired grant, or the default,
+  /// for every expired cosmetic they are still wearing.
+  Future<void> _fallBackFromExpired(List<TemporaryGrant> expired) async {
+    final grants = _temporaryGrants;
+    if (grants != null) _projectGrants(grants.ledger);
+    for (final g in expired) {
+      final previous = g.previousId;
+      switch (g.kind) {
+        case TemporaryGrantKind.skin:
+          if (state.selectedSkinId != g.id || state.isSkinUsable(g.id)) break;
+          final back = previous != null &&
+                  (previous == 'classic' || state.isSkinUsable(previous))
+              ? previous
+              : 'classic';
+          AppLogger.info('Temporary skin ${g.id} expired, back to $back');
+          await selectSkin(back);
+        case TemporaryGrantKind.trail:
+          if (state.selectedTrailId != g.id || state.isTrailUsable(g.id)) {
+            break;
+          }
+          final back = previous != null &&
+                  (previous == 'none' || state.isTrailUsable(previous))
+              ? previous
+              : 'none';
+          AppLogger.info('Temporary trail ${g.id} expired, back to $back');
+          await selectTrail(back);
+        case TemporaryGrantKind.theme:
+          final theme = TemporaryGrant.themeFromGrantId(g.id);
+          if (theme != null) await _restoreThemeAfterGrant(theme, previous);
+        case TemporaryGrantKind.xpBoost:
+          break;
+      }
+    }
+  }
+
+  Future<void> _restoreThemeAfterGrant(
+    GameTheme theme,
+    String? previousId,
+  ) async {
+    if (!getIt.isRegistered<ThemeCubit>()) return;
+    final themeCubit = getIt<ThemeCubit>();
+    if (!themeCubit.state.isReady) {
+      // On a cold start the ThemeCubit may still be loading the (expired)
+      // theme from Drift; wait for it so the fallback isn't overwritten.
+      try {
+        await themeCubit.stream
+            .firstWhere((s) => s.isReady)
+            .timeout(const Duration(seconds: 10));
+      } catch (_) {
+        return;
+      }
+    }
+    if (themeCubit.state.currentTheme != theme) return;
+    if (state.isThemeUnlocked(theme)) return; // bought it, or Pro
+    final previous =
+        previousId == null ? null : TemporaryGrant.themeFromGrantId(previousId);
+    final target = previous != null && state.isThemeUnlocked(previous)
+        ? previous
+        : GameTheme.classic;
+    AppLogger.info('Temporary theme $theme expired, back to $target');
+    await themeCubit.setTheme(target);
+  }
+
+  /// The premium theme day 7 of the daily bonus lends: one the player can't
+  /// use yet, rotating weekly so a long streak sees different ones. Never
+  /// Miami Nights (it isn't in [PremiumContent.premiumThemes]). Null when
+  /// every candidate is already unlocked (Pro, or bought them all).
+  static GameTheme? pickDailyBonusTheme(PremiumState s, DateTime now) {
+    final candidates = PremiumContent.premiumThemes
+        .where((t) => !s.isThemeUnlocked(t))
+        .toList();
+    if (candidates.isEmpty) return null;
+    final day = DateTime.utc(now.year, now.month, now.day)
+            .millisecondsSinceEpoch ~/
+        Duration.millisecondsPerDay;
+    return candidates[(day ~/ 7) % candidates.length];
+  }
+
+  /// Day 7 of the daily bonus: a premium theme for 24 hours, applied at
+  /// once. Returns the theme, or null when there was nothing to lend.
+  Future<GameTheme?> grantDailyBonusTheme() async {
+    final grants = _temporaryGrants;
+    if (grants == null || !getIt.isRegistered<ThemeCubit>()) return null;
+    final now = grants.now();
+    final theme = pickDailyBonusTheme(state, now);
+    if (theme == null) return null;
+    final themeCubit = getIt<ThemeCubit>();
+    await grants.grant(TemporaryGrant(
+      kind: TemporaryGrantKind.theme,
+      id: TemporaryGrant.themeGrantId(theme),
+      expiresAt: now.add(TemporaryGrant.duration),
+      source: TemporaryGrantSource.dailyBonus,
+      previousId: TemporaryGrant.themeGrantId(themeCubit.state.currentTheme),
+    ));
+    _projectGrants(grants.ledger);
+    await themeCubit.setTheme(theme, pushToBackend: false);
+    return theme;
+  }
+
+  /// The second rewarded ad of a "try it for a day" was watched: unlock
+  /// [kind]/[id] for 24 hours and put it on.
+  Future<void> grantCosmeticTrial(TemporaryGrantKind kind, String id) async {
+    final grants = _temporaryGrants;
+    if (grants == null) return;
+    final now = grants.now();
+    final ThemeCubit? themeCubit =
+        getIt.isRegistered<ThemeCubit>() ? getIt<ThemeCubit>() : null;
+    final String? previous = switch (kind) {
+      TemporaryGrantKind.skin => state.selectedSkinId,
+      TemporaryGrantKind.trail => state.selectedTrailId,
+      TemporaryGrantKind.theme => themeCubit == null
+          ? null
+          : TemporaryGrant.themeGrantId(themeCubit.state.currentTheme),
+      TemporaryGrantKind.xpBoost => null,
+    };
+    if (kind == TemporaryGrantKind.xpBoost) return;
+    await grants.grant(TemporaryGrant(
+      kind: kind,
+      id: id,
+      expiresAt: now.add(TemporaryGrant.duration),
+      source: TemporaryGrantSource.adTrial,
+      previousId: previous,
+    ));
+    _projectGrants(grants.ledger);
+    switch (kind) {
+      case TemporaryGrantKind.skin:
+        await selectSkin(id);
+      case TemporaryGrantKind.trail:
+        await selectTrail(id);
+      case TemporaryGrantKind.theme:
+        final theme = TemporaryGrant.themeFromGrantId(id);
+        if (theme != null && themeCubit != null) {
+          await themeCubit.setTheme(theme, pushToBackend: false);
+        }
+      case TemporaryGrantKind.xpBoost:
+        break;
+    }
+    _analytics.trackCosmeticTrial(
+      stage: 'unlocked',
+      cosmeticType: kind.name,
+      cosmeticId: id,
+    );
+  }
+
   /// Clear error
   void clearError() {
     emit(state.copyWith(clearError: true));
@@ -962,6 +1162,8 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> close() {
     _purchaseStatusSubscription?.cancel();
     _premiumStatusWatch?.cancel();
+    _grantChangesSub?.cancel();
+    _grantExpirySub?.cancel();
     return super.close();
   }
 
