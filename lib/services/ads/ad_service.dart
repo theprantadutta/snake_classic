@@ -1647,6 +1647,9 @@ class AdService {
   static const String placementTournamentEntry = 'tournament_entry';
   static const String placementWeeklyQuest2x = 'weekly_quest_2x';
 
+  /// "Try it for a day": two of these unlock a premium cosmetic for 24 h.
+  static const String placementCosmeticTrial = 'cosmetic_trial';
+
   /// Coins granted per "watch for coins" ad.
   static const int freeCoinsPerAd = 25;
 

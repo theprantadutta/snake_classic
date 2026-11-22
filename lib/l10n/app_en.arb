@@ -442,6 +442,57 @@
   "storeThemeNotAvailable": "Theme not available. Please try again later.",
   "storeItemNotAvailable": "Item not available. Please try again later.",
   "storeEquippedToast": "{name} equipped",
+  "dbItemSpeedBoost": "Speed Boost",
+  "@dbItemSpeedBoost": {
+    "description": "Daily login bonus item (day 3): one Speed Boost power-up"
+  },
+  "dbItemXpBoost": "2× Season XP · 24 h",
+  "@dbItemXpBoost": {
+    "description": "Daily login bonus item (day 5): Season (battle pass) XP doubled for 24 hours"
+  },
+  "dbItemThemeDay": "Premium theme · 1 day",
+  "@dbItemThemeDay": {
+    "description": "Daily login bonus item (day 7): a premium theme unlocked for one day"
+  },
+  "storeTrialStart": "Try 1 day · 2 ads",
+  "@storeTrialStart": {
+    "description": "Store button under a locked skin/trail/theme: watch two rewarded ads to use it for 24 hours"
+  },
+  "storeTrialOneLeft": "Try 1 day · 1 more ad",
+  "@storeTrialOneLeft": {
+    "description": "Same button after the first of the two ads was watched"
+  },
+  "storeTrialHalfToast": "One more ad and it's yours for a day.",
+  "@storeTrialHalfToast": {
+    "description": "Toast after the first of the two trial ads"
+  },
+  "storeTrialUnlockedToast": "{name} is yours for 24 hours!",
+  "@storeTrialUnlockedToast": {
+    "description": "Toast after the second trial ad: the cosmetic is unlocked and equipped for 24 hours",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "storeTrialEndsIn": "Yours for {hours} more h · buy it to keep it",
+  "@storeTrialEndsIn": {
+    "description": "Store footnote on a cosmetic worn on a temporary unlock; hours left, rounded up",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "bpXpBoostActive": "2× XP · {hours} h left",
+  "@bpXpBoostActive": {
+    "description": "Season screen chip while the daily-bonus 2x XP boost runs",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "storeFreeSpeedBoostInventory": "🎉 Free Speed Boost added to your inventory!",
   "storeWatchAdTitle": "Watch an ad — free Speed Boost",
   "storeWatchAdReady": "Adds 1 Speed Boost to your loadout",
