@@ -121,6 +121,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     required int inputsAccepted,
     required int inputsRejected,
     String endTrigger = 'other',
+    int runNumber = 0,
+    String gameMode = '',
+    bool onboarding = false,
   }) {
     return _analytics.logEvent(
       name: 'game_over',
@@ -139,6 +142,12 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         // declined | background | new_run | no_offer | ... `background`
         // counts the runs that were lost before 7.6.2.
         'end_trigger': endTrigger,
+        // Lifetime run number (1 = first ever), the mode, and whether this
+        // was one of the first three (onboarding) games: the first-session
+        // funnel and per-mode counts (retention plan 2026-11, section 5).
+        if (runNumber > 0) 'run_number': runNumber,
+        if (gameMode.isNotEmpty) 'game_mode': gameMode,
+        'onboarding': onboarding ? 1 : 0,
       },
     );
   }
@@ -626,4 +635,22 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       },
     );
   }
+
+  // ==================== Generic (retention analytics) ====================
+
+  @override
+  Future<void> trackEvent(String name, Map<String, Object> parameters) {
+    // GA4 caps string parameter values at 100 characters.
+    final safe = parameters.map(
+      (k, v) => MapEntry(
+        k,
+        v is String && v.length > 100 ? v.substring(0, 100) : v,
+      ),
+    );
+    return _analytics.logEvent(name: name, parameters: safe);
+  }
+
+  @override
+  Future<void> setUserProperty(String name, String? value) =>
+      _analytics.setUserProperty(name: name, value: value);
 }

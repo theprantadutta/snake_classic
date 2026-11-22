@@ -77,6 +77,9 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
     required int inputsAccepted,
     required int inputsRejected,
     String endTrigger = 'other',
+    int runNumber = 0,
+    String gameMode = '',
+    bool onboarding = false,
   }) async {
     _tracker.runFinished(score: score, durationSeconds: durationSeconds);
     unawaited(_feedbackStore.recordFinishedRun());
@@ -331,4 +334,11 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
     required int count,
     required String topReason,
   }) async {}
+
+  // Retention events are GA4-only; the session counters don't need them.
+  @override
+  Future<void> trackEvent(String name, Map<String, Object> parameters) async {}
+
+  @override
+  Future<void> setUserProperty(String name, String? value) async {}
 }

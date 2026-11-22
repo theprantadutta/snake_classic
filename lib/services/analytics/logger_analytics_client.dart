@@ -94,6 +94,9 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     required int inputsAccepted,
     required int inputsRejected,
     String endTrigger = 'other',
+    int runNumber = 0,
+    String gameMode = '',
+    bool onboarding = false,
   }) async {
     AppLogger.info(
       '$_tag game_over: score=$score, level=$level, duration=${durationSeconds}s, '
@@ -453,5 +456,17 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       'filled=$filled, failed=$failed, refreshOk=$refreshOk, '
       'refreshFailed=$refreshFailed, codes=$codes, lastError=$lastError',
     );
+  }
+
+  // ==================== Generic (retention analytics) ====================
+
+  @override
+  Future<void> trackEvent(String name, Map<String, Object> parameters) async {
+    AppLogger.info('$_tag $name: $parameters');
+  }
+
+  @override
+  Future<void> setUserProperty(String name, String? value) async {
+    AppLogger.info('$_tag user_property $name=$value');
   }
 }

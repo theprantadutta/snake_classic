@@ -1212,7 +1212,7 @@ class _GameScreenState extends State<GameScreen>
                                                 .isProSession,
                                             onProRevive: () => context
                                                 .read<GameCubit>()
-                                                .revive(),
+                                                .revive(via: 'free'),
                                             canAffordCoins:
                                                 context
                                                     .read<CoinsCubit>()
@@ -1228,7 +1228,8 @@ class _GameScreenState extends State<GameScreen>
                                               final outcome =
                                                   await getIt<AdService>()
                                                       .showRewardedOrWait(
-                                                        onReward: gc.revive,
+                                                        onReward: () =>
+                                                            gc.revive(),
                                                         placement: 'revive',
                                                       );
                                               return outcome !=
@@ -1245,7 +1246,7 @@ class _GameScreenState extends State<GameScreen>
                                                         .extraLives,
                                                     itemName: 'Revive',
                                                   );
-                                              if (ok) gc.revive();
+                                              if (ok) gc.revive(via: 'coins');
                                             },
                                             onDecline: () => context
                                                 .read<GameCubit>()

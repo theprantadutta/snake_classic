@@ -45,6 +45,9 @@ abstract class AnalyticsClient {
     required int inputsAccepted,
     required int inputsRejected,
     String endTrigger = 'other',
+    int runNumber = 0,
+    String gameMode = '',
+    bool onboarding = false,
   });
   /// A single-player run left before it ended: [reason] is `quit` (exit to
   /// menu) or `restart` (pause-menu restart). [runNumber] is lifetime, so
@@ -271,4 +274,15 @@ abstract class AnalyticsClient {
     required String codes,
     String? lastError,
   });
+
+  // ==================== Generic (retention analytics) ====================
+
+  /// A named event with flat parameters (String or num values only; GA4
+  /// limits: 40-char names, 100-char string values). Typed wrappers for each
+  /// event live in `retention_events.dart`; call those, not this directly.
+  Future<void> trackEvent(String name, Map<String, Object> parameters);
+
+  /// A GA4 user property (null clears it). Typed wrappers in
+  /// `retention_events.dart`.
+  Future<void> setUserProperty(String name, String? value);
 }

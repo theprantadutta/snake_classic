@@ -157,6 +157,9 @@ class AnalyticsFacade implements AnalyticsClient {
     required int inputsAccepted,
     required int inputsRejected,
     String endTrigger = 'other',
+    int runNumber = 0,
+    String gameMode = '',
+    bool onboarding = false,
   }) async =>
       _fire(
         (c) => c.trackGameOver(
@@ -171,6 +174,9 @@ class AnalyticsFacade implements AnalyticsClient {
           inputsAccepted: inputsAccepted,
           inputsRejected: inputsRejected,
           endTrigger: endTrigger,
+          runNumber: runNumber,
+          gameMode: gameMode,
+          onboarding: onboarding,
         ),
       );
 
@@ -483,4 +489,14 @@ class AnalyticsFacade implements AnalyticsClient {
           precision: precision,
         ),
       );
+
+  // ==================== Generic (retention analytics) ====================
+
+  @override
+  Future<void> trackEvent(String name, Map<String, Object> parameters) async =>
+      _fire((c) => c.trackEvent(name, parameters));
+
+  @override
+  Future<void> setUserProperty(String name, String? value) async =>
+      _fire((c) => c.setUserProperty(name, value));
 }

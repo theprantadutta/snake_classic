@@ -33,6 +33,7 @@ import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/services/tournament_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
 import 'package:snake_classic/models/battle_pass.dart';
 import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/models/input_result.dart';
@@ -298,6 +299,26 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Revives spent in this run. Bumped by [revive], reset by [startGame].
   int _revivesThisGame = 0;
 
+  /// This run is one of the player's first [FirstRunService.onboardingGameCount]
+  /// games. Captured in [startGame] before the games-started counter moves.
+  ///
+  /// Onboarding runs get no revive overlay and no game-over CONTINUE (Pro's
+  /// free revive excepted): a new player can't afford the coin path, and the
+  /// two back-to-back paid offers cost ~12 s between death and the score, at
+  /// the moment they decide whether to play again (retention plan 2026-11,
+  /// B1). Death goes straight to the game-over screen instead.
+  bool _onboardingRun = false;
+
+  /// Whether this run is one of the player's first three games.
+  bool get isOnboardingRun => _onboardingRun;
+
+  /// The first-game controls hint stays up until the player's first accepted
+  /// turn of an onboarding run (retention plan B4).
+  bool get showControlsHint =>
+      _onboardingRun &&
+      _inputsAcceptedThisGame == 0 &&
+      state.status == GamePlayStatus.playing;
+
   /// Per-food points of the current run, in bite order, for the game-over
   /// "uncoiled" chart. Local only — never synced (like replays).
   final List<RunBite> _bitesThisGame = [];
@@ -403,9 +424,10 @@ class GameCubit extends Cubit<GameCubitState> {
     //     went to Settings and chose Easy or Hard before their third game has
     //     made an explicit statement about how they want to play, and this
     //     does not second-guess it.
+    _onboardingRun = FirstRunService().isInOnboarding;
     final useOnboardingPace = state.tournamentMode == null &&
         settings.difficulty == Difficulty.normal &&
-        FirstRunService().isInOnboarding;
+        _onboardingRun;
     final startingSpeedMs =
         useOnboardingPace ? Difficulty.easy.baseSpeed : null;
     debugPrint(
@@ -766,6 +788,18 @@ class GameCubit extends Cubit<GameCubitState> {
     final accepted = state.gameState!.snake.changeDirection(newDirection);
     if (accepted) {
       _inputsAcceptedThisGame++;
+      if (_inputsAcceptedThisGame == 1 && _onboardingRun) {
+        final start = _gameStartTime;
+        unawaited(
+          _analytics.trackFirstInput(
+            runNumber: _runNumber,
+            secondsSinceRunStart: start == null
+                ? 0
+                : DateTime.now().difference(start).inMilliseconds / 1000,
+            controlScheme: _controlSchemeName,
+          ),
+        );
+      }
       _hapticService.selectionClick();
       // Emit timestamp + direction so the edge bloom and snake-head intent
       // shimmer and the turn animation can fire. Clears after 400ms (the
@@ -1373,8 +1407,15 @@ class GameCubit extends Cubit<GameCubitState> {
     // Let the in-world death sequence play (lunge + flash + tail-to-head
     // disintegration ends at ~1.5s — see SnakeFlameGame), then slide the
     // crash banner in over the settled scene.
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 1500), () async {
       if (state.status == GamePlayStatus.crashed) {
+        // Onboarding runs skip the crash banner's extra seconds: the death
+        // sequence has already shown what happened, and a new player's next
+        // decision (play again?) is on the game-over screen.
+        if (_onboardingRun) {
+          await _gameOver();
+          return;
+        }
         // Now show the crash banner (bottom chrome, no scrim)
         emit(
           state.copyWith(
@@ -1402,6 +1443,7 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Revive eligibility: once per run, and not in Time Attack (a fresh game
   /// loop there would hand back a full timer, which would be exploitable).
   bool _canOfferRevive() {
+    if (_onboardingRun && !_isPro) return false;
     if (_revivesThisGame >= maxRevivesPerGame) return false;
     final gs = state.gameState;
     if (gs == null) return false;
@@ -1424,10 +1466,16 @@ class GameCubit extends Cubit<GameCubitState> {
   ///
   /// Driven by the ReviveOverlay after a rewarded ad or coin spend; the caller
   /// owns the ad/coin side, this just resumes play.
-  void revive() {
+  ///
+  /// [via] is how it was paid for (`ad`, `coins` or `free` for Pro), for the
+  /// `revive_offer` event.
+  void revive({String via = 'ad'}) {
     final current = state.gameState;
     if (current == null || _revivesThisGame >= maxRevivesPerGame) return;
     _revivesThisGame++;
+    unawaited(
+      _analytics.trackReviveOffer(outcome: via, runNumber: _runNumber),
+    );
 
     // The run continues — pick the music back up from where the crash
     // paused it (see _handleCrash).
@@ -1502,8 +1550,13 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Dismiss the revive offer and fall through to the normal game-over flow.
+  /// The overlay calls this for both an explicit decline and its countdown
+  /// running out, so `revive_offer` logs both as `declined`.
   Future<void> declineRevive() async {
     if (state.status != GamePlayStatus.crashed) return;
+    unawaited(
+      _analytics.trackReviveOffer(outcome: 'declined', runNumber: _runNumber),
+    );
     emit(state.copyWith(offeringRevive: false));
     await _gameOver();
   }
@@ -1789,6 +1842,10 @@ class GameCubit extends Cubit<GameCubitState> {
 
     final tournamentId = state.tournamentId;
     final runId = _runId;
+    // Per-run fields, read now: finalization may run after startGame() has
+    // reset them for the next run.
+    final runNumber = _runNumber;
+    final onboardingRun = _onboardingRun;
     // Measured now, at the moment of game over — finalization may run up
     // to gameOverContinueWindow later.
     final gameDuration = _gameStartTime != null
@@ -1820,6 +1877,9 @@ class GameCubit extends Cubit<GameCubitState> {
         maxCombo: gameState.maxCombo,
         isNewHighScore: isNewHighScore,
         endTrigger: _endTrigger,
+        runNumber: runNumber,
+        gameMode: gameState.gameMode.name,
+        onboarding: onboardingRun,
       );
 
 
@@ -1866,6 +1926,7 @@ class GameCubit extends Cubit<GameCubitState> {
   /// Game-over continue eligibility: once per run, after a crash, never in
   /// Time Attack (a fresh loop would hand back the clock).
   bool _canOfferGameOverContinue(model.GameState gs) {
+    if (_onboardingRun && !_isPro) return false;
     if (_gameOverContinuesThisGame >= maxGameOverContinuesPerGame) return false;
     if (gs.gameMode == GameMode.timeAttack) return false;
     if (gs.crashReason == null) return false;
