@@ -41,32 +41,12 @@ import 'package:snake_classic/services/analytics/analytics_facade.dart';
 ///   changes), and this widget starts over.
 const bool _profileNoBanner = bool.fromEnvironment('LB_PROFILE_NO_BANNER');
 
-/// Gameplay uses the large banner only when the screen is at least this tall
-/// (logical px, portrait). Below it the extra ~50 dp would come out of the
-/// board, so gameplay keeps the classic size there.
-const double kLargeGameplayBannerMinHeight = 780;
-
-/// Whether a banner placement uses the large anchored adaptive size: always
-/// off the game screen; in gameplay only on a portrait screen at least
-/// [kLargeGameplayBannerMinHeight] tall (the A24 is 384×832).
-bool useLargeBanner({required bool gameplay, required Size screen}) =>
-    !gameplay ||
-    (screen.height > screen.width &&
-        screen.height >= kLargeGameplayBannerMinHeight);
+/// Profiling only: request the "large anchored adaptive" banner (up to
+/// ~100 dp tall) instead of the classic anchored adaptive one.
+const bool _profileLargeBanner = bool.fromEnvironment('LB_LARGE_BANNER');
 
 class SnakeBannerAd extends StatefulWidget {
-  const SnakeBannerAd({
-    super.key,
-    this.topGap = 0,
-    this.atTop = false,
-    this.gameplay = false,
-  });
-
-  /// The gameplay placement: large only on tall portrait screens
-  /// ([kLargeGameplayBannerMinHeight]); every other placement is always the
-  /// large anchored adaptive banner (AdMob, Nov 2026: up to 100 dp, unlocks
-  /// video demand, ~10–15% eCPM uplift). HCPP keeps either at 60 fps.
-  final bool gameplay;
+  const SnakeBannerAd({super.key, this.topGap = 0, this.atTop = false});
 
   /// Clear space (with a hairline) between the banner and the screen's
   /// content: above a bottom banner, below a top one ([atTop]). Use it where
@@ -101,26 +81,12 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
   // a running app (a foldable folding, split screen, DeX), and a size cached
   // from the wider window then made every request fail with "Ad size will
   // not fit on screen. a_w=800 … s_w=360" (Nov 2026).
-  //
-  // Two caches: the large and the classic size resolve independently.
-  static final _sizes = {true: _SizeCache(true), false: _SizeCache(false)};
-
-  /// Whether this placement shows the large banner (fixed at first build).
-  bool _large = true;
-  AdSize? get _adaptiveSize => _sizes[_large]!.size;
-
-  /// Height the box reserves before an ad loads (the slot's maximum).
-  int get _reserveHeight =>
-      _sizes[_large]!.reserveHeight ?? AdSize.banner.height;
+  static AnchoredAdaptiveBannerAdSize? _adaptiveSize;
+  static int? _adaptiveSizeWidth;
+  static Future<void>? _adaptiveSizeResolving;
+  static int? _adaptiveSizeResolvingWidth;
 
   BannerAd? _ad;
-
-  /// The size of the creative actually on screen. A large anchored slot is
-  /// often filled by a classic 320×50 creative (AdMob and the mediation
-  /// networks both do it), while `ad.size` stays the requested ~100 dp box,
-  /// so sizing by `ad.size` left the small banner inside a big empty band.
-  /// Re-read on every load and refresh, since each fill can differ.
-  AdSize? _creativeSize;
   bool _loaded = false;
   bool _loading = false;
   int _failedAttempts = 0;
@@ -144,20 +110,16 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     super.didChangeDependencies();
     if (_sizeRequested) return;
     _sizeRequested = true;
-    final screen = MediaQuery.sizeOf(context);
-    final width = screen.width.truncate();
-    _large = useLargeBanner(gameplay: widget.gameplay, screen: screen);
-    unawaited(
-      _sizes[_large]!.ensure(width).then((_) {
-        if (!mounted) return;
-        setState(() {}); // reserve the exact height once known
-        // Tell the service what size to keep warm. On the first banner of the
-        // session this is what starts the warm-up; on every later one the ad is
-        // already sitting there.
-        _ads?.setBannerSize(_adaptiveSize ?? AdSize.banner);
-        _maybeLoad();
-      }),
-    );
+    final width = MediaQuery.sizeOf(context).width.truncate();
+    unawaited(_ensureAdaptiveSize(width).then((_) {
+      if (!mounted) return;
+      setState(() {}); // reserve the exact height once known
+      // Tell the service what size to keep warm. On the first banner of the
+      // session this is what starts the warm-up; on every later one the ad is
+      // already sitting there.
+      _ads?.setBannerSize(_adaptiveSize ?? AdSize.banner);
+      _maybeLoad();
+    }));
   }
 
   void _onRearm() {
@@ -165,6 +127,45 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
     _failedAttempts = 0;
     _retryTimer?.cancel();
     _maybeLoad();
+  }
+
+  /// Resolve the anchored adaptive size once per session (deduped across all
+  /// banner instances). Falls back to the fixed 320×50 [AdSize.banner] when
+  /// the platform can't provide one.
+  static Future<void> _ensureAdaptiveSize(int width) {
+    if (_adaptiveSizeWidth == width) return Future.value();
+    final inFlight = _adaptiveSizeResolving;
+    if (inFlight != null && _adaptiveSizeResolvingWidth == width) {
+      return inFlight;
+    }
+    _adaptiveSizeResolvingWidth = width;
+    return _adaptiveSizeResolving = () async {
+      AnchoredAdaptiveBannerAdSize? size;
+      try {
+        // The non-deprecated replacement is the "Large" anchored adaptive
+        // variant. It shipped briefly (8.0.0–8.0.2, never released) and was
+        // dropped on 2026-11-22: real demand filled the large slot with
+        // 320×50 creatives almost every time, letterboxed between black
+        // bands, and the inline-adaptive workaround needed fragile size
+        // polling (0×0 before render, pixels instead of dp from some
+        // mediated creatives). The classic anchored adaptive size is the
+        // right fit; the deprecation is accepted knowingly. Revisit with an
+        // A/B test if large creatives ever win a real share.
+        size = _profileLargeBanner
+            ? await AdSize.getLargeAnchoredAdaptiveBannerAdSizeWithOrientation(
+                Orientation.portrait, width)
+            : await AdSize
+                // ignore: deprecated_member_use
+                .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+      } catch (_) {
+        size = null; // fall back to AdSize.banner
+      }
+      // A newer width may have started resolving meanwhile; it wins.
+      if (_adaptiveSizeResolvingWidth != width) return;
+      _adaptiveSize = size;
+      _adaptiveSizeWidth = width;
+      _adaptiveSizeResolving = null;
+    }();
   }
 
   void _onAdsEnabledChanged() {
@@ -190,7 +191,6 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         _loaded = true;
         _failedAttempts = 0;
       });
-      _readCreativeSize(warm);
       return;
     }
 
@@ -232,7 +232,6 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
             _loading = false;
             _failedAttempts = 0;
           });
-          _readCreativeSize(ad as BannerAd);
         },
         onAdFailedToLoad: (ad, error) {
           // A failed AUTO-REFRESH of the banner already on screen arrives
@@ -276,26 +275,6 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
   void _onOwnedBannerRefreshed() {
     if (!mounted) return;
     _trackImpression();
-    final ad = _ad;
-    if (ad != null) _readCreativeSize(ad);
-  }
-
-  /// Ask the platform what the loaded creative really measures (see
-  /// [_creativeSize]). Null or a failed call keeps the requested size.
-  Future<void> _readCreativeSize(BannerAd ad) async {
-    AdSize? size;
-    try {
-      size = await ad.getPlatformAdSize();
-    } catch (_) {
-      size = null;
-    }
-    if (!mounted || !identical(ad, _ad) || size == null) return;
-    if (size.width <= 0 || size.height <= 0) return;
-    if (size.width == _creativeSize?.width &&
-        size.height == _creativeSize?.height) {
-      return;
-    }
-    setState(() => _creativeSize = size);
   }
 
   /// An impression is the ad being DISPLAYED, which for a warm hand-off is
@@ -360,55 +339,32 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         // — long before any ad could fill — so the 320×50 fallback height is
         // only ever visible when no adaptive size exists at all.
         final ad = _ad;
-        final reservedHeight = _reserveHeight.toDouble();
-        // What the creative really measures. An inline adaptive ad's own
-        // size has height 0, so it is only shown once the platform answered.
-        final creative = (ad == null)
-            ? null
-            : (_creativeSize ?? (ad.size.height > 0 ? ad.size : null));
-        final showing =
-            _loaded && ad != null && creative != null && !_profileNoBanner;
-        final creativeHeight = min(
-          creative?.height.toDouble() ?? reservedHeight,
-          reservedHeight,
-        );
-        // Off the game screen the box shrinks to a smaller creative, so a
-        // 320×50 fill never sits in an empty 100 dp band. In gameplay the
-        // board must never move, so the box keeps its height and the small
-        // creative sits centred on the strip's wash instead.
-        final boxHeight = widget.gameplay ? reservedHeight : creativeHeight;
-        final strip = _EmptyBannerStrip(
-          // A policy gap already draws a hairline against the banner; don't
-          // double it.
-          divider: widget.topGap <= 0,
-          atTop: widget.atTop,
-        );
+        final reservedHeight =
+            (_adaptiveSize?.height ?? AdSize.banner.height).toDouble();
         // A banner pinned to the top of a screen owns the top inset; one at
         // the bottom owns the bottom inset.
         final banner = SafeArea(
           top: widget.atTop,
           bottom: !widget.atTop,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
+          child: SizedBox(
             width: double.infinity,
-            height: boxHeight,
+            height: reservedHeight,
             // Profiling A/B only: --dart-define=LB_PROFILE_NO_BANNER=true
             // keeps the reserved space but never mounts the native ad view.
-            child: showing
-                ? Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (creativeHeight < boxHeight)
-                        Positioned.fill(child: strip),
-                      SizedBox(
-                        width: creative.width.toDouble(),
-                        height: creativeHeight,
-                        child: AdWidget(ad: ad),
-                      ),
-                    ],
+            child: (_loaded && ad != null && !_profileNoBanner)
+                ? Center(
+                    child: SizedBox(
+                      width: ad.size.width.toDouble(),
+                      height: ad.size.height.toDouble(),
+                      child: AdWidget(ad: ad),
+                    ),
                   )
-                : strip,
+                : _EmptyBannerStrip(
+                    // A policy gap already draws a hairline against the
+                    // banner; don't double it.
+                    divider: widget.topGap <= 0,
+                    atTop: widget.atTop,
+                  ),
           ),
         );
         if (widget.topGap <= 0) return banner;
@@ -416,9 +372,8 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         // screen's content: above a bottom banner, below a top one.
         final gap = Container(
           height: widget.topGap,
-          alignment: widget.atTop
-              ? Alignment.topCenter
-              : Alignment.bottomCenter,
+          alignment:
+              widget.atTop ? Alignment.topCenter : Alignment.bottomCenter,
           child: Container(
             height: 1,
             color: Colors.white.withValues(alpha: 0.08),
@@ -430,64 +385,6 @@ class _SnakeBannerAdState extends State<SnakeBannerAd> {
         );
       },
     );
-  }
-}
-
-/// One anchored adaptive size (large or classic), resolved once per window
-/// width and shared by every banner of that kind, deduped while in flight.
-/// Falls back to null (the fixed 320×50 [AdSize.banner]) when the platform
-/// can't provide one.
-class _SizeCache {
-  _SizeCache(this.large);
-
-  final bool large;
-
-  /// The size requested from AdMob. For the large kind this is an inline
-  /// adaptive size capped at the large anchored height: anchored banners
-  /// letterbox a smaller creative (a 320×50 fill drew as a strip between two
-  /// black bands, Nov 2026) and still report the full slot, while an inline
-  /// adaptive banner reports the creative's real height after it loads.
-  AdSize? size;
-
-  /// Height to reserve before an ad has loaded: the most the slot can grow
-  /// to (an inline size's own height is 0 until then).
-  int? reserveHeight;
-  int? _width;
-  Future<void>? _resolving;
-  int? _resolvingWidth;
-
-  Future<void> ensure(int width) {
-    if (_width == width) return Future.value();
-    final inFlight = _resolving;
-    if (inFlight != null && _resolvingWidth == width) return inFlight;
-    _resolvingWidth = width;
-    return _resolving = () async {
-      AnchoredAdaptiveBannerAdSize? anchored;
-      try {
-        anchored = large
-            ? await AdSize.getLargeAnchoredAdaptiveBannerAdSizeWithOrientation(
-                Orientation.portrait,
-                width,
-              )
-            // The classic size is deprecated in favour of the large one; it
-            // stays for gameplay on short screens, knowingly.
-            : await AdSize
-              // ignore: deprecated_member_use
-              .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
-      } catch (_) {
-        anchored = null;
-      }
-      // A newer width may have started resolving meanwhile; it wins.
-      if (_resolvingWidth != width) return;
-      // Large: request inline adaptive with the large anchored height as its
-      // cap (see [size]). Classic stays anchored: its slot is already small.
-      size = (large && anchored != null)
-          ? AdSize.getInlineAdaptiveBannerAdSize(width, anchored.height)
-          : anchored;
-      reserveHeight = anchored?.height;
-      _width = width;
-      _resolving = null;
-    }();
   }
 }
 

@@ -167,6 +167,13 @@ class AdService {
   BannerAd? _warmBanner;
   int _warmBannerLoadedAtMs = 0;
   bool _warmBannerLoading = false;
+  int _warmBannerStartedAtMs = 0;
+
+  /// How long a placement waits on the spare before requesting its own. A
+  /// spare that never answered (no loaded, no failed callback: seen on a
+  /// realme with the real unit, Nov 2026) used to hold every placement on
+  /// the "wait for the spare" path forever, leaving every banner blank.
+  static const Duration _warmBannerWaitCap = Duration(seconds: 6);
   AdSize? _bannerSize;
 
   // Per-format retry state for [_loadRetryDelays].
@@ -1533,7 +1540,10 @@ class AdService {
 
   /// The spare is being requested right now. A placement mounting meanwhile
   /// waits for it rather than sending a second request beside it.
-  bool get warmBannerInFlight => _warmBannerLoading;
+  bool get warmBannerInFlight =>
+      _warmBannerLoading &&
+      DateTime.now().millisecondsSinceEpoch - _warmBannerStartedAtMs <
+          _warmBannerWaitCap.inMilliseconds;
 
   void _loadWarmBanner() {
     if (!adsEnabled || !_hasInternet) return;
@@ -1542,6 +1552,7 @@ class AdService {
     if (bannerRetryIn > Duration.zero) return; // shared backoff
     loadStats.requested('banner');
     _warmBannerLoading = true;
+    _warmBannerStartedAtMs = DateTime.now().millisecondsSinceEpoch;
     final ad = BannerAd(
       adUnitId: AdConfig.bannerUnitId,
       size: size,

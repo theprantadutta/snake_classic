@@ -6,7 +6,7 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**8.0.2+83** (2026-11-21; 8.0.0+81 was refused by Play over a Wi-Fi feature flag, 8.0.1+82 superseded by the banner sizing fix; same notes). The 7.7.x builds were never uploaded, so this text
+**8.0.3+84** (2026-11-22; 8.0.0+81 was refused by Play over a Wi-Fi feature flag, 8.0.1+82 and 8.0.2+83 were superseded by banner fixes; same notes). The 7.7.x builds were never uploaded, so this text
 covers everything since the live 7.6.x: the 7.7.3 notes (archived in
 release_notes_7.7.3.md) plus the 8.0 work below.
 
@@ -20,8 +20,9 @@ What 8.0.0 adds over 7.7.3:
   chevrons; eating shows the food going in.
 - **Redesigned pause screen** with a run card; Restart asks before scrapping
   the run.
-- Ads (not in the notes): large anchored adaptive banner everywhere it fits;
-  Meta, Mintegral and InMobi mediation adapters (idle until their accounts are
+- Ads (not in the notes): banners stay the classic anchored adaptive size
+  (the large banner was tried and dropped in 8.0.3); a hung warm banner can
+  no longer blank every banner; Meta, Mintegral and InMobi mediation adapters (idle until their accounts are
   live).
 - **iOS:** needs a macOS build for the new adapters; see CLAUDE.md, "macOS
   session".
