@@ -201,6 +201,22 @@ class PowerUpCubit extends Cubit<PowerUpState> {
   /// enqueues the sync outbox row for the SyncEngine to push.
   Future<void> grantFreePowerUp() => _grantToInventory(const {'speed_boost': 1});
 
+  /// The daily login bonus's day-3 Speed Boost. Builds on the STORED
+  /// inventory rather than [state]: the claim can land before
+  /// [loadInventory] finishes, and adding to an empty in-memory map would
+  /// overwrite everything the player owns with a single Speed Boost.
+  Future<void> grantDailyBonusSpeedBoost() async {
+    try {
+      final row = await StorageService().storeDao.getPowerUpInventoryRow();
+      final next = Map<String, int>.from(_decodeInventoryJson(row?.inventoryJson));
+      next['speed_boost'] = (next['speed_boost'] ?? 0) + 1;
+      emit(state.copyWith(inventory: next));
+      await _persistInventory(next);
+    } catch (e) {
+      AppLogger.error('Failed to grant the daily-bonus Speed Boost', e);
+    }
+  }
+
   /// Decrement one use of a power-up. Called by the pre-game
   /// activation flow at the moment the power-up activates in-game.
   /// Also clears the armed slot — once a power-up is used the user

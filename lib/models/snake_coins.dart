@@ -301,6 +301,9 @@ class DailyLoginBonus {
     return collectedWeekNumber == currentWeekNumber;
   }
 
+  /// The item this day grants besides coins, if any.
+  DailyBonusItem? get item => DailyBonusItem.fromLabel(bonusItem);
+
   String get displayReward {
     final coinText = '$coins coins';
     return bonusItem != null ? '$coinText + $bonusItem' : coinText;
@@ -363,6 +366,36 @@ class DailyLoginBonus {
         isCollected: false,
       ),
     ];
+  }
+}
+
+/// The items the daily login bonus grants on top of coins (days 3, 5, 7).
+/// [DailyLoginBonus.bonusItem] keeps its English label for compatibility;
+/// this is the typed, granted form of it.
+enum DailyBonusItem {
+  /// +1 Speed Boost in the power-up inventory.
+  speedBoost('speed_boost'),
+
+  /// 2x Season (battle pass) XP for 24 hours.
+  xpBoost('xp_boost'),
+
+  /// A premium theme for 24 hours.
+  themeDay('theme_day');
+
+  const DailyBonusItem(this.analyticsId);
+
+  /// Value of the `item` param on `daily_bonus_item_granted`.
+  final String analyticsId;
+
+  /// Maps a bonus label (the model's, or the popup's offline fallback
+  /// labels) to its item.
+  static DailyBonusItem? fromLabel(String? label) {
+    if (label == null) return null;
+    final l = label.toLowerCase();
+    if (l.contains('speed')) return DailyBonusItem.speedBoost;
+    if (l.contains('xp')) return DailyBonusItem.xpBoost;
+    if (l.contains('theme')) return DailyBonusItem.themeDay;
+    return null;
   }
 }
 

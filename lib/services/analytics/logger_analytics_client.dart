@@ -454,4 +454,32 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       'refreshFailed=$refreshFailed, codes=$codes, lastError=$lastError',
     );
   }
+
+  // ==================== Daily-bonus items & cosmetic trials ====================
+  // (retention-cosmetics, 2026-11)
+
+  @override
+  Future<void> trackDailyBonusItemGranted({
+    required String item,
+    required int day,
+  }) async {
+    AppLogger.info('$_tag daily_bonus_item_granted: item=$item, day=$day');
+  }
+
+  @override
+  Future<void> trackCosmeticTrial({
+    required String stage,
+    required String cosmeticType,
+    required String cosmeticId,
+  }) async {
+    AppLogger.info(
+      '$_tag cosmetic_trial: stage=$stage, type=$cosmeticType, '
+      'id=$cosmeticId',
+    );
+  }
+
+  @override
+  Future<void> trackXpBoost({required String stage}) async {
+    AppLogger.info('$_tag xp_boost: stage=$stage');
+  }
 }

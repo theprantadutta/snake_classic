@@ -232,7 +232,7 @@ class SnakeTrailComponent extends Component
   TrailType _resolveTrailType() {
     final premium = game.premiumState;
     if (premium.selectedTrailId != 'none' &&
-        premium.isTrailOwned(premium.selectedTrailId)) {
+        premium.isTrailUsable(premium.selectedTrailId)) {
       return _trailTypeFromCosmetic(premium.selectedTrailId);
     }
     if (game.trailSystemEnabled) {

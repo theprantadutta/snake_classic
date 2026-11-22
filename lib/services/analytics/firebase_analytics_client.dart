@@ -626,4 +626,42 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       },
     );
   }
+
+  // ==================== Daily-bonus items & cosmetic trials ====================
+  // (retention-cosmetics, 2026-11)
+
+  @override
+  Future<void> trackDailyBonusItemGranted({
+    required String item,
+    required int day,
+  }) {
+    return _analytics.logEvent(
+      name: 'daily_bonus_item_granted',
+      parameters: {'item': item, 'day': day},
+    );
+  }
+
+  @override
+  Future<void> trackCosmeticTrial({
+    required String stage,
+    required String cosmeticType,
+    required String cosmeticId,
+  }) {
+    return _analytics.logEvent(
+      name: 'cosmetic_trial',
+      parameters: {
+        'stage': stage,
+        'cosmetic_type': cosmeticType,
+        'cosmetic_id': cosmeticId,
+      },
+    );
+  }
+
+  @override
+  Future<void> trackXpBoost({required String stage}) {
+    return _analytics.logEvent(
+      name: 'xp_boost',
+      parameters: {'stage': stage},
+    );
+  }
 }

@@ -11,7 +11,9 @@ import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
+import 'package:snake_classic/services/temporary_grants_service.dart';
 import 'package:snake_classic/utils/logger.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'battle_pass_state.dart';
 
@@ -47,13 +49,22 @@ class BattlePassCubit extends Cubit<BattlePassState> {
   // single emit doesn't race itself.
   bool _reloadingFromDrift = false;
 
+  // The daily-bonus 2x Season XP boost lives here (device-local ledger).
+  // Null = no boost wiring (tests): the multiplier is always 1.
+  final TemporaryGrantsService? _temporaryGrants;
+
   BattlePassCubit({
     required this._storageService,
     this._premiumCubit,
     required this._analytics,
     required ProgressionService progressionService,
+    this._temporaryGrants,
   }) : _progression = progressionService,
        super(BattlePassState.initial());
+
+  /// Season XP buffered and not yet flushed. For tests.
+  @visibleForTesting
+  int get bufferedXp => _bufferedXP;
 
   @override
   Future<void> close() {
@@ -243,7 +254,11 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     _progression.bufferXp(xp, source: source);
 
     if (state.currentTier >= state.maxTier) return;
-    _bufferedXP += xp;
+    // The 2x Season XP boost (daily bonus day 5) doubles battle-pass XP
+    // only. Applied here, at earn time, so XP earned while the boost runs
+    // stays doubled even if the flush lands after it expires. Lifetime
+    // player level above is unaffected.
+    _bufferedXP += xp * (_temporaryGrants?.seasonXpMultiplier ?? 1);
     if (!_bufferedSources.contains(source)) {
       _bufferedSources.add(source);
     }

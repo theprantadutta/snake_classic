@@ -457,7 +457,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
   /// the Living Board redraws.
   bool get _usesLivingBoardSnake =>
       premiumState.selectedSkinId == 'classic' ||
-      !premiumState.isSkinOwned(premiumState.selectedSkinId);
+      !premiumState.isSkinUsable(premiumState.selectedSkinId);
 
   /// The Living Board snake: cell − 2 rounded squares (radius 3/20 of a
   /// cell, head 5/20), body alpha 100% → 45% toward the tail, a glowing head
@@ -1030,7 +1030,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final skinColors = _getSelectedSkinColors();
 
     if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic' &&
-        premiumState.isSkinOwned(premiumState.selectedSkinId)) {
+        premiumState.isSkinUsable(premiumState.selectedSkinId)) {
       // Use skin colors for premium skins
       if (skinColors.length == 1) {
         final tinted = _headTint(skinColors[0]);
@@ -1234,7 +1234,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     final skinColors = _getSelectedSkinColors();
 
     if (skinColors.isNotEmpty && premiumState.selectedSkinId != 'classic' &&
-        premiumState.isSkinOwned(premiumState.selectedSkinId)) {
+        premiumState.isSkinUsable(premiumState.selectedSkinId)) {
       // Single-color skin → just apply alpha by segment fade.
       if (skinColors.length == 1) {
         return skinColors[0].withValues(alpha: opacity);
@@ -2728,7 +2728,7 @@ class OptimizedGameBoardPainter extends CustomPainter {
     required int totalLength,
   }) {
     if (premiumState.selectedSkinId == 'classic') return;
-    if (!premiumState.isSkinOwned(premiumState.selectedSkinId)) return;
+    if (!premiumState.isSkinUsable(premiumState.selectedSkinId)) return;
     final skin = _getSelectedSkinType();
     final t = pulseAnimation.value; // 0..1 breathing
     final timeSec = animationTimeMs / 1000.0;
