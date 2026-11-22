@@ -1,6 +1,8 @@
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb/lb_crash_copy.dart';
 import 'package:snake_classic/widgets/lb_screens/game_over/game_over_beat_sheet.dart';
+import 'package:snake_classic/widgets/lb_screens/game_over/next_goals_panel.dart';
+import 'package:snake_classic/widgets/lb_screens/game_over/reminder_ask_row.dart';
 import 'package:snake_classic/widgets/game_over_continue_sheet.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
@@ -577,6 +579,31 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                             ),
                           ),
                         ],
+                        // A new best is the moment a "beat it tomorrow"
+                        // reminder means something (retention plan D1).
+                        if (isHighScore) ...[
+                          const SizedBox(height: 4),
+                          BeatIn(
+                            animation: reveal.action(
+                              _GameOverActions.trophyRow,
+                            ),
+                            child: ReminderAskRow(score: displayHighScore),
+                          ),
+                        ],
+                        // NEXT UP: today's dailies, Season XP, tomorrow's
+                        // login reward. From the second game on, so the
+                        // very first game-over stays about the run (C1).
+                        if (cubit.runNumber >= 2) ...[
+                          SizedBox(height: cell * .6),
+                          BeatIn(
+                            animation: reveal.action(
+                              _GameOverActions.trophyRow,
+                            ),
+                            child: NextGoalsPanel(
+                              onOpen: (goal) => _openGoal(context, goal),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -639,6 +666,16 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           ),
         ),
       ),
+    );
+  }
+
+  /// A NEXT UP row was tapped: close the run's continue window first (the
+  /// same as REPLAY does), then open that screen over this one.
+  Future<void> _openGoal(BuildContext context, String goal) async {
+    await context.read<GameCubit>().finalizeGameOver(trigger: 'goal');
+    if (!context.mounted) return;
+    context.push(
+      goal == 'season' ? AppRoutes.battlePass : AppRoutes.dailyChallenges,
     );
   }
 

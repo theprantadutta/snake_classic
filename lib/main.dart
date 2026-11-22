@@ -34,6 +34,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/app_router.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/analytics/analytics_route_observer.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
 import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/data_sync_service.dart';
@@ -362,6 +363,11 @@ Future<void> _bootstrap() async {
     // Track app open (fire-and-forget)
     unawaited(getIt<AnalyticsFacade>().trackAppOpened());
 
+    // Retention user properties (retention plan 2026-11, section 5), so every
+    // GA4 report can be split by install cohort, onboarding and whether
+    // notifications can reach the player.
+    unawaited(_setRetentionUserProperties());
+
     // Initialize independent services in parallel for faster startup
     // Note: PurchaseService.initialize() is NOT called here because
     // PremiumCubit.initialize() already calls it. Calling it twice would
@@ -462,6 +468,22 @@ Future<void> _bootstrap() async {
 /// can register everything again. The database is closed first: get_it has
 /// no dispose hook for it, and the retry opens a fresh connection to the
 /// same file.
+/// `install_week`, `onboarding_done` and `notif_permission` user properties.
+/// Never throws: analytics must not break startup.
+Future<void> _setRetentionUserProperties() async {
+  try {
+    final analytics = getIt<AnalyticsFacade>();
+    final firstRun = FirstRunService();
+    final installedAt = firstRun.installedAt;
+    if (installedAt != null) await analytics.setInstallWeek(installedAt);
+    await analytics.setOnboardingDone(firstRun.hasCompletedOnboarding);
+    final enabled = await NotificationService().areNotificationsEnabled();
+    await analytics.setNotificationPermission(
+      enabled ? 'granted' : 'denied_or_undecided',
+    );
+  } catch (_) {}
+}
+
 Future<void> _resetDependencies() async {
   try {
     if (getIt.isRegistered<AppDatabase>()) await getIt<AppDatabase>().close();

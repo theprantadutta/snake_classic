@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
 import 'dart:convert';
 import 'dart:ui' show Color, Locale, PlatformDispatcher;
 
@@ -1093,19 +1094,32 @@ class NotificationService {
     required AppLocalizations l10n,
   }) async {
     if (!_initialized) return;
+    final analytics = getIt.isRegistered<AnalyticsFacade>()
+        ? getIt<AnalyticsFacade>()
+        : null;
 
-    // Users with a real backend session are already covered by the server's
-    // send-daily-reminder job. Scheduling here too would double-notify them.
-    if (ApiService().isAuthenticated) {
-      AppLogger.info(
-        '⏭️ Day-1 local reminder skipped — backend session exists, '
-        'server daily reminder covers this user',
-      );
-      return;
-    }
+    // Day 1 always belongs to this local reminder. It used to be skipped
+    // whenever a backend session existed, on the theory that the server's
+    // send-daily-reminder covered those players, but most online new players
+    // get a silent anonymous session within seconds, so almost nobody got a
+    // day-1 nudge. The server job now leaves accounts younger than 48 h
+    // alone (backend DailyChallengeJobService, suppressedNewAccount), so the
+    // two never double up (retention plan 2026-11, D2).
 
     if (!(_notificationPreferences[NotificationType.dailyReminder] ?? true)) {
       AppLogger.info('🔕 Day-1 reminder blocked by user preferences');
+      unawaited(analytics?.trackDayOneReminder(result: 'skipped_pref'));
+      return;
+    }
+
+    // Android 13+ drops a notification posted without the permission, with
+    // no error. Don't pretend to schedule one; ReminderAskRow re-arms it the
+    // moment the player grants it.
+    if (!await areNotificationsEnabled()) {
+      AppLogger.info('🔕 Day-1 reminder skipped — notifications are off');
+      unawaited(
+        analytics?.trackDayOneReminder(result: 'skipped_no_permission'),
+      );
       return;
     }
 
@@ -1148,10 +1162,12 @@ class NotificationService {
       );
 
       AppLogger.success('⏰ Day-1 reminder scheduled for $fireAt');
+      unawaited(analytics?.trackDayOneReminder(result: 'scheduled'));
     } catch (e, st) {
       // Never let a scheduling failure surface to the player — this runs off
       // the game-over screen.
       AppLogger.error('Failed to schedule Day-1 reminder', e, st);
+      unawaited(analytics?.trackDayOneReminder(result: 'failed'));
     }
   }
 
