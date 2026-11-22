@@ -1078,6 +1078,37 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String storeCoinCosmeticBody(String name, String coins) {
+    return 'Открыть $name навсегда за $coins монет?';
+  }
+
+  @override
+  String storeCoinCosmeticBought(String name) {
+    return '$name теперь твоё! Надето.';
+  }
+
+  @override
+  String storeCoinCosmeticNeedMore(String coins) {
+    return 'Не хватает монет: $coins.';
+  }
+
+  @override
+  String get storeCoinCosmeticSyncing =>
+      'Последние монеты ещё синхронизируются. Попробуй чуть позже.';
+
+  @override
+  String get storeCoinCosmeticNeedsConnection =>
+      'Для покупки за монеты нужно подключение к интернету.';
+
+  @override
+  String get storeCoinCosmeticBusy =>
+      'Магазин занят. Монеты не списаны, попробуй ещё раз.';
+
+  @override
+  String get storeCoinCosmeticUnavailable =>
+      'Этот предмет сейчас нельзя купить за монеты.';
+
+  @override
   String get dbItemSpeedBoost => 'Ускорение';
 
   @override

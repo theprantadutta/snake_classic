@@ -1084,6 +1084,37 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String storeCoinCosmeticBody(String name, String coins) {
+    return '$coins सिक्कों में $name हमेशा के लिए अनलॉक करें?';
+  }
+
+  @override
+  String storeCoinCosmeticBought(String name) {
+    return '$name अब आपका है! लगा दिया गया।';
+  }
+
+  @override
+  String storeCoinCosmeticNeedMore(String coins) {
+    return 'आपको $coins और सिक्के चाहिए।';
+  }
+
+  @override
+  String get storeCoinCosmeticSyncing =>
+      'आपके नए सिक्के अभी सिंक हो रहे हैं। थोड़ी देर में फिर कोशिश करें।';
+
+  @override
+  String get storeCoinCosmeticNeedsConnection =>
+      'सिक्कों से खरीदने के लिए इंटरनेट कनेक्शन चाहिए।';
+
+  @override
+  String get storeCoinCosmeticBusy =>
+      'स्टोर अभी व्यस्त है। कोई सिक्का नहीं कटा, फिर कोशिश करें।';
+
+  @override
+  String get storeCoinCosmeticUnavailable =>
+      'यह आइटम अभी सिक्कों से नहीं खरीदा जा सकता।';
+
+  @override
   String get dbItemSpeedBoost => 'स्पीड बूस्ट';
 
   @override

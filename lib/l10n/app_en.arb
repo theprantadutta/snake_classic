@@ -442,6 +442,52 @@
   "storeThemeNotAvailable": "Theme not available. Please try again later.",
   "storeItemNotAvailable": "Item not available. Please try again later.",
   "storeEquippedToast": "{name} equipped",
+  "storeCoinCosmeticBody": "Unlock {name} for good for {coins} coins?",
+  "@storeCoinCosmeticBody": {
+    "description": "Confirm dialog body before buying a skin/trail/theme with coins; coins is locale-formatted",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "storeCoinCosmeticBought": "{name} is yours! Equipped.",
+  "@storeCoinCosmeticBought": {
+    "description": "Toast after a successful coin purchase of a cosmetic",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "storeCoinCosmeticNeedMore": "You need {coins} more coins.",
+  "@storeCoinCosmeticNeedMore": {
+    "description": "Not enough coins for a coin-priced cosmetic; coins = how many are missing, locale-formatted",
+    "placeholders": {
+      "coins": {
+        "type": "String"
+      }
+    }
+  },
+  "storeCoinCosmeticSyncing": "Your latest coins are still syncing. Try again in a moment.",
+  "@storeCoinCosmeticSyncing": {
+    "description": "The device shows enough coins but the server doesn't have them yet"
+  },
+  "storeCoinCosmeticNeedsConnection": "Buying with coins needs an internet connection.",
+  "@storeCoinCosmeticNeedsConnection": {
+    "description": "Coin purchase attempted offline or without a server session"
+  },
+  "storeCoinCosmeticBusy": "The store is busy. Nothing was charged, please try again.",
+  "@storeCoinCosmeticBusy": {
+    "description": "The server could not complete the coin purchase right now; no coins were taken"
+  },
+  "storeCoinCosmeticUnavailable": "This item can't be bought with coins right now.",
+  "@storeCoinCosmeticUnavailable": {
+    "description": "The server no longer sells this item for coins"
+  },
   "dbItemSpeedBoost": "Speed Boost",
   "@dbItemSpeedBoost": {
     "description": "Daily login bonus item (day 3): one Speed Boost power-up"

@@ -1081,6 +1081,37 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String storeCoinCosmeticBody(String name, String coins) {
+    return 'Unlock $name for good for $coins coins?';
+  }
+
+  @override
+  String storeCoinCosmeticBought(String name) {
+    return '$name is yours! Equipped.';
+  }
+
+  @override
+  String storeCoinCosmeticNeedMore(String coins) {
+    return 'You need $coins more coins.';
+  }
+
+  @override
+  String get storeCoinCosmeticSyncing =>
+      'Your latest coins are still syncing. Try again in a moment.';
+
+  @override
+  String get storeCoinCosmeticNeedsConnection =>
+      'Buying with coins needs an internet connection.';
+
+  @override
+  String get storeCoinCosmeticBusy =>
+      'The store is busy. Nothing was charged, please try again.';
+
+  @override
+  String get storeCoinCosmeticUnavailable =>
+      'This item can\'t be bought with coins right now.';
+
+  @override
   String get dbItemSpeedBoost => 'Speed Boost';
 
   @override

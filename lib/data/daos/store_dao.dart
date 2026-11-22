@@ -183,6 +183,61 @@ class StoreDao extends DatabaseAccessor<AppDatabase> with _$StoreDaoMixin {
     return true;
   }
 
+  /// Adopt the balance the SERVER returned after charging a coin purchase
+  /// (/cosmetics/buy-with-coins), keeping any coins this device gained
+  /// after [pushedBalance] was confirmed by the server.
+  ///
+  /// The caller pushed [pushedBalance] and got it accepted right before the
+  /// buy (SyncEngine.pushCoinBalanceNow, under SyncEngine.runExclusive), so
+  /// the server charged exactly that number: [serverBalance] =
+  /// [pushedBalance] - [charged]. New local = [serverBalance] + (local now
+  /// - [pushedBalance]); with no local change in between that is exactly
+  /// the server's balance, and nothing earned meanwhile is erased.
+  ///
+  /// The spend is NOT recorded as a client spend that syncs up: no
+  /// coin_transaction outbox row (the server wrote its own ledger row; a
+  /// client "spent" row would be a second one). The local history row is
+  /// for the in-app ledger only. One coin_balance outbox row is enqueued:
+  /// it pushes the adopted (absolute) balance, a no-op when it equals the
+  /// server's, and the correction when a stale push raced the purchase.
+  Future<int?> adoptServerBalanceAfterCharge({
+    required int serverBalance,
+    required int pushedBalance,
+    required int charged,
+    String source = 'cosmetics',
+    String? description,
+  }) async {
+    return transaction(() async {
+      final current = await (select(coins)..where((t) => t.id.equals(1)))
+          .getSingleOrNull();
+      if (current == null) return null;
+      final sincePush = current.balance - pushedBalance;
+      final adopted = serverBalance + sincePush;
+      final next = adopted < 0 ? 0 : adopted;
+      final now = DateTime.now();
+      await (update(coins)..where((t) => t.id.equals(1))).write(CoinsCompanion(
+        balance: Value(next),
+        totalSpent: Value(current.totalSpent + (charged > 0 ? charged : 0)),
+        lastUpdated: Value(now),
+        updatedAt: Value(now),
+      ));
+      if (charged > 0) {
+        await into(coinTransactions).insert(CoinTransactionsCompanion.insert(
+          amount: -charged,
+          type: 'spent',
+          source: source,
+          description: Value(description),
+          updatedAt: Value(now),
+        ));
+      }
+      await attachedDatabase.enqueueSyncOutbox(
+        dataType: SyncDataType.coinBalance,
+        entityKey: 'coin_balance:1',
+      );
+      return next;
+    });
+  }
+
   /// Set coin balance directly. Used by the first-sign-in pull when
   /// the cloud's authoritative balance comes down. [enqueueSync]
   /// defaults true; set false when hydrating from server data.

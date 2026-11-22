@@ -8,7 +8,12 @@ import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
 import 'package:snake_classic/models/snake_coins.dart';
+import 'package:snake_classic/models/coin_cosmetic.dart';
 import 'package:snake_classic/models/temporary_grant.dart';
+import 'package:snake_classic/services/analytics/retention_events.dart';
+import 'package:snake_classic/services/api_service.dart';
+import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/coin_cosmetic_purchaser.dart';
 import 'package:snake_classic/widgets/lb_screens/store/cosmetic_trial_button.dart';
 import 'package:snake_classic/presentation/bloc/auth/auth_cubit.dart';
 import 'package:snake_classic/presentation/bloc/coins/coins_cubit.dart';
@@ -110,6 +115,12 @@ class _StoreScreenState extends State<StoreScreen>
     _purchaseStatusSub = PurchaseService().purchaseStatusStream.listen(
       _onPurchaseStatus,
     );
+    // Fresh coin prices for the coin-priced cosmetics (server-owned).
+    if (getIt.isRegistered<CoinCosmeticsApi>()) {
+      unawaited(
+        getIt<PremiumCubit>().refreshCoinCatalog(getIt<CoinCosmeticsApi>()),
+      );
+    }
   }
 
   Future<void> _restore() async {
@@ -1008,7 +1019,7 @@ class _StoreScreenState extends State<StoreScreen>
         1.99,
         localeTag: Localizations.localeOf(context).toLanguageTag(),
       );
-      return StoreActionBlock(
+      final iapBuy = StoreActionBlock(
         label: l10n.lbBuyPrice(price),
         kind: LBBlockKind.goldFill,
         feedback: false,
@@ -1016,6 +1027,20 @@ class _StoreScreenState extends State<StoreScreen>
           setState(() => _focusTheme = target);
           _purchaseThemeProduct(productId, target.name);
         },
+      );
+      // Server theme ids are the bare product ids ("crystal_theme").
+      final coinId = PremiumContent.themeProductIds.entries
+          .where((e) => e.value == target)
+          .firstOrNull
+          ?.key;
+      if (coinId == null) return iapBuy;
+      return _withCoinOption(
+        iapBuy,
+        premiumState,
+        type: 'theme',
+        id: coinId,
+        owned: premiumState.isThemePermanentlyUnlocked(target),
+        displayName: target.localizedName(l10n),
       );
     }
 
@@ -1110,6 +1135,158 @@ class _StoreScreenState extends State<StoreScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [first, const SizedBox(height: 8), second],
       );
+
+  /// The server's coin offer for an item, when this player can use it:
+  /// signed in to the backend (the purchase is charged there), not Pro
+  /// (Pro owns every cosmetic) and not owned yet.
+  CoinCosmeticOffer? _coinOffer(
+    PremiumState premiumState, {
+    required String type,
+    required String id,
+    required bool owned,
+  }) {
+    if (owned || premiumState.hasPremium) return null;
+    if (!ApiService().isAuthenticated) return null;
+    final offer = premiumState.coinOfferFor(type, id);
+    return offer == null || offer.owned ? null : offer;
+  }
+
+  /// [iapBuy] alone, or with the coin price beside it ("800¢").
+  Widget _withCoinOption(
+    Widget iapBuy,
+    PremiumState premiumState, {
+    required String type,
+    required String id,
+    required bool owned,
+    required String displayName,
+  }) {
+    final offer = _coinOffer(premiumState, type: type, id: id, owned: owned);
+    if (offer == null) return iapBuy;
+    final l10n = AppLocalizations.of(context)!;
+    final coinBuy = StoreActionBlock(
+      label: l10n.storeCoinPrice(context.formatInt(offer.price)),
+      kind: LBBlockKind.gold,
+      feedback: false,
+      busy: _coinBuyingKey == '$type:$id',
+      onTap: () => _buyCosmeticWithCoins(offer, displayName),
+    );
+    return Row(
+      children: [
+        Expanded(child: iapBuy),
+        const SizedBox(width: 8),
+        Expanded(child: coinBuy),
+      ],
+    );
+  }
+
+  /// Grid status for a locked item: its coin price in gold when it is sold
+  /// for coins (so coin items stand out in the grid), else [fallback].
+  (String, Color) _gridPrice(
+    PremiumState premiumState, {
+    required String type,
+    required String id,
+    required bool owned,
+    required (String, Color) fallback,
+  }) {
+    final offer = _coinOffer(premiumState, type: type, id: id, owned: owned);
+    if (offer == null) return fallback;
+    final l10n = AppLocalizations.of(context)!;
+    return (l10n.storeCoinPrice(context.formatInt(offer.price)), LB.gold);
+  }
+
+  /// `type:id` of the coin purchase in flight, for its spinner.
+  String? _coinBuyingKey;
+
+  /// Confirm, buy on the server, then own, equip, chime and toast.
+  Future<void> _buyCosmeticWithCoins(
+    CoinCosmeticOffer offer,
+    String displayName,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final snackTheme = context.read<ThemeCubit>().state.currentTheme;
+    final premium = context.read<PremiumCubit>();
+    final themeCubit = context.read<ThemeCubit>();
+    final balance = context.read<CoinsCubit>().state.balance.total;
+
+    void say(String message, ArcadeSnackTone tone) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        arcadeSnackBarFor(snackTheme, message: message, tone: tone),
+      );
+    }
+
+    if (!ApiService().isAuthenticated ||
+        !getIt.isRegistered<CoinCosmeticPurchaser>()) {
+      say(l10n.storeCoinCosmeticNeedsConnection, ArcadeSnackTone.warning);
+      return;
+    }
+    if (balance < offer.price) {
+      say(
+        l10n.storeCoinCosmeticNeedMore(context.formatInt(offer.price - balance)),
+        ArcadeSnackTone.warning,
+      );
+      return;
+    }
+
+    final confirmed = await _confirmPurchase(
+      title: displayName,
+      body: l10n.storeCoinCosmeticBody(
+        displayName,
+        context.formatInt(offer.price),
+      ),
+      buyLabel: l10n.storeBuyCostCoins(offer.price),
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _coinBuyingKey = '${offer.type}:${offer.id}');
+    final CoinBuyOutcome outcome;
+    try {
+      outcome = await getIt<CoinCosmeticPurchaser>().buy(offer);
+    } finally {
+      if (mounted) setState(() => _coinBuyingKey = null);
+    }
+    if (!mounted) return;
+
+    switch (outcome.status) {
+      case CoinBuyStatus.bought:
+      case CoinBuyStatus.alreadyOwned:
+        switch (offer.type) {
+          case 'skin':
+            await premium.selectSkin(offer.id);
+          case 'trail':
+            await premium.selectTrail(offer.id);
+          case 'theme':
+            final theme = PremiumContent.themeProductIds[offer.id];
+            if (theme != null) await themeCubit.setTheme(theme);
+        }
+        if (outcome.charged > 0) {
+          AudioService().playSound('coin_collect');
+          getIt<AnalyticsFacade>().trackCosmeticBoughtWithCoins(
+            cosmeticType: offer.type,
+            cosmeticId: offer.id,
+            price: outcome.charged,
+          );
+        }
+        say(l10n.storeCoinCosmeticBought(displayName), ArcadeSnackTone.success);
+      case CoinBuyStatus.insufficientCoins:
+        say(
+          outcome.shortBy > 0
+              ? l10n.storeCoinCosmeticNeedMore(context.formatInt(outcome.shortBy))
+              : l10n.storeCoinCosmeticSyncing,
+          ArcadeSnackTone.warning,
+        );
+      case CoinBuyStatus.needsConnection:
+        say(l10n.storeCoinCosmeticNeedsConnection, ArcadeSnackTone.warning);
+      case CoinBuyStatus.busy:
+        say(l10n.storeCoinCosmeticBusy, ArcadeSnackTone.warning);
+      case CoinBuyStatus.unknownCosmetic:
+        say(l10n.storeCoinCosmeticUnavailable, ArcadeSnackTone.error);
+        unawaited(premium.refreshCoinCatalog(getIt<CoinCosmeticsApi>()));
+      case CoinBuyStatus.failed:
+        say(l10n.storePurchaseFailedRetry, ArcadeSnackTone.error);
+    }
+  }
 
   StoreItemBlock _buildThemeBlock(
     GameTheme target,
@@ -1485,7 +1662,13 @@ class _StoreScreenState extends State<StoreScreen>
                 ? (l10n.lbEquipped, p.lime)
                 : isUnlocked
                 ? (l10n.lbEquip, p.head)
-                : (_skinPrice(skin, l10n), p.inkMuted);
+                : _gridPrice(
+                    premiumState,
+                    type: 'skin',
+                    id: skin.id,
+                    owned: premiumState.isSkinOwned(skin.id),
+                    fallback: (_skinPrice(skin, l10n), p.inkMuted),
+                  );
             return StoreItemBlock(
               swatch: storeSwatch(
                 skin == SnakeSkinType.classic ? [p.lime] : skin.colors,
@@ -1525,7 +1708,7 @@ class _StoreScreenState extends State<StoreScreen>
     final isSelected = premiumState.selectedSkinId == skin.id;
     final productId = ProductIds.skinStoreId(skin.id);
     final isPending = _pendingProductIds.contains(productId);
-    final buyAction = StoreActionBlock(
+    final iapBuy = StoreActionBlock(
       label: l10n.lbBuyPrice(_skinPrice(skin, l10n)),
       kind: LBBlockKind.goldFill,
       feedback: false,
@@ -1537,6 +1720,16 @@ class _StoreScreenState extends State<StoreScreen>
           fallbackPrice: skin.price,
         );
       },
+    );
+    // Real-money price, plus the server's coin price beside it when the
+    // item is sold for coins.
+    final buyAction = _withCoinOption(
+      iapBuy,
+      premiumState,
+      type: 'skin',
+      id: skin.id,
+      owned: premiumState.isSkinOwned(skin.id),
+      displayName: skin.localizedName(l10n),
     );
 
     final Widget action;
@@ -1685,7 +1878,13 @@ class _StoreScreenState extends State<StoreScreen>
                 ? (l10n.lbEquipped, p.lime)
                 : isUnlocked
                 ? (l10n.lbEquip, p.head)
-                : (_trailPrice(trail, l10n), p.inkMuted);
+                : _gridPrice(
+                    premiumState,
+                    type: 'trail',
+                    id: trail.id,
+                    owned: premiumState.isTrailOwned(trail.id),
+                    fallback: (_trailPrice(trail, l10n), p.inkMuted),
+                  );
             return StoreItemBlock(
               swatch: storeSwatch(trail.colors, p.cellOff),
               name: trail.localizedName(l10n),
@@ -1722,7 +1921,7 @@ class _StoreScreenState extends State<StoreScreen>
     final isSelected = premiumState.selectedTrailId == trail.id;
     final productId = ProductIds.withPrefix(trail.id);
     final isPending = _pendingProductIds.contains(productId);
-    final buyAction = StoreActionBlock(
+    final iapBuy = StoreActionBlock(
       label: l10n.lbBuyPrice(_trailPrice(trail, l10n)),
       kind: LBBlockKind.goldFill,
       feedback: false,
@@ -1734,6 +1933,14 @@ class _StoreScreenState extends State<StoreScreen>
           fallbackPrice: trail.price,
         );
       },
+    );
+    final buyAction = _withCoinOption(
+      iapBuy,
+      premiumState,
+      type: 'trail',
+      id: trail.id,
+      owned: premiumState.isTrailOwned(trail.id),
+      displayName: trail.localizedName(l10n),
     );
 
     final Widget action;

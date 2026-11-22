@@ -102,6 +102,19 @@ extension RetentionEvents on AnalyticsClient {
   /// split by install cohort.
   Future<void> setInstallWeek(DateTime installedAt) =>
       setUserProperty('install_week', isoWeekLabel(installedAt));
+
+  /// A skin / trail / theme bought with coins (server-charged). [price] is
+  /// the coins actually charged.
+  Future<void> trackCosmeticBoughtWithCoins({
+    required String cosmeticType,
+    required String cosmeticId,
+    required int price,
+  }) =>
+      trackEvent('cosmetic_bought_with_coins', {
+        'cosmetic_type': cosmeticType,
+        'cosmetic_id': cosmeticId,
+        'price': price,
+      });
 }
 
 /// ISO-8601 week label (`2026-W48`) for [date] in local time.

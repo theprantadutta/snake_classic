@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
 import 'package:snake_classic/models/battle_pass.dart';
+import 'package:snake_classic/models/season_cosmetics.dart';
 import 'package:snake_classic/presentation/bloc/premium/premium_cubit.dart';
 import 'package:get_it/get_it.dart';
 import 'package:snake_classic/models/snake_coins.dart';
@@ -61,6 +62,29 @@ class BattlePassCubit extends Cubit<BattlePassState> {
     this._temporaryGrants,
   }) : _progression = progressionService,
        super(BattlePassState.initial());
+
+  /// The skins / trails / themes behind [state]'s claimed tiers.
+  static SeasonCosmetics seasonCosmeticsOf(BattlePassState state) =>
+      SeasonCosmetics.fromClaims(
+        state.season,
+        claimedFreeTiers: state.claimedFreeTiers,
+        claimedPremiumTiers: state.claimedPremiumTiers,
+      );
+
+  /// Keep PremiumCubit's derived Season overlay in step with every change
+  /// to the claimed tiers or the season: a claim, a local load, and a
+  /// cloud snapshot restore (the Drift watch reload) all emit here.
+  @override
+  void onChange(Change<BattlePassState> change) {
+    super.onChange(change);
+    final before = change.currentState;
+    final after = change.nextState;
+    final changed = !identical(before.season, after.season) ||
+        before.claimedFreeTiers != after.claimedFreeTiers ||
+        before.claimedPremiumTiers != after.claimedPremiumTiers ||
+        before.status != after.status;
+    if (changed) _premiumCubit?.applySeasonCosmetics(seasonCosmeticsOf(after));
+  }
 
   /// Season XP buffered and not yet flushed. For tests.
   @visibleForTesting

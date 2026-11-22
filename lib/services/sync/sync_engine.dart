@@ -244,6 +244,56 @@ class SyncEngine {
   /// Returns when the drain finishes, so a caller can await it if it needs to.
   Future<void> syncNow() => _drain();
 
+  /// Run [body] holding the drain lock: waits for an in-flight drain, and
+  /// no drain (so no outbox coin_balance push) starts until [body] is done.
+  /// A drain requested meanwhile coalesces onto [body]'s completion, and
+  /// one is kicked afterwards so nothing queued waits for the next trigger.
+  ///
+  /// Coin cosmetics need this: the server charges users.coins, which every
+  /// /sync/coin-balance push overwrites. Push-balance, server charge and
+  /// local apply must not interleave with another coin push, or a stale
+  /// balance landing after the charge would wipe it out.
+  Future<T> runExclusive<T>(Future<T> Function() body) async {
+    while (_isDraining) {
+      final inFlight = _drainInFlight;
+      if (inFlight == null) break;
+      await inFlight;
+    }
+    _isDraining = true;
+    final completer = Completer<void>();
+    _drainInFlight = completer.future;
+    try {
+      return await body();
+    } finally {
+      _isDraining = false;
+      _drainInFlight = null;
+      completer.complete();
+      unawaited(_drain());
+    }
+  }
+
+  /// Push the device's current coin balance right now and say whether the
+  /// server took it. Returns the balance pushed, or null when it failed
+  /// (offline, no session, server error). Call inside [runExclusive].
+  /// Queued coin_balance outbox rows stay queued; they push the live
+  /// balance later, which is harmless.
+  Future<int?> pushCoinBalanceNow() async {
+    final dao = _storeDao;
+    if (dao == null || !_api.isAuthenticated) return null;
+    try {
+      final row = await dao.getCoinBalanceRow();
+      if (row == null) return null;
+      final outcome = await _api.syncCoinBalance({
+        'balance': row.balance,
+        'updated_at': _utcIso(row.updatedAt),
+      });
+      return outcome.kind == SyncOutcomeKind.success ? row.balance : null;
+    } catch (e) {
+      AppLogger.warning('SyncEngine: coin balance push failed: $e');
+      return null;
+    }
+  }
+
   /// Recount the outbox and dead letters from Drift and publish.
   Future<void> refreshStatus() async {
     final dao = _syncDao;

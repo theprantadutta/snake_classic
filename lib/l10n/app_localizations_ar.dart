@@ -1068,6 +1068,37 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String storeCoinCosmeticBody(String name, String coins) {
+    return 'هل تريد فتح $name نهائيًا مقابل $coins عملة؟';
+  }
+
+  @override
+  String storeCoinCosmeticBought(String name) {
+    return '$name أصبح لك! تم تجهيزه.';
+  }
+
+  @override
+  String storeCoinCosmeticNeedMore(String coins) {
+    return 'تحتاج إلى $coins عملة إضافية.';
+  }
+
+  @override
+  String get storeCoinCosmeticSyncing =>
+      'ما زالت أحدث عملاتك قيد المزامنة. حاول مرة أخرى بعد لحظات.';
+
+  @override
+  String get storeCoinCosmeticNeedsConnection =>
+      'الشراء بالعملات يحتاج إلى اتصال بالإنترنت.';
+
+  @override
+  String get storeCoinCosmeticBusy =>
+      'المتجر مشغول. لم يُخصم شيء، حاول مرة أخرى.';
+
+  @override
+  String get storeCoinCosmeticUnavailable =>
+      'لا يمكن شراء هذا العنصر بالعملات الآن.';
+
+  @override
   String get dbItemSpeedBoost => 'تعزيز سرعة';
 
   @override

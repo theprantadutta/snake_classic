@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:snake_classic/models/coin_cosmetic.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
+import 'package:snake_classic/models/season_cosmetics.dart';
 import 'package:snake_classic/models/temporary_grant.dart';
 import 'package:snake_classic/services/purchase_service.dart' show ProductIds;
 import 'package:snake_classic/utils/constants.dart';
@@ -120,6 +122,25 @@ class PremiumState extends Equatable {
   /// expire, so membership alone means "active".
   final Map<String, DateTime> temporaryUnlocks;
 
+  /// Cosmetics the server sells for coins, with their server prices
+  /// (premium-content `coin_cosmetics` / GET /cosmetics/coin-catalog).
+  /// Empty until the server has answered: no coin price is ever shown
+  /// from a client-side guess.
+  final List<CoinCosmeticOffer> coinCosmetics;
+
+  /// Skins / trails / themes claimed in the Season, derived from the
+  /// battle pass's claimed tiers (BattlePassCubit pushes it here). Counts
+  /// as permanent ownership in the checks below, but is never merged into
+  /// the owned sets above, never stored and never synced upward: the
+  /// server's owned lists don't know these claims and would strip them.
+  final SeasonCosmetics seasonCosmetics;
+
+  /// The coin offer for [type] (`skin` / `trail` / `theme`) and [id], if
+  /// the server sells it for coins.
+  CoinCosmeticOffer? coinOfferFor(String type, String id) => coinCosmetics
+      .where((o) => o.type == type && o.id == id)
+      .firstOrNull;
+
   const PremiumState({
     this.status = PremiumStatus.initial,
     this.tier = PremiumTier.free,
@@ -142,6 +163,8 @@ class PremiumState extends Equatable {
     this.promoExpiresAt,
     this.promoSource,
     this.temporaryUnlocks = const {},
+    this.coinCosmetics = const [],
+    this.seasonCosmetics = SeasonCosmetics.none,
   });
 
   /// Initial state
@@ -173,6 +196,8 @@ class PremiumState extends Equatable {
     String? promoSource,
     bool clearPromo = false,
     Map<String, DateTime>? temporaryUnlocks,
+    List<CoinCosmeticOffer>? coinCosmetics,
+    SeasonCosmetics? seasonCosmetics,
   }) {
     return PremiumState(
       status: status ?? this.status,
@@ -202,6 +227,8 @@ class PremiumState extends Equatable {
           clearPromo ? null : (promoExpiresAt ?? this.promoExpiresAt),
       promoSource: clearPromo ? null : (promoSource ?? this.promoSource),
       temporaryUnlocks: temporaryUnlocks ?? this.temporaryUnlocks,
+      coinCosmetics: coinCosmetics ?? this.coinCosmetics,
+      seasonCosmetics: seasonCosmetics ?? this.seasonCosmetics,
     );
   }
 
@@ -255,7 +282,8 @@ class PremiumState extends Equatable {
   }
 
   /// Check if a theme is owned
-  bool isThemeOwned(GameTheme theme) => ownedThemes.contains(theme);
+  bool isThemeOwned(GameTheme theme) =>
+      ownedThemes.contains(theme) || seasonCosmetics.themes.contains(theme);
 
   /// Check if a theme is unlocked (free themes always unlocked, premium needs purchase or subscription)
   bool isThemeUnlocked(GameTheme theme) =>
@@ -265,7 +293,7 @@ class PremiumState extends Equatable {
   /// purchase reconciler uses this so a theme on trial doesn't read as bought.
   bool isThemePermanentlyUnlocked(GameTheme theme) =>
       _debugAllThemes ||
-      !PremiumContent.isPremiumTheme(theme) || hasPremium || ownedThemes.contains(theme);
+      !PremiumContent.isPremiumTheme(theme) || hasPremium || isThemeOwned(theme);
 
   /// Whether [kind]/[id] is temporarily unlocked right now.
   bool hasTemporaryUnlock(TemporaryGrantKind kind, String id) =>
@@ -298,13 +326,16 @@ class PremiumState extends Equatable {
   static const bool _debugAllThemes =
       kDebugMode && bool.fromEnvironment('LB_ALL_THEMES');
 
-  /// Check if a skin is owned. Strict set-membership only — used by the
-  /// purchase-pending reconciler (`_isProductOwned`) where we need to know
-  /// whether the IAP grant has landed, independent of Pro status.
-  bool isSkinOwned(String skinId) => ownedSkins.contains(skinId);
+  /// Check if a skin is owned: in the (server-mirrored) owned set, or
+  /// claimed in the Season ([seasonCosmetics], derived). Independent of Pro
+  /// status and of temporary unlocks; the purchase-pending reconciler
+  /// (`_isProductOwned`) relies on that.
+  bool isSkinOwned(String skinId) =>
+      ownedSkins.contains(skinId) || seasonCosmetics.skins.contains(skinId);
 
-  /// Check if a trail is owned. Same strict-set semantics as [isSkinOwned].
-  bool isTrailOwned(String trailId) => ownedTrails.contains(trailId);
+  /// Check if a trail is owned. Same semantics as [isSkinOwned].
+  bool isTrailOwned(String trailId) =>
+      ownedTrails.contains(trailId) || seasonCosmetics.trails.contains(trailId);
 
   /// Check if a skin is usable by the player — free skins always are; premium
   /// skins unlock either through individual purchase OR an active Pro
@@ -313,7 +344,7 @@ class PremiumState extends Equatable {
   bool isSkinUnlocked(SnakeSkinType skin) =>
       !skin.isPremium ||
       hasPremium ||
-      ownedSkins.contains(skin.id) ||
+      isSkinOwned(skin.id) ||
       hasTemporaryUnlock(TemporaryGrantKind.skin, skin.id);
 
   /// Check if a trail is usable by the player. Same Pro-bundle fast-path
@@ -321,7 +352,7 @@ class PremiumState extends Equatable {
   bool isTrailUnlocked(TrailEffectType trail) =>
       !trail.isPremium ||
       hasPremium ||
-      ownedTrails.contains(trail.id) ||
+      isTrailOwned(trail.id) ||
       hasTemporaryUnlock(TemporaryGrantKind.trail, trail.id);
 
   /// Check if a power-up is unlocked
@@ -381,5 +412,7 @@ class PremiumState extends Equatable {
     promoExpiresAt,
     promoSource,
     temporaryUnlocks,
+    coinCosmetics,
+    seasonCosmetics,
   ];
 }

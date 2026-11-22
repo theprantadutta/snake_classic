@@ -1972,6 +1972,48 @@ abstract class AppLocalizations {
   /// **'{name} equipped'**
   String storeEquippedToast(Object name);
 
+  /// Confirm dialog body before buying a skin/trail/theme with coins; coins is locale-formatted
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {name} for good for {coins} coins?'**
+  String storeCoinCosmeticBody(String name, String coins);
+
+  /// Toast after a successful coin purchase of a cosmetic
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is yours! Equipped.'**
+  String storeCoinCosmeticBought(String name);
+
+  /// Not enough coins for a coin-priced cosmetic; coins = how many are missing, locale-formatted
+  ///
+  /// In en, this message translates to:
+  /// **'You need {coins} more coins.'**
+  String storeCoinCosmeticNeedMore(String coins);
+
+  /// The device shows enough coins but the server doesn't have them yet
+  ///
+  /// In en, this message translates to:
+  /// **'Your latest coins are still syncing. Try again in a moment.'**
+  String get storeCoinCosmeticSyncing;
+
+  /// Coin purchase attempted offline or without a server session
+  ///
+  /// In en, this message translates to:
+  /// **'Buying with coins needs an internet connection.'**
+  String get storeCoinCosmeticNeedsConnection;
+
+  /// The server could not complete the coin purchase right now; no coins were taken
+  ///
+  /// In en, this message translates to:
+  /// **'The store is busy. Nothing was charged, please try again.'**
+  String get storeCoinCosmeticBusy;
+
+  /// The server no longer sells this item for coins
+  ///
+  /// In en, this message translates to:
+  /// **'This item can\'t be bought with coins right now.'**
+  String get storeCoinCosmeticUnavailable;
+
   /// Daily login bonus item (day 3): one Speed Boost power-up
   ///
   /// In en, this message translates to:

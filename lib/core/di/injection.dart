@@ -23,6 +23,7 @@ import 'package:snake_classic/services/game_end_pipeline.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
 import 'package:snake_classic/services/progression_service.dart';
 import 'package:snake_classic/services/daily_bonus_item_granter.dart';
+import 'package:snake_classic/services/coin_cosmetic_purchaser.dart';
 import 'package:snake_classic/services/temporary_grants_service.dart';
 import 'package:snake_classic/services/weekly_quest_service.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
@@ -221,6 +222,35 @@ Future<void> configureDependencies() async {
   // the "watch 2 ads, wear it for a day" trials. Never synced.
   getIt.registerLazySingleton<TemporaryGrantsService>(
     () => TemporaryGrantsService(analytics: getIt<AnalyticsFacade>()),
+  );
+
+  // Coin-priced cosmetics, charged on the server. Under the sync engine's
+  // drain lock: push the local balance (awaited), buy, adopt the server's
+  // balance (StoreDao.adoptServerBalanceAfterCharge). See
+  // CoinCosmeticPurchaser.
+  getIt.registerLazySingleton<CoinCosmeticsApi>(() => ApiCoinCosmeticsApi());
+  getIt.registerLazySingleton<CoinCosmeticPurchaser>(
+    () => CoinCosmeticPurchaser(
+      api: getIt<CoinCosmeticsApi>(),
+      serialize: <T>(Future<T> Function() body) =>
+          getIt<SyncEngine>().runExclusive<T>(body),
+      pushBalance: () => getIt<SyncEngine>().pushCoinBalanceNow(),
+      adoptBalance: ({
+        required int serverBalance,
+        required int pushedBalance,
+        required int charged,
+        required String description,
+      }) =>
+          getIt<StorageService>().storeDao.adoptServerBalanceAfterCharge(
+            serverBalance: serverBalance,
+            pushedBalance: pushedBalance,
+            charged: charged,
+            description: description,
+          ),
+      applyOwnership: (offer, outcome) =>
+          getIt<PremiumCubit>().applyCoinCosmeticPurchase(offer, outcome),
+      localBalance: () => getIt<CoinsCubit>().state.balance.total,
+    ),
   );
 
   getIt.registerLazySingleton<DailyBonusItemGranter>(

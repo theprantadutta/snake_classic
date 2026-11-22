@@ -1084,6 +1084,37 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String storeCoinCosmeticBody(String name, String coins) {
+    return 'Odblokować $name na zawsze za $coins monet?';
+  }
+
+  @override
+  String storeCoinCosmeticBought(String name) {
+    return '$name jest Twój! Założony.';
+  }
+
+  @override
+  String storeCoinCosmeticNeedMore(String coins) {
+    return 'Brakuje Ci monet: $coins.';
+  }
+
+  @override
+  String get storeCoinCosmeticSyncing =>
+      'Twoje najnowsze monety wciąż się synchronizują. Spróbuj za chwilę.';
+
+  @override
+  String get storeCoinCosmeticNeedsConnection =>
+      'Zakup za monety wymaga połączenia z internetem.';
+
+  @override
+  String get storeCoinCosmeticBusy =>
+      'Sklep jest zajęty. Nic nie pobrano, spróbuj ponownie.';
+
+  @override
+  String get storeCoinCosmeticUnavailable =>
+      'Tego przedmiotu nie można teraz kupić za monety.';
+
+  @override
   String get dbItemSpeedBoost => 'Przyspieszenie';
 
   @override

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/data/database/app_database.dart' as db;
@@ -13,7 +15,11 @@ import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/models/premium_cosmetics.dart';
 import 'package:snake_classic/models/premium_power_up.dart';
+import 'package:snake_classic/models/coin_cosmetic.dart';
+import 'package:snake_classic/models/season_cosmetics.dart';
+import 'package:snake_classic/presentation/bloc/premium/battle_pass_cubit.dart';
 import 'package:snake_classic/models/temporary_grant.dart';
+import 'package:snake_classic/services/coin_cosmetic_purchaser.dart';
 import 'package:snake_classic/models/tournament_entry_ledger.dart';
 import 'package:snake_classic/services/temporary_grants_service.dart';
 import 'package:snake_classic/utils/constants.dart';
@@ -731,26 +737,22 @@ class PremiumCubit extends Cubit<PremiumState> {
 
     // ---- Owned skins ----
     if (data['owned_skins'] is List) {
-      final serverSkins =
-          (data['owned_skins'] as List).whereType<String>().toSet();
-      if (serverSkins != state.ownedSkins) {
-        emit(state.copyWith(ownedSkins: serverSkins));
-        await _storageService.applyUnlockedSkinsFromServer(
-          serverSkins.toList(),
-        );
-      }
+      await _adoptServerSkins(
+        (data['owned_skins'] as List).whereType<String>().toSet(),
+      );
     }
 
     // ---- Owned trails ----
     if (data['owned_trails'] is List) {
-      final serverTrails =
-          (data['owned_trails'] as List).whereType<String>().toSet();
-      if (serverTrails != state.ownedTrails) {
-        emit(state.copyWith(ownedTrails: serverTrails));
-        await _storageService.applyUnlockedTrailsFromServer(
-          serverTrails.toList(),
-        );
-      }
+      await _adoptServerTrails(
+        (data['owned_trails'] as List).whereType<String>().toSet(),
+      );
+    }
+
+    // ---- Coin-priced cosmetics (server prices) ----
+    final coinOffers = CoinCosmeticOffer.parseList(data['coin_cosmetics']);
+    if (coinOffers != null) {
+      emit(state.copyWith(coinCosmetics: coinOffers));
     }
 
     // ---- Owned bundles ----
@@ -898,7 +900,8 @@ class PremiumCubit extends Cubit<PremiumState> {
     // keep rendering a paid item they shouldn't have. Pro subscribers
     // implicitly own all premium themes, so the theme fallback only
     // applies to free-tier users.
-    // Temporary unlocks count: they are device-local and never in the
+    await _ensureSeasonCosmeticsLoaded();
+    // Temporary unlocks and Season claims count: neither is in the
     // server's owned sets, so a strict check would strip a trial skin on
     // every sync.
     if (state.selectedSkinId != 'classic' &&
@@ -960,6 +963,106 @@ class PremiumCubit extends Cubit<PremiumState> {
       goldTournamentEntries: changes['gold']?.count,
     ));
     AppLogger.info('Absorbed server tournament-entry grants: $changes');
+  }
+
+  /// The server's owned-skin list replaces the in-memory set (it is
+  /// authoritative: refunds prune). Drift is merged, never echoed back.
+  Future<void> _adoptServerSkins(Set<String> serverSkins) async {
+    if (serverSkins == state.ownedSkins) return;
+    emit(state.copyWith(ownedSkins: serverSkins));
+    await _storageService.applyUnlockedSkinsFromServer(serverSkins.toList());
+  }
+
+  /// Trail twin of [_adoptServerSkins].
+  Future<void> _adoptServerTrails(Set<String> serverTrails) async {
+    if (serverTrails == state.ownedTrails) return;
+    emit(state.copyWith(ownedTrails: serverTrails));
+    await _storageService.applyUnlockedTrailsFromServer(serverTrails.toList());
+  }
+
+  /// Runs the premium-content apply on [data], as a backend sync would.
+  @visibleForTesting
+  Future<void> applyBackendEntitlementsForTest(Map<String, dynamic> data) =>
+      _applyBackendEntitlements(data);
+
+  // ==================== Season-claimed cosmetics ====================
+
+  /// The Season rewards the player has claimed (derived by BattlePassCubit
+  /// from its claimed tiers). Overlaid on ownership; never stored or synced.
+  void applySeasonCosmetics(SeasonCosmetics season) {
+    if (isClosed || season == state.seasonCosmetics) return;
+    emit(state.copyWith(seasonCosmetics: season));
+  }
+
+  /// Before deciding what a sync revoked, make sure the Season overlay is
+  /// loaded: on a cold start the post-auth sync can land before the battle
+  /// pass has read its claims, and an empty overlay would unequip a
+  /// Season skin.
+  Future<void> _ensureSeasonCosmeticsLoaded() async {
+    if (!getIt.isRegistered<BattlePassCubit>()) return;
+    final bp = getIt<BattlePassCubit>();
+    if (bp.state.status != BattlePassStatus.ready) {
+      try {
+        await bp.stream
+            .firstWhere((s) => s.status == BattlePassStatus.ready)
+            .timeout(const Duration(seconds: 5));
+      } catch (_) {
+        // Not ready: fall through with whatever overlay we have.
+      }
+    }
+    applySeasonCosmetics(BattlePassCubit.seasonCosmeticsOf(bp.state));
+  }
+
+  // ==================== Coin-priced cosmetics ====================
+
+  /// Refresh the coin price list from GET /cosmetics/coin-catalog (the
+  /// store calls this on open; premium-content also carries it).
+  Future<void> refreshCoinCatalog(CoinCosmeticsApi api) async {
+    if (!api.isAuthenticated) return;
+    final offers = await api.catalog();
+    if (offers == null || isClosed) return;
+    emit(state.copyWith(coinCosmetics: offers));
+  }
+
+  /// A coin purchase succeeded on the server: adopt its owned lists through
+  /// the same path premium-content uses (so the next sync agrees), and mark
+  /// the offer owned. No unlock row is written to the outbox: the server
+  /// already holds the ownership, and refuses that marker from clients.
+  Future<void> applyCoinCosmeticPurchase(
+    CoinCosmeticOffer offer,
+    CoinBuyOutcome outcome,
+  ) async {
+    final skins = outcome.ownedSkins;
+    final trails = outcome.ownedTrails;
+    if (skins != null) await _adoptServerSkins(skins.toSet());
+    if (trails != null) await _adoptServerTrails(trails.toSet());
+    // Belt and braces: the item itself, even if a list was missing.
+    switch (offer.type) {
+      case 'skin':
+        if (!state.ownedSkins.contains(offer.id)) {
+          await _adoptServerSkins({...state.ownedSkins, offer.id});
+        }
+      case 'trail':
+        if (!state.ownedTrails.contains(offer.id)) {
+          await _adoptServerTrails({...state.ownedTrails, offer.id});
+        }
+      case 'theme':
+        final theme = PremiumContent.themeProductIds[offer.id] ??
+            TemporaryGrant.themeFromGrantId(offer.id);
+        if (theme != null && !state.ownedThemes.contains(theme)) {
+          final themes = {...state.ownedThemes, theme};
+          emit(state.copyWith(ownedThemes: themes));
+          await _storageService.applyUnlockedThemesFromServer(
+            themes.map((t) => t.name).toList(),
+          );
+        }
+    }
+    emit(state.copyWith(
+      coinCosmetics: [
+        for (final o in state.coinCosmetics)
+          o.type == offer.type && o.id == offer.id ? o.copyWith(owned: true) : o,
+      ],
+    ));
   }
 
   // ==================== Temporary unlocks ====================

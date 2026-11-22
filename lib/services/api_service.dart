@@ -642,6 +642,45 @@ class ApiService {
     }
   }
 
+  /// POST /cosmetics/buy-with-coins. Returns the status and decoded body
+  /// for every answer, including 400/409 (their `error` code matters to
+  /// the caller), and a null status when the request never reached the
+  /// server. Interpreted by CoinCosmeticPurchaser.
+  Future<({int? statusCode, Map<String, dynamic>? body})>
+  buyCosmeticWithCoins({
+    required String cosmeticType,
+    required String cosmeticId,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/cosmetics/buy-with-coins'),
+            headers: _authHeaders,
+            body: jsonEncode({
+              'cosmetic_type': cosmeticType,
+              'cosmetic_id': cosmeticId,
+            }),
+          )
+          .timeout(_timeout);
+      ConnectivityService().recordBackendSuccess();
+      if (response.statusCode == 401) {
+        clearToken();
+        onUnauthorized?.call();
+      }
+      Map<String, dynamic>? body;
+      if (response.body.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(response.body);
+          if (decoded is Map) body = Map<String, dynamic>.from(decoded);
+        } catch (_) {}
+      }
+      return (statusCode: response.statusCode, body: body);
+    } catch (e) {
+      AppLogger.warning('Coin cosmetic purchase did not reach the server: $e');
+      return (statusCode: null, body: null);
+    }
+  }
+
   /// Persist the user's equipped cosmetic IDs so they survive reinstall
   /// and device-switch. Backend uses JsonNamingPolicy.SnakeCaseLower —
   /// keys must be snake_case or they bind to null silently.
