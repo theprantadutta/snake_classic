@@ -223,6 +223,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
     final fresh = unlocks.where((a) => !_revealedIds.contains(a.id)).toList();
     if (fresh.isEmpty) return;
     _revealedIds.addAll(fresh.map((a) => a.id));
+    // A new player's first games unlock several trophies at once, and the
+    // full-screen reveals (4.2 s each, blocking) buried the first game-over.
+    // During onboarding the inline gold trophy row on the card says it
+    // instead (retention plan 2026-11, B2).
+    if (context.read<GameCubit>().isOnboardingRun) return;
     // Wait until the game-over hero + score have landed before stealing
     // the screen — the trophy reveal should feel like the climax, not a
     // pop-up obscuring the result.

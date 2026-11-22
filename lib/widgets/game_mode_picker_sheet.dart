@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/l10n/enum_l10n.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/services/storage_service.dart';
 import 'package:snake_classic/core/di/injection.dart';
 import 'package:snake_classic/screens/run_setup_screen.dart';
@@ -14,13 +15,19 @@ import 'package:snake_classic/widgets/lb/lb.dart';
 /// seen the board cannot choose between Classic, Zen and Survival. It used to
 /// be deferred to their *second* tap of Play, which meant the ~41% of players
 /// who never start a second game were never offered any mode but Classic at
-/// all. It is now offered at the first game-over instead, where the player has
-/// seen the board and the choice means something, with the Play button acting
-/// as a fallback for anyone who gets past a game without passing game-over.
+/// all. It is now offered at the first game-over after onboarding (three games
+/// started), where the player has seen the board and the choice means
+/// something, with the Play button acting as a fallback for anyone who gets
+/// past a game without passing game-over.
 ///
 /// Shown at most once ever, tracked by [GameSettingsCubit]'s
 /// `gameModeFirstLaunchPrompted` flag.
 Future<void> maybeShowGameModePicker(BuildContext context) async {
+  // Not between a new player's first games: the sheet sat between death 1
+  // and game 2, one more decision at the moment they decide whether to keep
+  // playing (retention plan 2026-11, B3). It now first appears after the
+  // third game has started, on either path.
+  if (FirstRunService().isInOnboarding) return;
   final settingsCubit = context.read<GameSettingsCubit>();
 
   // Read the flag with a short hydration window. If the cubit is already ready

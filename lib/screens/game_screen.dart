@@ -18,6 +18,7 @@ import 'package:snake_classic/presentation/bloc/theme/theme_cubit.dart';
 import 'package:snake_classic/router/routes.dart';
 import 'package:snake_classic/services/ads/ad_service.dart';
 import 'package:snake_classic/services/audio_service.dart';
+import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/widgets/revive_overlay.dart';
 import 'package:snake_classic/widgets/time_bonus_overlay.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
@@ -85,10 +86,17 @@ class _GameScreenState extends State<GameScreen>
   GameTutorialController? _tutorialController;
   bool _tutorialChecked = false;
 
+  /// This screen is hosting the player's very first game: no gameplay banner
+  /// (retention plan 2026-11, B5). Decided once, before [_bootstrapGame]
+  /// starts the run and bumps the games-started counter, so the layout never
+  /// changes mid-game.
+  late final bool _firstEverGame;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _firstEverGame = FirstRunService().isFirstGame;
 
     // While the game screen is mounted, suppress App Open ads so backgrounding
     // and returning mid-run never drops a full-screen ad over live/paused play.
@@ -692,8 +700,10 @@ class _GameScreenState extends State<GameScreen>
               // Whether a banner row is present at the bottom (free users on
               // mobile). Decides who owns the bottom inset — see the play
               // area's SafeArea below.
+              // A player's very first game has no banner (see the slot below).
               final bannerReserved =
-                  getIt<AdService>().shouldReserveBannerSpace;
+                  getIt<AdService>().shouldReserveBannerSpace &&
+                  !_firstEverGame;
 
               return PopScope(
                 canPop: false,
@@ -745,7 +755,11 @@ class _GameScreenState extends State<GameScreen>
                                 // the bottom it was hidden for d-pad players,
                                 // because Google names ads next to game
                                 // controls as an accidental-click placement.)
-                                const LBBannerSlot(topGap: 12, atTop: true),
+                                // Not during a player's very first game: the
+                                // first impression is the game, not an ad
+                                // (retention plan 2026-11, B5).
+                                if (bannerReserved)
+                                  const LBBannerSlot(topGap: 12, atTop: true),
                                 Expanded(
                                   // Shake scoped to the play area (HUD + board +
                                   // controls) — wrapping the whole Scaffold
