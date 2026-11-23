@@ -57,6 +57,12 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   /// Seeds the crash line so it stays the same across rebuilds.
   final int _seed = DateTime.now().millisecondsSinceEpoch;
 
+  /// The run this screen is about, read once. AGAIN starts the next run
+  /// while this screen is still animating out; reading the cubit live there
+  /// showed run 1's screen as run 2, which mounted NEXT UP on the way out
+  /// and logged a phantom `next_goal_shown`.
+  late final int _runNumber;
+
   final AchievementService _achievementService = AchievementService();
   final ProgressionService _progressionService = ProgressionService();
   final AudioService _audioService = AudioService();
@@ -120,6 +126,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _runNumber = context.read<GameCubit>().runNumber;
 
     _loadAchievements();
 
@@ -382,7 +389,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
           // The reveal: one clock, beats authored in GameOverBeatSheet.
           child: GameOverBeatSheet(
             runKey: (
-              cubit.runNumber,
+              _runNumber,
               gameState.score,
               gameState.snake.length,
               bites.length,
@@ -419,10 +426,10 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                             ).copyWith(letterSpacing: 1.6),
                           ),
                         ),
-                        if (cubit.runNumber > 0) ...[
+                        if (_runNumber > 0) ...[
                           const SizedBox(width: 10),
                           Text(
-                            l10n.lbGoRun(context.formatInt(cubit.runNumber)),
+                            l10n.lbGoRun(context.formatInt(_runNumber)),
                             style: LBText.label(
                               p,
                               color: p.inkDim,
@@ -593,7 +600,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen>
                         // NEXT UP: today's dailies, Season XP, tomorrow's
                         // login reward. From the second game on, so the
                         // very first game-over stays about the run (C1).
-                        if (cubit.runNumber >= 2) ...[
+                        if (_runNumber >= 2) ...[
                           SizedBox(height: cell * .6),
                           BeatIn(
                             animation: reveal.action(
