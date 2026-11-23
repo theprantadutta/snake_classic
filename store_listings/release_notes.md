@@ -150,10 +150,108 @@ Her gün oynamak için daha fazla sebep.
 </tr-TR>
 ```
 
-## App Store Connect — What's New
+## App Store Connect — What's New (8.1.0)
 
-Not written yet. The last iOS build was 8.0.1 (82); the next one is built on
-macOS (see CLAUDE.md, "macOS session") and should carry 8.0.3's banner fix
-plus everything above. Reuse the Play lines **without "Updates now install
-in one tap"** (the Play update flow is Android-only; iOS keeps its own
-App Store dialog). The 8.0.1 App Store text is in release_notes_8.0.5.md.
+Entered in App Store Connect on 2026-11-23 for 8.1.0 (87). The App Store had
+8.0.1 (82) live. Same text as the Play notes minus "Updates now install in
+one tap" (Android-only). en-GB uses the en-US text. Promotional Text
+unchanged.
+
+**English (U.S.)**
+```
+More to play for, every day.
+
+• The daily bonus now includes power-ups, double Season XP and a free theme for a day.
+• After a game, NEXT UP shows your daily challenges and tomorrow's reward.
+• Buy trails and skins with coins, or try a premium look for a day with two short ads.
+• Season rewards no longer disappear after syncing.
+• New More games screen with our other games.
+```
+
+**Arabic**
+```
+المزيد لتلعب من أجله كل يوم.
+
+• المكافأة اليومية تشمل الآن معززات، وضعف نقاط الموسم، وثيمًا مجانيًا ليوم واحد.
+• بعد كل لعبة، تعرض «التالي» تحدياتك اليومية ومكافأة الغد.
+• اشترِ الذيول والأشكال بالعملات، أو جرّب مظهرًا مميزًا ليوم كامل بإعلانين قصيرين.
+• مكافآت الموسم لم تعد تختفي بعد المزامنة.
+• شاشة جديدة «المزيد من الألعاب» بألعابنا الأخرى.
+```
+
+**Spanish (Mexico)**
+```
+Más motivos para jugar cada día.
+
+• El bono diario ahora trae potenciadores, doble XP de Temporada y un tema gratis por un día.
+• Tras cada partida, SIGUIENTE muestra tus desafíos diarios y la recompensa de mañana.
+• Compra estelas y skins con monedas, o prueba un look premium por un día con dos anuncios cortos.
+• Las recompensas de Temporada ya no desaparecen al sincronizar.
+• Nueva pantalla Más juegos con nuestros otros juegos.
+```
+
+**French**
+```
+Plus de raisons de jouer chaque jour.
+
+• Le bonus du jour offre des bonus, l'XP de Saison doublée et un thème gratuit pour un jour.
+• Après chaque partie, À SUIVRE montre tes défis du jour et la récompense de demain.
+• Achète traînées et skins avec tes pièces, ou essaie un look premium un jour avec deux pubs courtes.
+• Les récompenses de Saison ne disparaissent plus après la synchro.
+• Nouvel écran Plus de jeux avec nos autres jeux.
+```
+
+**Hindi**
+```
+हर दिन खेलने की और वजहें।
+
+• डेली बोनस में अब पावर-अप, डबल सीज़न XP और एक दिन के लिए मुफ़्त थीम।
+• हर गेम के बाद, आगे क्या में आपके डेली चैलेंज और कल का इनाम।
+• सिक्कों से ट्रेल और स्किन खरीदें, या दो छोटे विज्ञापन देखकर एक दिन प्रीमियम लुक आज़माएँ।
+• सिंक के बाद सीज़न इनाम अब गायब नहीं होते।
+• नई और गेम स्क्रीन, हमारे दूसरे गेम के साथ।
+```
+
+**Italian**
+```
+Più motivi per giocare ogni giorno.
+
+• Il bonus giornaliero ora include potenziamenti, XP Stagione doppia e un tema gratis per un giorno.
+• Dopo ogni partita, PROSSIMI mostra le sfide giornaliere e il premio di domani.
+• Compra scie e skin con le monete, o prova un look premium per un giorno con due brevi pubblicità.
+• I premi Stagione non spariscono più dopo la sincronizzazione.
+• Nuova schermata Altri giochi con i nostri altri giochi.
+```
+
+**Polish**
+```
+Więcej powodów, by grać codziennie.
+
+• Bonus dzienny daje teraz ulepszenia, podwójne XP Sezonu i darmowy motyw na jeden dzień.
+• Po każdej grze DALEJ pokazuje wyzwania dnia i jutrzejszą nagrodę.
+• Kupuj ślady i skórki za monety albo wypróbuj wygląd premium na dzień za dwie krótkie reklamy.
+• Nagrody Sezonu nie znikają już po synchronizacji.
+• Nowy ekran Więcej gier z naszymi innymi grami.
+```
+
+**Portuguese (Brazil)**
+```
+Mais motivos para jogar todo dia.
+
+• O bônus diário agora traz power-ups, XP de Temporada em dobro e um tema grátis por um dia.
+• Depois de cada partida, PRÓXIMOS mostra seus desafios diários e o prêmio de amanhã.
+• Compre rastros e skins com moedas, ou teste um visual premium por um dia com dois anúncios curtos.
+• Os prêmios de Temporada não somem mais após sincronizar.
+• Nova tela Mais jogos com nossos outros jogos.
+```
+
+**Turkish**
+```
+Her gün oynamak için daha fazla sebep.
+
+• Günlük bonus artık güçlendirmeler, iki kat Sezon XP ve bir günlük ücretsiz tema veriyor.
+• Her oyundan sonra SIRADAKİ, günlük görevlerini ve yarının ödülünü gösteriyor.
+• İzleri ve görünümleri jetonla al ya da iki kısa reklamla premium bir görünümü bir gün dene.
+• Sezon ödülleri artık senkronizasyondan sonra kaybolmuyor.
+• Diğer oyunlarımızla yeni Daha fazla oyun ekranı.
+```
