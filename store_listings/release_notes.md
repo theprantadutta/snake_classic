@@ -33,7 +33,7 @@ big game release the Miami Nights theme nods to.**
 
 ---
 
-## Play Console — paste as-is
+## Play Console — Release notes (paste as-is)
 
 es-419 and es-ES share the `es` text.
 
