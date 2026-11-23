@@ -1990,5 +1990,7 @@
   "goNextBonusReady": "Dzisiejszy bonus czeka na ekranie głównym · +{coins}¢",
   "goRemindTitle": "Przypomnij mi jutro",
   "goRemindBody": "Jedno przypomnienie, żeby pobić {score}. Nic więcej.",
-  "goRemindSet": "Przypomnienie ustawione na jutro"
+  "goRemindSet": "Przypomnienie ustawione na jutro",
+  "settingsSectionMoreGames": "WIĘCEJ NASZYCH GIER",
+  "moreGamesCosmoStrike": "Zręcznościowa kosmiczna strzelanka od twórców Snake Classic"
 }

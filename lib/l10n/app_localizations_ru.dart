@@ -6860,4 +6860,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get goRemindSet => 'Напоминание на завтра готово';
+
+  @override
+  String get settingsSectionMoreGames => 'ДРУГИЕ НАШИ ИГРЫ';
+
+  @override
+  String get moreGamesCosmoStrike =>
+      'Аркадный космический шутер от создателей Snake Classic';
 }

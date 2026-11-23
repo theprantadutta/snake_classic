@@ -12015,6 +12015,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reminder set for tomorrow'**
   String get goRemindSet;
+
+  /// No description provided for @settingsSectionMoreGames.
+  ///
+  /// In en, this message translates to:
+  /// **'MORE GAMES FROM US'**
+  String get settingsSectionMoreGames;
+
+  /// Settings > More games: one-line description of Cosmo Strike, another game by the same developer. Keep the names Snake Classic and Cosmo Strike untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'Arcade space shooter from the makers of Snake Classic'**
+  String get moreGamesCosmoStrike;
 }
 
 class _AppLocalizationsDelegate

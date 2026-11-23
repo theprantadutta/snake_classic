@@ -6898,4 +6898,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get goRemindSet => 'Rappel prévu pour demain';
+
+  @override
+  String get settingsSectionMoreGames => 'NOS AUTRES JEUX';
+
+  @override
+  String get moreGamesCosmoStrike =>
+      'Jeu de tir spatial arcade des créateurs de Snake Classic';
 }

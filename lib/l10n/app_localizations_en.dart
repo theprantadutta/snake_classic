@@ -6809,4 +6809,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goRemindSet => 'Reminder set for tomorrow';
+
+  @override
+  String get settingsSectionMoreGames => 'MORE GAMES FROM US';
+
+  @override
+  String get moreGamesCosmoStrike =>
+      'Arcade space shooter from the makers of Snake Classic';
 }

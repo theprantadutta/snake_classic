@@ -28,6 +28,7 @@ import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
+import 'package:snake_classic/widgets/lb_screens/settings/more_games_section.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_display_panel.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_rows.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_theme_strip.dart';
@@ -164,6 +165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _account(l10n, auth),
         _yourGame(l10n),
         _help(l10n, themeState.currentTheme),
+        // The owner's other games (cross-promotion). Policy rules and the
+        // game list: lib/services/cross_promo.dart.
+        const MoreGamesSection(),
         _legal(l10n),
         if (premium.isInitialized) _premium(l10n, premium),
         SettingsFooterLinks(

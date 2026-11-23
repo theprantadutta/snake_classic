@@ -1990,5 +1990,7 @@
   "goNextBonusReady": "Сегодняшний бонус ждёт на главном экране · +{coins}¢",
   "goRemindTitle": "Напомни завтра",
   "goRemindBody": "Одно напоминание побить {score}. И всё.",
-  "goRemindSet": "Напоминание на завтра готово"
+  "goRemindSet": "Напоминание на завтра готово",
+  "settingsSectionMoreGames": "ДРУГИЕ НАШИ ИГРЫ",
+  "moreGamesCosmoStrike": "Аркадный космический шутер от создателей Snake Classic"
 }

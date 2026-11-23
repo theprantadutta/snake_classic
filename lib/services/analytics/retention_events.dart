@@ -88,6 +88,13 @@ extension RetentionEvents on AnalyticsClient {
   Future<void> trackDayOneReminder({required String result}) =>
       trackEvent('day1_reminder', {'result': result});
 
+  /// Settings → "More games" (cross-promotion of the owner's other games).
+  /// [stage]: `shown` (the row was scrolled into view, once per Settings
+  /// visit), `tapped`, `open_failed` (no store app could open the link).
+  /// [game]: the promoted game's id, e.g. `cosmo_strike`.
+  Future<void> trackMoreGames({required String stage, required String game}) =>
+      trackEvent('more_games', {'stage': stage, 'game': game});
+
   // ---- User properties ----
 
   /// `1` once the first three games have been started.

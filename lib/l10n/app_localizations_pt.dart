@@ -6868,4 +6868,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get goRemindSet => 'Lembrete marcado para amanhã';
+
+  @override
+  String get settingsSectionMoreGames => 'MAIS JOGOS NOSSOS';
+
+  @override
+  String get moreGamesCosmoStrike =>
+      'Jogo de tiros espacial arcade dos criadores de Snake Classic';
 }

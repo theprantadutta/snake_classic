@@ -1990,5 +1990,7 @@
   "goNextBonusReady": "Il bonus di oggi ti aspetta in Home · +{coins}¢",
   "goRemindTitle": "Ricordamelo domani",
   "goRemindBody": "Un promemoria per battere {score}. Tutto qui.",
-  "goRemindSet": "Promemoria impostato per domani"
+  "goRemindSet": "Promemoria impostato per domani",
+  "settingsSectionMoreGames": "ALTRI NOSTRI GIOCHI",
+  "moreGamesCosmoStrike": "Sparatutto spaziale arcade dai creatori di Snake Classic"
 }

@@ -208,6 +208,7 @@ flutter:
     - assets/images/food/
     - assets/images/powerups/
     - assets/images/effects/
+    - assets/images/cross_promo/
     - assets/legal/
     # Font licence texts (registered with LicenseRegistry in main.dart). The
     # TTFs themselves are declared in the fonts: section below.

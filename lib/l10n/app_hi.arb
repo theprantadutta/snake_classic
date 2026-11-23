@@ -1990,5 +1990,7 @@
   "goNextBonusReady": "आज का बोनस होम पर इंतज़ार कर रहा है · +{coins}¢",
   "goRemindTitle": "कल याद दिलाना",
   "goRemindBody": "{score} को हराने के लिए एक याद दिलावा। बस इतना ही।",
-  "goRemindSet": "कल के लिए रिमाइंडर सेट हो गया"
+  "goRemindSet": "कल के लिए रिमाइंडर सेट हो गया",
+  "settingsSectionMoreGames": "हमारे और गेम",
+  "moreGamesCosmoStrike": "Snake Classic के निर्माताओं का आर्केड स्पेस शूटर"
 }

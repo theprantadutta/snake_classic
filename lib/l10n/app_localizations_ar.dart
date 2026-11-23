@@ -6836,4 +6836,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get goRemindSet => 'تم ضبط التذكير لغدٍ';
+
+  @override
+  String get settingsSectionMoreGames => 'المزيد من ألعابنا';
+
+  @override
+  String get moreGamesCosmoStrike => 'لعبة رماية فضائية من صنّاع Snake Classic';
 }

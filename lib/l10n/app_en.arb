@@ -4347,5 +4347,10 @@
   "@goRemindBody": {
     "placeholders": { "score": {} }
   },
-  "goRemindSet": "Reminder set for tomorrow"
+  "goRemindSet": "Reminder set for tomorrow",
+  "settingsSectionMoreGames": "MORE GAMES FROM US",
+  "moreGamesCosmoStrike": "Arcade space shooter from the makers of Snake Classic",
+  "@moreGamesCosmoStrike": {
+    "description": "Settings > More games: one-line description of Cosmo Strike, another game by the same developer. Keep the names Snake Classic and Cosmo Strike untranslated."
+  }
 }

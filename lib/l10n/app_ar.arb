@@ -1990,5 +1990,7 @@
   "goNextBonusReady": "مكافأة اليوم بانتظارك في الرئيسية · +{coins}¢",
   "goRemindTitle": "ذكّرني غدًا",
   "goRemindBody": "تذكير واحد لتتجاوز {score}. هذا كل شيء.",
-  "goRemindSet": "تم ضبط التذكير لغدٍ"
+  "goRemindSet": "تم ضبط التذكير لغدٍ",
+  "settingsSectionMoreGames": "المزيد من ألعابنا",
+  "moreGamesCosmoStrike": "لعبة رماية فضائية من صنّاع Snake Classic"
 }

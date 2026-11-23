@@ -6809,4 +6809,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get goRemindSet => 'कल के लिए रिमाइंडर सेट हो गया';
+
+  @override
+  String get settingsSectionMoreGames => 'हमारे और गेम';
+
+  @override
+  String get moreGamesCosmoStrike =>
+      'Snake Classic के निर्माताओं का आर्केड स्पेस शूटर';
 }
