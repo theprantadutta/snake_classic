@@ -6,33 +6,30 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**8.0.5+86** (2026-11-23; same notes since 8.0.3+84. 8.0.0+81 was refused by Play over a Wi-Fi feature flag, 8.0.1+82 and 8.0.2+83 were superseded by banner fixes. 8.0.4+85 fixed the launch crash on Android 11-and-older xxhdpi phones; 8.0.5+86 fixes the coin-flight freeze, SNAKE-CLASSIC-FLUTTER-20). 7.7.0 and 7.7.3 did reach Android users (about 920 active installs in
-telemetry on 2026-11-22; an earlier note here said they were never uploaded),
-but most players are still on 7.6.x, so this text covers everything since
-7.6.x: the 7.7.3 notes (archived in release_notes_7.7.3.md) plus the 8.0 work
-below.
+**8.1.0+87** (2026-11-23), the November retention release
+(docs/RETENTION_PLAN_2026-11.md). 8.0.5+86 is the previous Play release; its
+notes (the 8.0 redesign) are archived in release_notes_8.0.5.md.
 
-What 8.0.0 adds over 7.7.3:
+What 8.1.0 adds over 8.0.5:
 
-- **Every theme redesigned** (feature/theme-scenes): each of the 11 themes has
-  its own painted scene behind the menus and the board, baked once into a GPU
-  image so all of them hold 60 fps on the A24.
-- **Smoother gameplay** (HCPP, googleads-mobile-flutter#1551): animated banner
-  ads no longer drop the game to ~43 fps. No snake flicker at bends; new turn
-  chevrons; eating shows the food going in.
-- **Redesigned pause screen** with a run card; Restart asks before scrapping
-  the run.
-- Ads (not in the notes): banners stay the classic anchored adaptive size
-  (the large banner was tried and dropped in 8.0.3); a hung warm banner can
-  no longer blank every banner; Meta, Mintegral and InMobi mediation adapters (idle until their accounts are
-  live).
-- **iOS:** needs a macOS build for the new adapters; see CLAUDE.md, "macOS
-  session".
+- **Daily bonus items:** day 3 a power-up, day 5 double Season XP for 24 h,
+  day 7 a premium theme for a day; home pill and Season XP bar.
+- **Game over NEXT UP panel** (from the 2nd game): daily challenges, Season,
+  tomorrow's reward; "Remind me tomorrow" row; local day-1 reminder.
+- **Coin cosmetics** (glow / neon trails, fire skin) and "watch 2 ads, wear
+  it for a day"; Season rewards no longer stripped by the premium sync.
+- **First three games:** steering hint, no revive / continue, no mode picker,
+  no gameplay banner, no full-screen trophy reveals.
+- **Play updates:** "Update now / Later" dialog, then Play's blocking update
+  (no Restart button to forget).
+- **More games screen** (Home menu + Settings): Cosmo Strike, Sunstone,
+  Pourfect, Screw Out, Gridwell, Jadewell.
+- **Needs the backend from `feature/retention-2026-11` deployed BEFORE this
+  build goes live** (`POST /cosmetics/buy-with-coins`, coin catalog, daily
+  reminder change).
 
-Every Play block fits the 500-character limit. Mode names are each
-language's in-app name (modeZen in the .arb files); Turkish is not an in-app
-language. **Never name or allude to the big game release the Miami Nights
-theme nods to.**
+Every Play block fits the 500-character limit. **Never name or allude to the
+big game release the Miami Nights theme nods to.**
 
 ---
 
@@ -42,201 +39,121 @@ es-419 and es-ES share the `es` text.
 
 ```
 <en-US>
-A fresh coat of paint.
+More to play for, every day.
 
-• All 11 themes redesigned with painted scenes, plus a new limited theme, Miami Nights: free until Dec 7.
-• Smoother gameplay: a steady 60 fps, no more flicker, new turn and eating animations.
-• Redesigned pause screen. Restart now asks before ending your run.
-• Daily challenges count toward weekly quests and pay out automatically.
-• Closing the app on game over keeps your score and coins.
-• Zen Mode no longer shows a wall glow.
+• The daily bonus now includes power-ups, double Season XP and a free theme for a day.
+• After a game, NEXT UP shows your daily challenges and tomorrow's reward.
+• Buy trails and skins with coins, or try a premium look for a day with two short ads.
+• Season rewards no longer disappear after syncing.
+• Updates now install in one tap.
+• New More games screen with our other games.
 </en-US>
 <ar>
-حلة جديدة بالكامل.
+المزيد لتلعب من أجله كل يوم.
 
-• إعادة تصميم كل الثيمات الـ11 بمشاهد مرسومة، وثيم جديد لفترة محدودة، ليالي ميامي: مجاني حتى 7 ديسمبر.
-• لعب أكثر سلاسة: 60 إطارًا ثابتة، بلا وميض، وحركات جديدة للالتفاف والأكل.
-• شاشة إيقاف مؤقت جديدة. إعادة البدء تسأل قبل إنهاء جولتك.
-• التحديات اليومية تُحتسب ضمن المهام الأسبوعية وتُضاف مكافآتها تلقائيًا.
-• إغلاق التطبيق عند انتهاء اللعبة يحفظ نقاطك وعملاتك.
-• لم يعد وضع الاسترخاء يُظهر توهج الجدران.
+• المكافأة اليومية تشمل الآن معززات، وضعف نقاط الموسم، وثيمًا مجانيًا ليوم واحد.
+• بعد كل لعبة، تعرض «التالي» تحدياتك اليومية ومكافأة الغد.
+• اشترِ الذيول والأشكال بالعملات، أو جرّب مظهرًا مميزًا ليوم كامل بإعلانين قصيرين.
+• مكافآت الموسم لم تعد تختفي بعد المزامنة.
+• التحديثات تُثبَّت الآن بلمسة واحدة.
+• شاشة جديدة «المزيد من الألعاب» بألعابنا الأخرى.
 </ar>
 <es-419>
-Una mano de pintura nueva.
+Más motivos para jugar cada día.
 
-• Los 11 temas, rediseñados con escenas pintadas, y un tema por tiempo limitado, Noches de Miami: gratis hasta el 7 de dic.
-• Juego más fluido: 60 fps estables, sin parpadeos, nuevas animaciones al girar y comer.
-• Nueva pantalla de pausa. Reiniciar ahora pide confirmación.
-• Los desafíos diarios cuentan para las misiones semanales y se cobran solos.
-• Cerrar la app al perder conserva tu puntuación y monedas.
-• El Modo Zen ya no muestra el brillo de pared.
+• El bono diario ahora trae potenciadores, doble XP de Temporada y un tema gratis por un día.
+• Tras cada partida, SIGUIENTE muestra tus desafíos diarios y la recompensa de mañana.
+• Compra estelas y skins con monedas, o prueba un look premium por un día con dos anuncios cortos.
+• Las recompensas de Temporada ya no desaparecen al sincronizar.
+• Las actualizaciones se instalan con un toque.
+• Nueva pantalla Más juegos con nuestros otros juegos.
 </es-419>
 <es-ES>
-Una mano de pintura nueva.
+Más motivos para jugar cada día.
 
-• Los 11 temas, rediseñados con escenas pintadas, y un tema por tiempo limitado, Noches de Miami: gratis hasta el 7 de dic.
-• Juego más fluido: 60 fps estables, sin parpadeos, nuevas animaciones al girar y comer.
-• Nueva pantalla de pausa. Reiniciar ahora pide confirmación.
-• Los desafíos diarios cuentan para las misiones semanales y se cobran solos.
-• Cerrar la app al perder conserva tu puntuación y monedas.
-• El Modo Zen ya no muestra el brillo de pared.
+• El bono diario ahora trae potenciadores, doble XP de Temporada y un tema gratis por un día.
+• Tras cada partida, SIGUIENTE muestra tus desafíos diarios y la recompensa de mañana.
+• Compra estelas y skins con monedas, o prueba un look premium por un día con dos anuncios cortos.
+• Las recompensas de Temporada ya no desaparecen al sincronizar.
+• Las actualizaciones se instalan con un toque.
+• Nueva pantalla Más juegos con nuestros otros juegos.
 </es-ES>
 <fr-FR>
-Un vrai coup de neuf.
+Plus de raisons de jouer chaque jour.
 
-• Les 11 thèmes redessinés avec des décors peints, et un thème limité, Nuits de Miami : gratuit jusqu'au 7 déc.
-• Jeu plus fluide : 60 fps stables, plus de scintillement, nouvelles animations de virage et de repas.
-• Nouvel écran de pause. Recommencer demande confirmation.
-• Les défis du jour comptent pour les quêtes hebdo et sont récompensés tout seuls.
-• Fermer l'app en fin de partie garde score et pièces.
-• Le Mode Zen n'affiche plus la lueur des murs.
+• Le bonus du jour offre des bonus, l'XP de Saison doublée et un thème gratuit pour un jour.
+• Après chaque partie, À SUIVRE montre tes défis du jour et la récompense de demain.
+• Achète traînées et skins avec tes pièces, ou essaie un look premium un jour avec deux pubs courtes.
+• Les récompenses de Saison ne disparaissent plus après la synchro.
+• Les mises à jour s'installent en un geste.
+• Nouvel écran Plus de jeux avec nos autres jeux.
 </fr-FR>
 <hi-IN>
-बिल्कुल नया रूप।
+हर दिन खेलने की और वजहें।
 
-• सभी 11 थीम नए पेंटेड दृश्यों के साथ, और नई लिमिटेड थीम मियामी नाइट्स: 7 दिसंबर तक मुफ़्त।
-• और स्मूद गेमप्ले: लगातार 60 fps, कोई झिलमिलाहट नहीं, मुड़ने और खाने के नए एनिमेशन।
-• नई पॉज़ स्क्रीन। रीस्टार्ट अब राउंड खत्म करने से पहले पूछता है।
-• डेली चैलेंज वीकली क्वेस्ट में गिने जाते हैं और इनाम अपने-आप मिलते हैं।
-• गेम ओवर पर ऐप बंद करने से स्कोर और सिक्के नहीं खोते।
-• ज़ेन मोड में अब दीवार की चमक नहीं दिखती।
+• डेली बोनस में अब पावर-अप, डबल सीज़न XP और एक दिन के लिए मुफ़्त थीम।
+• हर गेम के बाद, आगे क्या में आपके डेली चैलेंज और कल का इनाम।
+• सिक्कों से ट्रेल और स्किन खरीदें, या दो छोटे विज्ञापन देखकर एक दिन प्रीमियम लुक आज़माएँ।
+• सिंक के बाद सीज़न इनाम अब गायब नहीं होते।
+• अपडेट अब एक टैप में इंस्टॉल होते हैं।
+• नई और गेम स्क्रीन, हमारे दूसरे गेम के साथ।
 </hi-IN>
 <it-IT>
-Una mano di vernice nuova.
+Più motivi per giocare ogni giorno.
 
-• Tutti gli 11 temi ridisegnati con scenari dipinti, più un tema a tempo, Notti di Miami: gratis fino al 7 dic.
-• Gioco più fluido: 60 fps stabili, niente sfarfallio, nuove animazioni di svolta e pasto.
-• Nuova schermata di pausa. Ricomincia ora chiede conferma.
-• Le sfide giornaliere contano per le missioni settimanali e si riscattano da sole.
-• Chiudere l'app a fine partita mantiene punteggio e monete.
-• La Modalità Zen non mostra più il bagliore dei muri.
+• Il bonus giornaliero ora include potenziamenti, XP Stagione doppia e un tema gratis per un giorno.
+• Dopo ogni partita, PROSSIMI mostra le sfide giornaliere e il premio di domani.
+• Compra scie e skin con le monete, o prova un look premium per un giorno con due brevi pubblicità.
+• I premi Stagione non spariscono più dopo la sincronizzazione.
+• Gli aggiornamenti si installano con un tocco.
+• Nuova schermata Altri giochi con i nostri altri giochi.
 </it-IT>
 <pl-PL>
-Zupełnie nowa odsłona.
+Więcej powodów, by grać codziennie.
 
-• Wszystkie 11 motywów z nowymi malowanymi scenami i motyw na krótko, Noce Miami: za darmo do 7 grudnia.
-• Płynniejsza gra: stałe 60 fps, bez migotania, nowe animacje skrętu i jedzenia.
-• Nowy ekran pauzy. Restart pyta przed zakończeniem rundy.
-• Wyzwania dzienne liczą się do zadań tygodniowych i same się odbierają.
-• Zamknięcie aplikacji po przegranej zachowuje wynik i monety.
-• Tryb Zen nie pokazuje już poświaty ścian.
+• Bonus dzienny daje teraz ulepszenia, podwójne XP Sezonu i darmowy motyw na jeden dzień.
+• Po każdej grze DALEJ pokazuje wyzwania dnia i jutrzejszą nagrodę.
+• Kupuj ślady i skórki za monety albo wypróbuj wygląd premium na dzień za dwie krótkie reklamy.
+• Nagrody Sezonu nie znikają już po synchronizacji.
+• Aktualizacje instalują się jednym dotknięciem.
+• Nowy ekran Więcej gier z naszymi innymi grami.
 </pl-PL>
 <pt-BR>
-Cara nova.
+Mais motivos para jogar todo dia.
 
-• Os 11 temas redesenhados com cenários pintados, e um tema por tempo limitado, Noites de Miami: grátis até 7 de dez.
-• Jogo mais fluido: 60 fps estáveis, sem tremulação, novas animações de curva e de comer.
-• Nova tela de pausa. Reiniciar agora pede confirmação.
-• Desafios diários contam para as missões semanais e são resgatados sozinhos.
-• Fechar o app no fim de jogo mantém pontuação e moedas.
-• O Modo Zen não mostra mais o brilho das paredes.
+• O bônus diário agora traz power-ups, XP de Temporada em dobro e um tema grátis por um dia.
+• Depois de cada partida, PRÓXIMOS mostra seus desafios diários e o prêmio de amanhã.
+• Compre rastros e skins com moedas, ou teste um visual premium por um dia com dois anúncios curtos.
+• Os prêmios de Temporada não somem mais após sincronizar.
+• As atualizações agora instalam com um toque.
+• Nova tela Mais jogos com nossos outros jogos.
 </pt-BR>
 <ru-RU>
-Совершенно новый вид.
+Больше поводов играть каждый день.
 
-• Все 11 тем перерисованы с новыми сценами, и временная тема «Ночи Майами»: бесплатно до 7 декабря.
-• Плавнее игра: стабильные 60 fps, без мерцания, новые анимации поворота и еды.
-• Новый экран паузы. «Заново» теперь спрашивает подтверждение.
-• Задания дня засчитываются в недельные квесты и начисляются сами.
-• Закрытие приложения после проигрыша сохраняет счёт и монеты.
-• В режиме «Дзен» больше нет подсветки стен.
+• Ежедневный бонус теперь даёт усиления, двойной опыт сезона и бесплатную тему на день.
+• После каждой игры блок «ДАЛЕЕ» показывает задания дня и завтрашнюю награду.
+• Покупайте следы и скины за монеты или примерьте премиум-образ на день за две короткие рекламы.
+• Награды сезона больше не пропадают после синхронизации.
+• Обновления ставятся в одно касание.
+• Новый экран «Другие игры» с нашими играми.
 </ru-RU>
 <tr-TR>
-Baştan sona yenilendi.
+Her gün oynamak için daha fazla sebep.
 
-• 11 temanın tamamı yeni boyalı sahnelerle yenilendi; sınırlı süreli yeni tema Miami Geceleri 7 Aralık'a kadar ücretsiz.
-• Daha akıcı oyun: sabit 60 fps, titreme yok, yeni dönüş ve yeme animasyonları.
-• Yeni duraklatma ekranı. Yeniden başlat artık önce soruyor.
-• Günlük görevler haftalık görevlere sayılıyor ve ödüller otomatik geliyor.
-• Oyun sonunda uygulamayı kapatmak skoru ve jetonları korur.
-• Zen Modu artık duvar parıltısı göstermiyor.
+• Günlük bonus artık güçlendirmeler, iki kat Sezon XP ve bir günlük ücretsiz tema veriyor.
+• Her oyundan sonra SIRADAKİ, günlük görevlerini ve yarının ödülünü gösteriyor.
+• İzleri ve görünümleri jetonla al ya da iki kısa reklamla premium bir görünümü bir gün dene.
+• Sezon ödülleri artık senkronizasyondan sonra kaybolmuyor.
+• Güncellemeler artık tek dokunuşla yükleniyor.
+• Diğer oyunlarımızla yeni Daha fazla oyun ekranı.
 </tr-TR>
 ```
 
-## App Store Connect — What's New (8.0.1)
+## App Store Connect — What's New
 
-Entered in App Store Connect on 2026-11-21. The App Store already had 7.7.0
-live (submitted 2026-11-18 with the Miami Nights IAP, both approved), so the iOS text keeps
-only the 8.0 lines; Miami Nights is mentioned as "still free until Dec 7".
-Promotional Text is unchanged (carried over from 7.7.0).
-
-**en-US / en-GB**
-```
-Snake Classic 8.0: a fresh coat of paint.
-
-• All 11 themes redesigned with painted scenes. Miami Nights is still free until Dec 7.
-• Smoother gameplay: a steady 60 fps, no more flicker, new turn and eating animations.
-• Redesigned pause screen. Restart now asks before ending your run.
-```
-
-**ar**
-```
-Snake Classic 8.0: حلة جديدة بالكامل.
-
-• إعادة تصميم كل الثيمات الـ11 بمشاهد مرسومة. ثيم ليالي ميامي لا يزال مجانيًا حتى 7 ديسمبر.
-• لعب أكثر سلاسة: 60 إطارًا ثابتة، بلا وميض، وحركات جديدة للالتفاف والأكل.
-• شاشة إيقاف مؤقت جديدة. إعادة البدء تسأل قبل إنهاء جولتك.
-```
-
-**es-MX**
-```
-Snake Classic 8.0: una mano de pintura nueva.
-
-• Los 11 temas, rediseñados con escenas pintadas. Noches de Miami sigue gratis hasta el 7 de dic.
-• Juego más fluido: 60 fps estables, sin parpadeos, nuevas animaciones al girar y comer.
-• Nueva pantalla de pausa. Reiniciar ahora pide confirmación antes de terminar tu partida.
-```
-
-**fr-FR**
-```
-Snake Classic 8.0 : un vrai coup de neuf.
-
-• Les 11 thèmes redessinés avec des décors peints. Nuits de Miami reste gratuit jusqu'au 7 déc.
-• Jeu plus fluide : 60 fps stables, plus de scintillement, nouvelles animations de virage et de repas.
-• Nouvel écran de pause. Recommencer demande confirmation avant de mettre fin à la partie.
-```
-
-**hi**
-```
-Snake Classic 8.0: बिल्कुल नया रूप।
-
-• सभी 11 थीम नए पेंटेड दृश्यों के साथ। मियामी नाइट्स अब भी 7 दिसंबर तक मुफ़्त है।
-• और स्मूद गेमप्ले: लगातार 60 fps, कोई झिलमिलाहट नहीं, मुड़ने और खाने के नए एनिमेशन।
-• नई पॉज़ स्क्रीन। रीस्टार्ट अब राउंड खत्म करने से पहले पूछता है।
-```
-
-**it**
-```
-Snake Classic 8.0: una mano di vernice nuova.
-
-• Tutti gli 11 temi ridisegnati con scenari dipinti. Notti di Miami resta gratis fino al 7 dic.
-• Gioco più fluido: 60 fps stabili, niente sfarfallio, nuove animazioni di svolta e pasto.
-• Nuova schermata di pausa. Ricomincia ora chiede conferma prima di chiudere la partita.
-```
-
-**pl**
-```
-Snake Classic 8.0: zupełnie nowa odsłona.
-
-• Wszystkie 11 motywów z nowymi malowanymi scenami. Noce Miami wciąż za darmo do 7 grudnia.
-• Płynniejsza gra: stałe 60 fps, bez migotania, nowe animacje skrętu i jedzenia.
-• Nowy ekran pauzy. Restart pyta przed zakończeniem rundy.
-```
-
-**pt-BR**
-```
-Snake Classic 8.0: cara nova.
-
-• Os 11 temas redesenhados com cenários pintados. Noites de Miami continua grátis até 7 de dez.
-• Jogo mais fluido: 60 fps estáveis, sem tremulação, novas animações de curva e de comer.
-• Nova tela de pausa. Reiniciar agora pede confirmação antes de encerrar a partida.
-```
-
-**tr**
-```
-Snake Classic 8.0: baştan sona yenilendi.
-
-• 11 temanın tamamı yeni boyalı sahnelerle yenilendi. Miami Geceleri 7 Aralık'a kadar hâlâ ücretsiz.
-• Daha akıcı oyun: sabit 60 fps, titreme yok, yeni dönüş ve yeme animasyonları.
-• Yeni duraklatma ekranı. Yeniden başlat artık turu bitirmeden önce soruyor.
-```
+Not written yet. The last iOS build was 8.0.1 (82); the next one is built on
+macOS (see CLAUDE.md, "macOS session") and should carry 8.0.3's banner fix
+plus everything above. Reuse the Play lines **without "Updates now install
+in one tap"** (the Play update flow is Android-only; iOS keeps its own
+App Store dialog). The 8.0.1 App Store text is in release_notes_8.0.5.md.
