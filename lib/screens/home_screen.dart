@@ -52,6 +52,8 @@ import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/services/update_policy.dart';
+import 'package:snake_classic/services/cross_promo.dart';
+import 'package:snake_classic/widgets/lb_screens/settings/more_games_section.dart';
 import 'package:snake_classic/services/app_release_policy.dart';
 import 'package:snake_classic/services/app_release_service.dart';
 import 'package:snake_classic/widgets/update_ready_notice.dart';
@@ -1218,6 +1220,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 leading: const LBPixelIcon(LBIcon.film, cell: 4),
                 onTap: () => go(AppRoutes.replays),
               ),
+              // The owner's other games; hidden where none has a store
+              // link (web, desktop).
+              if (CrossPromo.forPlatform(defaultTargetPlatform).isNotEmpty)
+                LBRow(
+                  title: l10n.moreGamesTitle,
+                  subtitle: l10n.moreGamesMenuSub,
+                  leading: const LBPixelIcon(LBIcon.play, cell: 4),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    openMoreGames(context, source: 'menu');
+                  },
+                ),
               LBRow(
                 title: l10n.lbMenuAbout,
                 subtitle: l10n.lbMenuAboutSub,

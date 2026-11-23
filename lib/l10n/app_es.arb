@@ -1992,7 +1992,15 @@
   "goRemindBody": "Un aviso para superar {score}. Nada más.",
   "goRemindSet": "Recordatorio para mañana listo",
   "settingsSectionMoreGames": "MÁS JUEGOS NUESTROS",
-  "moreGamesCosmoStrike": "Shooter espacial arcade de los creadores de Snake Classic",
+  "moreGamesTitle": "MÁS JUEGOS",
+  "moreGamesSubtitle": "Otros juegos de los creadores de Snake Classic.",
+  "moreGamesMenuSub": "puzles, carreras, disparos",
+  "moreGamesCosmoStrike": "Shooter espacial arcade con jefes finales",
+  "moreGamesSunstone": "Carrera en el templo: desliza, salta y huye de jaguares",
+  "moreGamesPourfect": "Puzle relajante de ordenar bolas, sin conexión",
+  "moreGamesScrewOut": "Puzle tranquilo: quita los tornillos, libera cada placa",
+  "moreGamesGridwell": "Nonogramas de lógica: revela la imagen de píxeles",
+  "moreGamesJadewell": "Mahjong solitario: une fichas y despeja el tablero",
   "updatePlayOfferBody": "Hay una nueva versión de Snake Classic. Actualizar tarda alrededor de un minuto y el juego se reinicia solo al terminar.",
   "updateActionUpdateNow": "Actualizar ahora"
 }

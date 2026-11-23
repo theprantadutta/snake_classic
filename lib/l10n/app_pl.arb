@@ -1992,7 +1992,15 @@
   "goRemindBody": "Jedno przypomnienie, żeby pobić {score}. Nic więcej.",
   "goRemindSet": "Przypomnienie ustawione na jutro",
   "settingsSectionMoreGames": "WIĘCEJ NASZYCH GIER",
-  "moreGamesCosmoStrike": "Zręcznościowa kosmiczna strzelanka od twórców Snake Classic",
+  "moreGamesTitle": "WIĘCEJ GIER",
+  "moreGamesSubtitle": "Inne gry od twórców Snake Classic.",
+  "moreGamesMenuSub": "łamigłówki, biegi, strzelanki",
+  "moreGamesCosmoStrike": "Zręcznościowa kosmiczna strzelanka z bossami",
+  "moreGamesSunstone": "Bieg przez świątynię: przesuwaj, skacz, uciekaj jaguarom",
+  "moreGamesPourfect": "Relaksujące sortowanie kulek, działa offline",
+  "moreGamesScrewOut": "Spokojna łamigłówka: odkręć śruby, uwolnij płyty",
+  "moreGamesGridwell": "Logiczne nonogramy: odkryj obrazek z pikseli",
+  "moreGamesJadewell": "Mahjong pasjans: łącz kafelki, oczyść planszę",
   "updatePlayOfferBody": "Nowa wersja Snake Classic jest gotowa. Aktualizacja trwa około minuty, a gra sama uruchomi się ponownie po jej zakończeniu.",
   "updateActionUpdateNow": "Aktualizuj teraz"
 }

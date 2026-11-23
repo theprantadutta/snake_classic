@@ -6865,8 +6865,35 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsSectionMoreGames => 'ДРУГИЕ НАШИ ИГРЫ';
 
   @override
-  String get moreGamesCosmoStrike =>
-      'Аркадный космический шутер от создателей Snake Classic';
+  String get moreGamesTitle => 'ДРУГИЕ ИГРЫ';
+
+  @override
+  String get moreGamesSubtitle => 'Другие игры от создателей Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'головоломки, раннеры, шутеры';
+
+  @override
+  String get moreGamesCosmoStrike => 'Аркадный космический шутер с боссами';
+
+  @override
+  String get moreGamesSunstone =>
+      'Бег по храму: свайпай, прыгай, убегай от ягуаров';
+
+  @override
+  String get moreGamesPourfect =>
+      'Расслабляющая сортировка шариков, без интернета';
+
+  @override
+  String get moreGamesScrewOut =>
+      'Спокойная головоломка: открути болты, освободи пластины';
+
+  @override
+  String get moreGamesGridwell =>
+      'Японские кроссворды: открой картинку из пикселей';
+
+  @override
+  String get moreGamesJadewell => 'Маджонг-пасьянс: собирай пары, очищай поле';
 
   @override
   String get updatePlayOfferBody =>

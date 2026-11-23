@@ -88,12 +88,21 @@ extension RetentionEvents on AnalyticsClient {
   Future<void> trackDayOneReminder({required String result}) =>
       trackEvent('day1_reminder', {'result': result});
 
-  /// Settings → "More games" (cross-promotion of the owner's other games).
-  /// [stage]: `shown` (the row was scrolled into view, once per Settings
-  /// visit), `tapped`, `open_failed` (no store app could open the link).
-  /// [game]: the promoted game's id, e.g. `cosmo_strike`.
-  Future<void> trackMoreGames({required String stage, required String game}) =>
-      trackEvent('more_games', {'stage': stage, 'game': game});
+  /// The "More games" screen (cross-promotion of the owner's other games).
+  /// [stage]: `opened` (the screen was opened; [source] = `menu` or
+  /// `settings`), `shown` (a game's card was built, i.e. scrolled near,
+  /// once per visit), `tapped`, `open_failed` (no store app could open the
+  /// link). [game]: the promoted game's id, e.g. `cosmo_strike`.
+  Future<void> trackMoreGames({
+    required String stage,
+    String? game,
+    String? source,
+  }) =>
+      trackEvent('more_games', {
+        'stage': stage,
+        'game': ?game,
+        'source': ?source,
+      });
 
   /// Play in-app update funnel (Android). [stage]: `offered` (our dialog
   /// shown), `accepted` ("Update now"), `snoozed` ("Later"), `urgent`

@@ -52,6 +52,7 @@ abstract class AppRoutes {
   static const String weeklyQuests = '/weekly-quests';
   static const String instructions = '/instructions';
   static const String replays = '/replays';
+  static const String moreGames = '/more-games';
   static const String replayViewer = '/replays/:id';
 
   // Helper to generate replay viewer path with ID

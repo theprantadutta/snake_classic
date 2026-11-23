@@ -6841,7 +6841,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsSectionMoreGames => 'المزيد من ألعابنا';
 
   @override
-  String get moreGamesCosmoStrike => 'لعبة رماية فضائية من صنّاع Snake Classic';
+  String get moreGamesTitle => 'المزيد من الألعاب';
+
+  @override
+  String get moreGamesSubtitle => 'ألعاب أخرى من صنّاع Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'ألغاز، جري، رماية';
+
+  @override
+  String get moreGamesCosmoStrike => 'لعبة رماية فضائية مع معارك زعماء';
+
+  @override
+  String get moreGamesSunstone => 'جري في المعبد: اسحب واقفز واهرب من النمور';
+
+  @override
+  String get moreGamesPourfect => 'لغز ترتيب كرات مريح يعمل دون اتصال';
+
+  @override
+  String get moreGamesScrewOut => 'لغز هادئ: فكّ البراغي وحرّر كل لوح';
+
+  @override
+  String get moreGamesGridwell => 'ألغاز نونوغرام منطقية: اكشف صورة البكسل';
+
+  @override
+  String get moreGamesJadewell => 'ماهجونغ سوليتير: طابق البلاطات ونظّف اللوحة';
 
   @override
   String get updatePlayOfferBody =>

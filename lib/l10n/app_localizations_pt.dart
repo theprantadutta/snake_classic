@@ -6873,8 +6873,38 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settingsSectionMoreGames => 'MAIS JOGOS NOSSOS';
 
   @override
+  String get moreGamesTitle => 'MAIS JOGOS';
+
+  @override
+  String get moreGamesSubtitle =>
+      'Outros jogos dos criadores de Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'quebra-cabeças, corrida, tiro';
+
+  @override
   String get moreGamesCosmoStrike =>
-      'Jogo de tiros espacial arcade dos criadores de Snake Classic';
+      'Jogo de tiros espacial arcade com chefões';
+
+  @override
+  String get moreGamesSunstone =>
+      'Corrida no templo: deslize, salte e fuja das onças';
+
+  @override
+  String get moreGamesPourfect =>
+      'Quebra-cabeça relaxante de ordenar bolas, offline';
+
+  @override
+  String get moreGamesScrewOut =>
+      'Quebra-cabeça calmo: solte os parafusos, libere as placas';
+
+  @override
+  String get moreGamesGridwell =>
+      'Nonogramas de lógica: revele a imagem em pixels';
+
+  @override
+  String get moreGamesJadewell =>
+      'Mahjong paciência: combine peças, limpe o tabuleiro';
 
   @override
   String get updatePlayOfferBody =>

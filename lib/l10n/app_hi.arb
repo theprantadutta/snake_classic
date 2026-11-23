@@ -1992,7 +1992,15 @@
   "goRemindBody": "{score} को हराने के लिए एक याद दिलावा। बस इतना ही।",
   "goRemindSet": "कल के लिए रिमाइंडर सेट हो गया",
   "settingsSectionMoreGames": "हमारे और गेम",
-  "moreGamesCosmoStrike": "Snake Classic के निर्माताओं का आर्केड स्पेस शूटर",
+  "moreGamesTitle": "और गेम",
+  "moreGamesSubtitle": "Snake Classic के निर्माताओं के दूसरे गेम।",
+  "moreGamesMenuSub": "पज़ल, रनर, शूटर",
+  "moreGamesCosmoStrike": "बॉस लड़ाइयों वाला आर्केड स्पेस शूटर",
+  "moreGamesSunstone": "मंदिर रनर: स्वाइप करो, कूदो, जगुआर से बचो",
+  "moreGamesPourfect": "आरामदायक बॉल सॉर्ट पज़ल, ऑफ़लाइन भी",
+  "moreGamesScrewOut": "शांत पज़ल: पेंच खोलो, हर प्लेट छुड़ाओ",
+  "moreGamesGridwell": "नॉनोग्राम लॉजिक पज़ल: पिक्सल तस्वीर खोलो",
+  "moreGamesJadewell": "माहजोंग सॉलिटेयर: टाइल मिलाओ, बोर्ड साफ़ करो",
   "updatePlayOfferBody": "Snake Classic का नया वर्ज़न तैयार है। अपडेट में लगभग एक मिनट लगता है, और पूरा होने पर गेम अपने आप फिर से शुरू हो जाता है।",
   "updateActionUpdateNow": "अभी अपडेट करें"
 }

@@ -1992,7 +1992,15 @@
   "goRemindBody": "Одно напоминание побить {score}. И всё.",
   "goRemindSet": "Напоминание на завтра готово",
   "settingsSectionMoreGames": "ДРУГИЕ НАШИ ИГРЫ",
-  "moreGamesCosmoStrike": "Аркадный космический шутер от создателей Snake Classic",
+  "moreGamesTitle": "ДРУГИЕ ИГРЫ",
+  "moreGamesSubtitle": "Другие игры от создателей Snake Classic.",
+  "moreGamesMenuSub": "головоломки, раннеры, шутеры",
+  "moreGamesCosmoStrike": "Аркадный космический шутер с боссами",
+  "moreGamesSunstone": "Бег по храму: свайпай, прыгай, убегай от ягуаров",
+  "moreGamesPourfect": "Расслабляющая сортировка шариков, без интернета",
+  "moreGamesScrewOut": "Спокойная головоломка: открути болты, освободи пластины",
+  "moreGamesGridwell": "Японские кроссворды: открой картинку из пикселей",
+  "moreGamesJadewell": "Маджонг-пасьянс: собирай пары, очищай поле",
   "updatePlayOfferBody": "Готова новая версия Snake Classic. Обновление займёт около минуты, а игра сама перезапустится по завершении.",
   "updateActionUpdateNow": "Обновить сейчас"
 }

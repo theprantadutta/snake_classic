@@ -6903,8 +6903,37 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsSectionMoreGames => 'NOS AUTRES JEUX';
 
   @override
-  String get moreGamesCosmoStrike =>
-      'Jeu de tir spatial arcade des créateurs de Snake Classic';
+  String get moreGamesTitle => 'PLUS DE JEUX';
+
+  @override
+  String get moreGamesSubtitle =>
+      'D\'autres jeux des créateurs de Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'puzzles, course, tir';
+
+  @override
+  String get moreGamesCosmoStrike => 'Jeu de tir spatial arcade avec des boss';
+
+  @override
+  String get moreGamesSunstone =>
+      'Course au temple : glisse, saute et fuis les jaguars';
+
+  @override
+  String get moreGamesPourfect =>
+      'Puzzle relaxant de tri de billes, hors ligne';
+
+  @override
+  String get moreGamesScrewOut =>
+      'Puzzle calme : dévisse les boulons, libère chaque plaque';
+
+  @override
+  String get moreGamesGridwell =>
+      'Nonogrammes logiques : révèle l\'image en pixels';
+
+  @override
+  String get moreGamesJadewell =>
+      'Mahjong solitaire : associe les tuiles, vide le plateau';
 
   @override
   String get updatePlayOfferBody =>

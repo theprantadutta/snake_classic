@@ -12022,11 +12022,59 @@ abstract class AppLocalizations {
   /// **'MORE GAMES FROM US'**
   String get settingsSectionMoreGames;
 
-  /// Settings > More games: one-line description of Cosmo Strike, another game by the same developer. Keep the names Snake Classic and Cosmo Strike untranslated.
+  /// Title of the screen (and its menu/settings entry) listing the developer's other games.
   ///
   /// In en, this message translates to:
-  /// **'Arcade space shooter from the makers of Snake Classic'**
+  /// **'MORE GAMES'**
+  String get moreGamesTitle;
+
+  /// No description provided for @moreGamesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other games from the makers of Snake Classic.'**
+  String get moreGamesSubtitle;
+
+  /// Home menu: subtitle under MORE GAMES, the kinds of games listed. Lower case, short.
+  ///
+  /// In en, this message translates to:
+  /// **'puzzles, runners, shooters'**
+  String get moreGamesMenuSub;
+
+  /// More games: one-line description of each of the developer's other games (moreGames*). Game names are not translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Arcade space shooter with boss battles'**
   String get moreGamesCosmoStrike;
+
+  /// No description provided for @moreGamesSunstone.
+  ///
+  /// In en, this message translates to:
+  /// **'Temple runner: swipe, leap and outrun jaguars'**
+  String get moreGamesSunstone;
+
+  /// No description provided for @moreGamesPourfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxing ball sort puzzle that plays offline'**
+  String get moreGamesPourfect;
+
+  /// No description provided for @moreGamesScrewOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm puzzle: unscrew the bolts, free every plate'**
+  String get moreGamesScrewOut;
+
+  /// No description provided for @moreGamesGridwell.
+  ///
+  /// In en, this message translates to:
+  /// **'Nonogram logic puzzles: reveal the pixel picture'**
+  String get moreGamesGridwell;
+
+  /// No description provided for @moreGamesJadewell.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahjong solitaire: match tiles, clear the board'**
+  String get moreGamesJadewell;
 
   /// No description provided for @updatePlayOfferBody.
   ///

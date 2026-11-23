@@ -1992,7 +1992,15 @@
   "goRemindBody": "Un rappel pour battre {score}. C'est tout.",
   "goRemindSet": "Rappel prévu pour demain",
   "settingsSectionMoreGames": "NOS AUTRES JEUX",
-  "moreGamesCosmoStrike": "Jeu de tir spatial arcade des créateurs de Snake Classic",
+  "moreGamesTitle": "PLUS DE JEUX",
+  "moreGamesSubtitle": "D'autres jeux des créateurs de Snake Classic.",
+  "moreGamesMenuSub": "puzzles, course, tir",
+  "moreGamesCosmoStrike": "Jeu de tir spatial arcade avec des boss",
+  "moreGamesSunstone": "Course au temple : glisse, saute et fuis les jaguars",
+  "moreGamesPourfect": "Puzzle relaxant de tri de billes, hors ligne",
+  "moreGamesScrewOut": "Puzzle calme : dévisse les boulons, libère chaque plaque",
+  "moreGamesGridwell": "Nonogrammes logiques : révèle l'image en pixels",
+  "moreGamesJadewell": "Mahjong solitaire : associe les tuiles, vide le plateau",
   "updatePlayOfferBody": "Une nouvelle version de Snake Classic est prête. La mise à jour prend environ une minute et le jeu redémarre tout seul à la fin.",
   "updateActionUpdateNow": "Mettre à jour"
 }

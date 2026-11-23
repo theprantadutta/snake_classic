@@ -6873,8 +6873,37 @@ class AppLocalizationsPl extends AppLocalizations {
   String get settingsSectionMoreGames => 'WIĘCEJ NASZYCH GIER';
 
   @override
+  String get moreGamesTitle => 'WIĘCEJ GIER';
+
+  @override
+  String get moreGamesSubtitle => 'Inne gry od twórców Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'łamigłówki, biegi, strzelanki';
+
+  @override
   String get moreGamesCosmoStrike =>
-      'Zręcznościowa kosmiczna strzelanka od twórców Snake Classic';
+      'Zręcznościowa kosmiczna strzelanka z bossami';
+
+  @override
+  String get moreGamesSunstone =>
+      'Bieg przez świątynię: przesuwaj, skacz, uciekaj jaguarom';
+
+  @override
+  String get moreGamesPourfect =>
+      'Relaksujące sortowanie kulek, działa offline';
+
+  @override
+  String get moreGamesScrewOut =>
+      'Spokojna łamigłówka: odkręć śruby, uwolnij płyty';
+
+  @override
+  String get moreGamesGridwell =>
+      'Logiczne nonogramy: odkryj obrazek z pikseli';
+
+  @override
+  String get moreGamesJadewell =>
+      'Mahjong pasjans: łącz kafelki, oczyść planszę';
 
   @override
   String get updatePlayOfferBody =>

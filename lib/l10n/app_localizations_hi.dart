@@ -6814,8 +6814,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsSectionMoreGames => 'हमारे और गेम';
 
   @override
-  String get moreGamesCosmoStrike =>
-      'Snake Classic के निर्माताओं का आर्केड स्पेस शूटर';
+  String get moreGamesTitle => 'और गेम';
+
+  @override
+  String get moreGamesSubtitle => 'Snake Classic के निर्माताओं के दूसरे गेम।';
+
+  @override
+  String get moreGamesMenuSub => 'पज़ल, रनर, शूटर';
+
+  @override
+  String get moreGamesCosmoStrike => 'बॉस लड़ाइयों वाला आर्केड स्पेस शूटर';
+
+  @override
+  String get moreGamesSunstone => 'मंदिर रनर: स्वाइप करो, कूदो, जगुआर से बचो';
+
+  @override
+  String get moreGamesPourfect => 'आरामदायक बॉल सॉर्ट पज़ल, ऑफ़लाइन भी';
+
+  @override
+  String get moreGamesScrewOut => 'शांत पज़ल: पेंच खोलो, हर प्लेट छुड़ाओ';
+
+  @override
+  String get moreGamesGridwell => 'नॉनोग्राम लॉजिक पज़ल: पिक्सल तस्वीर खोलो';
+
+  @override
+  String get moreGamesJadewell =>
+      'माहजोंग सॉलिटेयर: टाइल मिलाओ, बोर्ड साफ़ करो';
 
   @override
   String get updatePlayOfferBody =>

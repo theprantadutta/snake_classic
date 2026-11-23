@@ -4349,10 +4349,24 @@
   },
   "goRemindSet": "Reminder set for tomorrow",
   "settingsSectionMoreGames": "MORE GAMES FROM US",
-  "moreGamesCosmoStrike": "Arcade space shooter from the makers of Snake Classic",
-  "@moreGamesCosmoStrike": {
-    "description": "Settings > More games: one-line description of Cosmo Strike, another game by the same developer. Keep the names Snake Classic and Cosmo Strike untranslated."
+  "moreGamesTitle": "MORE GAMES",
+  "@moreGamesTitle": {
+    "description": "Title of the screen (and its menu/settings entry) listing the developer's other games."
   },
+  "moreGamesSubtitle": "Other games from the makers of Snake Classic.",
+  "moreGamesMenuSub": "puzzles, runners, shooters",
+  "@moreGamesMenuSub": {
+    "description": "Home menu: subtitle under MORE GAMES, the kinds of games listed. Lower case, short."
+  },
+  "moreGamesCosmoStrike": "Arcade space shooter with boss battles",
+  "@moreGamesCosmoStrike": {
+    "description": "More games: one-line description of each of the developer's other games (moreGames*). Game names are not translated."
+  },
+  "moreGamesSunstone": "Temple runner: swipe, leap and outrun jaguars",
+  "moreGamesPourfect": "Relaxing ball sort puzzle that plays offline",
+  "moreGamesScrewOut": "Calm puzzle: unscrew the bolts, free every plate",
+  "moreGamesGridwell": "Nonogram logic puzzles: reveal the pixel picture",
+  "moreGamesJadewell": "Mahjong solitaire: match tiles, clear the board",
   "updatePlayOfferBody": "A new version of Snake Classic is ready. Updating takes about a minute, and the game restarts by itself when it's done.",
   "updateActionUpdateNow": "Update now"
 }

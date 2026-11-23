@@ -6814,8 +6814,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionMoreGames => 'MORE GAMES FROM US';
 
   @override
-  String get moreGamesCosmoStrike =>
-      'Arcade space shooter from the makers of Snake Classic';
+  String get moreGamesTitle => 'MORE GAMES';
+
+  @override
+  String get moreGamesSubtitle =>
+      'Other games from the makers of Snake Classic.';
+
+  @override
+  String get moreGamesMenuSub => 'puzzles, runners, shooters';
+
+  @override
+  String get moreGamesCosmoStrike => 'Arcade space shooter with boss battles';
+
+  @override
+  String get moreGamesSunstone =>
+      'Temple runner: swipe, leap and outrun jaguars';
+
+  @override
+  String get moreGamesPourfect =>
+      'Relaxing ball sort puzzle that plays offline';
+
+  @override
+  String get moreGamesScrewOut =>
+      'Calm puzzle: unscrew the bolts, free every plate';
+
+  @override
+  String get moreGamesGridwell =>
+      'Nonogram logic puzzles: reveal the pixel picture';
+
+  @override
+  String get moreGamesJadewell =>
+      'Mahjong solitaire: match tiles, clear the board';
 
   @override
   String get updatePlayOfferBody =>

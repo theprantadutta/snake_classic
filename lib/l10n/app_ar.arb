@@ -1992,7 +1992,15 @@
   "goRemindBody": "تذكير واحد لتتجاوز {score}. هذا كل شيء.",
   "goRemindSet": "تم ضبط التذكير لغدٍ",
   "settingsSectionMoreGames": "المزيد من ألعابنا",
-  "moreGamesCosmoStrike": "لعبة رماية فضائية من صنّاع Snake Classic",
+  "moreGamesTitle": "المزيد من الألعاب",
+  "moreGamesSubtitle": "ألعاب أخرى من صنّاع Snake Classic.",
+  "moreGamesMenuSub": "ألغاز، جري، رماية",
+  "moreGamesCosmoStrike": "لعبة رماية فضائية مع معارك زعماء",
+  "moreGamesSunstone": "جري في المعبد: اسحب واقفز واهرب من النمور",
+  "moreGamesPourfect": "لغز ترتيب كرات مريح يعمل دون اتصال",
+  "moreGamesScrewOut": "لغز هادئ: فكّ البراغي وحرّر كل لوح",
+  "moreGamesGridwell": "ألغاز نونوغرام منطقية: اكشف صورة البكسل",
+  "moreGamesJadewell": "ماهجونغ سوليتير: طابق البلاطات ونظّف اللوحة",
   "updatePlayOfferBody": "إصدار جديد من Snake Classic جاهز. يستغرق التحديث نحو دقيقة، وتُعاد اللعبة تلقائيًا عند انتهائه.",
   "updateActionUpdateNow": "حدّث الآن"
 }
