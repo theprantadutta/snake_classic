@@ -184,6 +184,12 @@ abstract final class LBCoinFly {
 
     final size = overlayBox.size;
     final pad = MediaQuery.paddingOf(context);
+    // Read everything from [context] now. The overlay rebuilds the entry
+    // while the coins are in the air, and by then the caller (a sheet or
+    // screen that claimed the reward) may already be gone: touching its
+    // context inside the builder threw "Null check operator used on a null
+    // value" from MediaQuery.of (SNAKE-CLASSIC-FLUTTER-20).
+    final cell = 9 * context.uiScale;
     final end = dest != null
         ? overlayBox.globalToLocal(dest.center)
         : Offset(size.width - 36, pad.top + 28);
@@ -209,7 +215,7 @@ abstract final class LBCoinFly {
         start: start,
         end: end,
         coins: coins.clamp(1, 16),
-        cell: 9 * context.uiScale,
+        cell: cell,
         onFirstLanding: land,
         onDone: () {
           land();

@@ -155,6 +155,53 @@ void main() {
       expect(find.text('35'), findsOneWidget);
     });
 
+    // SNAKE-CLASSIC-FLUTTER-20: the overlay rebuilt the flight after the
+    // screen that launched it had closed, and the builder read the dead
+    // caller's context (MediaQuery.of -> null check).
+    testWidgets('survives the launching route closing mid-flight', (tester) async {
+      final navigator = GlobalKey<NavigatorState>();
+      final source = GlobalKey();
+      await tester.pumpWidget(
+        MaterialApp(navigatorKey: navigator, home: const Scaffold(body: SizedBox())),
+      );
+      navigator.currentState!.push(
+        PageRouteBuilder<void>(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, _, _) => Scaffold(
+            body: Center(child: SizedBox(key: source, width: 80, height: 40)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byKey(source));
+      var done = false;
+      LBCoinFly.play(context, from: LBCoinFly.rectOf(source)!).then((_) => done = true);
+      await tester.pump();
+      expect(find.byKey(LBCoinFly.layerKey), findsOneWidget);
+
+      // Close the sheet/screen while the coins are in the air (its element
+      // is unmounted at the end of that frame), then make the overlay
+      // rebuild its entries, as any other insert/remove does.
+      navigator.currentState!.pop();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(source), findsNothing);
+      final overlay = navigator.currentState!.overlay!;
+      final other = OverlayEntry(builder: (_) => const SizedBox());
+      overlay.insert(other);
+      await tester.pump();
+      other.remove();
+      other.dispose();
+      await tester.pump(LBMotion.slow);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(LBCoinFly.layerKey), findsNothing);
+      expect(done, isTrue);
+    });
+
     testWidgets('reduce motion skips the flight', (tester) async {
       final source = GlobalKey();
       await tester.pumpWidget(
