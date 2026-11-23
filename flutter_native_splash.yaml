@@ -7,6 +7,16 @@
 # Info.plist, LaunchScreen.storyboard, web/index.html and the .xcassets
 # manifests. See the comment in values/styles.xml.
 #
+# ALSO AFTERWARDS (when a background_image is set): the generator writes
+# background.png into drawable/, drawable-night/, drawable-v21/ and
+# drawable-night-v21/. Density-less folders count as mdpi, so Android scales
+# the bitmap by the screen density BEFORE drawing it: a 1290x2796 backdrop on
+# an xxhdpi phone becomes ~109 MB, over the 100 MB canvas limit, and the app
+# crashes on launch on every Android 11-and-older xxhdpi+ device
+# (SNAKE-CLASSIC-FLUTTER-23, 8.0.3). Move ONE copy to drawable-nodpi/ and
+# delete the four generated copies; nodpi is never prescaled, and
+# gravity="fill" still stretches it to the window at draw time.
+#
 # Both images below are true alpha over the `color` window background —
 # nothing carries a baked-in backdrop (checked over magenta). They are the
 # Living Board "Cell S" mark: android_12_splash_dark.png is the kit's
