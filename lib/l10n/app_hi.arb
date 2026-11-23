@@ -1992,5 +1992,7 @@
   "goRemindBody": "{score} को हराने के लिए एक याद दिलावा। बस इतना ही।",
   "goRemindSet": "कल के लिए रिमाइंडर सेट हो गया",
   "settingsSectionMoreGames": "हमारे और गेम",
-  "moreGamesCosmoStrike": "Snake Classic के निर्माताओं का आर्केड स्पेस शूटर"
+  "moreGamesCosmoStrike": "Snake Classic के निर्माताओं का आर्केड स्पेस शूटर",
+  "updatePlayOfferBody": "Snake Classic का नया वर्ज़न तैयार है। अपडेट में लगभग एक मिनट लगता है, और पूरा होने पर गेम अपने आप फिर से शुरू हो जाता है।",
+  "updateActionUpdateNow": "अभी अपडेट करें"
 }

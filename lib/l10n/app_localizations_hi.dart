@@ -6816,4 +6816,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get moreGamesCosmoStrike =>
       'Snake Classic के निर्माताओं का आर्केड स्पेस शूटर';
+
+  @override
+  String get updatePlayOfferBody =>
+      'Snake Classic का नया वर्ज़न तैयार है। अपडेट में लगभग एक मिनट लगता है, और पूरा होने पर गेम अपने आप फिर से शुरू हो जाता है।';
+
+  @override
+  String get updateActionUpdateNow => 'अभी अपडेट करें';
 }

@@ -51,6 +51,7 @@ import 'package:snake_classic/widgets/walkthrough/home_walkthrough.dart';
 import 'package:snake_classic/widgets/walkthrough/walkthrough_overlay.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
+import 'package:snake_classic/services/update_policy.dart';
 import 'package:snake_classic/services/app_release_policy.dart';
 import 'package:snake_classic/services/app_release_service.dart';
 import 'package:snake_classic/widgets/update_ready_notice.dart';
@@ -92,9 +93,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().markAppReady();
       // Play update check: once per session, after first frame, so it
-      // never competes with the bootstrap. Flexible by default — the
-      // download runs while they play and the strip below the rail
-      // offers the restart when it lands.
+      // never competes with the bootstrap. A routine release resolves to
+      // an offer that the prompt queue shows first (step 0); urgent
+      // releases and finished downloads are handled inside the service.
       unawaited(InAppUpdateService().checkForUpdate());
       // The iOS half of the same job. The App Store has no in-app update
       // API, so the version to compare against comes from our backend and
@@ -169,6 +170,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // before anything pops over it.
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
+
+    // 0. Play update offer (Android). The check started post-frame and has
+    //    its own 5 s timeout; this awaits the same future. When the offer
+    //    shows, it is the visit's interruption: "Update now" restarts the
+    //    app anyway, and after "Later" one more popup would be too much.
+    final updateFlow = await InAppUpdateService().checkForUpdate();
+    if (!mounted) return;
+    if (updateFlow == UpdateFlow.offer && InAppUpdateService().offerPending) {
+      await showPlayUpdateOfferDialog(context);
+      return;
+    }
 
     // 1. Home walkthrough — resolves once completed or skipped (or
     //    immediately if it was already seen).

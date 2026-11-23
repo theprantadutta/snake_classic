@@ -95,6 +95,18 @@ extension RetentionEvents on AnalyticsClient {
   Future<void> trackMoreGames({required String stage, required String game}) =>
       trackEvent('more_games', {'stage': stage, 'game': game});
 
+  /// Play in-app update funnel (Android). [stage]: `offered` (our dialog
+  /// shown), `accepted` ("Update now"), `snoozed` ("Later"), `urgent`
+  /// (priority release, blocking flow unasked), `flexible_fallback`,
+  /// `immediate_result` ([result]: `success` / `userDeniedUpdate` /
+  /// `failed` / `error`), `auto_completed` ([result]: `home`, a finished
+  /// download installed at launch).
+  Future<void> trackAppUpdate({required String stage, String? result}) =>
+      trackEvent('app_update', {
+        'stage': stage,
+        'result': ?result,
+      });
+
   // ---- User properties ----
 
   /// `1` once the first three games have been started.

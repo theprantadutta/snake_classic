@@ -6883,4 +6883,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get moreGamesCosmoStrike =>
       'Shooter espacial arcade de los creadores de Snake Classic';
+
+  @override
+  String get updatePlayOfferBody =>
+      'Hay una nueva versión de Snake Classic. Actualizar tarda alrededor de un minuto y el juego se reinicia solo al terminar.';
+
+  @override
+  String get updateActionUpdateNow => 'Actualizar ahora';
 }

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/services/app_release_policy.dart';
 import 'package:snake_classic/services/app_release_service.dart';
+import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
@@ -135,6 +136,85 @@ Future<void> showAppUpdateDialog(
       );
     },
   );
+}
+
+/// Android: our "Update now / Later" offer for a Play update (UpdateFlow
+/// .offer). "Update now" hands over to Play's blocking flow, which shows the
+/// download, keeps the game untouchable and restarts the app itself, so the
+/// player never has to remember a Restart button. "Later", the barrier and
+/// back all snooze. Returns when the dialog is closed (or, after "Update
+/// now", when Play's screen returns without having restarted the app).
+Future<void> showPlayUpdateOfferDialog(BuildContext context) async {
+  final service = InAppUpdateService();
+  final l10n = AppLocalizations.of(context)!;
+  service.markOfferShown();
+  final accepted = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: .65),
+    builder: (dialogContext) {
+      final p = dialogContext.lb;
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: LB.margin * 1.5, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: LBBlock(
+            kind: LBBlockKind.sheet,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    LBPixelIcon(LBIcon.gift, cell: 3.4, color: p.lime),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        l10n.updateAvailableTitle,
+                        style: LBText.button(p, color: p.head, size: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.updatePlayOfferBody,
+                  style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
+                ),
+                const SizedBox(height: 18),
+                LBBlock(
+                  kind: LBBlockKind.fill,
+                  height: 50,
+                  alignment: Alignment.center,
+                  onTap: () => Navigator.of(dialogContext).pop(true),
+                  child: Text(
+                    l10n.updateActionUpdateNow,
+                    style: LBText.button(p, color: p.onLime, size: 13),
+                  ),
+                ),
+                LBBlock(
+                  kind: LBBlockKind.muted,
+                  height: 46,
+                  alignment: Alignment.center,
+                  onTap: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(
+                    l10n.updateActionLater,
+                    style: LBText.button(p, color: p.inkMuted, size: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+  if (accepted == true) {
+    await service.acceptOffer();
+  } else {
+    await service.snoozeOffer();
+  }
 }
 
 Future<bool> _openStore(String url) async {

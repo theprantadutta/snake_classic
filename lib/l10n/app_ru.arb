@@ -1992,5 +1992,7 @@
   "goRemindBody": "Одно напоминание побить {score}. И всё.",
   "goRemindSet": "Напоминание на завтра готово",
   "settingsSectionMoreGames": "ДРУГИЕ НАШИ ИГРЫ",
-  "moreGamesCosmoStrike": "Аркадный космический шутер от создателей Snake Classic"
+  "moreGamesCosmoStrike": "Аркадный космический шутер от создателей Snake Classic",
+  "updatePlayOfferBody": "Готова новая версия Snake Classic. Обновление займёт около минуты, а игра сама перезапустится по завершении.",
+  "updateActionUpdateNow": "Обновить сейчас"
 }

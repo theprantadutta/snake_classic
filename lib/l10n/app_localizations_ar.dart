@@ -6842,4 +6842,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get moreGamesCosmoStrike => 'لعبة رماية فضائية من صنّاع Snake Classic';
+
+  @override
+  String get updatePlayOfferBody =>
+      'إصدار جديد من Snake Classic جاهز. يستغرق التحديث نحو دقيقة، وتُعاد اللعبة تلقائيًا عند انتهائه.';
+
+  @override
+  String get updateActionUpdateNow => 'حدّث الآن';
 }

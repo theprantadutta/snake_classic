@@ -4352,5 +4352,7 @@
   "moreGamesCosmoStrike": "Arcade space shooter from the makers of Snake Classic",
   "@moreGamesCosmoStrike": {
     "description": "Settings > More games: one-line description of Cosmo Strike, another game by the same developer. Keep the names Snake Classic and Cosmo Strike untranslated."
-  }
+  },
+  "updatePlayOfferBody": "A new version of Snake Classic is ready. Updating takes about a minute, and the game restarts by itself when it's done.",
+  "updateActionUpdateNow": "Update now"
 }

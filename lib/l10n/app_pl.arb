@@ -1992,5 +1992,7 @@
   "goRemindBody": "Jedno przypomnienie, żeby pobić {score}. Nic więcej.",
   "goRemindSet": "Przypomnienie ustawione na jutro",
   "settingsSectionMoreGames": "WIĘCEJ NASZYCH GIER",
-  "moreGamesCosmoStrike": "Zręcznościowa kosmiczna strzelanka od twórców Snake Classic"
+  "moreGamesCosmoStrike": "Zręcznościowa kosmiczna strzelanka od twórców Snake Classic",
+  "updatePlayOfferBody": "Nowa wersja Snake Classic jest gotowa. Aktualizacja trwa około minuty, a gra sama uruchomi się ponownie po jej zakończeniu.",
+  "updateActionUpdateNow": "Aktualizuj teraz"
 }

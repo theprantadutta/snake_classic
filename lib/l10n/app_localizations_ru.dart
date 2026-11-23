@@ -6867,4 +6867,11 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get moreGamesCosmoStrike =>
       'Аркадный космический шутер от создателей Snake Classic';
+
+  @override
+  String get updatePlayOfferBody =>
+      'Готова новая версия Snake Classic. Обновление займёт около минуты, а игра сама перезапустится по завершении.';
+
+  @override
+  String get updateActionUpdateNow => 'Обновить сейчас';
 }

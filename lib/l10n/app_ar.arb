@@ -1992,5 +1992,7 @@
   "goRemindBody": "تذكير واحد لتتجاوز {score}. هذا كل شيء.",
   "goRemindSet": "تم ضبط التذكير لغدٍ",
   "settingsSectionMoreGames": "المزيد من ألعابنا",
-  "moreGamesCosmoStrike": "لعبة رماية فضائية من صنّاع Snake Classic"
+  "moreGamesCosmoStrike": "لعبة رماية فضائية من صنّاع Snake Classic",
+  "updatePlayOfferBody": "إصدار جديد من Snake Classic جاهز. يستغرق التحديث نحو دقيقة، وتُعاد اللعبة تلقائيًا عند انتهائه.",
+  "updateActionUpdateNow": "حدّث الآن"
 }

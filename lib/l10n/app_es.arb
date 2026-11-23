@@ -1992,5 +1992,7 @@
   "goRemindBody": "Un aviso para superar {score}. Nada más.",
   "goRemindSet": "Recordatorio para mañana listo",
   "settingsSectionMoreGames": "MÁS JUEGOS NUESTROS",
-  "moreGamesCosmoStrike": "Shooter espacial arcade de los creadores de Snake Classic"
+  "moreGamesCosmoStrike": "Shooter espacial arcade de los creadores de Snake Classic",
+  "updatePlayOfferBody": "Hay una nueva versión de Snake Classic. Actualizar tarda alrededor de un minuto y el juego se reinicia solo al terminar.",
+  "updateActionUpdateNow": "Actualizar ahora"
 }

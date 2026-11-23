@@ -12027,6 +12027,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Arcade space shooter from the makers of Snake Classic'**
   String get moreGamesCosmoStrike;
+
+  /// No description provided for @updatePlayOfferBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of Snake Classic is ready. Updating takes about a minute, and the game restarts by itself when it\'s done.'**
+  String get updatePlayOfferBody;
+
+  /// No description provided for @updateActionUpdateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateActionUpdateNow;
 }
 
 class _AppLocalizationsDelegate
