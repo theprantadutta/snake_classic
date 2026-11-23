@@ -6,9 +6,11 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**8.0.5+86** (2026-11-23; same notes since 8.0.3+84. 8.0.0+81 was refused by Play over a Wi-Fi feature flag, 8.0.1+82 and 8.0.2+83 were superseded by banner fixes. 8.0.4+85 fixed the launch crash on Android 11-and-older xxhdpi phones; 8.0.5+86 fixes the coin-flight freeze, SNAKE-CLASSIC-FLUTTER-20). The 7.7.x builds were never uploaded, so this text
-covers everything since the live 7.6.x: the 7.7.3 notes (archived in
-release_notes_7.7.3.md) plus the 8.0 work below.
+**8.0.5+86** (2026-11-23; same notes since 8.0.3+84. 8.0.0+81 was refused by Play over a Wi-Fi feature flag, 8.0.1+82 and 8.0.2+83 were superseded by banner fixes. 8.0.4+85 fixed the launch crash on Android 11-and-older xxhdpi phones; 8.0.5+86 fixes the coin-flight freeze, SNAKE-CLASSIC-FLUTTER-20). 7.7.0 and 7.7.3 did reach Android users (about 920 active installs in
+telemetry on 2026-11-22; an earlier note here said they were never uploaded),
+but most players are still on 7.6.x, so this text covers everything since
+7.6.x: the 7.7.3 notes (archived in release_notes_7.7.3.md) plus the 8.0 work
+below.
 
 What 8.0.0 adds over 7.7.3:
 
