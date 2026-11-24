@@ -1,0 +1,6 @@
+[
+  {"src": "raw/miami_play_70.png", "out": "../../store_listings/app_store_ppo_2026-11/01-classic-redrawn.png", "head": ["CLASSIC SNAKE", "REDRAWN"], "accent": 1, "sub": "The game you know, in painted worlds.", "crop_top": 240, "crop_bottom": 80},
+  {"src": "raw/space_play.png", "out": "../../store_listings/app_store_ppo_2026-11/02-themes.png", "head": ["11 THEMES"], "sub": "From deep space to neon nights.", "crop_top": 240, "crop_bottom": 80},
+  {"src": "raw/ocean_play.png", "out": "../../store_listings/app_store_ppo_2026-11/03-combo.png", "head": ["CHAIN BITES"], "sub": "Stack combos. Catch fire. Keep chewing.", "crop_top": 240, "crop_bottom": 80},
+  {"src": "raw/miami_home.png", "out": "../../store_listings/app_store_ppo_2026-11/04-modes.png", "head": ["8 MODES"], "accent": 0, "sub": "Classic, Zen, Speed and more. All free.", "crop_top": 40, "crop_bottom": 210}
+]
