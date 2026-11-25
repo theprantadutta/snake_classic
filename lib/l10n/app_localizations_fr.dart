@@ -5350,6 +5350,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get updateOpenStoreFailed => 'Impossible d’ouvrir l’App Store';
 
   @override
+  String get updateRequiredBodyPlay =>
+      'Cette version de Snake Classic n’est plus prise en charge. Mettez à jour depuis Google Play pour continuer à jouer.';
+
+  @override
+  String get updateOpenPlayFailed => 'Impossible d’ouvrir Google Play';
+
+  @override
   String get lbHomeHint => 'FONCE DANS UN BLOC. OU TOUCHE-LE. ON NE JUGE PAS.';
 
   @override

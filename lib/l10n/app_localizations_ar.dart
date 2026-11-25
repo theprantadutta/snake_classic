@@ -5266,6 +5266,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get updateOpenStoreFailed => 'تعذّر فتح App Store';
 
   @override
+  String get updateRequiredBodyPlay =>
+      'لم يعد هذا الإصدار من Snake Classic مدعومًا. حدِّث من Google Play لمواصلة اللعب.';
+
+  @override
+  String get updateOpenPlayFailed => 'تعذّر فتح Google Play';
+
+  @override
   String get lbHomeHint => 'وجّه الثعبان نحو مربع. أو انقر. لن نحكم عليك.';
 
   @override

@@ -1574,6 +1574,8 @@
   "updateActionUpdate": "تحديث",
   "updateActionLater": "لاحقًا",
   "updateOpenStoreFailed": "تعذّر فتح App Store",
+  "updateRequiredBodyPlay": "لم يعد هذا الإصدار من Snake Classic مدعومًا. حدِّث من Google Play لمواصلة اللعب.",
+  "updateOpenPlayFailed": "تعذّر فتح Google Play",
   "lbHomeHint": "وجّه الثعبان نحو مربع. أو انقر. لن نحكم عليك.",
   "lbDailyAllFed": "شبعنا. عُد غدًا.",
   "lbModeRow": "الوضع {index}/{count} · {mode}",

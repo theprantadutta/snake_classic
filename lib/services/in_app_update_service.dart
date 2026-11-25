@@ -207,6 +207,41 @@ class InAppUpdateService {
     }
   }
 
+  /// The dashboard declared this build below the minimum supported version
+  /// (the blocking dialog from [AppReleaseService]). Runs Play's blocking
+  /// flow regardless of snoozes or priority. Returns false when Play can't
+  /// run it (no update visible to this device yet, flow not allowed, or an
+  /// error), so the caller can open the Play listing instead; true when
+  /// Play's screen ran, whether or not the player went through with it.
+  Future<bool> runRequiredUpdate() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final info = await InAppUpdate.checkForUpdate().timeout(
+        const Duration(seconds: 5),
+      );
+      _updateInfo = info;
+      if (info.installStatus == InstallStatus.downloaded) {
+        _log('required', result: 'downloaded');
+        await completeUpdate();
+        return true;
+      }
+      if (info.updateAvailability != UpdateAvailability.updateAvailable ||
+          !info.immediateUpdateAllowed) {
+        _log('required', result: 'unavailable');
+        return false;
+      }
+      _log('required');
+      final result = await InAppUpdate.performImmediateUpdate();
+      AppLogger.info('Required update: ${result.name}');
+      _log('immediate_result', result: result.name);
+      return result != AppUpdateResult.inAppUpdateFailed;
+    } catch (e, stackTrace) {
+      AppLogger.error('Required update failed', e, stackTrace);
+      _log('required', result: 'error');
+      return false;
+    }
+  }
+
   /// Our dialog is on screen (logged here, not at decision time, so
   /// `offered` counts players who actually saw it).
   void markOfferShown() => _log('offered');

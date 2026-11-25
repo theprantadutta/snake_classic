@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,7 +11,8 @@ import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
-/// Tell an iOS player there is a newer build on the App Store.
+/// Tell the player there is a newer build (iOS), or that this build is
+/// below the dashboard's minimum supported version (iOS and Android).
 ///
 /// Two shapes from one widget, because the two cases differ only in whether
 /// there is a way out:
@@ -40,6 +44,7 @@ Future<void> showAppUpdateDialog(
 
   final blocking = prompt == UpdatePrompt.required;
   final l10n = AppLocalizations.of(context)!;
+  final play = !kIsWeb && Platform.isAndroid;
 
   await showDialog<void>(
     context: context,
@@ -80,7 +85,7 @@ Future<void> showAppUpdateDialog(
                   const SizedBox(height: 12),
                   Text(
                     blocking
-                        ? l10n.updateRequiredBody
+                        ? (play ? l10n.updateRequiredBodyPlay : l10n.updateRequiredBody)
                         : l10n.updateAvailableBody(service.latestVersion ?? ''),
                     style: LBText.body(p, color: p.ink.withValues(alpha: .8), size: 12),
                   ),
@@ -91,10 +96,22 @@ Future<void> showAppUpdateDialog(
                     alignment: Alignment.center,
                     onTap: () async {
                       final messenger = ScaffoldMessenger.maybeOf(dialogContext);
+                      // Android: Play's own blocking update first (download,
+                      // install and restart without leaving the app); the
+                      // listing only when Play can't run it.
+                      if (blocking &&
+                          play &&
+                          await InAppUpdateService().runRequiredUpdate()) {
+                        return;
+                      }
                       final opened = await _openStore(storeUrl);
                       if (!opened) {
                         messenger?.showSnackBar(
-                          SnackBar(content: Text(l10n.updateOpenStoreFailed)),
+                          SnackBar(
+                            content: Text(
+                              play ? l10n.updateOpenPlayFailed : l10n.updateOpenStoreFailed,
+                            ),
+                          ),
                         );
                         return;
                       }
@@ -223,7 +240,7 @@ Future<bool> _openStore(String url) async {
     if (uri == null) return false;
     return await launchUrl(uri, mode: LaunchMode.externalApplication);
   } catch (e, stackTrace) {
-    AppLogger.error('Could not open the App Store', e, stackTrace);
+    AppLogger.error('Could not open the store listing', e, stackTrace);
     return false;
   }
 }

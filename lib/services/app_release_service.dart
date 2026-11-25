@@ -7,19 +7,23 @@ import 'package:snake_classic/services/api_service.dart';
 import 'package:snake_classic/services/app_release_policy.dart';
 import 'package:snake_classic/utils/logger.dart';
 
-/// Tells an iOS build that a newer one is on the App Store.
+/// Compares this build with the release policy the operator sets on the
+/// dashboard (App Releases page, `GET /app-release/{platform}`).
 ///
-/// Android does not come through here. Google Play has a real in-app update
-/// API and [InAppUpdateService] uses it: Play knows what it published, can
-/// download in the background, and can install without leaving the app.
-/// None of that exists on iOS, where the best available answer is a dialog
-/// and a link out to the store — so the version to compare against has to
-/// come from our own backend, which is what this fetches.
+/// * **iOS:** the whole update prompt. The App Store has no in-app update
+///   API, so both the optional "newer build" notice and the forced floor
+///   come from here.
+/// * **Android (8.1.1+):** only the forced floor ("minimum supported
+///   version"). Routine updates stay with Google Play's own flow in
+///   [InAppUpdateService]; this exists so the owner can force everyone off a
+///   broken build (owner, 2026-11-25, after 8.0.2 blanked banners). The
+///   blocking dialog's Update button runs Play's immediate flow, falling back
+///   to the Play listing.
 ///
 /// One check per process, after the home screen is up rather than during
-/// bootstrap, matching the Android service. The snooze stamp is device-only
-/// state (this handset's last refusal), so it lives in SharedPreferences,
-/// not Drift.
+/// bootstrap; later calls share the same future, so Home's prompt queue can
+/// wait for it. The snooze stamp is device-only state (this handset's last
+/// refusal), so it lives in SharedPreferences, not Drift.
 class AppReleaseService {
   static final AppReleaseService _instance = AppReleaseService._internal();
   factory AppReleaseService() => _instance;
@@ -30,7 +34,15 @@ class AppReleaseService {
 
   static const _kDeclinedAtMs = 'app_release_declined_ms';
 
-  bool _checkedThisSession = false;
+  /// Used when the Android policy row has no store URL.
+  static const playStoreUrl =
+      'https://play.google.com/store/apps/details?id=com.pranta.snakeclassic';
+
+  Future<UpdatePrompt>? _sessionCheck;
+
+  /// True once this session's check said the build is below the floor.
+  bool get updateRequired => _updateRequired;
+  bool _updateRequired = false;
 
   /// Where the update button should send the player. Null until a check has
   /// succeeded.
@@ -44,20 +56,40 @@ class AppReleaseService {
   Future<UpdatePrompt> check({
     @visibleForTesting ApiService? api,
     @visibleForTesting String? currentVersionOverride,
+    @visibleForTesting String? platformOverride,
     @visibleForTesting bool force = false,
-  }) async {
-    if (!force) {
-      if (!Platform.isIOS) return UpdatePrompt.none;
-      if (kDebugMode) {
-        AppLogger.info('Skipping app-release check in debug mode');
-        return UpdatePrompt.none;
-      }
-      if (_checkedThisSession) return UpdatePrompt.none;
-      _checkedThisSession = true;
+  }) {
+    if (force) {
+      return _runCheck(
+        api: api,
+        currentVersionOverride: currentVersionOverride,
+        platform: platformOverride ?? _platform(),
+      );
     }
+    final platform = _platform();
+    if (platform == null) return Future.value(UpdatePrompt.none);
+    if (kDebugMode) {
+      AppLogger.info('Skipping app-release check in debug mode');
+      return Future.value(UpdatePrompt.none);
+    }
+    return _sessionCheck ??= _runCheck(platform: platform);
+  }
 
+  static String? _platform() {
+    if (kIsWeb) return null;
+    if (Platform.isIOS) return 'ios';
+    if (Platform.isAndroid) return 'android';
+    return null;
+  }
+
+  Future<UpdatePrompt> _runCheck({
+    ApiService? api,
+    String? currentVersionOverride,
+    required String? platform,
+  }) async {
+    if (platform == null) return UpdatePrompt.none;
     try {
-      final response = await (api ?? ApiService()).getAppRelease('ios');
+      final response = await (api ?? ApiService()).getAppRelease(platform);
       if (response == null) return UpdatePrompt.none;
 
       final enabled = response['enabled'] as bool? ?? false;
@@ -76,7 +108,7 @@ class AppReleaseService {
               milliseconds: DateTime.now().millisecondsSinceEpoch - declinedMs,
             );
 
-      final prompt = AppReleasePolicy.decide(
+      var prompt = AppReleasePolicy.decide(
         enabled: enabled,
         currentVersion: current,
         latestVersion: latest,
@@ -84,15 +116,25 @@ class AppReleaseService {
         sinceDeclined: sinceDeclined,
       );
 
+      // Android: Play owns routine updates (InAppUpdateService). Only the
+      // forced floor comes from here, or players would get two offers.
+      final android = platform == 'android';
+      if (android && prompt == UpdatePrompt.optional) {
+        prompt = UpdatePrompt.none;
+      }
+
       // Only publish the destination once there is something to show, so a
       // stale URL can never be used by a dialog that should not open.
       if (prompt != UpdatePrompt.none) {
-        storeUrl = url;
+        storeUrl = (url == null || url.trim().isEmpty)
+            ? (android ? playStoreUrl : null)
+            : url;
         latestVersion = latest;
       }
+      _updateRequired = prompt == UpdatePrompt.required;
 
       AppLogger.info(
-        'App release check: current=$current, latest=$latest, '
+        'App release check ($platform): current=$current, latest=$latest, '
         'minimum=$minimum, prompt=${prompt.name}',
       );
       return prompt;

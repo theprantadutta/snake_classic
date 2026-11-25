@@ -1574,6 +1574,8 @@
   "updateActionUpdate": "Обновить",
   "updateActionLater": "Позже",
   "updateOpenStoreFailed": "Не удалось открыть App Store",
+  "updateRequiredBodyPlay": "Эта версия Snake Classic больше не поддерживается. Обновите приложение в Google Play, чтобы продолжить игру.",
+  "updateOpenPlayFailed": "Не удалось открыть Google Play",
   "lbHomeHint": "ЗАРУЛИ В БЛОК. ИЛИ ТАПНИ. МЫ НЕ СУДИМ.",
   "lbDailyAllFed": "ВСЕ СЫТЫ. ПРИХОДИ ЗАВТРА.",
   "lbModeRow": "РЕЖИМ {index}/{count} · {mode}",

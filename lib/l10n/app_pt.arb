@@ -1574,6 +1574,8 @@
   "updateActionUpdate": "Atualizar",
   "updateActionLater": "Depois",
   "updateOpenStoreFailed": "Não foi possível abrir a App Store",
+  "updateRequiredBodyPlay": "Esta versão do Snake Classic não é mais compatível. Atualize pelo Google Play para continuar jogando.",
+  "updateOpenPlayFailed": "Não foi possível abrir o Google Play",
   "lbHomeHint": "GUIE ATÉ UM BLOCO. OU TOQUE. SEM JULGAMENTOS.",
   "lbDailyAllFed": "BARRIGA CHEIA. VOLTE AMANHÃ.",
   "lbModeRow": "MODO {index}/{count} · {mode}",

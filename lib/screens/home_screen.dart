@@ -99,11 +99,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // an offer that the prompt queue shows first (step 0); urgent
       // releases and finished downloads are handled inside the service.
       unawaited(InAppUpdateService().checkForUpdate());
-      // The iOS half of the same job. The App Store has no in-app update
-      // API, so the version to compare against comes from our backend and
-      // the outcome is a dialog rather than a Play-owned download. Runs on
-      // Android too and returns immediately there.
-      unawaited(_checkIosAppRelease());
+      // The dashboard's release policy: the whole update prompt on iOS (no
+      // in-app update API there) and the forced minimum version on both
+      // platforms.
+      unawaited(_checkAppRelease());
       unawaited(_loadHomeReadouts());
       _maybeOpenDebugRoute();
       // Debug builds launched with --dart-define=LB_SEED=true only.
@@ -122,14 +121,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     context.push(route);
   }
 
-  /// Ask the backend whether this iOS build is behind the store, and show
-  /// the matching dialog. No-ops on Android, in debug, after the first
-  /// check of the session, and whenever anything at all is unclear — see
-  /// [AppReleasePolicy].
-  Future<void> _checkIosAppRelease() async {
+  /// Ask the backend whether this build is behind the store or below the
+  /// minimum supported version, and show the matching dialog. No-ops in
+  /// debug, after the first dialog of the session, and whenever anything at
+  /// all is unclear — see [AppReleasePolicy]. On Android only the forced
+  /// floor shows; routine updates stay with Play.
+  static bool _appReleaseDialogShown = false;
+  Future<void> _checkAppRelease() async {
+    if (_appReleaseDialogShown) return;
     final prompt = await AppReleaseService().check();
     if (prompt == UpdatePrompt.none) return;
-    if (!mounted) return;
+    if (!mounted || _appReleaseDialogShown) return;
+    _appReleaseDialogShown = true;
     await showAppUpdateDialog(context, prompt);
   }
 
@@ -172,6 +175,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // before anything pops over it.
     await Future.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
+
+    // A forced update (dashboard minimum version) owns the screen: nothing
+    // else may pop over or behind its blocking dialog.
+    await AppReleaseService().check();
+    if (!mounted || AppReleaseService().updateRequired) return;
 
     // 0. Play update offer (Android). The check started post-frame and has
     //    its own 5 s timeout; this awaits the same future. When the offer

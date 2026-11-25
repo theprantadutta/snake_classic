@@ -9514,6 +9514,18 @@ abstract class AppLocalizations {
   /// **'Could not open the App Store'**
   String get updateOpenStoreFailed;
 
+  /// No description provided for @updateRequiredBodyPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Snake Classic is no longer supported. Please update from Google Play to keep playing.'**
+  String get updateRequiredBodyPlay;
+
+  /// No description provided for @updateOpenPlayFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open Google Play'**
+  String get updateOpenPlayFailed;
+
   /// Home footer hint: the idle snake can be steered into a menu block, or the block tapped
   ///
   /// In en, this message translates to:

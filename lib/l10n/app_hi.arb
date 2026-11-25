@@ -1574,6 +1574,8 @@
   "updateActionUpdate": "अपडेट करें",
   "updateActionLater": "बाद में",
   "updateOpenStoreFailed": "App Store नहीं खुल सका",
+  "updateRequiredBodyPlay": "Snake Classic का यह वर्शन अब समर्थित नहीं है। खेलते रहने के लिए Google Play से अपडेट करें।",
+  "updateOpenPlayFailed": "Google Play नहीं खुल सका",
   "lbHomeHint": "साँप को ब्लॉक में घुसाइए। या टैप कीजिए। हम जज नहीं करते।",
   "lbDailyAllFed": "पेट भर गया। कल फिर आइए।",
   "lbModeRow": "मोड {index}/{count} · {mode}",

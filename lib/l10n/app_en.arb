@@ -2098,6 +2098,8 @@
   "updateActionUpdate": "Update",
   "updateActionLater": "Later",
   "updateOpenStoreFailed": "Could not open the App Store",
+  "updateRequiredBodyPlay": "This version of Snake Classic is no longer supported. Please update from Google Play to keep playing.",
+  "updateOpenPlayFailed": "Could not open Google Play",
   "@updateAvailableBody": {
     "description": "Body of the dismissible iOS update prompt. {version} is the store version, e.g. 6.4.3.",
     "placeholders": {
