@@ -151,11 +151,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   /// Who "me" is on this screen: the ONE place it is decided, used for the
   /// board, the HUD and the winner check alike.
   ///
-  /// It reads AuthCubit while the cubit decides wins from UnifiedUserService
-  /// (the same Firebase uid today). Once MultiplayerCubit exposes its own
-  /// `currentUserId`, switch this getter to it so screen and cubit can never
-  /// disagree about who won.
-  String? get _currentUserId => context.read<AuthCubit>().state.userId;
+  /// It reads the multiplayer cubit's own id, the same one the cubit uses to
+  /// decide the winner, so screen and cubit can never disagree about who won
+  /// (this used to read AuthCubit while the cubit read UnifiedUserService).
+  String? get _currentUserId => context.read<MultiplayerCubit>().currentUserId;
 
   /// A press on the two-button layout, resolved off my snake's heading
   /// and then handled exactly like a swipe.

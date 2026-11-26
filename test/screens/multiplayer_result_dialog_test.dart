@@ -133,7 +133,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    mp = _FakeMultiplayerCubit(initial);
+    mp = _FakeMultiplayerCubit(initial, currentUserId: me);
     final router = GoRouter(
       initialLocation: AppRoutes.multiplayerGame,
       routes: [
@@ -516,7 +516,10 @@ void main() {
 /// cubit's own emits; the few methods the screen calls are answered here.
 class _FakeMultiplayerCubit extends Cubit<MultiplayerState>
     implements MultiplayerCubit {
-  _FakeMultiplayerCubit(super.initial);
+  _FakeMultiplayerCubit(super.initial, {required this.currentUserId});
+
+  @override
+  final String? currentUserId;
 
   int leaveCalls = 0;
 
