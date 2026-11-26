@@ -8,6 +8,7 @@ import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
+import 'package:snake_classic/services/analytics/versus_events.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement.dart';
 import 'package:snake_classic/services/multiplayer/multiplayer_settlement_service.dart';
@@ -1406,6 +1407,17 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// everyone had and the host never pressed START.
   Future<void> _abandonLobby(MultiplayerError reason) async {
     try {
+      unawaited(
+        _analytics.trackVersusLobbyClosed(
+          reason: reason == MultiplayerError.hostDidNotStart
+              ? 'host_did_not_start'
+              : 'ready_timeout',
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Versus analytics failed', e);
+    }
+    try {
       await leaveGame();
     } catch (_) {
       // Leaving is best-effort: the room is being abandoned either way,
@@ -1583,6 +1595,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   @override
   void onChange(Change<MultiplayerState> change) {
     super.onChange(change);
+    _trackVersusTransition(change.currentState, change.nextState);
     if (Autopilot.enabled &&
         change.currentState.status != change.nextState.status) {
       vsLog(
@@ -1590,6 +1603,37 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         '${change.nextState.status.name}'
         '${change.nextState.errorCode != null ? ' (error ${change.nextState.errorCode!.name})' : ''}',
       );
+    }
+  }
+
+  /// Versus diagnostics (see VersusEvents), derived from state transitions so
+  /// every path into these states is counted exactly once.
+  void _trackVersusTransition(MultiplayerState from, MultiplayerState to) {
+    if (from.status == to.status) return;
+    final wasLive = from.status == MultiplayerStatus.playing ||
+        from.status == MultiplayerStatus.reconnecting;
+    try {
+      if (from.status == MultiplayerStatus.playing &&
+          to.status == MultiplayerStatus.reconnecting) {
+        unawaited(_analytics.trackVersusConnection(stage: 'reconnecting'));
+      } else if (from.status == MultiplayerStatus.reconnecting &&
+          to.status == MultiplayerStatus.playing) {
+        unawaited(_analytics.trackVersusConnection(stage: 'recovered'));
+      } else if (wasLive && to.status == MultiplayerStatus.idle) {
+        final stage = switch (to.errorCode) {
+          MultiplayerError.matchEndedAway => 'ended_away',
+          MultiplayerError.connectionLost => 'lost',
+          _ => null,
+        };
+        if (stage != null) {
+          unawaited(_analytics.trackVersusConnection(stage: stage));
+        }
+      }
+      // versus_lobby_closed is tracked in _abandonLobby: leaveGame() takes
+      // the lobby to idle before the reason is attached, so it is not a
+      // single transition here.
+    } catch (e) {
+      AppLogger.error('Versus analytics failed', e);
     }
   }
 
@@ -1691,6 +1735,19 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       });
     }
     guarded('prediction log', _logPredictionAccuracy);
+    guarded('match quality', () {
+      final checked = _predictor.predictionsChecked;
+      unawaited(
+        _analytics.trackVersusMatchQuality(
+          roundTripMs: _predictor.roundTrip.inMilliseconds,
+          lateSnapshots: _lateSnapshots,
+          maxGapMs: _maxSnapshotGap.inMilliseconds,
+          correctionPct:
+              checked == 0 ? 0 : (_predictor.mispredictions * 100 ~/ checked),
+          result: won ? 'win' : (result.isDraw ? 'draw' : 'loss'),
+        ),
+      );
+    });
     _matchActive = false;
     _predictor.reset();
     _settlingGameId = _matchGameId;

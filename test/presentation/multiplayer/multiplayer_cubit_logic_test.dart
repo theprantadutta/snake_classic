@@ -74,6 +74,9 @@ void main() {
         expect(h.cubit.state.status, MultiplayerStatus.idle);
         expect(h.cubit.state.errorCode, MultiplayerError.readyTimeout);
         expect(h.service.leaveCalls, 1);
+        expect(h.analytics.named('versus_lobby_closed'), [
+          {'reason': 'ready_timeout'},
+        ]);
       });
     });
 
@@ -94,6 +97,9 @@ void main() {
         expect(h.cubit.state.errorCode, MultiplayerError.hostDidNotStart);
         expect(h.cubit.state.hostStartDeadlineSeconds, isNull);
         expect(h.cubit.state.currentGame, isNull);
+        expect(h.analytics.named('versus_lobby_closed'), [
+          {'reason': 'host_did_not_start'},
+        ]);
       });
     });
 
@@ -209,6 +215,11 @@ void main() {
         h.service.matchEnds.add(rivalWins());
         async.flushMicrotasks();
         expect(h.cubit.state.status, MultiplayerStatus.finished);
+        final quality = h.analytics.named('versus_match_quality').single;
+        expect(quality['result'], 'loss');
+        expect(quality.keys, containsAll(
+          ['rtt_ms', 'late_snapshots', 'max_gap_ms', 'correction_pct'],
+        ));
 
         h.service.snapshots.add(snapshotAt(2));
         async.flushMicrotasks();
@@ -286,6 +297,10 @@ void main() {
         async.flushMicrotasks();
         expect(h.cubit.state.status, MultiplayerStatus.idle);
         expect(h.cubit.state.errorCode, MultiplayerError.matchEndedAway);
+        expect(
+          h.analytics.named('versus_connection').map((e) => e['stage']),
+          ['reconnecting', 'ended_away'],
+        );
       });
     });
 
@@ -300,6 +315,10 @@ void main() {
         expect(h.cubit.state.status, MultiplayerStatus.playing);
         async.elapse(const Duration(seconds: 30));
         expect(h.cubit.state.status, MultiplayerStatus.playing);
+        expect(
+          h.analytics.named('versus_connection').map((e) => e['stage']),
+          ['reconnecting', 'recovered'],
+        );
       });
     });
 

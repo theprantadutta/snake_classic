@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
 import 'package:snake_classic/presentation/bloc/multiplayer/multiplayer_cubit.dart';
+import 'package:snake_classic/services/analytics/analytics_client.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/audio_service.dart';
 import 'package:snake_classic/services/haptic_service.dart';
@@ -170,15 +171,32 @@ class FakeSettlementService implements MultiplayerSettlementService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Records generic [AnalyticsClient.trackEvent] calls; every other client
+/// method is a no-op future.
+class RecordingAnalytics implements AnalyticsClient {
+  final events = <(String, Map<String, Object>)>[];
+
+  Iterable<Map<String, Object>> named(String name) =>
+      events.where((e) => e.$1 == name).map((e) => e.$2);
+
+  @override
+  Future<void> trackEvent(String name, Map<String, Object> parameters) async =>
+      events.add((name, parameters));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => Future<void>.value();
+}
+
 class Harness {
   final service = FakeMultiplayerService();
   final settlement = FakeSettlementService();
+  final analytics = RecordingAnalytics();
   late final MultiplayerCubit cubit = MultiplayerCubit(
     multiplayerService: service,
     userService: FakeUserService(),
     audioService: FakeAudio(),
     hapticService: FakeHaptics(),
-    analytics: AnalyticsFacade(const []),
+    analytics: AnalyticsFacade([analytics]),
     settlementService: settlement,
   );
 }
