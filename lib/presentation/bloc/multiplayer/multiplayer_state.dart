@@ -103,7 +103,27 @@ class MultiplayerState extends Equatable {
   /// strangers cannot, so without a deadline one of them tabbing away
   /// leaves the other staring at a lobby that will never start. At zero
   /// the room is abandoned and the waiting player goes back to the queue.
+  ///
+  /// Null while every seated player is ready: the READY check is then over
+  /// and [hostStartDeadlineSeconds] runs instead. If someone un-readies it
+  /// comes back with the seconds it had left, not a fresh thirty, so
+  /// toggling READY cannot hold a lobby open indefinitely.
   final int? readyDeadlineSeconds;
+
+  /// Seconds left for the host to press START in a matchmade lobby where
+  /// every seated player is ready, or null when that is not the situation.
+  ///
+  /// A room of two humans only starts when the host presses START (the
+  /// server auto-starts bot rooms alone). The READY deadline used to keep
+  /// running after both players had confirmed, and kicked them both with
+  /// "weren't ready in time" when the host simply had not pressed START yet.
+  /// This bound is separate and longer, and its expiry carries its own error
+  /// ([MultiplayerError.hostDidNotStart]) so the copy can say what happened.
+  final int? hostStartDeadlineSeconds;
+
+  /// True while every seated player has confirmed READY and the lobby is
+  /// waiting on the host's START.
+  bool get isWaitingForHostStart => hostStartDeadlineSeconds != null;
 
   /// True while this lobby came from matchmaking rather than a room code.
   /// The two paths differ in what the lobby is allowed to do to you: only
@@ -156,6 +176,7 @@ class MultiplayerState extends Equatable {
     this.lastRejectedDirection,
     this.countdownSeconds = 3,
     this.readyDeadlineSeconds,
+    this.hostStartDeadlineSeconds,
     this.isMatchmadeLobby = false,
     this.isMatchmaking = false,
     this.matchmakingQueuePosition = 0,
@@ -186,6 +207,7 @@ class MultiplayerState extends Equatable {
     int? boardSize,
     SettlementStatus? settlementStatus,
     MultiplayerSettlement? settlement,
+    bool clearSettlement = false,
     Direction? intentDirection,
     bool clearIntentDirection = false,
     LocalPrediction? localPrediction,
@@ -196,6 +218,8 @@ class MultiplayerState extends Equatable {
     int? countdownSeconds,
     int? readyDeadlineSeconds,
     bool clearReadyDeadline = false,
+    int? hostStartDeadlineSeconds,
+    bool clearHostStartDeadline = false,
     bool? isMatchmadeLobby,
     bool clearMatch = false,
     bool? isMatchmaking,
@@ -218,8 +242,10 @@ class MultiplayerState extends Equatable {
       snapshot: (clearMatch || clearGame) ? null : (snapshot ?? this.snapshot),
       matchEnd: (clearMatch || clearGame) ? null : (matchEnd ?? this.matchEnd),
       boardSize: boardSize ?? this.boardSize,
-      settlementStatus: settlementStatus ?? this.settlementStatus,
-      settlement: settlement ?? this.settlement,
+      settlementStatus: clearSettlement
+          ? SettlementStatus.none
+          : (settlementStatus ?? this.settlementStatus),
+      settlement: clearSettlement ? null : (settlement ?? this.settlement),
       intentDirection: (clearMatch || clearGame || clearIntentDirection)
           ? null
           : (intentDirection ?? this.intentDirection),
@@ -236,6 +262,9 @@ class MultiplayerState extends Equatable {
       readyDeadlineSeconds: (clearReadyDeadline || clearGame)
           ? null
           : (readyDeadlineSeconds ?? this.readyDeadlineSeconds),
+      hostStartDeadlineSeconds: (clearHostStartDeadline || clearGame)
+          ? null
+          : (hostStartDeadlineSeconds ?? this.hostStartDeadlineSeconds),
       isMatchmadeLobby: clearGame
           ? false
           : (isMatchmadeLobby ?? this.isMatchmadeLobby),
@@ -323,6 +352,7 @@ class MultiplayerState extends Equatable {
     lastRejectedDirection,
     countdownSeconds,
     readyDeadlineSeconds,
+    hostStartDeadlineSeconds,
     isMatchmadeLobby,
     isMatchmaking,
     matchmakingQueuePosition,
