@@ -20,6 +20,12 @@ enum JoinQueueOutcome {
   /// We never got as far as asking — the hub connection could not be
   /// established. A connectivity problem, not a matchmaking one.
   unreachable,
+
+  /// The server matched us while the join was still in flight: MatchFound
+  /// is pushed from inside JoinMatchmaking when an opponent is already
+  /// waiting, so it can land before the invocation returns. The lobby is
+  /// already being entered; the caller must not go back to "searching".
+  matched,
 }
 
 class MatchmakingStatus {
@@ -83,6 +89,22 @@ class MultiplayerService {
   int _matchmakingPlayerCount = 2;
   int _matchmakingQueuePosition = 0;
   int _matchmakingEstimatedWait = 0;
+
+  /// Bumped by every MatchFound handled, so [joinMatchmaking] can tell that
+  /// one landed while its invocation was in flight.
+  int _matchFoundCount = 0;
+
+  /// The transport's own retry schedule after an unexpected drop, in ms.
+  ///
+  /// signalr_netcore's default is 0, 2, 10, 30 s. Its third attempt comes
+  /// twelve seconds after the drop, so a four-second Wi-Fi blip left the
+  /// board frozen for about eight more seconds before the client could even
+  /// ask the server where the match stood — long enough, in production, for
+  /// the match to have ended unseen. Short, steady retries cover the server's
+  /// 30 s reconnect window and get back within a second or so of the link.
+  static const List<int> _transportRetryDelaysMs = [
+    0, 1000, 1000, 2000, 2000, 3000, 3000, 4000, 5000, 5000, 5000,
+  ];
 
   // Heartbeat timer
   Timer? _heartbeatTimer;
@@ -344,7 +366,13 @@ class MultiplayerService {
       final hub = _liveHub;
       if (hub == null) return JoinQueueOutcome.unreachable;
 
+      final matchesBefore = _matchFoundCount;
       await hub.invoke('JoinMatchmaking', args: [mode.name, playerCount]);
+
+      // MatchFound already arrived during the invocation. Reporting
+      // "searching" now would put a seated player back on the search ring
+      // and flag us as queued for a match that is already made.
+      if (_matchFoundCount != matchesBefore) return JoinQueueOutcome.matched;
 
       _isInMatchmaking = true;
       _matchmakingMode = mode;
@@ -506,7 +534,7 @@ class MultiplayerService {
                   requestTimeout: 15000,
                 ),
               )
-              .withAutomaticReconnect()
+              .withAutomaticReconnect(retryDelays: _transportRetryDelaysMs)
               .build();
 
           _registerEventHandlers();
@@ -517,6 +545,7 @@ class MultiplayerService {
           // MatchResumed reply re-syncs the snapshot mid-match.
           _hubConnection!.onreconnected(({connectionId}) {
             _isConnected = true;
+            _emitConnectionAction('connection_restored');
             final roomCode = _currentRoomCode;
             final queuedMode = _matchmakingMode;
             if (roomCode != null) {
@@ -550,6 +579,11 @@ class MultiplayerService {
 
           _hubConnection!.onreconnecting(({error}) {
             _isConnected = false;
+            // Mid-match the board just froze with nothing to say why; the
+            // cubit shows "reconnecting" off this.
+            if (!_intentionalDisconnect) {
+              _emitConnectionAction('connection_reconnecting');
+            }
           });
 
           _hubConnection!.onclose(({error}) {
@@ -558,14 +592,7 @@ class MultiplayerService {
             // release the guard so the next attempt isn't blocked.
             _isReconnecting = false;
             if (_intentionalDisconnect) return;
-            _gameActionsController.add(
-              MultiplayerGameAction(
-                actionType: 'connection_lost',
-                playerId: '',
-                timestamp: DateTime.now(),
-                data: const {},
-              ),
-            );
+            _emitConnectionAction('connection_lost');
           });
 
           await _hubConnection!.start();
@@ -591,6 +618,20 @@ class MultiplayerService {
       _isConnected = false;
       return false;
     }
+  }
+
+  /// A transport-level event for the cubit (connection_reconnecting,
+  /// connection_restored, connection_lost).
+  void _emitConnectionAction(String actionType) {
+    if (_gameActionsController.isClosed) return;
+    _gameActionsController.add(
+      MultiplayerGameAction(
+        actionType: actionType,
+        playerId: '',
+        timestamp: DateTime.now(),
+        data: const {},
+      ),
+    );
   }
 
   Future<void> _disconnectSignalR() async {
@@ -939,6 +980,10 @@ class MultiplayerService {
 
   void _emitSnapshot(Object? raw) {
     if (raw is! Map<String, dynamic>) return;
+    // A Tick that trails GameEnded describes a match that is over; passing
+    // it on would tell listeners the match is live again. (GameStarted and
+    // MatchResumed mark the game playing before they get here.)
+    if (_currentGame?.isFinished ?? false) return;
     try {
       _snapshotController.add(MatchSnapshot.fromJson(raw));
     } catch (e) {
@@ -970,10 +1015,14 @@ class MultiplayerService {
             );
           }).toList(),
         );
-        _gameStreamController.add(_currentGame);
       }
 
+      // The result goes out BEFORE the finished game update. Listeners get
+      // them in this order, so the cubit reaches `finished` together with
+      // its result instead of sitting on a result-less `finished` first —
+      // a dead end if the second event never made it.
       _matchEndController.add(result);
+      if (game != null) _gameStreamController.add(_currentGame);
     } catch (e) {
       AppLogger.error('Error handling GameEnded', e);
     }
@@ -1049,6 +1098,7 @@ class MultiplayerService {
     if (data == null) return;
 
     try {
+      _matchFoundCount++;
       _isInMatchmaking = false;
       _currentGameId = data['game_id']?.toString();
       _currentRoomCode = data['room_code']?.toString();
