@@ -111,7 +111,7 @@ extension RetentionEvents on AnalyticsClient {
   /// `failed` / `error`), `auto_completed` ([result]: `home`, a finished
   /// download installed at launch).
   Future<void> trackAppUpdate({required String stage, String? result}) =>
-      trackEvent('app_update', {
+      trackEvent('play_update', {
         'stage': stage,
         'result': ?result,
       });

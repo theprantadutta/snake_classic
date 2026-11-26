@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'analytics_client.dart';
+import 'package:snake_classic/utils/logger.dart';
 
 /// Multi-client dispatcher that fans out every analytics call to all
 /// registered [AnalyticsClient] implementations.
@@ -13,7 +14,13 @@ class AnalyticsFacade implements AnalyticsClient {
 
   void _fire(Future<void> Function(AnalyticsClient c) action) {
     for (final client in _clients) {
-      unawaited(action(client));
+      // A rejected call (e.g. Firebase refusing a reserved event name) must
+      // stay a log line: unawaited, it would surface as an unhandled fatal.
+      unawaited(
+        Future.sync(() => action(client)).catchError((Object e, StackTrace s) {
+          AppLogger.warning('Analytics call failed on ${client.runtimeType}: $e');
+        }),
+      );
     }
   }
 

@@ -32,7 +32,7 @@ import 'package:snake_classic/utils/logger.dart';
 /// paused mid-run game also backgrounds the app, and the install kills the
 /// process.
 ///
-/// Analytics: `app_update` (`stage`, optional `result`), see
+/// Analytics: `play_update` (`stage`, optional `result`), see
 /// [RetentionEvents.trackAppUpdate].
 ///
 /// Device-only state (the snooze stamp) lives in SharedPreferences: it is
