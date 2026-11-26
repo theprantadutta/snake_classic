@@ -1,7 +1,7 @@
 import 'dart:collection';
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/position.dart';
 import 'package:snake_classic/utils/direction.dart';
@@ -18,9 +18,18 @@ import 'package:snake_classic/utils/direction.dart';
 /// `FrameStatsLogger` when a match begins and logs the match's network
 /// numbers through [vsLog]. Compiled out of any build without the define.
 ///
-/// [vsLog] uses debugPrint: AppLogger is off in profile builds, debugPrint
-/// still reaches logcat (`adb logcat -s flutter | grep "\[VS\]"`).
-void vsLog(String message) => debugPrint('[VS] $message');
+/// [vsLog] goes to the VM service's Logging stream (`dart:developer` log):
+/// in this app's profile builds print/debugPrint reach neither logcat nor the
+/// VM service's Stdout stream. The VM service trims long log strings, so the
+/// message is sent in short numbered chunks.
+void vsLog(String message) {
+  const size = 100;
+  final parts = (message.length / size).ceil();
+  for (var i = 0; i < parts; i++) {
+    final chunk = message.substring(i * size, math.min(message.length, (i + 1) * size));
+    developer.log(parts > 1 ? '${i + 1}/$parts $chunk' : chunk, name: 'VS');
+  }
+}
 
 /// Picks the next heading for [userId]'s snake, or null to keep going.
 ///

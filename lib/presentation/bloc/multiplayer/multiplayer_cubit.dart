@@ -1280,7 +1280,15 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     if (last != null) {
       final gap = arrived - last;
       if (gap > _maxSnapshotGap) _maxSnapshotGap = gap;
-      if (gap > const Duration(milliseconds: 400)) _lateSnapshots++;
+      if (gap > const Duration(milliseconds: 400)) {
+        _lateSnapshots++;
+        // Profiling (LB_AUTOPILOT): the tick number lets two devices'
+        // logs be lined up — the same late ticks on both means the delay is
+        // upstream of the Wi-Fi.
+        if (Autopilot.enabled) {
+          vsLog('late snapshot: tick ${snapshot.tick} after ${gap.inMilliseconds}ms');
+        }
+      }
     }
     _lastSnapshotAt = arrived;
     _snapshotCount++;
