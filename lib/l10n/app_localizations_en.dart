@@ -5135,7 +5135,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mpErrReadyTimeout =>
-      'Both players weren\'t ready in time. Finding you a new match…';
+      'Your match didn\'t start — not everyone was ready. Tap Find match to try again.';
+
+  @override
+  String get mpErrHostDidNotStart =>
+      'The host never started the match. Tap Find match to try again.';
+
+  @override
+  String get mpErrNoResult =>
+      'The match ended, but its result didn\'t reach this device.';
 
   @override
   String mpLobbyReadyDeadline(int seconds) {
@@ -6474,8 +6482,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lbDrawLine => 'Perfectly balanced. Rematch?';
 
   @override
-  String get lbVersusFooter =>
+  String get lbVersusFooterVictory =>
+      'Every win is just a title defense waiting to happen.';
+
+  @override
+  String get lbVersusFooterDraw =>
+      'Every draw is just a tiebreaker waiting to happen.';
+
+  @override
+  String get lbVersusFooterDefeat =>
       'Every loss is just a rematch waiting to happen.';
+
+  @override
+  String get lbFinal => 'FINAL';
+
+  @override
+  String get lbMatchOver => 'Match over.';
 
   @override
   String get lbLength => 'LENGTH';

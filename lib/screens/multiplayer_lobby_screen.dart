@@ -75,7 +75,33 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       // Attempted regardless: offline the request fails fast and the strip
       // settles on dashes rather than sitting in a loading state forever.
       _loadRecord();
+
+      // A match that went live before this screen was built: the listener
+      // below only hears changes, so catch up once here.
+      if (mounted) _maybeEnterMatch(context.read<MultiplayerCubit>().state);
     });
+  }
+
+  /// Set once this lobby has handed over to the game screen.
+  bool _enteredMatch = false;
+
+  /// A live match with no result yet: the player belongs on the board.
+  static bool _matchIsLive(MultiplayerState s) =>
+      s.isGameActive &&
+      s.matchEnd == null &&
+      s.status != MultiplayerStatus.finished;
+
+  /// Go to the game screen, exactly once per lobby.
+  ///
+  /// This used to run from build, in a post-frame callback, on EVERY build
+  /// while the match was live. The lobby's builder rebuilds on every state
+  /// change, so several callbacks could queue before the route changed and
+  /// each one replaced the game route again: new game-screen States, the
+  /// first of which could miss the match result entirely.
+  void _maybeEnterMatch(MultiplayerState state) {
+    if (_enteredMatch || !mounted || !_matchIsLive(state)) return;
+    _enteredMatch = true;
+    context.pushReplacement(AppRoutes.multiplayerGame);
   }
 
   Future<void> _loadRecord() async {
@@ -194,6 +220,19 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<MultiplayerCubit, MultiplayerState>(
+          listenWhen: (prev, curr) => !_matchIsLive(prev) && _matchIsLive(curr),
+          listener: (context, state) => _maybeEnterMatch(state),
+        ),
+        _errorListener(),
+      ],
+      child: _buildBody(),
+    );
+  }
+
+  BlocListener<MultiplayerCubit, MultiplayerState> _errorListener() {
     return BlocListener<MultiplayerCubit, MultiplayerState>(
       listenWhen: (prev, curr) =>
           prev.errorCode != curr.errorCode && curr.errorCode != null,
@@ -220,17 +259,16 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         );
         context.read<MultiplayerCubit>().clearError();
       },
-      child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
+    );
+  }
+
+  Widget _buildBody() {
+    return BlocBuilder<MultiplayerCubit, MultiplayerState>(
         builder: (context, multiplayerState) {
           return BlocBuilder<AuthCubit, AuthState>(
             builder: (context, authState) {
-              // Navigate to game screen when game starts
-              if (multiplayerState.isGameActive) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.pushReplacement(AppRoutes.multiplayerGame);
-                });
-              }
-
+              // Entering the match is the listener's job (_maybeEnterMatch),
+              // never this builder's.
               final Widget content = multiplayerState.matchmakingUnreachable
                   ? _buildMatchmakingUnreachableUI(context, multiplayerState)
                   : multiplayerState.status == MultiplayerStatus.inMatchmaking
@@ -267,7 +305,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             },
           );
         },
-      ),
     );
   }
 

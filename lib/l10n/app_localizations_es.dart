@@ -5195,7 +5195,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mpErrReadyTimeout =>
-      'Los dos jugadores no estuvieron listos a tiempo. Buscando una nueva partida…';
+      'Tu partida no empezó: no todos estaban listos. Toca Buscar partida para volver a intentarlo.';
+
+  @override
+  String get mpErrHostDidNotStart =>
+      'El anfitrión nunca inició la partida. Toca Buscar partida para volver a intentarlo.';
+
+  @override
+  String get mpErrNoResult =>
+      'La partida terminó, pero el resultado no llegó a este dispositivo.';
 
   @override
   String mpLobbyReadyDeadline(int seconds) {
@@ -6539,7 +6547,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get lbDrawLine => 'Perfectamente equilibrado. ¿Revancha?';
 
   @override
-  String get lbVersusFooter => 'Cada derrota es solo una revancha pendiente.';
+  String get lbVersusFooterVictory =>
+      'Cada victoria es solo un título que defender.';
+
+  @override
+  String get lbVersusFooterDraw =>
+      'Cada empate es solo un desempate pendiente.';
+
+  @override
+  String get lbVersusFooterDefeat =>
+      'Cada derrota es solo una revancha pendiente.';
+
+  @override
+  String get lbFinal => 'FINAL';
+
+  @override
+  String get lbMatchOver => 'Partida terminada.';
 
   @override
   String get lbLength => 'LARGO';

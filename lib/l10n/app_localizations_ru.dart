@@ -5166,7 +5166,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mpErrReadyTimeout =>
-      'Игроки не успели подтвердить готовность. Ищем новый матч…';
+      'Матч не начался: не все были готовы. Нажмите «Найти матч», чтобы попробовать снова.';
+
+  @override
+  String get mpErrHostDidNotStart =>
+      'Хост так и не начал матч. Нажмите «Найти матч», чтобы попробовать снова.';
+
+  @override
+  String get mpErrNoResult =>
+      'Матч завершён, но его результат не дошёл до этого устройства.';
 
   @override
   String mpLobbyReadyDeadline(int seconds) {
@@ -6520,8 +6528,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lbDrawLine => 'Идеальный баланс. Реванш?';
 
   @override
-  String get lbVersusFooter =>
+  String get lbVersusFooterVictory =>
+      'Каждая победа — это титул, который ещё придётся защищать.';
+
+  @override
+  String get lbVersusFooterDraw =>
+      'Каждая ничья — это решающий матч, который ждёт своего часа.';
+
+  @override
+  String get lbVersusFooterDefeat =>
       'Каждое поражение — это реванш, который ждёт своего часа.';
+
+  @override
+  String get lbFinal => 'ИТОГ';
+
+  @override
+  String get lbMatchOver => 'Матч окончен.';
 
   @override
   String get lbLength => 'ДЛИНА';

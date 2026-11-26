@@ -18,8 +18,26 @@ String versusClock(int ms) {
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
 
+/// Where the match on screen stands, as far as the HUD is concerned.
+///
+/// The header badge and the status line under the board both read it, so
+/// they can never disagree: a match that is over must not say LIVE, and a
+/// board that has stopped updating must not keep taunting.
+enum VersusMatchPhase {
+  /// Snapshots are arriving and nobody has won yet.
+  live,
+
+  /// The match is still running on the server, but this device is not
+  /// hearing about it (transport dropped, or snapshots stalled).
+  reconnecting,
+
+  /// The match is over: a result arrived, or the server said it finished.
+  ended,
+}
+
 /// The top of the match (render 19): you on the left in lime cell digits,
 /// the clock and a LIVE dot in the middle, the rival on the right in red.
+/// Once the match is over the dot goes out and the badge reads FINAL.
 class VersusMatchHeader extends StatelessWidget {
   const VersusMatchHeader({
     super.key,
@@ -27,12 +45,14 @@ class VersusMatchHeader extends StatelessWidget {
     required this.opponent,
     required this.elapsedGameMs,
     required this.onLeave,
+    this.phase = VersusMatchPhase.live,
   });
 
   final MatchPlayerState? me;
   final MatchPlayerState? opponent;
   final int elapsedGameMs;
   final VoidCallback onLeave;
+  final VersusMatchPhase phase;
 
   @override
   Widget build(BuildContext context) {
@@ -74,22 +94,7 @@ class VersusMatchHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: LB.bonk,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: LB.bonk.withValues(alpha: .6), blurRadius: 6)],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(l10n.lbLive, style: LBText.label(p, color: LB.bonk)),
-                  ],
-                ),
+                _MatchBadge(phase: phase),
               ],
             ),
           ),
@@ -103,6 +108,47 @@ class VersusMatchHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// LIVE (red dot) while the match runs, the same word in gold without the
+/// glow while this device is out of touch, FINAL once it is over. Same
+/// height in every phase, so the clock above never jumps.
+class _MatchBadge extends StatelessWidget {
+  const _MatchBadge({required this.phase});
+
+  final VersusMatchPhase phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    if (phase == VersusMatchPhase.ended) {
+      return Text(
+        l10n.lbFinal,
+        key: const ValueKey('versus-badge-final'),
+        style: LBText.label(p, color: p.inkMuted),
+      );
+    }
+    final live = phase == VersusMatchPhase.live;
+    final color = live ? LB.bonk : LB.gold;
+    return Row(
+      key: ValueKey(live ? 'versus-badge-live' : 'versus-badge-reconnecting'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: live ? [BoxShadow(color: color.withValues(alpha: .6), blurRadius: 6)] : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(l10n.lbLive, style: LBText.label(p, color: color)),
+      ],
     );
   }
 }
@@ -433,9 +479,18 @@ class VersusResultCard extends StatelessWidget {
   }
 }
 
+/// The footer under the result card, one per outcome: the loss line under a
+/// win read like the game hadn't noticed who won.
+String versusResultFooter(AppLocalizations l10n, VersusOutcome outcome) => switch (outcome) {
+      VersusOutcome.victory => l10n.lbVersusFooterVictory,
+      VersusOutcome.draw => l10n.lbVersusFooterDraw,
+      VersusOutcome.defeat => l10n.lbVersusFooterDefeat,
+    };
+
 /// The result dialog chrome: the card, then the footer line under it.
 Future<void> showVersusResultDialog({
   required BuildContext context,
+  required VersusOutcome outcome,
   required Widget Function(BuildContext dialogContext) card,
 }) {
   return showDialog<void>(
@@ -461,7 +516,7 @@ Future<void> showVersusResultDialog({
                 card(dialogContext),
                 const SizedBox(height: 18),
                 Text(
-                  AppLocalizations.of(dialogContext)!.lbVersusFooter,
+                  versusResultFooter(AppLocalizations.of(dialogContext)!, outcome),
                   textAlign: TextAlign.center,
                   style: LBText.body(p, color: p.inkDim, size: 11),
                 ),

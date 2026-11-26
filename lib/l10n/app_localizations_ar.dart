@@ -5128,7 +5128,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mpErrReadyTimeout =>
-      'لم يستعدّ اللاعبان في الوقت المحدد. نبحث عن مباراة جديدة…';
+      'لم تبدأ مباراتك: لم يكن الجميع مستعدًا. اضغط «ابحث عن مباراة» للمحاولة مجددًا.';
+
+  @override
+  String get mpErrHostDidNotStart =>
+      'لم يبدأ المضيف المباراة أبدًا. اضغط «ابحث عن مباراة» للمحاولة مجددًا.';
+
+  @override
+  String get mpErrNoResult =>
+      'انتهت المباراة، لكن نتيجتها لم تصل إلى هذا الجهاز.';
 
   @override
   String mpLobbyReadyDeadline(int seconds) {
@@ -6495,7 +6503,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get lbDrawLine => 'توازن مثالي. مباراة ثأر؟';
 
   @override
-  String get lbVersusFooter => 'كل خسارة مجرد مباراة ثأر تنتظر.';
+  String get lbVersusFooterVictory => 'كل فوز مجرد لقب ينتظر من يدافع عنه.';
+
+  @override
+  String get lbVersusFooterDraw => 'كل تعادل مجرد مباراة فاصلة تنتظر.';
+
+  @override
+  String get lbVersusFooterDefeat => 'كل خسارة مجرد مباراة ثأر تنتظر.';
+
+  @override
+  String get lbFinal => 'انتهت';
+
+  @override
+  String get lbMatchOver => 'انتهت المباراة.';
 
   @override
   String get lbLength => 'الطول';
