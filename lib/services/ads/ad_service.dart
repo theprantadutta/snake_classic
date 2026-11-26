@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:snake_classic/debug/demo_autopilot.dart';
+
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
@@ -240,7 +242,8 @@ class AdService {
       GetIt.I.isRegistered<AnalyticsFacade>() ? GetIt.I<AnalyticsFacade>() : null;
 
   /// The single master switch. Everything checks this.
-  bool get adsEnabled => _sdkReady && _isMobile && !_isPro && _canRequestAds;
+  bool get adsEnabled =>
+      !kDemoAutopilot && _sdkReady && _isMobile && !_isPro && _canRequestAds;
 
   // Flipped whenever [adsEnabled] may have changed (SDK became ready, consent
   // changed). Lets widgets created BEFORE init finished (the cold-start home
