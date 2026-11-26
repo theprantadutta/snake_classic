@@ -5132,7 +5132,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mpErrReadyTimeout =>
-      'दोनों खिलाड़ी समय पर तैयार नहीं हुए। नया मैच खोजा जा रहा है…';
+      'आपका मैच शुरू नहीं हुआ — सभी तैयार नहीं थे। दोबारा कोशिश करने के लिए मैच ढूँढें पर टैप करें।';
+
+  @override
+  String get mpErrHostDidNotStart =>
+      'होस्ट ने मैच शुरू ही नहीं किया। दोबारा कोशिश करने के लिए मैच ढूँढें पर टैप करें।';
+
+  @override
+  String get mpErrNoResult =>
+      'मैच ख़त्म हो गया, लेकिन उसका नतीजा इस डिवाइस तक नहीं पहुँचा।';
 
   @override
   String mpLobbyReadyDeadline(int seconds) {
@@ -6473,7 +6481,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get lbDrawLine => 'बिल्कुल बराबरी। रीमैच?';
 
   @override
-  String get lbVersusFooter => 'हर हार बस एक रीमैच है, जो होना बाकी है।';
+  String get lbVersusFooterVictory =>
+      'हर जीत बस एक ख़िताब है, जिसका बचाव होना बाकी है।';
+
+  @override
+  String get lbVersusFooterDraw =>
+      'हर ड्रॉ बस एक टाईब्रेकर है, जो होना बाकी है।';
+
+  @override
+  String get lbVersusFooterDefeat => 'हर हार बस एक रीमैच है, जो होना बाकी है।';
+
+  @override
+  String get lbFinal => 'समाप्त';
+
+  @override
+  String get lbMatchOver => 'मैच ख़त्म।';
 
   @override
   String get lbLength => 'लंबाई';

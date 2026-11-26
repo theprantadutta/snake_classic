@@ -9262,11 +9262,23 @@ abstract class AppLocalizations {
   /// **'A bigger phone-shaped arena'**
   String get boardTallPlusDesc;
 
-  /// Shown when a matchmade lobby expires because both players did not confirm READY in time.
+  /// Shown when a matchmade lobby expires because a player did not confirm READY in time. The app does NOT search again by itself; 'Find match' is the lobby's FIND MATCH button (lbFindMatch).
   ///
   /// In en, this message translates to:
-  /// **'Both players weren\'t ready in time. Finding you a new match…'**
+  /// **'Your match didn\'t start — not everyone was ready. Tap Find match to try again.'**
   String get mpErrReadyTimeout;
+
+  /// Shown when a lobby is abandoned because every player was ready but the host never started the match. 'Find match' is the lobby's FIND MATCH button (lbFindMatch).
+  ///
+  /// In en, this message translates to:
+  /// **'The host never started the match. Tap Find match to try again.'**
+  String get mpErrHostDidNotStart;
+
+  /// Snackbar when a Versus match finished but the final result never arrived, so the app returns to the lobby without a result screen.
+  ///
+  /// In en, this message translates to:
+  /// **'The match ended, but its result didn\'t reach this device.'**
+  String get mpErrNoResult;
 
   /// Countdown chip on a matchmade lobby showing seconds left to confirm READY.
   ///
@@ -11458,11 +11470,35 @@ abstract class AppLocalizations {
   /// **'Perfectly balanced. Rematch?'**
   String get lbDrawLine;
 
-  /// Result screen footer
+  /// Versus result footer under a VICTORY
+  ///
+  /// In en, this message translates to:
+  /// **'Every win is just a title defense waiting to happen.'**
+  String get lbVersusFooterVictory;
+
+  /// Versus result footer under a DRAW
+  ///
+  /// In en, this message translates to:
+  /// **'Every draw is just a tiebreaker waiting to happen.'**
+  String get lbVersusFooterDraw;
+
+  /// Versus result footer under a DEFEAT
   ///
   /// In en, this message translates to:
   /// **'Every loss is just a rematch waiting to happen.'**
-  String get lbVersusFooter;
+  String get lbVersusFooterDefeat;
+
+  /// Versus match header badge once the match is over (replaces LIVE). Keep it one short word.
+  ///
+  /// In en, this message translates to:
+  /// **'FINAL'**
+  String get lbFinal;
+
+  /// Versus status line under the board once the match has ended (replaces the live 'X is N points ahead' taunts).
+  ///
+  /// In en, this message translates to:
+  /// **'Match over.'**
+  String get lbMatchOver;
 
   /// Stat
   ///

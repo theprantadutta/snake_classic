@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:snake_classic/design/lb_motion.dart';
 import 'package:snake_classic/l10n/app_localizations.dart';
 import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
@@ -50,8 +53,36 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   /// What the swipe pad's compass shows: the last turn, accepted or refused.
   final ValueNotifier<LBSwipeCue?> _swipeCue = ValueNotifier(null);
 
-  // One-shot guards for listener-driven effects
+  // The verdict is derived from the cubit's state, not from one listener
+  // event. It used to be a single shot (listener sees matchEnd go
+  // null -> set, waits, shows), so a State built after matchEnd was set (a
+  // remount, or a duplicate game route from the lobby) never showed it, and
+  // the winner sat on a frozen LIVE board. [_syncWithMatch] re-reads the
+  // state from the listener AND once after the first frame.
+
+  /// The verdict has been shown at least once (it can be shown again from
+  /// Back). Only set once the dialog is actually on its way up.
   bool _resultDialogShown = false;
+
+  /// The result dialog is on screen right now.
+  bool _resultDialogOpen = false;
+
+  /// The death-shake beat before the verdict; non-null while one is pending.
+  Timer? _resultTimer;
+
+  /// Armed when the server says the match finished but no result came with
+  /// it; if none arrives in [_noResultGrace] the screen goes to the lobby.
+  Timer? _noResultTimer;
+  static const _noResultGrace = Duration(seconds: 3);
+
+  /// Snapshots arrive several times a second; this long without one means
+  /// the link is gone even if the transport has not said so yet (a short
+  /// Wi-Fi drop showed nothing at all).
+  Timer? _stallTimer;
+  bool _stalled = false;
+  MatchSnapshot? _lastSeenSnapshot;
+  static const _stallAfter = Duration(seconds: 2);
+
   bool _exiting = false;
   bool _juiceAliveLastTick = true;
 
@@ -80,12 +111,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _keyboardFocusNode.requestFocus();
+      // BlocListener never fires for the state it starts with, so a screen
+      // built after the match already ended would otherwise wait forever.
+      final state = context.read<MultiplayerCubit>().state;
+      _watchForStall(state);
+      _syncWithMatch(state);
     });
   }
 
   @override
   void dispose() {
+    _resultTimer?.cancel();
+    _noResultTimer?.cancel();
+    _stallTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _keyboardFocusNode.dispose();
     _juiceController.dispose();
@@ -108,7 +148,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     }
   }
 
-  String? get _currentUserId => context.read<AuthCubit>().state.userId;
+  /// Who "me" is on this screen: the ONE place it is decided, used for the
+  /// board, the HUD and the winner check alike.
+  ///
+  /// It reads the multiplayer cubit's own id, the same one the cubit uses to
+  /// decide the winner, so screen and cubit can never disagree about who won
+  /// (this used to read AuthCubit while the cubit read UnifiedUserService).
+  String? get _currentUserId => context.read<MultiplayerCubit>().currentUserId;
 
   /// A press on the two-button layout, resolved off my snake's heading
   /// and then handled exactly like a swipe.
@@ -160,7 +206,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
           direction = Direction.right;
           break;
         case LogicalKeyboardKey.escape:
-          _showExitDialog();
+          _handleBack();
           break;
       }
 
@@ -199,10 +245,108 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     _juiceController.foodEaten();
   }
 
-  void _showResultDialog(MatchEndResult result) {
-    if (_resultDialogShown) return;
-    _resultDialogShown = true;
+  /// Bring the screen in line with where the match is. Idempotent: called
+  /// from the listener on every relevant change and once after the first
+  /// frame, so a remounted screen catches up.
+  void _syncWithMatch(MultiplayerState state) {
+    if (!mounted || _exiting) return;
+    if (state.matchEnd != null) {
+      _noResultTimer?.cancel();
+      _noResultTimer = null;
+      _scheduleResult();
+      return;
+    }
+    if (state.status == MultiplayerStatus.finished) {
+      _noResultTimer ??= Timer(_noResultGrace, _onNoResult);
+    } else {
+      _noResultTimer?.cancel();
+      _noResultTimer = null;
+    }
+  }
 
+  /// Show the verdict after the death shake has had a beat to land, unless
+  /// it is already up or on its way.
+  void _scheduleResult() {
+    if (_resultDialogShown || _resultDialogOpen || _resultTimer != null) {
+      return;
+    }
+    _resultTimer = Timer(LBMotion.lingering, () {
+      _resultTimer = null;
+      if (!mounted || _exiting || _resultDialogShown) return;
+      final result = context.read<MultiplayerCubit>().state.matchEnd;
+      if (result != null) _showResultDialog(result);
+    });
+  }
+
+  /// The server finished the match but its result never came. Leave the
+  /// frozen board rather than sit on it.
+  void _onNoResult() {
+    _noResultTimer = null;
+    if (!mounted || _exiting) return;
+    final state = context.read<MultiplayerCubit>().state;
+    if (state.matchEnd != null) {
+      _scheduleResult();
+      return;
+    }
+    if (state.status != MultiplayerStatus.finished) return;
+    _reportProblem('finished_without_result');
+    _leaveWithMessage(AppLocalizations.of(context)!.mpErrNoResult);
+  }
+
+  void _leaveWithMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(arcadeSnackBar(context, message: message));
+    _navigateToLobby();
+  }
+
+  /// Versus result trouble goes to Sentry: a winner without a verdict is
+  /// invisible otherwise (nothing crashes).
+  void _reportProblem(String what, [Object? error, StackTrace? stackTrace]) {
+    try {
+      if (error != null) {
+        unawaited(
+          Sentry.captureException(
+            error,
+            stackTrace: stackTrace,
+            withScope: (scope) => scope.setTag('versus_result', what),
+          ),
+        );
+      } else {
+        unawaited(
+          Sentry.captureMessage(
+            'Versus: $what',
+            level: SentryLevel.warning,
+            withScope: (scope) => scope.setTag('versus_result', what),
+          ),
+        );
+      }
+    } catch (_) {
+      // Reporting must never be the thing that breaks the exit.
+    }
+  }
+
+  void _showResultDialog(MatchEndResult result) {
+    if (!mounted || _exiting || _resultDialogOpen) return;
+    _resultTimer?.cancel();
+    _resultTimer = null;
+    try {
+      _openResultDialog(result);
+    } catch (e, st) {
+      // Never leave the player locked on the board: report it, then go to
+      // the lobby with a plain explanation.
+      _resultDialogOpen = false;
+      _resultDialogShown = true;
+      _reportProblem('result_dialog_failed', e, st);
+      _leaveWithMessage(AppLocalizations.of(context)!.mpErrNoResult);
+    }
+  }
+
+  void _openResultDialog(MatchEndResult result) {
+    if (_exitDialogOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _exitDialogOpen = false;
+    }
     final l10n = AppLocalizations.of(context)!;
     final userId = _currentUserId ?? '';
     final won = result.isWinner(userId);
@@ -254,8 +398,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     // don't (the room is finished — they re-invite from the lobby).
     final canRematch = context.read<MultiplayerCubit>().lastMatchWasQuickMatch;
 
+    // Flags go up only now, after everything above that could throw.
+    _resultDialogShown = true;
+    _resultDialogOpen = true;
     showVersusResultDialog(
       context: context,
+      outcome: outcome,
       card: (dialogContext) => VersusResultCard(
         outcome: outcome,
         line: line,
@@ -278,7 +426,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 cubit.queueAgain();
               },
       ),
-    );
+    ).whenComplete(() {
+      // Dismissed (the system Back closes it too): Back on the board shows
+      // it again rather than offering to forfeit a finished match.
+      _resultDialogOpen = false;
+      _restoreGameplayFocus();
+    });
   }
 
   /// A loss with no specific cause on record — the summary would only say
@@ -336,16 +489,89 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   void _navigateToLobby() {
+    if (_exiting) return;
     // leaveGame emits idle — flag first so the stranded-exit listener
     // doesn't navigate a second time.
     _exiting = true;
+    _resultTimer?.cancel();
+    _noResultTimer?.cancel();
     context.read<MultiplayerCubit>().leaveGame();
     context.pushReplacement(AppRoutes.multiplayerLobby);
   }
 
+  /// Back (system gesture, the header's back block, Escape).
+  ///
+  /// The forfeit warning is only true while the match is running. After it
+  /// ends, Back brings the verdict back; with no verdict to show it goes
+  /// straight to the lobby. (The lobby still needs the finished room
+  /// dropped from the cubit, so that path calls leaveGame too; leaving a
+  /// finished room forfeits nothing.)
+  void _handleBack() {
+    if (_exiting || !mounted) return;
+    final state = context.read<MultiplayerCubit>().state;
+    final result = state.matchEnd;
+    if (result != null) {
+      _showResultDialog(result);
+      return;
+    }
+    if (state.status == MultiplayerStatus.finished ||
+        state.status == MultiplayerStatus.idle ||
+        state.status == MultiplayerStatus.error) {
+      _navigateToLobby();
+      return;
+    }
+    _showExitDialog();
+  }
+
+  /// Restart the stall clock on every fresh snapshot; let it run out only
+  /// while a match is live.
+  void _watchForStall(MultiplayerState state) {
+    final fresh = !identical(state.snapshot, _lastSeenSnapshot);
+    _lastSeenSnapshot = state.snapshot;
+    final live =
+        state.status == MultiplayerStatus.playing &&
+        state.matchEnd == null &&
+        state.snapshot != null;
+    if (!live) {
+      _stallTimer?.cancel();
+      _stallTimer = null;
+      _setStalled(false);
+      return;
+    }
+    if (fresh || (_stallTimer == null && !_stalled)) {
+      _setStalled(false);
+      _stallTimer?.cancel();
+      _stallTimer = Timer(_stallAfter, () {
+        _stallTimer = null;
+        _setStalled(true);
+      });
+    }
+  }
+
+  void _setStalled(bool value) {
+    if (_stalled == value || !mounted) return;
+    setState(() => _stalled = value);
+  }
+
+  /// One answer for the header badge, the status line and the board pill.
+  VersusMatchPhase _phaseOf(MultiplayerState state) {
+    if (state.matchEnd != null ||
+        state.status == MultiplayerStatus.finished ||
+        state.status == MultiplayerStatus.idle ||
+        state.status == MultiplayerStatus.error) {
+      return VersusMatchPhase.ended;
+    }
+    if (state.status == MultiplayerStatus.reconnecting || _stalled) {
+      return VersusMatchPhase.reconnecting;
+    }
+    return VersusMatchPhase.live;
+  }
+
   void _showExitDialog() {
+    if (_exitDialogOpen) return;
     final l10n = AppLocalizations.of(context)!;
 
+    _exitDialogOpen = true;
     showLBDialog<void>(
       context: context,
       title: l10n.mpLeaveGameTitle,
@@ -359,8 +585,16 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
         _navigateToLobby();
       },
       secondaryLabel: l10n.commonCancel,
-    ).whenComplete(_restoreGameplayFocus);
+    ).whenComplete(() {
+      _exitDialogOpen = false;
+      _restoreGameplayFocus();
+    });
   }
+
+  /// The forfeit question is open. If the match ends under it, it is closed
+  /// before the verdict goes up: its warning is no longer true, and its
+  /// LEAVE would otherwise pop the verdict instead of itself.
+  bool _exitDialogOpen = false;
 
   /// Give the keyboard back to the match after a modal takes it away.
   ///
@@ -395,15 +629,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             if (snapshot != null) {
               _applySnapshotJuice(snapshot);
             }
-            final matchEnd = state.matchEnd;
-            if (matchEnd != null && !_resultDialogShown) {
-              // Give the death shake a beat to land before the verdict.
-              Future.delayed(const Duration(milliseconds: 900), () {
-                if (mounted && !_resultDialogShown) {
-                  _showResultDialog(matchEnd);
-                }
-              });
-            }
+            _watchForStall(state);
+            _syncWithMatch(state);
 
             // Stranded exit: the cubit gave up on the match (reconnect
             // refused/timed out) with no GameEnded result. Leave the
@@ -438,7 +665,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
               if (!didPop) {
-                _showExitDialog();
+                _handleBack();
               }
             },
             child: KeyboardListener(
@@ -464,9 +691,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     child: BlocBuilder<MultiplayerCubit, MultiplayerState>(
                       builder: (context, multiplayerState) {
                         return BlocBuilder<AuthCubit, AuthState>(
-                          builder: (context, authState) {
+                          builder: (context, _) {
                             final snapshot = multiplayerState.snapshot;
-                            final currentUserId = authState.userId ?? '';
+                            // Rebuilt by this AuthCubit builder, resolved
+                            // through the screen's single user-id getter.
+                            final currentUserId = _currentUserId ?? '';
+                            final phase = _phaseOf(multiplayerState);
 
                             // Waiting for the first authoritative
                             // snapshot — GameStarted lands right after
@@ -495,7 +725,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                         me: me,
                                         opponent: opponent,
                                         elapsedGameMs: snapshot.elapsedGameMs,
-                                        onLeave: _showExitDialog,
+                                        onLeave: _handleBack,
+                                        phase: phase,
                                       ),
 
                                       // Board, status row and the control
@@ -509,6 +740,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                                           me,
                                           opponent,
                                           theme,
+                                          phase,
                                         ),
                                       ),
                                     ],
@@ -553,7 +785,24 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     MatchPlayerState? me,
     MatchPlayerState? opponent,
     GameTheme theme,
+    VersusMatchPhase phase,
   ) {
+    final board = _boardWithStallNotice(
+      SwipeDetector(
+        onSwipe: _handleSwipe,
+        child: MultiplayerFlameBoard(
+          snapshot: snapshot,
+          boardSize: multiplayerState.boardSize,
+          currentUserId: currentUserId,
+          prediction: multiplayerState.localPrediction,
+          onLocalFoodEaten: _onLocalFoodShown,
+        ),
+      ),
+      // The full-screen scrim already covers a transport drop; this is the
+      // quieter case where snapshots stopped without the transport noticing.
+      show:
+          _stalled && multiplayerState.status != MultiplayerStatus.reconnecting,
+    );
     return LayoutBuilder(
       builder: (context, c) {
         final cell = context.lbCell;
@@ -606,24 +855,17 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    SizedBox(
-                      width: ls,
-                      height: ls,
-                      child: SwipeDetector(
-                        onSwipe: _handleSwipe,
-                        child: MultiplayerFlameBoard(
-                          snapshot: snapshot,
-                          boardSize: multiplayerState.boardSize,
-                          currentUserId: currentUserId,
-                          prediction: multiplayerState.localPrediction,
-                          onLocalFoodEaten: _onLocalFoodShown,
-                        ),
-                      ),
-                    ),
+                    SizedBox(width: ls, height: ls, child: board),
                     SizedBox(
                       width: ls,
                       height: statusH,
-                      child: _statusRow(snapshot, currentUserId, me, opponent),
+                      child: _statusRow(
+                        snapshot,
+                        currentUserId,
+                        me,
+                        opponent,
+                        phase,
+                      ),
                     ),
                   ],
                 ),
@@ -655,29 +897,80 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
             // swipe pad below). It used to wrap the whole column, so a drag
             // starting on the versus header could steer. The board is square;
             // size it HERE, so the frame wraps the playfield exactly.
-            SizedBox(
-              width: side,
-              height: side,
-              child: SwipeDetector(
-                onSwipe: _handleSwipe,
-                child: MultiplayerFlameBoard(
-                  snapshot: snapshot,
-                  boardSize: multiplayerState.boardSize,
-                  currentUserId: currentUserId,
-                  prediction: multiplayerState.localPrediction,
-                  onLocalFoodEaten: _onLocalFoodShown,
-                ),
-              ),
-            ),
+            SizedBox(width: side, height: side, child: board),
             SizedBox(
               width: side,
               height: statusH,
-              child: _statusRow(snapshot, currentUserId, me, opponent),
+              child: _statusRow(snapshot, currentUserId, me, opponent, phase),
             ),
             Expanded(child: _controlZone(theme)),
           ],
         );
       },
+    );
+  }
+
+  /// The board with a small RECONNECTING… notice over its top edge while
+  /// snapshots have stopped arriving. The board itself stays visible: the
+  /// match is still running, only this device has lost sight of it.
+  Widget _boardWithStallNotice(Widget board, {required bool show}) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.lb;
+    final cell = context.lbCell;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        board,
+        Positioned(
+          top: cell * .6,
+          left: cell * .6,
+          right: cell * .6,
+          child: IgnorePointer(
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: LBMotion.of(context, LBMotion.quick),
+                switchInCurve: LBMotion.easeOutSoft,
+                switchOutCurve: LBMotion.exit,
+                child: !show
+                    ? const SizedBox.shrink()
+                    : Semantics(
+                        key: const ValueKey('versus-stall-notice'),
+                        liveRegion: true,
+                        label: l10n.mpReconnecting,
+                        excludeSemantics: true,
+                        child: LBBlock(
+                          kind: LBBlockKind.sheet,
+                          height: cell * 2.4,
+                          padding: EdgeInsets.symmetric(horizontal: cell),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              VersusBusyCells(
+                                cell: 4 * context.uiScale,
+                                color: LB.gold,
+                              ),
+                              SizedBox(width: cell * .6),
+                              Flexible(
+                                child: Text(
+                                  l10n.mpReconnecting.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LBText.button(
+                                    p,
+                                    color: LB.gold,
+                                    size: 11.5,
+                                  ).copyWith(letterSpacing: 2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -778,26 +1071,37 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
     String currentUserId,
     MatchPlayerState? me,
     MatchPlayerState? opponent,
+    VersusMatchPhase phase,
   ) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.lb;
     final cell = context.lbCell;
     final length = snapshot.playerByUserId(currentUserId)?.body.length ?? 0;
     final manyPlayers = snapshot.players.length > 2;
-    final swipe = !context.select<GameSettingsCubit, bool>(
-      (c) => c.state.dPadEnabled,
-    );
+    // A read, not a select: this runs inside a LayoutBuilder on the State's
+    // context, where provider's select asserts. build() already watches
+    // GameSettingsCubit, so a settings change still rebuilds this row.
+    final swipe = !context.read<GameSettingsCubit>().state.dPadEnabled;
 
     final myScore = me?.score ?? 0;
     final rivalScore = opponent?.score ?? 0;
     final gap = (rivalScore - myScore).abs();
-    final String? gapLine = opponent == null
-        ? null
-        : rivalScore > myScore
-        ? l10n.lbMatchBehind(opponent.username, context.formatInt(gap))
-        : myScore > rivalScore
-        ? l10n.lbMatchAhead(context.formatInt(gap))
-        : l10n.lbMatchTied;
+    // The taunts are about a race still being run. Once it is over (in
+    // last_alive the dead rival can hold more points than the winner) or
+    // while this device can't see it, a neutral line replaces them.
+    final String? gapLine = switch (phase) {
+      VersusMatchPhase.ended => l10n.lbMatchOver,
+      VersusMatchPhase.reconnecting => l10n.mpReconnecting,
+      VersusMatchPhase.live =>
+        opponent == null
+            ? null
+            : rivalScore > myScore
+            ? l10n.lbMatchBehind(opponent.username, context.formatInt(gap))
+            : myScore > rivalScore
+            ? l10n.lbMatchAhead(context.formatInt(gap))
+            : l10n.lbMatchTied,
+    };
+    final lineColor = phase == VersusMatchPhase.reconnecting ? LB.gold : null;
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: cell * .4),
@@ -815,7 +1119,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: LBText.body(p, size: 11.5),
+                    style: LBText.body(p, color: lineColor, size: 11.5),
                   ),
           ),
           const SizedBox(width: 8),

@@ -138,14 +138,42 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   // Reconnect settle timeout (see _startReconnectTimeout)
   Timer? _reconnectTimeoutTimer;
 
-  /// Ticks the visible READY deadline in a matchmade lobby.
+  /// Ticks the matchmade lobby's two deadlines (see [_onLobbyDeadlineTick]).
   Timer? _readyDeadlineTimer;
+
+  /// Seconds left on the READY check. Only counts down while someone seated
+  /// is not ready.
+  int _readyRemaining = 0;
+
+  /// Seconds left for the host to press START. Only counts down while every
+  /// seated player is ready.
+  int _hostStartRemaining = 0;
 
   /// Watches the gap between GameStarting and GameStarted.
   Timer? _countdownWatchdog;
 
+  /// Catches a match that finished without its result (see
+  /// [_armMatchEndWatchdog]).
+  Timer? _matchEndWatchdog;
+
+  /// How long `finished` may sit without a [MatchEndResult] before the
+  /// cubit stops waiting for one.
+  static const Duration matchEndWatchdogDelay = Duration(seconds: 3);
+
   /// How long two matched strangers get to both confirm READY.
-  static const int _readyDeadlineSeconds = 30;
+  static const int readyDeadlineSeconds = 30;
+
+  /// How long the host gets to press START once everyone is ready.
+  static const int hostStartDeadlineSeconds = 40;
+
+  /// Bumped by every MatchFound. quickMatch compares it across its awaited
+  /// join to tell that the match arrived while the join was in flight.
+  int _matchFoundCount = 0;
+
+  /// The game whose end this client has already seen (GameEnded, a finished
+  /// game update, or "ended while you were away"). Snapshots for it are late
+  /// and must not reopen it.
+  String? _endedGameId;
 
   /// Whether the current/last session came from quick match — drives the
   /// "Play Again" re-queue action on the result screen.
@@ -214,6 +242,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       (status) {
         if (status.matchFound && status.gameId != null) {
           // Match found! Stop timer and transition to lobby
+          _matchFoundCount++;
           _stopMatchmakingTimer();
           _startReadyDeadline();
           _audioService.playSound('match_found');
@@ -225,8 +254,10 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
             state.copyWith(
               status: MultiplayerStatus.inLobby,
               isMatchmadeLobby: true,
-              readyDeadlineSeconds: _readyDeadlineSeconds,
+              readyDeadlineSeconds: _readyRemaining,
+              clearHostStartDeadline: true,
               clearMatchmaking: true,
+              clearMatch: true,
             ),
           );
 
@@ -243,6 +274,13 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
             ),
           );
         } else if (status.isSearching) {
+          // A "searching" report can trail the match it was searching for:
+          // the server pushes MatchFound before the JoinMatchmaking
+          // invocation returns, and the join's own report lands after. It
+          // used to drag the lobby back to the search ring (inLobby ->
+          // inMatchmaking ~2 ms after the match), and once left a seated
+          // player stuck there, unable to ready up.
+          if (!_mayShowSearching(state.status)) return;
           emit(
             state.copyWith(
               status: MultiplayerStatus.inMatchmaking,
@@ -268,6 +306,16 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     );
   }
 
+  /// Whether a queue report may move the cubit to [MultiplayerStatus.
+  /// inMatchmaking]. Never backwards out of a match that has been found.
+  static bool _mayShowSearching(MultiplayerStatus status) => switch (status) {
+    MultiplayerStatus.inLobby ||
+    MultiplayerStatus.playing ||
+    MultiplayerStatus.reconnecting ||
+    MultiplayerStatus.finished => false,
+    _ => true,
+  };
+
   /// Subscribe to the authoritative match streams (tick snapshots +
   /// the GameEnded result).
   void _startMatchListeners() {
@@ -290,10 +338,21 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     );
   }
 
+  /// The signed-in player's id: THE identity every multiplayer decision
+  /// uses (which snake is mine, who won, whether I am host). Screens should
+  /// read this rather than a second source such as AuthCubit, so the cubit
+  /// and the screen can never disagree about who "me" is.
+  String? get currentUserId => _userService.currentUser?.uid;
+
+  /// The current match's id, from the service or, once the service has
+  /// dropped it (ReconnectFailed clears it), from the last game update.
+  String? get _matchGameId =>
+      _multiplayerService.currentGameId ?? state.currentGame?.id;
+
   /// Get current player from the game
   MultiplayerPlayer? get currentPlayer {
     if (state.currentGame == null) return null;
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
     if (currentUserId == null) return null;
 
     return state.currentGame!.getPlayer(currentUserId);
@@ -302,7 +361,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// My side of the latest server snapshot (null outside a live match).
   MatchPlayerState? get mySnapshotPlayer {
     final snapshot = state.snapshot;
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
     if (snapshot == null || currentUserId == null) return null;
     return snapshot.playerByUserId(currentUserId);
   }
@@ -310,7 +369,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// The opponent's side of the latest server snapshot.
   MatchPlayerState? get opponentSnapshotPlayer {
     final snapshot = state.snapshot;
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
     if (snapshot == null || currentUserId == null) return null;
     for (final p in snapshot.players) {
       if (p.userId != currentUserId) return p;
@@ -322,7 +381,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Host is determined by playerIndex (rank) == 0, not by list order
   bool get isHost {
     if (state.currentGame == null) return false;
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
     if (currentUserId == null) return false;
 
     final currentPlayer = state.currentGame!.getPlayer(currentUserId);
@@ -332,7 +391,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Get opponent player
   MultiplayerPlayer? getOpponent() {
     if (state.currentGame == null) return null;
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
     if (currentUserId == null) return null;
 
     final opponents = state.currentGame!.players
@@ -347,7 +406,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     MultiplayerGameMode mode = MultiplayerGameMode.classic,
     int maxPlayers = 2,
   }) async {
-    emit(state.copyWith(isLoading: true, clearError: true));
+    // A new session starts with no trace of the last match: a stale result
+    // would also make the late-snapshot guard refuse the new match's ticks.
+    emit(state.copyWith(isLoading: true, clearError: true, clearMatch: true));
 
     try {
       _quickMatchSession = false;
@@ -396,7 +457,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
 
   /// Join a game by room code
   Future<bool> joinGame(String roomCode) async {
-    emit(state.copyWith(isLoading: true, clearError: true));
+    // A new session starts with no trace of the last match: a stale result
+    // would also make the late-snapshot guard refuse the new match's ticks.
+    emit(state.copyWith(isLoading: true, clearError: true, clearMatch: true));
 
     try {
       _quickMatchSession = false;
@@ -441,29 +504,44 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   }
 
   /// Leave current game
+  ///
+  /// The local half always happens, even when the server call throws. The
+  /// failure path used to emit only an error code and leave status
+  /// `finished` with the old `matchEnd` in place, which then leaked into the
+  /// next match (Play Again goes straight from here into quickMatch).
   Future<void> leaveGame() async {
+    // Stop the lobby timers before the room goes away — otherwise the
+    // ready deadline keeps ticking against a game that no longer exists
+    // and eventually tries to abandon it a second time.
+    _stopReadyDeadline();
+    _stopCountdownWatchdog();
+    _stopMatchEndWatchdog();
+    _cancelReconnectTimeout();
+    _startGameTimeoutTimer?.cancel();
+    var failed = false;
     try {
-      // Stop the lobby timers before the room goes away — otherwise the
-      // ready deadline keeps ticking against a game that no longer exists
-      // and eventually tries to abandon it a second time.
-      _stopReadyDeadline();
-      _stopCountdownWatchdog();
       await _multiplayerService.leaveGame();
-      _stopListening();
-      _matchActive = false;
-      _predictor.reset();
-      _matchTimer.stop();
-      emit(
-        state.copyWith(
-          status: MultiplayerStatus.idle,
-          clearGame: true,
-          clearError: true,
-        ),
-      );
     } catch (e) {
       AppLogger.error('Error leaving game', e);
-      emit(state.copyWith(errorCode: MultiplayerError.generic));
+      failed = true;
     }
+    _stopListening();
+    _matchActive = false;
+    _predictor.reset();
+    _matchTimer.stop();
+    emit(
+      state.copyWith(
+        status: MultiplayerStatus.idle,
+        isLoading: false,
+        clearGame: true,
+        clearMatch: true,
+        clearReadyDeadline: true,
+        clearHostStartDeadline: true,
+        clearSettlement: true,
+        clearError: !failed,
+        errorCode: failed ? MultiplayerError.generic : null,
+      ),
+    );
   }
 
   /// Set the current player's ready flag. Toggling back to not-ready is
@@ -508,7 +586,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     status: state.status,
     snapshot: state.snapshot,
     errorCode: state.errorCode,
-    currentUserId: _userService.currentUser?.uid,
+    currentUserId: currentUserId,
   );
 
   /// Steer, and say what became of the input.
@@ -532,7 +610,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   Direction? relativeTarget(RelativeTurn turn) {
     final snapshot = state.snapshot;
     if (snapshot == null) return null;
-    final uid = _userService.currentUser?.uid;
+    final uid = currentUserId;
     final me = uid == null ? null : snapshot.playerByUserId(uid);
     final heading = state.intentDirection ?? me?.direction;
     if (heading == null) return null;
@@ -542,7 +620,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   InputResult changeDirection(Direction direction) {
     final steerable = canSteer;
     final me = steerable
-        ? state.snapshot!.playerByUserId(_userService.currentUser!.uid)!
+        ? state.snapshot!.playerByUserId(currentUserId!)!
         : null;
 
     final result = MultiplayerSteering.resolve(
@@ -611,7 +689,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     int playerCount = 2,
   }) async {
     emit(
-      state.copyWith(isLoading: true, clearError: true, clearMatchmaking: true),
+      state.copyWith(
+        isLoading: true,
+        clearError: true,
+        clearMatchmaking: true,
+        clearMatch: true,
+      ),
     );
 
     try {
@@ -623,10 +706,25 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       // so a hub that was never connected still put the UI into "searching"
       // — a queue the server had no idea about, counting down to a timeout
       // that could never have been anything else.
+      final matchesBefore = _matchFoundCount;
       final outcome = await _multiplayerService.joinMatchmaking(
         mode: mode,
         playerCount: playerCount,
       );
+
+      // The match can arrive before the join returns: the server pushes
+      // MatchFound from inside JoinMatchmaking when an opponent is already
+      // waiting. The lobby has been entered by then, so this "queued"
+      // answer is stale — emitting inMatchmaking here dragged the lobby back
+      // to the search ring, and starting the watch would poll for a match
+      // that already exists.
+      if (outcome == JoinQueueOutcome.matched ||
+          _matchFoundCount != matchesBefore) {
+        emit(state.copyWith(isLoading: false));
+        _analytics.trackMultiplayerQueueJoined();
+        return true;
+      }
+
       if (outcome != JoinQueueOutcome.joined) {
         // Say which thing broke. "Matchmaking failed" for a socket that
         // never opened sends the player to look at the wrong thing — the
@@ -820,8 +918,9 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         mode: state.matchmakingMode ?? MultiplayerGameMode.classic,
         playerCount: state.matchmakingPlayerCount ?? 2,
       );
-      // Cancelled while the join was in flight — nothing to restore.
-      if (!state.isMatchmaking) return;
+      // Cancelled (or matched) while the join was in flight — nothing to
+      // restore.
+      if (!state.isMatchmaking || outcome == JoinQueueOutcome.matched) return;
       if (outcome != JoinQueueOutcome.joined) {
         await _onMatchmakingFailed(MatchmakingFailure.connectionLost);
         return;
@@ -946,6 +1045,14 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// status change by returning to the lobby.
   void _giveUpOnMatch(MultiplayerError code) {
     _cancelReconnectTimeout();
+    _stopMatchEndWatchdog();
+    if (code == MultiplayerError.matchEndedAway) {
+      // The match is over, not merely out of reach: anything still in
+      // flight for it is late. Its rewards come from the settlement, which
+      // is worth asking for now rather than at the next trigger.
+      _endedGameId = _matchGameId ?? _endedGameId;
+      unawaited(_settlementService.syncPending());
+    }
     _matchActive = false;
     _predictor.reset();
     if (_matchTimer.isRunning) _matchTimer.stop();
@@ -1129,9 +1236,20 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       // not on this status flip.
       newStatus = MultiplayerStatus.finished;
       shouldClearLoading = true;
+      _endedGameId = game.id.isNotEmpty ? game.id : _matchGameId;
+      _stopReadyDeadline();
+      _stopCountdownWatchdog();
+      if (state.matchEnd == null) _armMatchEndWatchdog();
     } else if (game.status == MultiplayerGameStatus.waiting) {
       newStatus = MultiplayerStatus.inLobby;
     }
+
+    // Keep the visible lobby deadline in step with readiness the moment it
+    // changes, rather than up to a second later on the next tick.
+    final lobbyDeadlineRunning =
+        _readyDeadlineTimer != null &&
+        game.status == MultiplayerGameStatus.waiting;
+    final everyoneReady = lobbyDeadlineRunning && _everyoneReady(game);
 
     emit(
       state.copyWith(
@@ -1139,6 +1257,12 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         currentGame: game,
         isLoading: shouldClearLoading ? false : null,
         clearError: clearStaleError,
+        readyDeadlineSeconds: lobbyDeadlineRunning && !everyoneReady
+            ? _readyRemaining
+            : null,
+        clearReadyDeadline: lobbyDeadlineRunning && everyoneReady,
+        hostStartDeadlineSeconds: everyoneReady ? _hostStartRemaining : null,
+        clearHostStartDeadline: !everyoneReady,
       ),
     );
 
@@ -1160,17 +1284,69 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// both sides have not confirmed by then the room is abandoned and
   /// whoever is still here goes back to the queue to find someone else.
   /// Nobody is stranded, and nobody is force-started into a match.
+  ///
+  /// The READY clock only runs while someone seated is not ready. It used to
+  /// keep running after both players had confirmed, and with no START from
+  /// the host inside the remaining seconds both were kicked for "not being
+  /// ready" (seen in production: both ready 23 s in, abandoned at 30 s). Once
+  /// everyone is ready a second, longer clock bounds the wait for START, so
+  /// a host who walks away cannot strand the guest either.
+  ///
+  /// One ticker drives both, and each clock keeps what it has left when the
+  /// other takes over. An un-ready resumes the READY clock with its remaining
+  /// seconds rather than a fresh thirty: refilling it would let a READY
+  /// toggle hold the lobby open forever, and the lobby's whole life stays
+  /// bounded by the two budgets added together.
   void _startReadyDeadline() {
     _readyDeadlineTimer?.cancel();
-    _readyDeadlineTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final remaining = (state.readyDeadlineSeconds ?? 0) - 1;
-      if (remaining > 0) {
-        emit(state.copyWith(readyDeadlineSeconds: remaining));
+    _readyRemaining = readyDeadlineSeconds;
+    _hostStartRemaining = hostStartDeadlineSeconds;
+    _readyDeadlineTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _onLobbyDeadlineTick(),
+    );
+  }
+
+  /// Every seated seat is filled and every seated player has confirmed.
+  static bool _everyoneReady(MultiplayerGame? game) =>
+      game != null &&
+      game.status == MultiplayerGameStatus.waiting &&
+      game.players.length >= game.maxPlayers &&
+      game.canStart;
+
+  void _onLobbyDeadlineTick() {
+    if (isClosed) {
+      _stopReadyDeadline();
+      return;
+    }
+    if (_everyoneReady(state.currentGame)) {
+      _hostStartRemaining--;
+      if (_hostStartRemaining > 0) {
+        emit(
+          state.copyWith(
+            hostStartDeadlineSeconds: _hostStartRemaining,
+            clearReadyDeadline: true,
+          ),
+        );
         return;
       }
       _stopReadyDeadline();
-      unawaited(_abandonUnreadyLobby());
-    });
+      unawaited(_abandonLobby(MultiplayerError.hostDidNotStart));
+      return;
+    }
+
+    _readyRemaining--;
+    if (_readyRemaining > 0) {
+      emit(
+        state.copyWith(
+          readyDeadlineSeconds: _readyRemaining,
+          clearHostStartDeadline: true,
+        ),
+      );
+      return;
+    }
+    _stopReadyDeadline();
+    unawaited(_abandonLobby(MultiplayerError.readyTimeout));
   }
 
   void _stopReadyDeadline() {
@@ -1224,23 +1400,55 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// So it surfaces the reason and stops. Searching again is one tap, and it
   /// is the player's tap — which also means an idle app cannot sit there
   /// queueing against the server indefinitely.
-  Future<void> _abandonUnreadyLobby() async {
+  ///
+  /// [reason] says which clock ran out: [MultiplayerError.readyTimeout] when
+  /// somebody never confirmed, [MultiplayerError.hostDidNotStart] when
+  /// everyone had and the host never pressed START.
+  Future<void> _abandonLobby(MultiplayerError reason) async {
     try {
       await leaveGame();
     } catch (_) {
       // Leaving is best-effort: the room is being abandoned either way,
       // and the server drops an unready Waiting room on disconnect.
     }
+    if (isClosed) return;
 
     emit(
       state.copyWith(
         status: MultiplayerStatus.idle,
-        errorCode: MultiplayerError.readyTimeout,
+        errorCode: reason,
         clearGame: true,
         clearReadyDeadline: true,
+        clearHostStartDeadline: true,
         isMatchmaking: false,
       ),
     );
+  }
+
+  /// A match flipped to finished without its [MatchEndResult]. Normally the
+  /// result follows within milliseconds (the service now sends it first);
+  /// if it never comes, `finished` with no result is a dead end — the result
+  /// screen has nothing to show and nothing moves it on. After a short wait
+  /// this gives up the way a match that ended out of reach does: idle plus
+  /// [MultiplayerError.matchEndedAway], which the screen already treats as a
+  /// stranded exit. The rewards are not lost — they come from the
+  /// settlement, which [_giveUpOnMatch] asks for.
+  void _armMatchEndWatchdog() {
+    _matchEndWatchdog?.cancel();
+    _matchEndWatchdog = Timer(matchEndWatchdogDelay, () {
+      _matchEndWatchdog = null;
+      if (isClosed) return;
+      if (state.status == MultiplayerStatus.finished &&
+          state.matchEnd == null) {
+        AppLogger.warning('Match finished without a result; leaving it');
+        _giveUpOnMatch(MultiplayerError.matchEndedAway);
+      }
+    });
+  }
+
+  void _stopMatchEndWatchdog() {
+    _matchEndWatchdog?.cancel();
+    _matchEndWatchdog = null;
   }
 
   /// Fold an authoritative snapshot into the state. The first snapshot
@@ -1254,6 +1462,17 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   Duration _maxSnapshotGap = Duration.zero;
 
   void _handleSnapshot(MatchSnapshot snapshot) {
+    // A Tick that trails GameEnded belongs to a match that is over. Folding
+    // it in flipped finished back to playing, restarted the per-match
+    // bookkeeping below and made the D-pad steerable again.
+    if (!MultiplayerRecovery.acceptsSnapshot(
+      status: state.status,
+      hasMatchEnd: state.matchEnd != null,
+      currentGameId: _multiplayerService.currentGameId,
+      endedGameId: _endedGameId,
+    )) {
+      return;
+    }
     if (!_matchActive) {
       _matchActive = true;
       _myAliveLastTick = true;
@@ -1293,7 +1512,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _lastSnapshotAt = arrived;
     _snapshotCount++;
 
-    final currentUserId = _userService.currentUser?.uid;
+    final currentUserId = this.currentUserId;
 
     // Reconcile the local prediction first. An OLDER tick than the one
     // already shown (a reply racing the broadcast) is dropped outright:
@@ -1402,30 +1621,50 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
   /// Handle the server's GameEnded verdict: record stats, credit
   /// rewards (both guarded to fire once per match), and surface the
   /// result to the screen.
+  ///
+  /// Everything before the emit is side effects (sound, analytics, the
+  /// settlement fetch); each is guarded so none of them can stop the result
+  /// reaching the screen. A throw there used to leave the client on
+  /// `finished` with no result — a screen with nothing to show and no way on.
   void _handleMatchEnd(MatchEndResult result) {
+    if (isClosed) return;
     _startGameTimeoutTimer?.cancel();
     _stopCountdownWatchdog();
     _stopReadyDeadline();
     _cancelReconnectTimeout();
+    _stopMatchEndWatchdog();
     if (_matchTimer.isRunning) _matchTimer.stop();
+    _endedGameId = _matchGameId ?? _endedGameId;
 
-    final currentUserId = _userService.currentUser?.uid;
-    final won = currentUserId != null && result.isWinner(currentUserId);
-    final myResult = currentUserId != null
-        ? result.playerByUserId(currentUserId)
-        : null;
-
-    if (won) {
-      _audioService.playSound('victory');
-      _hapticService.heavyImpact();
-    } else {
-      _audioService.playSound('defeat');
-      _hapticService.mediumImpact();
+    void guarded(String what, void Function() action) {
+      try {
+        action();
+      } catch (e) {
+        AppLogger.error('Match end: $what failed', e);
+      }
     }
-    _analytics.trackMultiplayerGameEnded(
-      score: myResult?.score ?? 0,
-      result: won ? 'win' : (result.isDraw ? 'draw' : 'loss'),
-    );
+
+    final currentUserId = this.currentUserId;
+    final won = currentUserId != null && result.isWinner(currentUserId);
+
+    guarded('feedback', () {
+      if (won) {
+        _audioService.playSound('victory');
+        _hapticService.heavyImpact();
+      } else {
+        _audioService.playSound('defeat');
+        _hapticService.mediumImpact();
+      }
+    });
+    guarded('analytics', () {
+      final myResult = currentUserId != null
+          ? result.playerByUserId(currentUserId)
+          : null;
+      _analytics.trackMultiplayerGameEnded(
+        score: myResult?.score ?? 0,
+        result: won ? 'win' : (result.isDraw ? 'draw' : 'loss'),
+      );
+    });
 
     // Rewards and statistics are NOT applied from this broadcast any more.
     // They come from the server's settlement for this match, fetched here and
@@ -1435,22 +1674,26 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // Rewards are shown as processing until the settlement lands. The fetch
     // retries on its own (backoff, connectivity, next launch), so a failure
     // here is a delay rather than a loss.
-    unawaited(_settlementService.syncPending());
+    guarded('settlement fetch', () {
+      unawaited(_settlementService.syncPending());
+    });
 
     if (Autopilot.enabled) {
-      vsLog(
-        'match ended: ${won ? 'WIN' : (result.isDraw ? 'DRAW' : 'LOSS')} '
-        'reason=${result.reason} after ${_matchTimer.elapsed.inSeconds}s; '
-        '${result.players.map((p) => '${p.username} ${p.score}pts ${p.alive ? 'alive' : 'dead(${p.deathReason})'}').join(', ')}; '
-        'snapshots $_snapshotCount, round trip ~${_predictor.roundTrip.inMilliseconds}ms, '
-        'longest gap ${_maxSnapshotGap.inMilliseconds}ms, $_lateSnapshots gaps >400ms, '
-        'corrections ${_predictor.mispredictions}/${_predictor.predictionsChecked}',
-      );
+      guarded('autopilot log', () {
+        vsLog(
+          'match ended: ${won ? 'WIN' : (result.isDraw ? 'DRAW' : 'LOSS')} '
+          'reason=${result.reason} after ${_matchTimer.elapsed.inSeconds}s; '
+          '${result.players.map((p) => '${p.username} ${p.score}pts ${p.alive ? 'alive' : 'dead(${p.deathReason})'}').join(', ')}; '
+          'snapshots $_snapshotCount, round trip ~${_predictor.roundTrip.inMilliseconds}ms, '
+          'longest gap ${_maxSnapshotGap.inMilliseconds}ms, $_lateSnapshots gaps >400ms, '
+          'corrections ${_predictor.mispredictions}/${_predictor.predictionsChecked}',
+        );
+      });
     }
-    _logPredictionAccuracy();
+    guarded('prediction log', _logPredictionAccuracy);
     _matchActive = false;
     _predictor.reset();
-    _settlingGameId = _multiplayerService.currentGameId;
+    _settlingGameId = _matchGameId;
     emit(
       state.copyWith(
         status: MultiplayerStatus.finished,
@@ -1485,6 +1728,28 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         final seconds =
             (action.data['countdown_seconds'] as num?)?.toInt() ?? 3;
         emit(state.copyWith(countdownSeconds: seconds));
+        break;
+
+      // The socket dropped and the transport is retrying on its own. The
+      // board froze with nothing saying why: status stayed `playing` for the
+      // whole outage. Say so now. No local timeout here — the transport's
+      // retry schedule is bounded and ends in connection_restored or
+      // connection_lost, both of which settle this.
+      case 'connection_reconnecting':
+        if (state.status == MultiplayerStatus.playing) {
+          emit(state.copyWith(status: MultiplayerStatus.reconnecting));
+        }
+        break;
+
+      // The transport is back and the service has asked the server to
+      // re-seat us (Reconnect). The answer settles it: ReconnectSuccess /
+      // MatchResumed back to playing, ReconnectFailed (a match that ended
+      // while we were offline) straight to matchEndedAway. The timeout only
+      // covers an answer that never comes.
+      case 'connection_restored':
+        if (state.status == MultiplayerStatus.reconnecting) {
+          _startReconnectTimeout();
+        }
         break;
 
       // The transport gave up (auto-reconnect exhausted or hard drop).
@@ -1549,6 +1814,7 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     _startGameTimeoutTimer?.cancel();
     _stopReadyDeadline();
     _stopCountdownWatchdog();
+    _stopMatchEndWatchdog();
     _reconnectTimeoutTimer?.cancel();
     _rejectedInputClearTimer?.cancel();
     _errorSubscription?.cancel();

@@ -11,10 +11,14 @@ enum MultiplayerError {
   readyFailed,
   startFailed,
   startTimeout,
-  /// A matchmade lobby expired because both players did not confirm
-  /// READY inside the deadline. Not a failure — the player is being
-  /// requeued — but it explains why the lobby vanished.
+  /// A matchmade lobby expired because not every player confirmed READY
+  /// inside the deadline. The player is NOT requeued (one tap searches
+  /// again); this explains why the lobby vanished.
   readyTimeout,
+  /// A matchmade lobby expired because everyone was READY but the host
+  /// never pressed START inside the host-start deadline. Distinct from
+  /// [readyTimeout], which means somebody never confirmed READY.
+  hostDidNotStart,
   reconnectFailed,
   connectionLost,
   matchEndedAway,
@@ -41,6 +45,8 @@ extension MultiplayerErrorL10n on MultiplayerError {
         MultiplayerError.startFailed => l10n.mpErrStartFailed,
         MultiplayerError.startTimeout => l10n.mpErrStartTimeout,
         MultiplayerError.readyTimeout => l10n.mpErrReadyTimeout,
+        // Placeholder until a dedicated mpErrHostDidNotStart string lands.
+        MultiplayerError.hostDidNotStart => l10n.mpErrHostDidNotStart,
         MultiplayerError.reconnectFailed => l10n.mpErrReconnectFailed,
         MultiplayerError.connectionLost => l10n.mpErrConnectionLost,
         MultiplayerError.matchEndedAway => l10n.mpErrMatchEndedAway,

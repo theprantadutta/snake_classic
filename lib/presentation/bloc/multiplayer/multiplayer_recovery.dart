@@ -24,6 +24,27 @@ class MultiplayerRecovery {
   static bool provesMatchLive(MultiplayerGameStatus status) =>
       status == MultiplayerGameStatus.playing;
 
+  /// Should a snapshot that just arrived be folded in at all?
+  ///
+  /// A snapshot proves the match is live — unless it describes a match this
+  /// client has already seen end. A Tick can trail GameEnded on the wire,
+  /// and folding it in used to flip `finished` back to `playing`, restart the
+  /// per-match bookkeeping and make the player steerable in a match that was
+  /// over. So: nothing once the match has finished or its result is in, and
+  /// nothing for the game id that ended ([endedGameId]) while that is still
+  /// the service's current game.
+  static bool acceptsSnapshot({
+    required MultiplayerStatus status,
+    required bool hasMatchEnd,
+    String? currentGameId,
+    String? endedGameId,
+  }) {
+    if (status == MultiplayerStatus.finished) return false;
+    if (hasMatchEnd) return false;
+    if (endedGameId != null && currentGameId == endedGameId) return false;
+    return true;
+  }
+
   /// The state after an authoritative engine tick.
   ///
   /// A snapshot is the strongest proof there is — the server is simulating
@@ -47,6 +68,14 @@ class MultiplayerRecovery {
     Direction? intentDirection,
     LocalPrediction? localPrediction,
   }) {
+    // Never un-finish a match (see [acceptsSnapshot]); the cubit already
+    // filters these, this keeps the rule true for any other caller.
+    if (!acceptsSnapshot(
+      status: current.status,
+      hasMatchEnd: current.matchEnd != null,
+    )) {
+      return current;
+    }
     return current.copyWith(
       status: MultiplayerStatus.playing,
       snapshot: snapshot,
