@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:snake_classic/debug/autopilot.dart';
+import 'package:snake_classic/debug/versus_autopilot.dart';
 import 'package:snake_classic/game/multiplayer/local_snake_predictor.dart';
 import 'package:snake_classic/models/match_snapshot.dart';
 import 'package:snake_classic/models/multiplayer_game.dart';
@@ -1263,6 +1265,15 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
       _snapshotCount = 0;
       _lateSnapshots = 0;
       _maxSnapshotGap = Duration.zero;
+      if (Autopilot.enabled) {
+        FrameStatsLogger.instance.start();
+        vsLog(
+          'match started: game=${_multiplayerService.currentGameId} '
+          'tick=${snapshot.tick} tickMs=${snapshot.tickMs} '
+          'board=${_multiplayerService.boardSize} '
+          'players=${snapshot.players.map((p) => p.username).join(" vs ")}',
+        );
+      }
     }
     final arrived = _predictionClock.elapsed;
     final last = _lastSnapshotAt;
@@ -1315,6 +1326,44 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
         localPrediction: _predictor.prediction,
       ),
     );
+
+    if (Autopilot.enabled) _autopilotStep(snapshot, me);
+  }
+
+  /// Profiling only (LB_AUTOPILOT): steer through [changeDirection], the
+  /// D-pad's path, and log the link every 50 snapshots.
+  void _autopilotStep(MatchSnapshot snapshot, MatchPlayerState? me) {
+    if (_snapshotCount % 50 == 0) {
+      vsLog(
+        'link @tick ${snapshot.tick}: snapshots $_snapshotCount, round trip '
+        '~${_predictor.roundTrip.inMilliseconds}ms, longest gap '
+        '${_maxSnapshotGap.inMilliseconds}ms, $_lateSnapshots gaps >400ms, '
+        'corrections ${_predictor.mispredictions}/${_predictor.predictionsChecked}',
+      );
+    }
+    final userId = _userService.currentUser?.uid;
+    if (me == null || userId == null || !canSteer) return;
+    final heading = _predictor.lastPendingDirection ?? me.direction;
+    final next = versusAutopilotDirection(
+      snapshot: snapshot,
+      userId: userId,
+      boardSize: _multiplayerService.boardSize,
+      heading: heading,
+    );
+    if (next != null && next != heading) changeDirection(next);
+  }
+
+  @override
+  void onChange(Change<MultiplayerState> change) {
+    super.onChange(change);
+    if (Autopilot.enabled &&
+        change.currentState.status != change.nextState.status) {
+      vsLog(
+        'status ${change.currentState.status.name} -> '
+        '${change.nextState.status.name}'
+        '${change.nextState.errorCode != null ? ' (error ${change.nextState.errorCode!.name})' : ''}',
+      );
+    }
   }
 
   /// The eat chirp for one of my bites, played when the board SHOWS it —
@@ -1380,6 +1429,16 @@ class MultiplayerCubit extends Cubit<MultiplayerState> {
     // here is a delay rather than a loss.
     unawaited(_settlementService.syncPending());
 
+    if (Autopilot.enabled) {
+      vsLog(
+        'match ended: ${won ? 'WIN' : (result.isDraw ? 'DRAW' : 'LOSS')} '
+        'reason=${result.reason} after ${_matchTimer.elapsed.inSeconds}s; '
+        '${result.players.map((p) => '${p.username} ${p.score}pts ${p.alive ? 'alive' : 'dead(${p.deathReason})'}').join(', ')}; '
+        'snapshots $_snapshotCount, round trip ~${_predictor.roundTrip.inMilliseconds}ms, '
+        'longest gap ${_maxSnapshotGap.inMilliseconds}ms, $_lateSnapshots gaps >400ms, '
+        'corrections ${_predictor.mispredictions}/${_predictor.predictionsChecked}',
+      );
+    }
     _logPredictionAccuracy();
     _matchActive = false;
     _predictor.reset();
