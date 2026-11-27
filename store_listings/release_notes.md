@@ -123,3 +123,10 @@ Daha akıcı Versus maçları.
 • Maç başlayamadığında daha net mesajlar.
 </tr-TR>
 ```
+
+## App Store Connect — What's New (8.2.1)
+
+Entered in App Store Connect on 2026-11-27 for 8.2.1 (89), over the live
+8.1.0 (87): the Play block above, verbatim, in all 10 App Store locales
+(en-US/en-GB, ar, es-MX = es-419, fr-FR, hi, it, pl, pt-BR, tr). Nothing in it
+is Android-only. Promotional Text unchanged.
