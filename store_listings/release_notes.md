@@ -6,26 +6,21 @@
      A release that actually shipped is archived as release_notes_<v>.md. -->
 
 Paste-ready "What's new" for Play Console / App Store Connect. Written for
-**8.2.0+88** (2026-11-26), the Versus reliability release. 8.1.0+87 is the
-previous release; its notes are archived in release_notes_8.1.0.md.
+**8.3.0+90** (2026-11-28), the controls release. 8.2.1+89 is the previous
+release (same notes as 8.2.0, archived in release_notes_8.2.0.md).
 
-What 8.2.0 adds over 8.1.0 (found in a two-device Versus test against
-production on 2026-11-26):
+What 8.3.0 adds over 8.2.1 (controls were the top complaint in Play reviews):
 
-- **Versus lobby:** the READY countdown stops once everyone is ready (it used
-  to kill rooms the host was about to start); a separate 40 s "host never
-  started" limit with its own message; a match-found race that could leave a
-  phone on the Versus screen while seated in a room.
-- **Result screen** always appears (the winner sometimes got none); Back
-  after a match re-shows it instead of offering to forfeit; LIVE → FINAL,
-  "Match over." instead of live taunts; per-outcome footer.
-- **Connection drops:** RECONNECTING overlay at once, faster reconnect
-  attempts, and "The match ended while you were away" instead of a frozen
-  board.
-- **Forced update on Android too** (dashboard minimum version, 8.2.0+ only).
-- **Versus analytics:** versus_lobby_closed, versus_connection,
-  versus_match_quality (CLAUDE.md, "Versus analytics (8.2)").
-- No backend change required (backend master is compatible as deployed).
+- **Faster swipes:** raw pointer input; a turn fires mid-swipe after ~14 px
+  instead of ~50 px.
+- **Button size** (Small / Normal / Large / Huge) for the d-pad and turn
+  buttons, and **swipe sensitivity** (Low / Normal / High), in Settings and
+  the pause menu.
+- **"Pick your controls"** intro, once, before the second game.
+- **About** is a full screen.
+- Original launch splash back; the Miami Nights pop-up on Home removed.
+- Rating prompt after 5 games / 1 day on Android too.
+- No backend change required.
 
 Every Play block fits the 500-character limit.
 
@@ -35,91 +30,114 @@ Every Play block fits the 500-character limit.
 
 ```
 <en-US>
-Smoother Versus matches.
+Better controls, your way.
 
-• Matches no longer fall apart when both players are ready and waiting for the host.
-• You always see your result at the end of a match.
-• If your connection drops, the game tells you it's reconnecting and gets you back faster.
-• Clearer messages when a match can't start.
+• Swipes respond faster: the snake turns the moment you swipe.
+• Make the d-pad and turn buttons bigger (up to Huge) in Settings or the pause menu.
+• Choose how sensitive swipes are: Low, Normal or High.
+• Pick swipe, d-pad, turn buttons or a stick, with a quick guide to help you choose.
+• A new About page.
 </en-US>
 <ar>
-مباريات تحدٍّ أكثر سلاسة.
+تحكم أفضل، على طريقتك.
 
-• لم تعد المباريات تُلغى عندما يكون اللاعبان جاهزين بانتظار المضيف.
-• سترى نتيجتك دائمًا في نهاية كل مباراة.
-• إذا انقطع اتصالك، تخبرك اللعبة بأنها تعيد الاتصال وتعيدك أسرع.
-• رسائل أوضح عندما لا تبدأ المباراة.
+• السحب أسرع استجابة: يلتف الثعبان لحظة السحب.
+• كبّر أزرار الاتجاهات وأزرار الانعطاف (حتى "ضخم") من الإعدادات أو قائمة الإيقاف المؤقت.
+• اختر حساسية السحب: منخفضة أو عادية أو عالية.
+• اختر السحب أو أزرار الاتجاهات أو أزرار الانعطاف أو العصا، مع دليل سريع يساعدك.
+• صفحة "حول" جديدة.
 </ar>
 <es-419>
-Partidas Versus más fluidas.
+Mejores controles, a tu manera.
 
-• Las partidas ya no se cancelan cuando ambos están listos esperando al anfitrión.
-• Siempre verás tu resultado al terminar una partida.
-• Si se corta tu conexión, el juego te avisa que se está reconectando y te devuelve más rápido.
-• Mensajes más claros cuando una partida no puede empezar.
+• Deslizar responde más rápido: la serpiente gira en cuanto deslizas.
+• Agranda la cruceta y los botones de giro (hasta Enorme) en Ajustes o en el menú de pausa.
+• Elige la sensibilidad del deslizamiento: Baja, Normal o Alta.
+• Elige deslizar, cruceta, botones de giro o palanca, con una guía rápida.
+• Nueva página Acerca de.
 </es-419>
 <es-ES>
-Partidas Versus más fluidas.
+Mejores controles, a tu manera.
 
-• Las partidas ya no se cancelan cuando ambos están listos esperando al anfitrión.
-• Siempre verás tu resultado al terminar una partida.
-• Si se corta tu conexión, el juego te avisa de que se está reconectando y te devuelve antes.
-• Mensajes más claros cuando una partida no puede empezar.
+• Deslizar responde más rápido: la serpiente gira en cuanto deslizas.
+• Agranda la cruceta y los botones de giro (hasta Enorme) en Ajustes o en el menú de pausa.
+• Elige la sensibilidad del deslizamiento: Baja, Normal o Alta.
+• Elige deslizar, cruceta, botones de giro o palanca, con una guía rápida.
+• Nueva página Acerca de.
 </es-ES>
 <fr-FR>
-Des matchs Versus plus fluides.
+De meilleures commandes, à ta façon.
 
-• Les matchs ne s'annulent plus quand les deux joueurs sont prêts et attendent l'hôte.
-• Tu vois toujours ton résultat à la fin d'un match.
-• Si ta connexion coupe, le jeu indique qu'il se reconnecte et te ramène plus vite.
-• Des messages plus clairs quand un match ne peut pas démarrer.
+• Le glissement répond plus vite : le serpent tourne dès que tu glisses.
+• Agrandis la croix et les boutons de virage (jusqu'à Énorme) dans les Réglages ou le menu pause.
+• Choisis la sensibilité du glissement : Faible, Normale ou Élevée.
+• Choisis glisser, croix, boutons de virage ou joystick, avec un guide rapide.
+• Une nouvelle page À propos.
 </fr-FR>
 <hi-IN>
-वर्सस मैच अब और बेहतर।
+बेहतर कंट्रोल, आपके अंदाज़ में।
 
-• दोनों खिलाड़ी तैयार हों और होस्ट का इंतज़ार कर रहे हों, तो मैच अब रद्द नहीं होता।
-• मैच के अंत में आपको हमेशा अपना नतीजा दिखेगा।
-• कनेक्शन टूटे तो गेम बताता है कि वह फिर से जुड़ रहा है और आपको जल्दी वापस लाता है।
-• मैच शुरू न हो पाने पर साफ़ संदेश।
+• स्वाइप अब तेज़ी से काम करता है: स्वाइप करते ही सांप मुड़ जाता है।
+• सेटिंग्स या पॉज़ मेन्यू से डी-पैड और मोड़ बटन बड़े करें (बहुत बड़ा तक)।
+• स्वाइप संवेदनशीलता चुनें: कम, सामान्य या ज़्यादा।
+• स्वाइप, डी-पैड, मोड़ बटन या स्टिक चुनें, एक छोटी गाइड के साथ।
+• नया परिचय पेज।
 </hi-IN>
 <it-IT>
-Partite Versus più fluide.
+Comandi migliori, a modo tuo.
 
-• Le partite non saltano più quando entrambi sono pronti e aspettano l'host.
-• Vedi sempre il tuo risultato alla fine di una partita.
-• Se la connessione cade, il gioco ti dice che si sta riconnettendo e ti riporta dentro prima.
-• Messaggi più chiari quando una partita non può iniziare.
+• Lo swipe risponde più in fretta: il serpente gira appena scorri.
+• Ingrandisci la croce e i pulsanti di svolta (fino a Enorme) nelle Impostazioni o nel menu di pausa.
+• Scegli la sensibilità dello swipe: Bassa, Normale o Alta.
+• Scegli swipe, croce, pulsanti di svolta o levetta, con una guida rapida.
+• Una nuova pagina Informazioni.
 </it-IT>
 <pl-PL>
-Płynniejsze mecze Versus.
+Lepsze sterowanie, po twojemu.
 
-• Mecze nie przepadają już, gdy obaj gracze są gotowi i czekają na gospodarza.
-• Zawsze zobaczysz swój wynik na koniec meczu.
-• Gdy połączenie zerwie się, gra pokaże, że łączy się ponownie, i szybciej cię przywróci.
-• Jaśniejsze komunikaty, gdy mecz nie może się zacząć.
+• Przesuwanie reaguje szybciej: wąż skręca, gdy tylko przesuniesz palec.
+• Powiększ krzyżak i przyciski skrętu (aż do Ogromny) w Ustawieniach lub menu pauzy.
+• Wybierz czułość przesunięcia: Niska, Normalna lub Wysoka.
+• Wybierz przesuwanie, krzyżak, przyciski skrętu lub gałkę, z krótkim przewodnikiem.
+• Nowa strona O grze.
 </pl-PL>
 <pt-BR>
-Partidas Versus mais fluidas.
+Controles melhores, do seu jeito.
 
-• As partidas não caem mais quando os dois estão prontos esperando o anfitrião.
-• Você sempre vê seu resultado no fim da partida.
-• Se a conexão cair, o jogo avisa que está reconectando e te traz de volta mais rápido.
-• Mensagens mais claras quando uma partida não consegue começar.
+• O deslize responde mais rápido: a cobrinha vira assim que você desliza.
+• Aumente o direcional e os botões de virar (até Enorme) nas Configurações ou no menu de pausa.
+• Escolha a sensibilidade do deslize: Baixa, Normal ou Alta.
+• Escolha deslizar, direcional, botões de virar ou alavanca, com um guia rápido.
+• Nova página Sobre.
 </pt-BR>
 <ru-RU>
-Матчи Versus стали стабильнее.
+Удобное управление, как вам нравится.
 
-• Матч больше не срывается, когда оба игрока готовы и ждут хоста.
-• В конце матча вы всегда видите результат.
-• Если связь пропала, игра покажет, что переподключается, и вернёт вас быстрее.
-• Понятные сообщения, если матч не может начаться.
+• Свайпы срабатывают быстрее: змейка поворачивает сразу.
+• Увеличьте крестовину и кнопки поворота (до «Огромный») в Настройках или меню паузы.
+• Выберите чувствительность свайпа: низкую, обычную или высокую.
+• Выберите свайпы, крестовину, кнопки поворота или стик, с короткой подсказкой.
+• Новая страница «Об игре».
 </ru-RU>
 <tr-TR>
-Daha akıcı Versus maçları.
+Daha iyi kontroller, senin tarzında.
 
-• İki oyuncu hazır olup ev sahibini beklerken maçlar artık iptal olmuyor.
-• Maç sonunda sonucunu her zaman görüyorsun.
-• Bağlantın koparsa oyun yeniden bağlandığını söylüyor ve seni daha hızlı geri getiriyor.
-• Maç başlayamadığında daha net mesajlar.
+• Kaydırma daha hızlı tepki veriyor: yılan kaydırdığın anda dönüyor.
+• Ayarlar'dan veya duraklatma menüsünden yön tuşlarını ve dönüş düğmelerini büyüt (Dev boyuta kadar).
+• Kaydırma hassasiyetini seç: Düşük, Normal veya Yüksek.
+• Kaydırma, yön tuşları, dönüş düğmeleri veya çubuk seç; kısa bir rehber yardım eder.
+• Yeni bir Hakkında sayfası.
 </tr-TR>
+```
+
+## App Store Connect — What's New (iOS)
+
+```
+Better controls, your way.
+
+• Swipes respond faster: the snake turns the moment you swipe.
+• Make the d-pad and turn buttons bigger (up to Huge) in Settings or the pause menu.
+• Choose how sensitive swipes are: Low, Normal or High.
+• Pick swipe, d-pad, turn buttons or a stick, with a quick guide to help you choose.
+• A new About page.
 ```
