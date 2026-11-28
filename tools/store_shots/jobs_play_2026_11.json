@@ -1,0 +1,7 @@
+[
+  {"src": "raw/controls_intro_dpad.png", "out": "../../store_listings/play_experiment_2026-11/01-controls.png", "head": ["4 WAYS", "TO STEER"], "accent": 0, "sub": "Swipe, d-pad, turn or stick. Your size.", "crop_top": 330, "crop_bottom": 270, "ios_status_bar": false},
+  {"src": "raw/space_play.png", "out": "../../store_listings/play_experiment_2026-11/02-themes.png", "head": ["11 THEMES"], "sub": "From deep space to the deep sea.", "crop_top": 240, "crop_bottom": 80, "ios_status_bar": false},
+  {"src": "raw/ocean_play.png", "out": "../../store_listings/play_experiment_2026-11/03-combo.png", "head": ["CHAIN BITES"], "sub": "Stack combos. Catch fire. Keep chewing.", "crop_top": 240, "crop_bottom": 80, "ios_status_bar": false},
+  {"src": "raw/classic_play.png", "out": "../../store_listings/play_experiment_2026-11/04-classic.png", "head": ["CLASSIC SNAKE"], "accent": 0, "sub": "One tap and you're playing.", "crop_top": 60, "crop_bottom": 0, "ios_status_bar": false},
+  {"src": "raw/versus.png", "out": "../../store_listings/play_experiment_2026-11/05-versus.png", "head": ["LIVE 1V1"], "sub": "Race a real player for the apple.", "crop_top": 60, "crop_bottom": 0, "ios_status_bar": false}
+]
