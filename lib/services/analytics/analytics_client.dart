@@ -48,6 +48,9 @@ abstract class AnalyticsClient {
     int runNumber = 0,
     String gameMode = '',
     bool onboarding = false,
+    // The run's pace and tuning: difficulty, start_speed_ms, assist_level,
+    // tuning_version and exp_variant (adaptive assist A/B).
+    Map<String, Object> tuning = const {},
   });
   /// A single-player run left before it ended: [reason] is `quit` (exit to
   /// menu) or `restart` (pause-menu restart). [runNumber] is lifetime, so

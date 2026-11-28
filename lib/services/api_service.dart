@@ -1115,6 +1115,28 @@ class ApiService {
     }
   }
 
+  /// The server game-tuning document (pacing, assist, ad cadence, A/B
+  /// experiments). Unauthenticated, like [getAppRelease]: guests have no
+  /// token and the caller falls back to its cache or built-in defaults on
+  /// null.
+  Future<Map<String, dynamic>?> getGameTuning() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/game-tuning'),
+            headers: {
+              'Accept': 'application/json',
+              ...InstallIdentity.clientHeaders,
+            },
+          )
+          .timeout(const Duration(seconds: 5));
+      return _handleResponse(response);
+    } catch (e) {
+      AppLogger.error('Error GET /game-tuning', e);
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> getActiveTournaments() async {
     try {
       final response = await http

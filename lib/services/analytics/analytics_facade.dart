@@ -167,6 +167,7 @@ class AnalyticsFacade implements AnalyticsClient {
     int runNumber = 0,
     String gameMode = '',
     bool onboarding = false,
+    Map<String, Object> tuning = const {},
   }) async =>
       _fire(
         (c) => c.trackGameOver(
@@ -184,6 +185,7 @@ class AnalyticsFacade implements AnalyticsClient {
           runNumber: runNumber,
           gameMode: gameMode,
           onboarding: onboarding,
+          tuning: tuning,
         ),
       );
 

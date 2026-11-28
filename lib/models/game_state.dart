@@ -71,6 +71,13 @@ class GameState {
   /// recording all stay exactly as the player configured them.
   final int? startingSpeedMs;
 
+  /// Scales how much the snake speeds up with level and length, for this
+  /// run. 1.0 is the normal curve; adaptive assist lowers it (e.g. 0.7 =
+  /// 30% gentler) for a player who keeps dying early. Like
+  /// [startingSpeedMs], it changes pace only: difficulty, leaderboard
+  /// eligibility and high-score recording are untouched.
+  final double rampScale;
+
   // Combo system. The combo is a real streak: it BREAKS (resets to 0)
   // after [GameConstants.comboDecayMs] of accumulated game-time without
   // eating — see SnakeSimulation.step. Game-time (ticks × tick duration)
@@ -119,6 +126,7 @@ class GameState {
     this.gameMode = GameMode.classic,
     this.difficulty = Difficulty.normal,
     this.startingSpeedMs,
+    this.rampScale = 1.0,
     this.currentCombo = 0,
     this.maxCombo = 0,
     this.comboMultiplier = 1.0,
@@ -178,7 +186,10 @@ class GameState {
     // [startingSpeedMs]. The per-level ramp stays mode-owned either way, so an
     // overridden run still accelerates on exactly the same curve.
     final baseSpeed = startingSpeedMs ?? difficulty.baseSpeed;
-    final speedDecrease = (level - 1) * gameMode.speedIncreaseRate;
+    // [rampScale] softens both ramps for an assisted run (1.0 = unchanged).
+    final ramp = rampScale.clamp(0.0, 1.0);
+    final speedDecrease =
+        ((level - 1) * gameMode.speedIncreaseRate * ramp).round();
     // Upper bound is baseSpeed, NOT a literal 300 — the snake must never
     // start slower than its own base, and a hard-coded 300 would have
     // clamped Easy's 380ms start straight back down to Normal, making the
@@ -201,8 +212,8 @@ class GameState {
     // ramp stops and the level ramp carries on alone, so a very long snake
     // is fast but still steerable.
     final grown = (snake.length - Snake.initialLength).clamp(0, 1 << 30);
-    final lengthFactor =
-        (1.0 - grown * _lengthSpeedRate).clamp(_lengthSpeedFloor, 1.0);
+    final lengthFactor = (1.0 - grown * _lengthSpeedRate * ramp)
+        .clamp(1.0 - (1.0 - _lengthSpeedFloor) * ramp, 1.0);
     speed = (speed * lengthFactor).round().clamp(50, baseSpeed);
 
     final hasSpeedBoost = activePowerUps.any(
@@ -343,6 +354,7 @@ class GameState {
     GameMode? gameMode,
     Difficulty? difficulty,
     int? startingSpeedMs,
+    double? rampScale,
     int? currentCombo,
     int? maxCombo,
     double? comboMultiplier,
@@ -378,6 +390,7 @@ class GameState {
       gameMode: gameMode ?? this.gameMode,
       difficulty: difficulty ?? this.difficulty,
       startingSpeedMs: startingSpeedMs ?? this.startingSpeedMs,
+      rampScale: rampScale ?? this.rampScale,
       currentCombo: currentCombo ?? this.currentCombo,
       maxCombo: maxCombo ?? this.maxCombo,
       comboMultiplier: comboMultiplier ?? this.comboMultiplier,

@@ -126,6 +126,11 @@ extension RetentionEvents on AnalyticsClient {
   Future<void> setNotificationPermission(String state) =>
       setUserProperty('notif_permission', state);
 
+  /// Server-tuning experiment groups, e.g. `assist_v1:assist` (empty when in
+  /// none), so retention can be split by A/B variant.
+  Future<void> setExperimentVariant(String label) =>
+      setUserProperty('exp_variant', label.isEmpty ? 'none' : label);
+
   /// ISO week of the install, e.g. `2026-W48`, so every GA4 report can be
   /// split by install cohort.
   Future<void> setInstallWeek(DateTime installedAt) =>

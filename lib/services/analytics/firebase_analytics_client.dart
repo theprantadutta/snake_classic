@@ -124,6 +124,7 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
     int runNumber = 0,
     String gameMode = '',
     bool onboarding = false,
+    Map<String, Object> tuning = const {},
   }) {
     return _analytics.logEvent(
       name: 'game_over',
@@ -148,6 +149,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
         if (runNumber > 0) 'run_number': runNumber,
         if (gameMode.isNotEmpty) 'game_mode': gameMode,
         'onboarding': onboarding ? 1 : 0,
+        // Pace and tuning of the run (adaptive assist A/B): difficulty,
+        // start_speed_ms, assist_level, tuning_version, exp_variant.
+        ...tuning,
       },
     );
   }

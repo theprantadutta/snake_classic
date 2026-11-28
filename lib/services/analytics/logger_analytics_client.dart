@@ -97,6 +97,7 @@ class LoggerAnalyticsClient implements AnalyticsClient {
     int runNumber = 0,
     String gameMode = '',
     bool onboarding = false,
+    Map<String, Object> tuning = const {},
   }) async {
     AppLogger.info(
       '$_tag game_over: score=$score, level=$level, duration=${durationSeconds}s, '

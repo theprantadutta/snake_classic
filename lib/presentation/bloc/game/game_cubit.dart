@@ -41,6 +41,8 @@ import 'package:snake_classic/models/input_result.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:snake_classic/utils/constants.dart';
+import 'package:snake_classic/game/assist/adaptive_assist.dart';
+import 'package:snake_classic/services/tuning/tuning_service.dart';
 
 import 'game_state.dart';
 import 'game_settings_cubit.dart';
@@ -265,8 +267,9 @@ class GameCubit extends Cubit<GameCubitState> {
   }
 
   /// Start a new game
-  /// Coin cost of the FIRST revive in a run. Each further revive costs a
-  /// multiple of this — see [reviveCoinCostFor].
+  /// Built-in coin cost of the FIRST revive in a run. The live price comes
+  /// from server tuning (`revive_coin_cost`, defaulting to this); each
+  /// further revive costs a multiple of it — see [reviveCoinCostFor].
   static const int reviveCoinCost = 1500;
 
   /// How many times a single run can be revived. One, for everybody.
@@ -289,7 +292,8 @@ class GameCubit extends Cubit<GameCubitState> {
   /// effectively [reviveCoinCost]. The escalation is kept because it is the
   /// correct shape if the cap is ever raised again — a flat price would make
   /// a second revive a formality.
-  static int reviveCoinCostFor(int used) => reviveCoinCost * (used + 1);
+  static int reviveCoinCostFor(int used) =>
+      TuningService.instance.current.reviveCoinCost * (used + 1);
 
   /// Coin price of the revive currently on offer.
   int get currentReviveCoinCost => reviveCoinCostFor(_revivesThisGame);
@@ -360,6 +364,12 @@ class GameCubit extends Cubit<GameCubitState> {
   int _runNumber = 0;
   int get runNumber => _runNumber;
 
+  /// This run's pace (onboarding / adaptive assist) and the tuning it came
+  /// from, logged with game_over so assist can be judged per variant.
+  RunPace _runPace = RunPace.standard;
+  int _runTuningVersion = 0;
+  String _runVariantLabel = '';
+
   /// When the game-over continue offer closes; null when none is open.
   DateTime? get gameOverContinueDeadline => _continueDeadline;
 
@@ -426,11 +436,26 @@ class GameCubit extends Cubit<GameCubitState> {
     //     made an explicit statement about how they want to play, and this
     //     does not second-guess it.
     _onboardingRun = FirstRunService().isInOnboarding;
-    final useOnboardingPace = state.tournamentMode == null &&
-        settings.difficulty == Difficulty.normal &&
-        _onboardingRun;
-    final startingSpeedMs =
-        useOnboardingPace ? Difficulty.easy.baseSpeed : null;
+    //
+    // Adaptive assist (A/B tested through the server tuning, off by default)
+    // builds on the same idea: a player who keeps dying in the first seconds
+    // gets a slower start and a softer ramp, until they last longer or their
+    // best score reaches the cap. See AdaptiveAssist for the rules. Tuning
+    // is read once here, so a refresh mid-run never changes this run.
+    final tuning = TuningService.instance.current;
+    final pace = AdaptiveAssist.paceFor(
+      tuning: tuning,
+      difficulty: effectiveDifficulty,
+      mode: effectiveGameMode,
+      isTournament: state.tournamentMode != null,
+      onboarding: _onboardingRun && settings.difficulty == Difficulty.normal,
+      recentRunSeconds: RunHistoryStore.instance.recentRunSeconds,
+      bestScore: settings.highScore,
+    );
+    _runPace = pace;
+    _runTuningVersion = TuningService.instance.version;
+    _runVariantLabel = TuningService.instance.variantLabel;
+    final startingSpeedMs = pace.startingSpeedMs;
     debugPrint(
       '🎮 [GameCubit] Settings: boardSize=${settings.boardSize.width}x${settings.boardSize.height}, gameMode=${effectiveGameMode.name}, highScore=${settings.highScore}',
     );
@@ -444,6 +469,7 @@ class GameCubit extends Cubit<GameCubitState> {
       gameMode: effectiveGameMode,
       difficulty: effectiveDifficulty,
       startingSpeedMs: startingSpeedMs,
+      rampScale: pace.rampScale,
       status: model.GameStatus.playing,
       currentCombo: 0,
       maxCombo: 0,
@@ -1858,6 +1884,16 @@ class GameCubit extends Cubit<GameCubitState> {
     // reset them for the next run.
     final runNumber = _runNumber;
     final onboardingRun = _onboardingRun;
+    final runPace = _runPace;
+    final tuningParams = <String, Object>{
+      'difficulty': gameState.difficulty.name,
+      'start_speed_ms': gameState.startingSpeedMs ?? gameState.difficulty.baseSpeed,
+      'assist_level': runPace.assistLevel,
+      'tuning_version': _runTuningVersion,
+      if (_runVariantLabel.isNotEmpty) 'exp_variant': _runVariantLabel,
+    };
+    final countsForAssistHistory =
+        tournamentId == null && gameState.difficulty == Difficulty.normal;
     // Measured now, at the moment of game over — finalization may run up
     // to gameOverContinueWindow later.
     final gameDuration = _gameStartTime != null
@@ -1892,7 +1928,14 @@ class GameCubit extends Cubit<GameCubitState> {
         runNumber: runNumber,
         gameMode: gameState.gameMode.name,
         onboarding: onboardingRun,
+        tuning: tuningParams,
       );
+
+      // Adaptive assist reads how long recent runs lasted. Recorded at
+      // finalization, so a continued run counts once, at its real length.
+      if (countsForAssistHistory) {
+        unawaited(RunHistoryStore.instance.record(gameDuration));
+      }
 
 
       // All remaining work is fire-and-forget — user already sees game over screen

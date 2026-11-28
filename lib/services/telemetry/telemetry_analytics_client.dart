@@ -80,6 +80,7 @@ class TelemetryAnalyticsClient implements AnalyticsClient {
     int runNumber = 0,
     String gameMode = '',
     bool onboarding = false,
+    Map<String, Object> tuning = const {},
   }) async {
     _tracker.runFinished(score: score, durationSeconds: durationSeconds);
     unawaited(_feedbackStore.recordFinishedRun());

@@ -44,6 +44,8 @@ import 'package:snake_classic/services/notification_service.dart';
 import 'package:snake_classic/services/purchase_service.dart';
 import 'package:snake_classic/services/sync/sync_engine.dart';
 import 'package:snake_classic/services/telemetry/install_identity.dart';
+import 'package:snake_classic/services/tuning/tuning_service.dart';
+import 'package:snake_classic/game/assist/adaptive_assist.dart';
 import 'package:snake_classic/services/telemetry/telemetry_service.dart';
 import 'package:snake_classic/services/unified_user_service.dart';
 import 'package:snake_classic/utils/logger.dart';
@@ -333,6 +335,11 @@ Future<void> _bootstrap() async {
       () => hasLocalGameplayEvidence(getIt<AppDatabase>()),
     );
 
+    // Game tuning: the cached server document (or built-in defaults) is
+    // ready before the first game; the fresh copy is fetched in the
+    // background and applies from the next run. Never blocks startup.
+    await _initGameTuning();
+
     // Initialize router with analytics observer. `appRouter` is `late final`,
     // so this must run exactly once: SnakeClassicApp throws
     // LateInitializationError if it builds before the assignment, and the
@@ -468,6 +475,34 @@ Future<void> _bootstrap() async {
 /// can register everything again. The database is closed first: get_it has
 /// no dispose hook for it, and the retry opens a fresh connection to the
 /// same file.
+/// Loads cached game tuning and run history, then refreshes tuning from the
+/// backend in the background. Never throws.
+Future<void> _initGameTuning() async {
+  try {
+    final installId = InstallIdentity.current?.installId ?? '';
+    final gamesStarted = FirstRunService().gamesStarted;
+    await RunHistoryStore.instance.initialize();
+    await TuningService.instance.initialize(
+      installId: installId,
+      gamesStarted: gamesStarted,
+    );
+    unawaited(
+      TuningService.instance
+          .refresh(
+            fetch: () => ApiService().getGameTuning(),
+            installId: installId,
+            gamesStarted: gamesStarted,
+          )
+          .then((_) => getIt<AnalyticsFacade>().setExperimentVariant(
+                TuningService.instance.variantLabel,
+              ))
+          .catchError((_) {}),
+    );
+  } catch (e) {
+    AppLogger.warning('Game tuning init failed, using defaults: $e');
+  }
+}
+
 /// `install_week`, `onboarding_done` and `notif_permission` user properties.
 /// Never throws: analytics must not break startup.
 Future<void> _setRetentionUserProperties() async {

@@ -13,6 +13,7 @@ import 'package:snake_classic/services/ads/ad_load_stats.dart';
 import 'package:snake_classic/services/ads/game_over_ad_gate.dart';
 import 'package:snake_classic/services/analytics/analytics_facade.dart';
 import 'package:snake_classic/services/connectivity_service.dart';
+import 'package:snake_classic/services/tuning/tuning_service.dart';
 import 'package:snake_classic/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,8 +45,16 @@ class AdService {
   // game, so the format was switched off for roughly four in five installs.
   // At 2 the first one lands on game three and the cadence reaches ~half the
   // base instead of a fifth of it.
-  static const int _interstitialEveryNGames = 2;
-  static const Duration _interstitialMinGap = Duration(seconds: 90);
+  //
+  // Both numbers are server tuning since 8.4 (`interstitial_every_n_games`,
+  // `interstitial_min_gap_s`), defaulting to 2 and 90 s. Day-0 data
+  // (Oct 15 – Nov 24 2026) showed no D1 drop for players who saw an
+  // interstitial at equal run counts, so the defaults stay; tuning lets them
+  // be tested without a release.
+  static int get _interstitialEveryNGames =>
+      TuningService.instance.current.interstitialEveryNGames;
+  static Duration get _interstitialMinGap => Duration(
+      seconds: TuningService.instance.current.interstitialMinGapSeconds);
 
   // Minimum spacing between ANY two full-screen ads (interstitial / rewarded /
   // app-open), so an opt-in rewarded watch can't be chased by an interstitial
