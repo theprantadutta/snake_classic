@@ -9,6 +9,12 @@ Paste-ready "What's new" for Play Console / App Store Connect. Written for
 **8.3.0+90** (2026-11-28), the controls release. 8.2.1+89 is the previous
 release (same notes as 8.2.0, archived in release_notes_8.2.0.md).
 
+**8.3.1+91** (2026-11-28, Android) ships with these same notes. It adds
+server game tuning and the adaptive assist A/B (docs/GAME_TUNING.md), all
+off until the experiment is started on the dashboard, so there is nothing
+new for players to read about. Users updating from 8.2.x still see the
+controls notes. iOS can go straight to 8.3.1 with the same text.
+
 What 8.3.0 adds over 8.2.1 (controls were the top complaint in Play reviews):
 
 - **Faster swipes:** raw pointer input; a turn fires mid-swipe after ~14 px
