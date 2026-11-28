@@ -6987,4 +6987,76 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Gioca';
+
+  @override
+  String get abTitle => 'Informazioni';
+
+  @override
+  String get abSubtitle => 'Il gioco, e la persona che lo crea.';
+
+  @override
+  String get abTheGame => 'Il gioco';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic è il serpente con cui sei cresciuto, rifatto per oggi. Un tocco e stai già giocando: 8 modalità, 11 mondi dipinti, una sfida quotidiana sempre nuova e sfide 1 contro 1 dal vivo. Niente confusione, niente fretta. Solo tu, il serpente e la prossima mela.';
+
+  @override
+  String get abInside => 'Cosa c\'è dentro';
+
+  @override
+  String get abYourStory => 'La tua storia finora';
+
+  @override
+  String get abNoGamesYet =>
+      'La tua storia inizia con la prima partita. Dai, la mela ti aspetta.';
+
+  @override
+  String get abStatGames => 'Partite';
+
+  @override
+  String get abStatBest => 'Record';
+
+  @override
+  String get abStatFood => 'Mele mangiate';
+
+  @override
+  String get abStatTime => 'Tempo di gioco';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Giochi dal $date';
+  }
+
+  @override
+  String get abMadeBy => 'Creato da';
+
+  @override
+  String get abDevRole => 'Sviluppatore indipendente';
+
+  @override
+  String get abDevNote =>
+      'Ciao, sono Pranta. Creo Snake Classic da solo, e ogni aggiornamento parte da quello che mi dicono i giocatori. Se qualcosa non ti convince o hai un\'idea, mi farebbe piacere sentirla.';
+
+  @override
+  String get abWebsite => 'Sito web';
+
+  @override
+  String get abFeedback => 'Invia un feedback';
+
+  @override
+  String get abFeedbackSub => 'Idee, bug, qualsiasi cosa';
+
+  @override
+  String get abThanks => 'Grazie';
+
+  @override
+  String get abThanksBody =>
+      'A chi gioca, vota e scrive: grazie. Siete voi il motivo per cui il serpente continua a crescere.';
+
+  @override
+  String get abLicenses => 'Licenze open source';
+
+  @override
+  String get crChipHowToPlay => 'Come si gioca';
 }

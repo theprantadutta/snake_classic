@@ -6971,4 +6971,76 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Играть';
+
+  @override
+  String get abTitle => 'Об игре';
+
+  @override
+  String get abSubtitle => 'Игра и человек, который её делает.';
+
+  @override
+  String get abTheGame => 'Игра';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic — та самая змейка из детства, переделанная для сегодняшнего дня. Одно касание, и вы уже играете: 8 режимов, 11 нарисованных миров, новое ежедневное испытание и живые дуэли 1 на 1. Без лишнего и без спешки. Только вы, змейка и следующее яблоко.';
+
+  @override
+  String get abInside => 'Что внутри';
+
+  @override
+  String get abYourStory => 'Ваша история';
+
+  @override
+  String get abNoGamesYet =>
+      'Ваша история начнётся с первой игры. Вперёд, яблоко ждёт.';
+
+  @override
+  String get abStatGames => 'Игры';
+
+  @override
+  String get abStatBest => 'Рекорд';
+
+  @override
+  String get abStatFood => 'Съедено яблок';
+
+  @override
+  String get abStatTime => 'Время в игре';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Играете с $date';
+  }
+
+  @override
+  String get abMadeBy => 'Автор';
+
+  @override
+  String get abDevRole => 'Независимый разработчик';
+
+  @override
+  String get abDevNote =>
+      'Привет, я Пранта. Я делаю Snake Classic один, и каждое обновление начинается с того, что пишут игроки. Если что-то не так или есть идея, буду рад её услышать.';
+
+  @override
+  String get abWebsite => 'Сайт';
+
+  @override
+  String get abFeedback => 'Написать отзыв';
+
+  @override
+  String get abFeedbackSub => 'Идеи, ошибки, что угодно';
+
+  @override
+  String get abThanks => 'Спасибо';
+
+  @override
+  String get abThanksBody =>
+      'Всем, кто играет, ставит оценки и пишет: спасибо. Благодаря вам змейка продолжает расти.';
+
+  @override
+  String get abLicenses => 'Лицензии open source';
+
+  @override
+  String get crChipHowToPlay => 'Как играть';
 }

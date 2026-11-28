@@ -40,7 +40,6 @@ import 'package:snake_classic/widgets/game_mode_picker_sheet.dart';
 import 'package:snake_classic/widgets/ads/reward_toast.dart';
 import 'package:snake_classic/services/first_run_service.dart';
 import 'package:snake_classic/utils/legal_acceptance.dart';
-import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/daily_bonus_popup.dart';
 import 'package:snake_classic/widgets/first_run_legal_notice.dart';
 import 'package:snake_classic/widgets/notification_permission_primer.dart';
@@ -1178,7 +1177,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _openMenu(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = context.read<ThemeCubit>().state.currentTheme;
     showLBSheet<void>(
       context: context,
       title: l10n.lbHomeMenu,
@@ -1243,7 +1241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 leading: const LBPixelIcon(LBIcon.star, cell: 4),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  showCreditsDialog(context, theme);
+                  context.push(AppRoutes.about);
                 },
               ),
             ],

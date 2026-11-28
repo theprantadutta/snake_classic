@@ -7011,4 +7011,76 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Jouer';
+
+  @override
+  String get abTitle => 'À propos';
+
+  @override
+  String get abSubtitle => 'Le jeu, et la personne qui le crée.';
+
+  @override
+  String get abTheGame => 'Le jeu';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic, c\'est le serpent de ton enfance, refait pour aujourd\'hui. Une touche et tu joues : 8 modes, 11 mondes peints, un nouveau défi chaque jour et des duels 1 contre 1 en direct. Pas de fouillis, pas de stress. Juste toi, le serpent et la prochaine pomme.';
+
+  @override
+  String get abInside => 'Au programme';
+
+  @override
+  String get abYourStory => 'Ton histoire jusqu\'ici';
+
+  @override
+  String get abNoGamesYet =>
+      'Ton histoire commence avec ta première partie. Vas-y, la pomme t\'attend.';
+
+  @override
+  String get abStatGames => 'Parties';
+
+  @override
+  String get abStatBest => 'Record';
+
+  @override
+  String get abStatFood => 'Pommes mangées';
+
+  @override
+  String get abStatTime => 'Temps de jeu';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Tu joues depuis le $date';
+  }
+
+  @override
+  String get abMadeBy => 'Créé par';
+
+  @override
+  String get abDevRole => 'Développeur indépendant';
+
+  @override
+  String get abDevNote =>
+      'Salut, moi c\'est Pranta. Je crée Snake Classic tout seul, et chaque mise à jour part de ce que me disent les joueurs. Si quelque chose cloche ou si tu as une idée, j\'adorerais la lire.';
+
+  @override
+  String get abWebsite => 'Site web';
+
+  @override
+  String get abFeedback => 'Envoyer un avis';
+
+  @override
+  String get abFeedbackSub => 'Idées, bugs, tout ce que tu veux';
+
+  @override
+  String get abThanks => 'Merci';
+
+  @override
+  String get abThanksBody =>
+      'À tous ceux qui jouent, notent et m\'écrivent : merci. C\'est grâce à vous que le serpent continue de grandir.';
+
+  @override
+  String get abLicenses => 'Licences open source';
+
+  @override
+  String get crChipHowToPlay => 'Comment jouer';
 }

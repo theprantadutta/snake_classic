@@ -29,6 +29,7 @@ import 'package:snake_classic/screens/premium_benefits_screen.dart';
 import 'package:snake_classic/screens/profile_screen.dart';
 import 'package:snake_classic/screens/replay_viewer_screen.dart';
 import 'package:snake_classic/screens/replays_screen.dart';
+import 'package:snake_classic/screens/about_screen.dart';
 import 'package:snake_classic/screens/more_games_screen.dart';
 import 'package:snake_classic/screens/run_setup_screen.dart';
 import 'package:snake_classic/screens/route_error_screen.dart';
@@ -377,6 +378,12 @@ GoRouter createAppRouter({List<NavigatorObserver>? observers}) => GoRouter(
       name: 'moreGames',
       pageBuilder: (context, state) =>
           _zoomPage(context, state, const MoreGamesScreen()),
+    ),
+    GoRoute(
+      path: AppRoutes.about,
+      name: 'about',
+      pageBuilder: (context, state) =>
+          _zoomPage(context, state, const AboutScreen()),
     ),
     GoRoute(
       path: AppRoutes.replayViewer,

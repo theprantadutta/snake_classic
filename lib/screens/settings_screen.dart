@@ -27,7 +27,6 @@ import 'package:snake_classic/widgets/control_layout_preview.dart';
 import 'package:snake_classic/widgets/control_tuning.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
-import 'package:snake_classic/widgets/credits_dialog.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/more_games_section.dart';
 import 'package:snake_classic/widgets/lb_screens/settings/settings_display_panel.dart';
@@ -838,7 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: l10n.settingsAboutCredits,
           subtitle: l10n.settingsAboutCreditsSubtitle,
           leading: const LBPixelIcon(LBIcon.heart, cell: 3.4),
-          onTap: () => showCreditsDialog(context, theme),
+          onTap: () => context.push(AppRoutes.about),
         ),
         // Explicit "Rate us" — opens the store listing directly (not the
         // quota-limited in-app review sheet, which the platform may silently

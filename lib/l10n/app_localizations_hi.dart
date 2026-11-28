@@ -6917,4 +6917,76 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'खेलें';
+
+  @override
+  String get abTitle => 'परिचय';
+
+  @override
+  String get abSubtitle => 'गेम, और इसे बनाने वाला इंसान।';
+
+  @override
+  String get abTheGame => 'गेम';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic वही सांप वाला गेम है जिसके साथ आप बड़े हुए, आज के लिए नए रूप में। एक टैप और खेल शुरू: 8 मोड, 11 रंगीन दुनिया, रोज़ नई चुनौती, और लाइव 1 बनाम 1 मुकाबले। न कोई झंझट, न जल्दबाज़ी। बस आप, सांप और अगला सेब।';
+
+  @override
+  String get abInside => 'इसमें क्या है';
+
+  @override
+  String get abYourStory => 'अब तक की आपकी कहानी';
+
+  @override
+  String get abNoGamesYet =>
+      'आपकी कहानी पहले गेम से शुरू होती है। चलिए, सेब इंतज़ार कर रहा है।';
+
+  @override
+  String get abStatGames => 'गेम';
+
+  @override
+  String get abStatBest => 'बेस्ट';
+
+  @override
+  String get abStatFood => 'खाए गए सेब';
+
+  @override
+  String get abStatTime => 'खेलने का समय';
+
+  @override
+  String abPlayingSince(String date) {
+    return '$date से खेल रहे हैं';
+  }
+
+  @override
+  String get abMadeBy => 'बनाने वाले';
+
+  @override
+  String get abDevRole => 'स्वतंत्र डेवलपर';
+
+  @override
+  String get abDevNote =>
+      'नमस्ते, मैं प्रांत हूं। Snake Classic मैं अकेले बनाता हूं, और हर अपडेट खिलाड़ियों की बातों से शुरू होता है। अगर कुछ ठीक न लगे या आपके पास कोई आइडिया हो, तो ज़रूर बताइए।';
+
+  @override
+  String get abWebsite => 'वेबसाइट';
+
+  @override
+  String get abFeedback => 'फ़ीडबैक भेजें';
+
+  @override
+  String get abFeedbackSub => 'आइडिया, बग, कुछ भी';
+
+  @override
+  String get abThanks => 'धन्यवाद';
+
+  @override
+  String get abThanksBody =>
+      'खेलने, रेटिंग देने और लिखने वाले हर व्यक्ति का धन्यवाद। आप ही वजह हैं कि सांप बढ़ता जा रहा है।';
+
+  @override
+  String get abLicenses => 'ओपन-सोर्स लाइसेंस';
+
+  @override
+  String get crChipHowToPlay => 'कैसे खेलें';
 }

@@ -6922,4 +6922,76 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Play';
+
+  @override
+  String get abTitle => 'About';
+
+  @override
+  String get abSubtitle => 'The game, and the person who makes it.';
+
+  @override
+  String get abTheGame => 'The game';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic is the snake you grew up with, rebuilt for today. One tap and you\'re playing: 8 modes, 11 painted worlds, a fresh daily challenge, and live 1v1 Versus. No clutter, no rush. Just you, the snake and the next apple.';
+
+  @override
+  String get abInside => 'What\'s inside';
+
+  @override
+  String get abYourStory => 'Your story so far';
+
+  @override
+  String get abNoGamesYet =>
+      'Your story starts with your first game. Go on, the apple is waiting.';
+
+  @override
+  String get abStatGames => 'Games';
+
+  @override
+  String get abStatBest => 'Best';
+
+  @override
+  String get abStatFood => 'Apples eaten';
+
+  @override
+  String get abStatTime => 'Time played';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Playing since $date';
+  }
+
+  @override
+  String get abMadeBy => 'Made by';
+
+  @override
+  String get abDevRole => 'Independent developer';
+
+  @override
+  String get abDevNote =>
+      'Hi, I\'m Pranta. I make Snake Classic on my own, and every update starts with what players tell me. If something feels off, or you have an idea, I\'d love to hear it.';
+
+  @override
+  String get abWebsite => 'Website';
+
+  @override
+  String get abFeedback => 'Send feedback';
+
+  @override
+  String get abFeedbackSub => 'Ideas, bugs, anything';
+
+  @override
+  String get abThanks => 'Thank you';
+
+  @override
+  String get abThanksBody =>
+      'To everyone who plays, rates and writes in: thank you. You\'re the reason the snake keeps growing.';
+
+  @override
+  String get abLicenses => 'Open-source licenses';
+
+  @override
+  String get crChipHowToPlay => 'How to play';
 }

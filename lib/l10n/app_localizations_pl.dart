@@ -6981,4 +6981,76 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Graj';
+
+  @override
+  String get abTitle => 'O grze';
+
+  @override
+  String get abSubtitle => 'Gra i osoba, która ją tworzy.';
+
+  @override
+  String get abTheGame => 'Gra';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic to wąż, z którym dorastałeś, odnowiony na dziś. Jedno dotknięcie i już grasz: 8 trybów, 11 malowanych światów, codziennie nowe wyzwanie i pojedynki 1 na 1 na żywo. Bez bałaganu i pośpiechu. Tylko ty, wąż i następne jabłko.';
+
+  @override
+  String get abInside => 'Co w środku';
+
+  @override
+  String get abYourStory => 'Twoja historia do tej pory';
+
+  @override
+  String get abNoGamesYet =>
+      'Twoja historia zaczyna się od pierwszej gry. Śmiało, jabłko czeka.';
+
+  @override
+  String get abStatGames => 'Gry';
+
+  @override
+  String get abStatBest => 'Rekord';
+
+  @override
+  String get abStatFood => 'Zjedzone jabłka';
+
+  @override
+  String get abStatTime => 'Czas gry';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Grasz od $date';
+  }
+
+  @override
+  String get abMadeBy => 'Twórca';
+
+  @override
+  String get abDevRole => 'Niezależny twórca';
+
+  @override
+  String get abDevNote =>
+      'Cześć, jestem Pranta. Snake Classic tworzę sam, a każda aktualizacja zaczyna się od tego, co mówią gracze. Jeśli coś jest nie tak albo masz pomysł, chętnie go poznam.';
+
+  @override
+  String get abWebsite => 'Strona';
+
+  @override
+  String get abFeedback => 'Wyślij opinię';
+
+  @override
+  String get abFeedbackSub => 'Pomysły, błędy, cokolwiek';
+
+  @override
+  String get abThanks => 'Dziękuję';
+
+  @override
+  String get abThanksBody =>
+      'Wszystkim, którzy grają, oceniają i piszą: dziękuję. To dzięki wam wąż wciąż rośnie.';
+
+  @override
+  String get abLicenses => 'Licencje open source';
+
+  @override
+  String get crChipHowToPlay => 'Jak grać';
 }

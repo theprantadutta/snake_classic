@@ -6941,4 +6941,75 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'العب';
+
+  @override
+  String get abTitle => 'حول';
+
+  @override
+  String get abSubtitle => 'اللعبة، والشخص الذي يصنعها.';
+
+  @override
+  String get abTheGame => 'اللعبة';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic هي لعبة الثعبان التي كبرت معها، أُعيد بناؤها لليوم. نقرة واحدة وتبدأ اللعب: 8 أوضاع، و11 عالمًا مرسومًا، وتحدٍّ يومي جديد، ومواجهات مباشرة 1 ضد 1. بلا فوضى ولا عجلة. أنت والثعبان والتفاحة التالية فقط.';
+
+  @override
+  String get abInside => 'ماذا تجد فيها';
+
+  @override
+  String get abYourStory => 'قصتك حتى الآن';
+
+  @override
+  String get abNoGamesYet => 'تبدأ قصتك مع أول لعبة. هيا، التفاحة بانتظارك.';
+
+  @override
+  String get abStatGames => 'الألعاب';
+
+  @override
+  String get abStatBest => 'الأفضل';
+
+  @override
+  String get abStatFood => 'تفاح مأكول';
+
+  @override
+  String get abStatTime => 'وقت اللعب';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'تلعب منذ $date';
+  }
+
+  @override
+  String get abMadeBy => 'من صنع';
+
+  @override
+  String get abDevRole => 'مطوّر مستقل';
+
+  @override
+  String get abDevNote =>
+      'مرحبًا، أنا برانتا. أصنع Snake Classic وحدي، وكل تحديث يبدأ مما يخبرني به اللاعبون. إذا شعرت أن شيئًا ليس على ما يرام، أو لديك فكرة، يسعدني أن أسمعها.';
+
+  @override
+  String get abWebsite => 'الموقع';
+
+  @override
+  String get abFeedback => 'أرسل ملاحظاتك';
+
+  @override
+  String get abFeedbackSub => 'أفكار، أخطاء، أي شيء';
+
+  @override
+  String get abThanks => 'شكرًا لك';
+
+  @override
+  String get abThanksBody =>
+      'لكل من يلعب ويقيّم ويراسلنا: شكرًا لكم. أنتم سبب استمرار الثعبان في النمو.';
+
+  @override
+  String get abLicenses => 'تراخيص المصادر المفتوحة';
+
+  @override
+  String get crChipHowToPlay => 'طريقة اللعب';
 }

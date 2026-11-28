@@ -12213,6 +12213,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Play'**
   String get ctrlIntroPlay;
+
+  /// No description provided for @abTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get abTitle;
+
+  /// No description provided for @abSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The game, and the person who makes it.'**
+  String get abSubtitle;
+
+  /// No description provided for @abTheGame.
+  ///
+  /// In en, this message translates to:
+  /// **'The game'**
+  String get abTheGame;
+
+  /// No description provided for @abGameStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Snake Classic is the snake you grew up with, rebuilt for today. One tap and you\'re playing: 8 modes, 11 painted worlds, a fresh daily challenge, and live 1v1 Versus. No clutter, no rush. Just you, the snake and the next apple.'**
+  String get abGameStory;
+
+  /// No description provided for @abInside.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s inside'**
+  String get abInside;
+
+  /// No description provided for @abYourStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Your story so far'**
+  String get abYourStory;
+
+  /// No description provided for @abNoGamesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your story starts with your first game. Go on, the apple is waiting.'**
+  String get abNoGamesYet;
+
+  /// No description provided for @abStatGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get abStatGames;
+
+  /// No description provided for @abStatBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best'**
+  String get abStatBest;
+
+  /// No description provided for @abStatFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Apples eaten'**
+  String get abStatFood;
+
+  /// No description provided for @abStatTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time played'**
+  String get abStatTime;
+
+  /// No description provided for @abPlayingSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing since {date}'**
+  String abPlayingSince(String date);
+
+  /// No description provided for @abMadeBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Made by'**
+  String get abMadeBy;
+
+  /// No description provided for @abDevRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Independent developer'**
+  String get abDevRole;
+
+  /// No description provided for @abDevNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I\'m Pranta. I make Snake Classic on my own, and every update starts with what players tell me. If something feels off, or you have an idea, I\'d love to hear it.'**
+  String get abDevNote;
+
+  /// No description provided for @abWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get abWebsite;
+
+  /// No description provided for @abFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get abFeedback;
+
+  /// No description provided for @abFeedbackSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas, bugs, anything'**
+  String get abFeedbackSub;
+
+  /// No description provided for @abThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you'**
+  String get abThanks;
+
+  /// No description provided for @abThanksBody.
+  ///
+  /// In en, this message translates to:
+  /// **'To everyone who plays, rates and writes in: thank you. You\'re the reason the snake keeps growing.'**
+  String get abThanksBody;
+
+  /// No description provided for @abLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get abLicenses;
+
+  /// No description provided for @crChipHowToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'How to play'**
+  String get crChipHowToPlay;
 }
 
 class _AppLocalizationsDelegate

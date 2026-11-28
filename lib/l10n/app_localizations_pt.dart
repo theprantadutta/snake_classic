@@ -6982,4 +6982,76 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get ctrlIntroPlay => 'Jogar';
+
+  @override
+  String get abTitle => 'Sobre';
+
+  @override
+  String get abSubtitle => 'O jogo, e a pessoa que o faz.';
+
+  @override
+  String get abTheGame => 'O jogo';
+
+  @override
+  String get abGameStory =>
+      'Snake Classic é a cobrinha com que você cresceu, refeita para hoje. Um toque e você já está jogando: 8 modos, 11 mundos pintados, um desafio diário novo e partidas 1 contra 1 ao vivo. Sem bagunça, sem pressa. Só você, a cobrinha e a próxima maçã.';
+
+  @override
+  String get abInside => 'O que tem dentro';
+
+  @override
+  String get abYourStory => 'Sua história até agora';
+
+  @override
+  String get abNoGamesYet =>
+      'Sua história começa com o primeiro jogo. Vai lá, a maçã está esperando.';
+
+  @override
+  String get abStatGames => 'Jogos';
+
+  @override
+  String get abStatBest => 'Recorde';
+
+  @override
+  String get abStatFood => 'Maçãs comidas';
+
+  @override
+  String get abStatTime => 'Tempo jogado';
+
+  @override
+  String abPlayingSince(String date) {
+    return 'Jogando desde $date';
+  }
+
+  @override
+  String get abMadeBy => 'Feito por';
+
+  @override
+  String get abDevRole => 'Desenvolvedor independente';
+
+  @override
+  String get abDevNote =>
+      'Oi, eu sou o Pranta. Faço o Snake Classic sozinho, e toda atualização começa pelo que os jogadores me contam. Se algo não estiver legal, ou se você tiver uma ideia, vou adorar saber.';
+
+  @override
+  String get abWebsite => 'Site';
+
+  @override
+  String get abFeedback => 'Enviar feedback';
+
+  @override
+  String get abFeedbackSub => 'Ideias, bugs, qualquer coisa';
+
+  @override
+  String get abThanks => 'Obrigado';
+
+  @override
+  String get abThanksBody =>
+      'A todo mundo que joga, avalia e escreve: obrigado. Vocês são o motivo de a cobrinha continuar crescendo.';
+
+  @override
+  String get abLicenses => 'Licenças de código aberto';
+
+  @override
+  String get crChipHowToPlay => 'Como jogar';
 }

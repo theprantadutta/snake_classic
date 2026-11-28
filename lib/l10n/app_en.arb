@@ -4418,5 +4418,34 @@
   "ctrlIntroTitle": "Pick your controls",
   "ctrlIntroBody": "Swipe, a d-pad, turn buttons or a stick: steer however feels best to you. You can switch any time.",
   "ctrlIntroTune": "Make the buttons bigger, move the d-pad, or change how far a swipe goes in Settings → Controls, or from the pause menu.",
-  "ctrlIntroPlay": "Play"
+  "ctrlIntroPlay": "Play",
+  "abTitle": "About",
+  "abSubtitle": "The game, and the person who makes it.",
+  "abTheGame": "The game",
+  "abGameStory": "Snake Classic is the snake you grew up with, rebuilt for today. One tap and you're playing: 8 modes, 11 painted worlds, a fresh daily challenge, and live 1v1 Versus. No clutter, no rush. Just you, the snake and the next apple.",
+  "abInside": "What's inside",
+  "abYourStory": "Your story so far",
+  "abNoGamesYet": "Your story starts with your first game. Go on, the apple is waiting.",
+  "abStatGames": "Games",
+  "abStatBest": "Best",
+  "abStatFood": "Apples eaten",
+  "abStatTime": "Time played",
+  "abPlayingSince": "Playing since {date}",
+  "abMadeBy": "Made by",
+  "abDevRole": "Independent developer",
+  "abDevNote": "Hi, I'm Pranta. I make Snake Classic on my own, and every update starts with what players tell me. If something feels off, or you have an idea, I'd love to hear it.",
+  "abWebsite": "Website",
+  "abFeedback": "Send feedback",
+  "abFeedbackSub": "Ideas, bugs, anything",
+  "abThanks": "Thank you",
+  "abThanksBody": "To everyone who plays, rates and writes in: thank you. You're the reason the snake keeps growing.",
+  "abLicenses": "Open-source licenses",
+  "@abPlayingSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "crChipHowToPlay": "How to play"
 }

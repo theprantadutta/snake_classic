@@ -262,6 +262,8 @@ Controls were the most common complaint in Play reviews (d-pad too small, swipes
 ### Launch splash and event promo (8.3)
 The Miami Nights launch splash (Nov 18) and the Home "try the Miami Nights theme" pop-up were removed in 8.3: the owner judged both were hurting players. The native splash is back to the Cell S splash from before 94e0c7f (solid `#0F380F` + logo; `drawable/background.png` is a 69-byte solid image again, so the nodpi rule below only matters if a full-screen `background_image` ever comes back). The Miami Nights theme itself stays in the picker (free until Dec 7, then paid).
 
+**About is a full screen** (`lib/screens/about_screen.dart`, route `/about`) since 8.3, replacing the credits dialog: the game, what's inside (chips open each feature), the player's own stats, the developer note, feedback / website / rate / more games, thanks, legal and licenses. Opened from the Home menu and Settings → About. Render it without a device: `flutter test tools/render_about_test.dart` (PNGs in `build/`).
+
 The rating prompt (`ReviewService`) uses 5 games / 1 day on both platforms since 8.3 (Android was 8 / 3 days, which almost nobody reached).
 
 ### "More games" cross-promotion (8.1) (LOAD-BEARING)
