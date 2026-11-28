@@ -4354,24 +4354,35 @@
   "goNextUp": "NEXT UP",
   "goNextSeasonTier": "Season · tier {tier}",
   "@goNextSeasonTier": {
-    "placeholders": { "tier": {} }
+    "placeholders": {
+      "tier": {}
+    }
   },
   "goNextSeasonXp": "+{xp} XP",
   "@goNextSeasonXp": {
-    "placeholders": { "xp": {} }
+    "placeholders": {
+      "xp": {}
+    }
   },
   "goNextTomorrow": "Tomorrow · day {day} · +{coins}¢",
   "@goNextTomorrow": {
-    "placeholders": { "day": {}, "coins": {} }
+    "placeholders": {
+      "day": {},
+      "coins": {}
+    }
   },
   "goNextBonusReady": "Today's bonus is waiting on Home · +{coins}¢",
   "@goNextBonusReady": {
-    "placeholders": { "coins": {} }
+    "placeholders": {
+      "coins": {}
+    }
   },
   "goRemindTitle": "Remind me tomorrow",
   "goRemindBody": "One nudge to beat {score}. That's it.",
   "@goRemindBody": {
-    "placeholders": { "score": {} }
+    "placeholders": {
+      "score": {}
+    }
   },
   "goRemindSet": "Reminder set for tomorrow",
   "settingsSectionMoreGames": "MORE GAMES FROM US",
@@ -4394,5 +4405,18 @@
   "moreGamesGridwell": "Nonogram logic puzzles: reveal the pixel picture",
   "moreGamesJadewell": "Mahjong solitaire: match tiles, clear the board",
   "updatePlayOfferBody": "A new version of Snake Classic is ready. Updating takes about a minute, and the game restarts by itself when it's done.",
-  "updateActionUpdateNow": "Update now"
+  "updateActionUpdateNow": "Update now",
+  "ctrlButtonSize": "Button size",
+  "ctrlSizeSmall": "Small",
+  "ctrlSizeNormal": "Normal",
+  "ctrlSizeLarge": "Large",
+  "ctrlSizeExtraLarge": "Huge",
+  "ctrlSwipeSensitivity": "Swipe sensitivity",
+  "ctrlSensitivityLow": "Low",
+  "ctrlSensitivityNormal": "Normal",
+  "ctrlSensitivityHigh": "High",
+  "ctrlIntroTitle": "Pick your controls",
+  "ctrlIntroBody": "Swipe, a d-pad, turn buttons or a stick: steer however feels best to you. You can switch any time.",
+  "ctrlIntroTune": "Make the buttons bigger, move the d-pad, or change how far a swipe goes in Settings → Controls, or from the pause menu.",
+  "ctrlIntroPlay": "Play"
 }

@@ -6881,4 +6881,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Update now';
+
+  @override
+  String get ctrlButtonSize => 'Button size';
+
+  @override
+  String get ctrlSizeSmall => 'Small';
+
+  @override
+  String get ctrlSizeNormal => 'Normal';
+
+  @override
+  String get ctrlSizeLarge => 'Large';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Huge';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Swipe sensitivity';
+
+  @override
+  String get ctrlSensitivityLow => 'Low';
+
+  @override
+  String get ctrlSensitivityNormal => 'Normal';
+
+  @override
+  String get ctrlSensitivityHigh => 'High';
+
+  @override
+  String get ctrlIntroTitle => 'Pick your controls';
+
+  @override
+  String get ctrlIntroBody =>
+      'Swipe, a d-pad, turn buttons or a stick: steer however feels best to you. You can switch any time.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Make the buttons bigger, move the d-pad, or change how far a swipe goes in Settings → Controls, or from the pause menu.';
+
+  @override
+  String get ctrlIntroPlay => 'Play';
 }

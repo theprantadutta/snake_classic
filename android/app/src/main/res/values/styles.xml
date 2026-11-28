@@ -5,6 +5,8 @@
         <!-- Show a splash screen on the activity. Automatically removed when
              the Flutter engine draws its first frame -->
         <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowFullscreen">false</item>
         <!-- Edge-to-edge: theme-level transparent bars so the splash screen
              extends under the system bars during process startup, matching
              the SystemUiMode.edgeToEdge bootstrap in main.dart. Required
@@ -19,11 +21,9 @@
              reformats Info.plist, LaunchScreen.storyboard, web/index.html
              and the .xcassets manifests without changing their meaning —
              revert those too, so the diff shows only real changes. -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:forceDarkAllowed">false</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <!-- Theme applied to the Android Window as soon as the process has started.

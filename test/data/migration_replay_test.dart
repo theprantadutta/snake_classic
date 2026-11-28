@@ -51,17 +51,17 @@ void main() {
   }
 
   // Every version a shipped build could have left a device at.
-  for (var from = 1; from < 24; from++) {
+  for (var from = 1; from < 25; from++) {
     test('replaying the upgrade from v$from onto a complete schema succeeds',
         () async {
       final file = await completeSchemaStampedAs(from);
       final db = AppDatabase.forTesting(NativeDatabase(file));
       addTearDown(db.close);
 
-      // Any query opens the database, which runs onUpgrade(from, 24).
+      // Any query opens the database, which runs onUpgrade(from, 25).
       await db.customSelect('SELECT 1').get();
 
-      expect(await userVersion(db), 24, reason: 'the upgrade completed');
+      expect(await userVersion(db), 25, reason: 'the upgrade completed');
 
       // The schema is still whole: the columns the crash loops were about,
       // and the newest table, all readable.
@@ -74,7 +74,8 @@ void main() {
         'FROM game_settings LIMIT 1',
       ).get();
       await db.customSelect(
-        'SELECT snap_movement_enabled, control_layout_index '
+        'SELECT snap_movement_enabled, control_layout_index, '
+        'control_size_index, swipe_sensitivity_index '
         'FROM device_preferences LIMIT 1',
       ).get();
       await db.customSelect(
@@ -106,7 +107,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 24);
+    expect(await userVersion(db), 25);
 
     final now = DateTime(2026, 10, 3, 9);
     await db.telemetryDao.upsertSession(
@@ -137,7 +138,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 24);
+    expect(await userVersion(db), 25);
   });
 
   test('a real v23 database gains the absorbed counters, unknown, with its '
@@ -165,7 +166,7 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);
     await db.customSelect('SELECT 1').get();
-    expect(await userVersion(db), 24);
+    expect(await userVersion(db), 25);
 
     final status = await db.storeDao.getPremiumStatus();
     expect(status!.bronzeTournamentEntries, 2);
@@ -174,5 +175,46 @@ void main() {
     expect(status.bronzeGrantsAbsorbed, isNull);
     expect(status.silverGrantsAbsorbed, isNull);
     expect(status.goldGrantsAbsorbed, isNull);
+  });
+
+  test('a real v24 database gains control size and swipe sensitivity at '
+      'normal, keeping its other device preferences', () async {
+    // A complete schema minus what v25 adds, stamped 24, with a player who
+    // already chose the d-pad layout and snap movement.
+    final file = await completeSchemaStampedAs(24);
+    final raw = AppDatabase.forTesting(NativeDatabase(file));
+    await raw.customSelect('SELECT 1').get();
+    await raw.customStatement(
+      'INSERT OR REPLACE INTO device_preferences '
+      '(id, high_refresh_rate_enabled, snap_movement_enabled, '
+      'control_layout_index, control_size_index, swipe_sensitivity_index, '
+      'updated_at) VALUES (1, 0, 1, 1, 1, 1, 0)',
+    );
+    for (final column in ['control_size_index', 'swipe_sensitivity_index']) {
+      await raw.customStatement(
+        'ALTER TABLE device_preferences DROP COLUMN $column',
+      );
+    }
+    await raw.customStatement('PRAGMA user_version = 24');
+    await raw.close();
+
+    final db = AppDatabase.forTesting(NativeDatabase(file));
+    addTearDown(db.close);
+    await db.customSelect('SELECT 1').get();
+    expect(await userVersion(db), 25);
+
+    expect(await db.settingsDao.isSnapMovementEnabled(), isTrue);
+    expect(await db.settingsDao.getControlLayoutIndex(), 1);
+    // New columns arrive at their defaults: nobody's controls change.
+    expect(await db.settingsDao.getControlSizeIndex(), 1);
+    expect(await db.settingsDao.getSwipeSensitivityIndex(), 1);
+
+    await db.settingsDao.updateControlSizeIndex(3);
+    await db.settingsDao.updateSwipeSensitivityIndex(2);
+    expect(await db.settingsDao.getControlSizeIndex(), 3);
+    expect(await db.settingsDao.getSwipeSensitivityIndex(), 2);
+    // Writing one preference leaves the others alone.
+    expect(await db.settingsDao.isSnapMovementEnabled(), isTrue);
+    expect(await db.settingsDao.getControlLayoutIndex(), 1);
   });
 }

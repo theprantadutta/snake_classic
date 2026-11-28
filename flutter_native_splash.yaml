@@ -7,16 +7,6 @@
 # Info.plist, LaunchScreen.storyboard, web/index.html and the .xcassets
 # manifests. See the comment in values/styles.xml.
 #
-# ALSO AFTERWARDS (when a background_image is set): the generator writes
-# background.png into drawable/, drawable-night/, drawable-v21/ and
-# drawable-night-v21/. Density-less folders count as mdpi, so Android scales
-# the bitmap by the screen density BEFORE drawing it: a 1290x2796 backdrop on
-# an xxhdpi phone becomes ~109 MB, over the 100 MB canvas limit, and the app
-# crashes on launch on every Android 11-and-older xxhdpi+ device
-# (SNAKE-CLASSIC-FLUTTER-23, 8.0.3). Move ONE copy to drawable-nodpi/ and
-# delete the four generated copies; nodpi is never prescaled, and
-# gravity="fill" still stretches it to the window at draw time.
-#
 # Both images below are true alpha over the `color` window background —
 # nothing carries a baked-in backdrop (checked over magenta). They are the
 # Living Board "Cell S" mark: android_12_splash_dark.png is the kit's
@@ -24,53 +14,25 @@
 # = width/3 the system circle crop allows) and splash_logo_transparent.png
 # is its centre crop. No branding strip: the in-app splash draws the
 # wordmark right after.
-# ---------------------------------------------------------------------------
-# MIAMI NIGHTS EVENT SPLASH (7.6.2, free-theme window Nov 19 - Dec 7 2026).
-# REVERT in the first release after Dec 7: delete this active block, uncomment
-# the CLASSIC block below, re-run the generator, redo the AFTERWARDS steps.
-# A native splash is baked into the build, so installs that never update keep
-# showing this one; that's harmless.
-# Assets: miami_nights_bg.png is rendered from lib/design/miami_nights_scene.dart
-# by `flutter test tools/render_miami_splash_test.dart`; the two miami_nights_*
-# logos are the Cell S files recoloured lime -> pink (red apple kept). Generic
-# sunset imagery only: no other game's name, logo or lettering.
-# Android 12+ ignores background images: it shows the pink mark on dusk violet.
-# ---------------------------------------------------------------------------
 flutter_native_splash:
-  # No top-level color: the generator ignores background_image when one is set.
-  background_image: assets/splash/miami_nights_bg.png
-  background_image_dark: assets/splash/miami_nights_bg.png
-  image: assets/splash/miami_nights_logo.png
-  image_dark: assets/splash/miami_nights_logo.png
+  color: "#0F380F"
+  color_dark: "#0F380F"
+  # image: assets/images/splash.png
+  # image_dark: assets/images/splash.png
+  # background_image: assets/splash/splash_bg.png
+  # background_image_dark: assets/splash/splash_bg.png
+  # android_gravity: fill
+  # fullscreen: true
+  # branding: assets/images/branding.png
+
+  # background_image: assets/splash/splash_background_light.png
+  # background_image_dark: assets/splash/splash_background_dark.png
+  
+  image: assets/splash/splash_logo_transparent.png
+  image_dark: assets/splash/splash_logo_transparent.png
 
   android_12:
-    image: assets/splash/miami_nights_android_12.png
-    image_dark: assets/splash/miami_nights_android_12.png
-    color: "#2A0A45"
-    color_dark: "#2A0A45"
-
-# ---------------------------------------------------------------------------
-# CLASSIC SPLASH (restore after the event)
-# ---------------------------------------------------------------------------
-# flutter_native_splash:
-#   color: "#0F380F"
-#   color_dark: "#0F380F"
-#   # image: assets/images/splash.png
-#   # image_dark: assets/images/splash.png
-#   # background_image: assets/splash/splash_bg.png
-#   # background_image_dark: assets/splash/splash_bg.png
-#   # android_gravity: fill
-#   # fullscreen: true
-#   # branding: assets/images/branding.png
-#
-#   # background_image: assets/splash/splash_background_light.png
-#   # background_image_dark: assets/splash/splash_background_dark.png
-#
-#   image: assets/splash/splash_logo_transparent.png
-#   image_dark: assets/splash/splash_logo_transparent.png
-#
-#   android_12:
-#     image: assets/splash/android_12_splash_dark.png
-#     image_dark: assets/splash/android_12_splash_dark.png
-#     color: "#0F380F"
-#     color_dark: "#0F380F"
+    image: assets/splash/android_12_splash_dark.png
+    image_dark: assets/splash/android_12_splash_dark.png
+    color: "#0F380F"
+    color_dark: "#0F380F"

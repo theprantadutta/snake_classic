@@ -975,7 +975,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
   }
 
   /// The control zone's floor, shared with single-player's.
-  static double _zoneMin(BuildContext context) => 150 * context.uiScale;
+  static double _zoneMin(BuildContext context) {
+    final controls = context.read<GameSettingsCubit>().state;
+    return GameBottomBar.zoneMin(
+      context,
+      dPadEnabled: controls.dPadEnabled,
+      layout: controls.controlLayout,
+      size: controls.controlSize,
+    );
+  }
 
   /// Dim the frozen board and say what's happening while the cubit
   /// retries the connection. The match keeps running server-side.
@@ -1141,7 +1149,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
       buildWhen: (previous, current) =>
           previous.dPadEnabled != current.dPadEnabled ||
           previous.dPadPosition != current.dPadPosition ||
-          previous.controlLayout != current.controlLayout,
+          previous.controlLayout != current.controlLayout ||
+          previous.controlSize != current.controlSize,
       builder: (context, controls) =>
           BlocSelector<MultiplayerCubit, MultiplayerState, bool>(
             selector: (_) => context.read<MultiplayerCubit>().canSteer,
@@ -1153,6 +1162,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen>
                 dPadEnabled: controls.dPadEnabled,
                 dPadPosition: controls.dPadPosition,
                 controlLayout: controls.controlLayout,
+                controlSize: controls.controlSize,
                 onRelativeTurn: _handleRelativeTurn,
                 onDirection: _handleSwipe,
                 canSteerOverride: canSteer,

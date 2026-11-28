@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Nonogrammi logici: svela l'immagine in pixel",
   "moreGamesJadewell": "Mahjong solitario: abbina le tessere, svuota il tavolo",
   "updatePlayOfferBody": "È pronta una nuova versione di Snake Classic. L'aggiornamento richiede circa un minuto e il gioco si riavvia da solo al termine.",
-  "updateActionUpdateNow": "Aggiorna ora"
+  "updateActionUpdateNow": "Aggiorna ora",
+  "ctrlButtonSize": "Dimensione pulsanti",
+  "ctrlSizeSmall": "Piccola",
+  "ctrlSizeNormal": "Normale",
+  "ctrlSizeLarge": "Grande",
+  "ctrlSizeExtraLarge": "Enorme",
+  "ctrlSwipeSensitivity": "Sensibilità dello swipe",
+  "ctrlSensitivityLow": "Bassa",
+  "ctrlSensitivityNormal": "Normale",
+  "ctrlSensitivityHigh": "Alta",
+  "ctrlIntroTitle": "Scegli i comandi",
+  "ctrlIntroBody": "Swipe, croce direzionale, pulsanti di svolta o levetta: gioca come ti trovi meglio. Puoi cambiare quando vuoi.",
+  "ctrlIntroTune": "Ingrandisci i pulsanti, sposta la croce o cambia la sensibilità dello swipe in Impostazioni → Comandi, o dal menu di pausa.",
+  "ctrlIntroPlay": "Gioca"
 }

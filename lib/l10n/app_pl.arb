@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Logiczne nonogramy: odkryj obrazek z pikseli",
   "moreGamesJadewell": "Mahjong pasjans: łącz kafelki, oczyść planszę",
   "updatePlayOfferBody": "Nowa wersja Snake Classic jest gotowa. Aktualizacja trwa około minuty, a gra sama uruchomi się ponownie po jej zakończeniu.",
-  "updateActionUpdateNow": "Aktualizuj teraz"
+  "updateActionUpdateNow": "Aktualizuj teraz",
+  "ctrlButtonSize": "Rozmiar przycisków",
+  "ctrlSizeSmall": "Mały",
+  "ctrlSizeNormal": "Normalny",
+  "ctrlSizeLarge": "Duży",
+  "ctrlSizeExtraLarge": "Ogromny",
+  "ctrlSwipeSensitivity": "Czułość przesunięcia",
+  "ctrlSensitivityLow": "Niska",
+  "ctrlSensitivityNormal": "Normalna",
+  "ctrlSensitivityHigh": "Wysoka",
+  "ctrlIntroTitle": "Wybierz sterowanie",
+  "ctrlIntroBody": "Przesuwanie, krzyżak, przyciski skrętu lub gałka: steruj tak, jak ci wygodnie. Możesz to zmienić w każdej chwili.",
+  "ctrlIntroTune": "Powiększ przyciski, przesuń krzyżak lub zmień czułość przesunięcia w Ustawienia → Sterowanie albo w menu pauzy.",
+  "ctrlIntroPlay": "Graj"
 }

@@ -35,6 +35,12 @@ G = {'A':['111','101','111','101','101'],'B':['110','101','110','101','110'],'C'
 LIME = (174, 220, 16)
 GOLD = (245, 197, 24)
 W, H = 1284, 2778
+# Google Play phone screenshots may be at most 2:1. STORE_SHOT_PLAY=1 lays the
+# same design out on a 1284 x 2568 canvas (the phone mock runs off the bottom
+# edge) and saves it at 1080 x 2160.
+PLAY = os.environ.get('STORE_SHOT_PLAY') == '1'
+if PLAY:
+    H = W * 2
 
 
 def font(name, size):
@@ -160,7 +166,10 @@ def render(j, base_dir):
 
     out = os.path.join(base_dir, j['out'])
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    cv.convert('RGB').save(out, 'PNG', optimize=True)
+    img = cv.convert('RGB')
+    if PLAY:
+        img = img.resize((1080, 2160), Image.LANCZOS)
+    img.save(out, 'PNG', optimize=True)
     print('wrote', out)
 
 

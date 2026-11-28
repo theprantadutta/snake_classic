@@ -70,6 +70,23 @@ extension DPadPositionL10n on DPadPosition {
       };
 }
 
+extension ControlSizeL10n on ControlSize {
+  String localizedName(AppLocalizations l10n) => switch (this) {
+        ControlSize.small => l10n.ctrlSizeSmall,
+        ControlSize.normal => l10n.ctrlSizeNormal,
+        ControlSize.large => l10n.ctrlSizeLarge,
+        ControlSize.extraLarge => l10n.ctrlSizeExtraLarge,
+      };
+}
+
+extension SwipeSensitivityL10n on SwipeSensitivity {
+  String localizedName(AppLocalizations l10n) => switch (this) {
+        SwipeSensitivity.low => l10n.ctrlSensitivityLow,
+        SwipeSensitivity.normal => l10n.ctrlSensitivityNormal,
+        SwipeSensitivity.high => l10n.ctrlSensitivityHigh,
+      };
+}
+
 extension MultiplayerGameModeL10n on MultiplayerGameMode {
   String localizedName(AppLocalizations l10n) => switch (this) {
         MultiplayerGameMode.classic => l10n.mpModeClassicBattle,

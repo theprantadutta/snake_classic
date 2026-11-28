@@ -36,6 +36,7 @@ class GameBottomBar extends StatelessWidget {
     required this.onDirection,
     this.dPadPosition = DPadPosition.bottomCenter,
     this.controlLayout = ControlLayout.dPad,
+    this.controlSize = ControlSize.normal,
     this.onRelativeTurn,
     this.canSteerOverride,
     this.height,
@@ -62,7 +63,38 @@ class GameBottomBar extends StatelessWidget {
   /// Which on-screen control [dPadEnabled] draws. Turn buttons need
   /// [onRelativeTurn]; without it the zone falls back to the d-pad.
   final ControlLayout controlLayout;
+
+  /// Player's size choice for the d-pad and turn buttons (scales the cap).
+  final ControlSize controlSize;
   final void Function(RelativeTurn)? onRelativeTurn;
+
+  /// The d-pad's size cap before [ControlSize] (dp, phone).
+  static const double dPadCap = 190;
+
+  /// The turn buttons' height cap before [ControlSize] (dp, phone).
+  static const double turnCap = 220;
+
+  /// The control zone's floor. 150 dp fits a normal control; a large or
+  /// extra-large d-pad / turn buttons raise it so the chosen size really
+  /// fits, and the board gives up that height. Both gameplay screens use
+  /// this so solo and Versus agree.
+  static double zoneMin(
+    BuildContext context, {
+    required bool dPadEnabled,
+    required ControlLayout layout,
+    required ControlSize size,
+  }) {
+    final scale = context.uiScale;
+    const base = 150.0;
+    if (!dPadEnabled || size.factor <= 1.0) return base * scale;
+    final double cap = switch (layout) {
+      ControlLayout.dPad => dPadCap,
+      ControlLayout.turnButtons => turnCap * .8,
+      ControlLayout.joystick => 0,
+    };
+    // Room for the zone's own padding (2 × 10 + 8) on top of the control.
+    return math.max(base, cap * size.factor * .9 + 28) * scale;
+  }
 
   /// The zone's full height. Null keeps the old fixed bar size.
   final double? height;
@@ -100,7 +132,7 @@ class GameBottomBar extends StatelessWidget {
         child: SteerableTurnButtons(
           onTurn: onRelativeTurn!,
           theme: theme,
-          height: math.min(inner, 220 * scale),
+          height: math.min(inner, turnCap * controlSize.factor * scale),
           canSteer: isInteractive,
         ),
       );
@@ -115,7 +147,12 @@ class GameBottomBar extends StatelessWidget {
       );
     } else {
       // Grows with the zone, capped so a thumb can still cross it.
-      final size = math.min(inner, 190 * scale);
+      // ...and never wider than the zone either (extra large on a narrow
+      // phone).
+      final size = math.min(
+        math.min(inner, dPadCap * controlSize.factor * scale),
+        MediaQuery.sizeOf(context).width - 48 * scale,
+      );
       control = Center(
         child: SizedBox(
           height: size,

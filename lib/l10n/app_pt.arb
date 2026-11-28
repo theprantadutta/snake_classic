@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Nonogramas de lógica: revele a imagem em pixels",
   "moreGamesJadewell": "Mahjong paciência: combine peças, limpe o tabuleiro",
   "updatePlayOfferBody": "Há uma nova versão do Snake Classic. A atualização demora cerca de um minuto e o jogo reinicia sozinho no fim.",
-  "updateActionUpdateNow": "Atualizar agora"
+  "updateActionUpdateNow": "Atualizar agora",
+  "ctrlButtonSize": "Tamanho dos botões",
+  "ctrlSizeSmall": "Pequeno",
+  "ctrlSizeNormal": "Normal",
+  "ctrlSizeLarge": "Grande",
+  "ctrlSizeExtraLarge": "Enorme",
+  "ctrlSwipeSensitivity": "Sensibilidade do deslize",
+  "ctrlSensitivityLow": "Baixa",
+  "ctrlSensitivityNormal": "Normal",
+  "ctrlSensitivityHigh": "Alta",
+  "ctrlIntroTitle": "Escolha seus controles",
+  "ctrlIntroBody": "Deslizar, direcional, botões de virar ou alavanca: jogue do jeito mais confortável. Dá para trocar quando quiser.",
+  "ctrlIntroTune": "Aumente os botões, mude o direcional de lugar ou ajuste a sensibilidade do deslize em Configurações → Controles, ou no menu de pausa.",
+  "ctrlIntroPlay": "Jogar"
 }

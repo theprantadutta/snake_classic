@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snake_classic/debug/autopilot.dart';
+import 'package:snake_classic/widgets/dialogs/control_choice_dialog.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/lb/lb_game_hud.dart';
 import 'package:go_router/go_router.dart';
@@ -160,6 +161,17 @@ class _GameScreenState extends State<GameScreen>
     );
     if (gameCubit.state.status == GamePlayStatus.ready ||
         gameCubit.state.status == GamePlayStatus.initial) {
+      // Once per install, before the second game (never the first: see
+      // ControlsIntro): the control styles and how to tune them.
+      if (!widget.startTutorial &&
+          !Autopilot.enabled &&
+          await ControlsIntro.shouldShow(
+            gamesStarted: FirstRunService().gamesStarted,
+          )) {
+        if (!mounted) return;
+        await showControlsIntroSheet(context);
+        if (!mounted) return;
+      }
       debugPrint('[GameScreen] Starting game...');
       gameCubit.startGame();
       debugPrint(
@@ -352,7 +364,8 @@ class _GameScreenState extends State<GameScreen>
       buildWhen: (previous, current) =>
           previous.dPadEnabled != current.dPadEnabled ||
           previous.dPadPosition != current.dPadPosition ||
-          previous.controlLayout != current.controlLayout,
+          previous.controlLayout != current.controlLayout ||
+          previous.controlSize != current.controlSize,
       builder: (context, controls) => BlocBuilder<GameCubit, GameCubitState>(
         buildWhen: (previous, current) =>
             previous.gameState?.status != current.gameState?.status,
@@ -365,6 +378,7 @@ class _GameScreenState extends State<GameScreen>
             dPadEnabled: controls.dPadEnabled,
             dPadPosition: controls.dPadPosition,
             controlLayout: controls.controlLayout,
+            controlSize: controls.controlSize,
             onRelativeTurn: _handleRelativeTurn,
             onDirection: _handleSwipe,
             swipeZone: _swipeZone(zone.maxHeight),
@@ -944,10 +958,13 @@ class _GameScreenState extends State<GameScreen>
                                                                     // when the player switches controls. It gets at least
                                                                     // this much, and any spare height on a tall phone goes
                                                                     // to it too rather than to a dead band.
-                                                                    final zoneMin =
-                                                                        150 *
-                                                                        context
-                                                                            .uiScale;
+                                                                    final controls = context.read<GameSettingsCubit>().state;
+final zoneMin = GameBottomBar.zoneMin(
+  context,
+  dPadEnabled: controls.dPadEnabled,
+  layout: controls.controlLayout,
+  size: controls.controlSize,
+);
                                                                     final topGap =
                                                                         context
                                                                             .lbCell *

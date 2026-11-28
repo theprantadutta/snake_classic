@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,21 +34,19 @@ class ReviewService {
   /// between local prompts leaves headroom.
   static const Duration _minDaysBetweenPrompts = Duration(days: 60);
 
-  /// New installs need a baseline of play before being prompted.
-  /// 8 lifetime games × ~2 min each ≈ 15+ minutes of engagement.
+  /// New installs need a baseline of play before being prompted: 5 lifetime
+  /// games and a day since first play, on both platforms.
   ///
-  /// iOS uses a lower bar (5 games, 1 day). The App Store listing had zero
-  /// ratings in Nov 2026 with ~100 installs a month, and almost nobody stayed
-  /// long enough to reach the Android gate. With no stars shown in search,
-  /// App Store visibility stays low, so getting the first ratings matters more
-  /// there. StoreKit still caps the sheet at 3 per user per year.
-  static int get _minLifetimeGames => Platform.isIOS ? 5 : 8;
+  /// Android used 8 games / 3 days until 8.3. With D1 retention ~14% and D7
+  /// ~3.5% almost nobody reached that gate: Play got 0–4 ratings a day and
+  /// the store rating (3.58, Nov 2026) was set by the few unhappy players who
+  /// rate unprompted. iOS had already moved to 5 / 1 day in 7.6.2 for the
+  /// same reason. The ask still only comes right after a new personal best or
+  /// a rare achievement, and the stores cap the sheet (~3 a year).
+  static int get _minLifetimeGames => 5;
 
-  /// Don't prompt anyone who installed less than this ago — even if they
-  /// somehow blasted through 8 games on day 1, that's not "I love this app"
-  /// territory yet.
-  static Duration get _minDaysSinceFirstPlay =>
-      Platform.isIOS ? const Duration(days: 1) : const Duration(days: 3);
+  /// Don't prompt anyone who installed less than this ago.
+  static Duration get _minDaysSinceFirstPlay => const Duration(days: 1);
 
   /// Delay before triggering the OS dialog after the eligibility check
   /// passes. Lets celebration audio + animation finish first so the prompt

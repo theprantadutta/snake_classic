@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "नॉनोग्राम लॉजिक पज़ल: पिक्सल तस्वीर खोलो",
   "moreGamesJadewell": "माहजोंग सॉलिटेयर: टाइल मिलाओ, बोर्ड साफ़ करो",
   "updatePlayOfferBody": "Snake Classic का नया वर्ज़न तैयार है। अपडेट में लगभग एक मिनट लगता है, और पूरा होने पर गेम अपने आप फिर से शुरू हो जाता है।",
-  "updateActionUpdateNow": "अभी अपडेट करें"
+  "updateActionUpdateNow": "अभी अपडेट करें",
+  "ctrlButtonSize": "बटन का आकार",
+  "ctrlSizeSmall": "छोटा",
+  "ctrlSizeNormal": "सामान्य",
+  "ctrlSizeLarge": "बड़ा",
+  "ctrlSizeExtraLarge": "बहुत बड़ा",
+  "ctrlSwipeSensitivity": "स्वाइप संवेदनशीलता",
+  "ctrlSensitivityLow": "कम",
+  "ctrlSensitivityNormal": "सामान्य",
+  "ctrlSensitivityHigh": "ज़्यादा",
+  "ctrlIntroTitle": "अपना कंट्रोल चुनें",
+  "ctrlIntroBody": "स्वाइप, डी-पैड, मोड़ बटन या स्टिक: जैसे आपको आसान लगे, वैसे खेलें। आप कभी भी बदल सकते हैं।",
+  "ctrlIntroTune": "बटन बड़े करें, डी-पैड की जगह बदलें, या स्वाइप संवेदनशीलता बदलें: सेटिंग्स → कंट्रोल में या पॉज़ मेन्यू से।",
+  "ctrlIntroPlay": "खेलें"
 }

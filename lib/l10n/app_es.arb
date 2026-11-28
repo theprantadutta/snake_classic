@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Nonogramas de lógica: revela la imagen de píxeles",
   "moreGamesJadewell": "Mahjong solitario: une fichas y despeja el tablero",
   "updatePlayOfferBody": "Hay una nueva versión de Snake Classic. Actualizar tarda alrededor de un minuto y el juego se reinicia solo al terminar.",
-  "updateActionUpdateNow": "Actualizar ahora"
+  "updateActionUpdateNow": "Actualizar ahora",
+  "ctrlButtonSize": "Tamaño de botones",
+  "ctrlSizeSmall": "Pequeño",
+  "ctrlSizeNormal": "Normal",
+  "ctrlSizeLarge": "Grande",
+  "ctrlSizeExtraLarge": "Enorme",
+  "ctrlSwipeSensitivity": "Sensibilidad del deslizamiento",
+  "ctrlSensitivityLow": "Baja",
+  "ctrlSensitivityNormal": "Normal",
+  "ctrlSensitivityHigh": "Alta",
+  "ctrlIntroTitle": "Elige tus controles",
+  "ctrlIntroBody": "Deslizar, cruceta, botones de giro o palanca: juega como te resulte más cómodo. Puedes cambiarlo cuando quieras.",
+  "ctrlIntroTune": "Agranda los botones, mueve la cruceta o cambia la sensibilidad del deslizamiento en Ajustes → Controles, o desde el menú de pausa.",
+  "ctrlIntroPlay": "Jugar"
 }

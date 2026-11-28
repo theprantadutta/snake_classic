@@ -24,6 +24,7 @@ import 'package:snake_classic/services/username_service.dart';
 import 'package:snake_classic/services/walkthrough_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/control_layout_preview.dart';
+import 'package:snake_classic/widgets/control_tuning.dart';
 import 'package:snake_classic/widgets/account_upgrade_sheet.dart';
 import 'package:snake_classic/widgets/arcade_snackbar.dart';
 import 'package:snake_classic/widgets/credits_dialog.dart';
@@ -221,6 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   dPadEnabled: false,
                   layout: ControlLayout.dPad,
                   dPadPosition: s.dPadPosition,
+                  controlSize: s.controlSize,
                   theme: context.read<ThemeCubit>().state.currentTheme,
                 ),
               ),
@@ -237,6 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   dPadEnabled: true,
                   layout: ControlLayout.dPad,
                   dPadPosition: s.dPadPosition,
+                  controlSize: s.controlSize,
                   theme: context.read<ThemeCubit>().state.currentTheme,
                 ),
               ),
@@ -255,6 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   dPadEnabled: true,
                   layout: ControlLayout.turnButtons,
                   dPadPosition: s.dPadPosition,
+                  controlSize: s.controlSize,
                   theme: context.read<ThemeCubit>().state.currentTheme,
                 ),
               ),
@@ -271,28 +275,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   dPadEnabled: true,
                   layout: ControlLayout.joystick,
                   dPadPosition: s.dPadPosition,
+                  controlSize: s.controlSize,
                   theme: context.read<ThemeCubit>().state.currentTheme,
                 ),
               ),
             ),
           ],
         ),
-        // The position selector only applies to the four-way pad; the turn
-        // buttons occupy both corners by design and the stick floats.
-        if (on(ControlLayout.dPad)) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
-            child: LBSectionLabel(l10n.settingsDPadPosition),
-          ),
-          SettingsOptionStrip<DPadPosition>(
-            options: DPadPosition.values,
-            selected: s.dPadPosition,
-            labelOf: (pos) => pos.localizedName(l10n),
-            onSelect: (pos) =>
-                context.read<GameSettingsCubit>().updateDPadPosition(pos),
-          ),
-          const SizedBox(height: 4),
-        ],
+        // Size, position and swipe sensitivity for the chosen control.
+        ControlTuning(settings: s, onChanged: _track),
         // Cell-by-cell movement. Device-local, read straight off the cubit.
         SettingsToggleRow(
           title: l10n.settingsSnapMovement,

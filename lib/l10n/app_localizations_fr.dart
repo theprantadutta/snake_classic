@@ -6970,4 +6970,45 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Mettre à jour';
+
+  @override
+  String get ctrlButtonSize => 'Taille des boutons';
+
+  @override
+  String get ctrlSizeSmall => 'Petite';
+
+  @override
+  String get ctrlSizeNormal => 'Normale';
+
+  @override
+  String get ctrlSizeLarge => 'Grande';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Énorme';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Sensibilité du glissement';
+
+  @override
+  String get ctrlSensitivityLow => 'Faible';
+
+  @override
+  String get ctrlSensitivityNormal => 'Normale';
+
+  @override
+  String get ctrlSensitivityHigh => 'Élevée';
+
+  @override
+  String get ctrlIntroTitle => 'Choisis tes commandes';
+
+  @override
+  String get ctrlIntroBody =>
+      'Glisser, croix directionnelle, boutons de virage ou joystick : dirige comme tu préfères. Tu peux changer à tout moment.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Agrandis les boutons, déplace la croix ou règle la sensibilité du glissement dans Réglages → Commandes, ou depuis le menu pause.';
+
+  @override
+  String get ctrlIntroPlay => 'Jouer';
 }

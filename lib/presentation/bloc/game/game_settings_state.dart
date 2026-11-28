@@ -3,7 +3,7 @@ import 'package:snake_classic/utils/constants.dart';
 
 // Re-export DPadPosition, BoardSize, and GameMode from constants
 export 'package:snake_classic/utils/constants.dart'
-    show DPadPosition, BoardSize, GameMode;
+    show DPadPosition, BoardSize, GameMode, ControlSize, SwipeSensitivity;
 
 /// Status of the game settings cubit
 enum GameSettingsStatus { initial, loading, ready }
@@ -19,6 +19,12 @@ class GameSettingsState extends Equatable {
 
   /// Render cell-by-cell instead of gliding between cells. Device-local.
   final bool snapMovementEnabled;
+
+  /// Size of the d-pad and turn buttons. Device-local.
+  final ControlSize controlSize;
+
+  /// Swipe travel before a turn. Device-local.
+  final SwipeSensitivity swipeSensitivity;
   final BoardSize boardSize;
   final Difficulty difficulty;
   final GameMode gameMode;
@@ -50,6 +56,8 @@ class GameSettingsState extends Equatable {
     this.dPadPosition = DPadPosition.bottomCenter,
     this.controlLayout = ControlLayout.dPad,
     this.snapMovementEnabled = false,
+    this.controlSize = ControlSize.normal,
+    this.swipeSensitivity = SwipeSensitivity.normal,
     this.boardSize = BoardSize.classic,
     this.difficulty = Difficulty.normal,
     this.gameMode = GameMode.classic,
@@ -73,6 +81,8 @@ class GameSettingsState extends Equatable {
     DPadPosition? dPadPosition,
     ControlLayout? controlLayout,
     bool? snapMovementEnabled,
+    ControlSize? controlSize,
+    SwipeSensitivity? swipeSensitivity,
     BoardSize? boardSize,
     Difficulty? difficulty,
     GameMode? gameMode,
@@ -92,6 +102,8 @@ class GameSettingsState extends Equatable {
       dPadPosition: dPadPosition ?? this.dPadPosition,
       controlLayout: controlLayout ?? this.controlLayout,
       snapMovementEnabled: snapMovementEnabled ?? this.snapMovementEnabled,
+      controlSize: controlSize ?? this.controlSize,
+      swipeSensitivity: swipeSensitivity ?? this.swipeSensitivity,
       boardSize: boardSize ?? this.boardSize,
       difficulty: difficulty ?? this.difficulty,
       gameMode: gameMode ?? this.gameMode,
@@ -119,6 +131,8 @@ class GameSettingsState extends Equatable {
     dPadPosition,
     controlLayout,
     snapMovementEnabled,
+    controlSize,
+    swipeSensitivity,
     boardSize,
     difficulty,
     gameMode,

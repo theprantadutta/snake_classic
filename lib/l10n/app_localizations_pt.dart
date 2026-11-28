@@ -6941,4 +6941,45 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Atualizar agora';
+
+  @override
+  String get ctrlButtonSize => 'Tamanho dos botões';
+
+  @override
+  String get ctrlSizeSmall => 'Pequeno';
+
+  @override
+  String get ctrlSizeNormal => 'Normal';
+
+  @override
+  String get ctrlSizeLarge => 'Grande';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Enorme';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Sensibilidade do deslize';
+
+  @override
+  String get ctrlSensitivityLow => 'Baixa';
+
+  @override
+  String get ctrlSensitivityNormal => 'Normal';
+
+  @override
+  String get ctrlSensitivityHigh => 'Alta';
+
+  @override
+  String get ctrlIntroTitle => 'Escolha seus controles';
+
+  @override
+  String get ctrlIntroBody =>
+      'Deslizar, direcional, botões de virar ou alavanca: jogue do jeito mais confortável. Dá para trocar quando quiser.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Aumente os botões, mude o direcional de lugar ou ajuste a sensibilidade do deslize em Configurações → Controles, ou no menu de pausa.';
+
+  @override
+  String get ctrlIntroPlay => 'Jogar';
 }

@@ -27,6 +27,43 @@ enum ControlLayout {
       values[index.clamp(0, values.length - 1)];
 }
 
+/// How big the on-screen d-pad and turn buttons are drawn. Device-local
+/// (a hand and a phone, like [ControlLayout]). Index-stored: never reorder.
+///
+/// Added in 8.3 after review feedback ("I wish the D-pad could be resized,
+/// my fingers are too big"). The factor scales the control's size cap; a
+/// bigger control also raises the floor of the control zone, so on a short
+/// phone the board gives up a little height to make room.
+enum ControlSize {
+  small(0.8),
+  normal(1.0),
+  large(1.25),
+  extraLarge(1.5);
+
+  const ControlSize(this.factor);
+
+  final double factor;
+
+  static ControlSize fromIndex(int index) =>
+      values[index.clamp(0, values.length - 1)];
+}
+
+/// How far a finger travels before a swipe counts as a turn. Device-local.
+/// Index-stored: never reorder. [distance] is in logical pixels on a phone
+/// (scaled by `uiScale` on tablets).
+enum SwipeSensitivity {
+  low(24),
+  normal(14),
+  high(8);
+
+  const SwipeSensitivity(this.distance);
+
+  final double distance;
+
+  static SwipeSensitivity fromIndex(int index) =>
+      values[index.clamp(0, values.length - 1)];
+}
+
 enum DPadPosition {
   bottomLeft,
   bottomCenter,

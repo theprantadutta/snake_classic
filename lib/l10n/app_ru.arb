@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Японские кроссворды: открой картинку из пикселей",
   "moreGamesJadewell": "Маджонг-пасьянс: собирай пары, очищай поле",
   "updatePlayOfferBody": "Готова новая версия Snake Classic. Обновление займёт около минуты, а игра сама перезапустится по завершении.",
-  "updateActionUpdateNow": "Обновить сейчас"
+  "updateActionUpdateNow": "Обновить сейчас",
+  "ctrlButtonSize": "Размер кнопок",
+  "ctrlSizeSmall": "Маленький",
+  "ctrlSizeNormal": "Обычный",
+  "ctrlSizeLarge": "Большой",
+  "ctrlSizeExtraLarge": "Огромный",
+  "ctrlSwipeSensitivity": "Чувствительность свайпа",
+  "ctrlSensitivityLow": "Низкая",
+  "ctrlSensitivityNormal": "Обычная",
+  "ctrlSensitivityHigh": "Высокая",
+  "ctrlIntroTitle": "Выберите управление",
+  "ctrlIntroBody": "Свайпы, крестовина, кнопки поворота или стик: управляйте так, как вам удобно. Сменить можно в любой момент.",
+  "ctrlIntroTune": "Увеличьте кнопки, переместите крестовину или настройте чувствительность свайпа в Настройках → Управление или в меню паузы.",
+  "ctrlIntroPlay": "Играть"
 }

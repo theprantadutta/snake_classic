@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "Nonogrammes logiques : révèle l'image en pixels",
   "moreGamesJadewell": "Mahjong solitaire : associe les tuiles, vide le plateau",
   "updatePlayOfferBody": "Une nouvelle version de Snake Classic est prête. La mise à jour prend environ une minute et le jeu redémarre tout seul à la fin.",
-  "updateActionUpdateNow": "Mettre à jour"
+  "updateActionUpdateNow": "Mettre à jour",
+  "ctrlButtonSize": "Taille des boutons",
+  "ctrlSizeSmall": "Petite",
+  "ctrlSizeNormal": "Normale",
+  "ctrlSizeLarge": "Grande",
+  "ctrlSizeExtraLarge": "Énorme",
+  "ctrlSwipeSensitivity": "Sensibilité du glissement",
+  "ctrlSensitivityLow": "Faible",
+  "ctrlSensitivityNormal": "Normale",
+  "ctrlSensitivityHigh": "Élevée",
+  "ctrlIntroTitle": "Choisis tes commandes",
+  "ctrlIntroBody": "Glisser, croix directionnelle, boutons de virage ou joystick : dirige comme tu préfères. Tu peux changer à tout moment.",
+  "ctrlIntroTune": "Agrandis les boutons, déplace la croix ou règle la sensibilité du glissement dans Réglages → Commandes, ou depuis le menu pause.",
+  "ctrlIntroPlay": "Jouer"
 }

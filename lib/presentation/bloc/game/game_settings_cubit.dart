@@ -92,6 +92,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
       final controlLayout = await _storageService.getControlLayout();
       final snapMovementEnabled =
           await _storageService.isSnapMovementEnabled();
+      final controlSize = await _storageService.getControlSize();
+      final swipeSensitivity = await _storageService.getSwipeSensitivity();
       final screenShakeEnabled = await _storageService.isScreenShakeEnabled();
       final hapticsEnabled = await _storageService.isHapticsEnabled();
       // Read from storage rather than from AudioService's in-memory flags.
@@ -123,6 +125,8 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
           dPadPosition: dPadPosition,
           controlLayout: controlLayout,
           snapMovementEnabled: snapMovementEnabled,
+          controlSize: controlSize,
+          swipeSensitivity: swipeSensitivity,
           screenShakeEnabled: screenShakeEnabled,
           hapticsEnabled: hapticsEnabled,
           soundEnabled: soundEnabled,
@@ -326,6 +330,20 @@ class GameSettingsCubit extends Cubit<GameSettingsState> {
     if (state.controlLayout == layout) return;
     emit(state.copyWith(controlLayout: layout));
     await _storageService.setControlLayout(layout);
+  }
+
+  /// Size of the d-pad and turn buttons. Device-local.
+  Future<void> setControlSize(ControlSize size) async {
+    if (state.controlSize == size) return;
+    emit(state.copyWith(controlSize: size));
+    await _storageService.setControlSize(size);
+  }
+
+  /// How far a swipe travels before it turns. Device-local.
+  Future<void> setSwipeSensitivity(SwipeSensitivity sensitivity) async {
+    if (state.swipeSensitivity == sensitivity) return;
+    emit(state.copyWith(swipeSensitivity: sensitivity));
+    await _storageService.setSwipeSensitivity(sensitivity);
   }
 
   /// Cell-by-cell movement. Device-local.

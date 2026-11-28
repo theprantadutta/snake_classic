@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:snake_classic/services/haptic_service.dart';
+import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/utils/direction.dart';
 import 'package:snake_classic/widgets/swipe_detector.dart';
 
@@ -8,7 +9,8 @@ import 'control_test_harness.dart';
 
 /// What may and may not become a turn.
 ///
-/// The gesture policy itself — a 15dp threshold, a 1.3 directional-ratio gate
+/// The gesture policy itself — a distance threshold (14 dp on Normal since
+/// 8.3, set by the player's swipe sensitivity), a 1.3 directional-ratio gate
 /// mid-drag, a velocity fallback for flicks with no ratio gate, and multiple
 /// turns within one drag — is deliberate and unchanged. These tests pin it so
 /// the next person to touch the recognizer finds out immediately, and cover
@@ -21,13 +23,17 @@ void main() {
     WidgetTester tester, {
     VoidCallback? onTap,
     Widget? child,
+    SwipeSensitivity? sensitivity,
   }) async {
     swipes = [];
     await tester.pumpWidget(
       harness(
         SwipeDetector(
+          // Fresh state per pump: the spam guards read the wall clock.
+          key: UniqueKey(),
           onSwipe: swipes.add,
           onTap: onTap,
+          sensitivity: sensitivity,
           child:
               child ??
               Container(width: 300, height: 300, color: const Color(0xFF000000)),
@@ -303,6 +309,97 @@ void main() {
       await tester.pump();
 
       expect(swipes, isEmpty);
+    });
+  });
+
+  group('latency (8.3: raw pointer events, no pan slop)', () {
+    testWidgets('the turn fires while the finger is still moving', (
+      tester,
+    ) async {
+      // The old pan recognizer swallowed ~36 px of slop before it counted
+      // anything, then needed the threshold on top: ~50 px of travel before a
+      // turn. Now 16 px is enough on Normal, mid-drag, before any release.
+      await pumpDetector(tester);
+      final centre = tester.getCenter(find.byType(SwipeDetector));
+
+      final gesture = await tester.startGesture(centre);
+      await gesture.moveBy(const Offset(0, 8));
+      await gesture.moveBy(const Offset(0, 8));
+      await tester.pump();
+
+      expect(swipes, [Direction.down], reason: 'fired before lift-off');
+      await gesture.up();
+      await tester.pump();
+      expect(swipes, [Direction.down], reason: 'and only once');
+    });
+
+    testWidgets('a second finger takes over steering', (tester) async {
+      await pumpDetector(tester);
+      final centre = tester.getCenter(find.byType(SwipeDetector));
+
+      final first = await tester.startGesture(centre, pointer: 1);
+      final second = await tester.startGesture(
+        centre + const Offset(0, 40),
+        pointer: 2,
+      );
+      // The first finger's movement no longer steers...
+      await first.moveBy(const Offset(40, 0));
+      await tester.pump();
+      expect(swipes, isEmpty);
+      // ...the newest one does.
+      await second.moveBy(const Offset(0, -40));
+      await tester.pump();
+      expect(swipes, [Direction.up]);
+      await first.up();
+      await second.up();
+    });
+  });
+
+  group('swipe sensitivity', () {
+    Future<List<Direction>> dragBy(
+      WidgetTester tester,
+      SwipeSensitivity sensitivity,
+      double dx,
+    ) async {
+      await pumpDetector(tester, sensitivity: sensitivity);
+      final centre = tester.getCenter(find.byType(SwipeDetector));
+      final gesture = await tester.startGesture(centre);
+      // Slow, so the release-velocity fallback can't rescue a short drag.
+      for (var i = 0; i < 4; i++) {
+        await gesture.moveBy(
+          Offset(dx / 4, 0),
+          timeStamp: Duration(milliseconds: 200 * (i + 1)),
+        );
+      }
+      await gesture.up(timeStamp: const Duration(milliseconds: 2000));
+      await tester.pump();
+      return swipes;
+    }
+
+    testWidgets('high turns on a short drag that normal ignores', (
+      tester,
+    ) async {
+      expect(await dragBy(tester, SwipeSensitivity.normal, 10), isEmpty);
+      expect(await dragBy(tester, SwipeSensitivity.high, 10), [
+        Direction.right,
+      ]);
+    });
+
+    testWidgets('low ignores a drag that normal takes', (tester) async {
+      expect(await dragBy(tester, SwipeSensitivity.normal, 18), [
+        Direction.right,
+      ]);
+      expect(await dragBy(tester, SwipeSensitivity.low, 18), isEmpty);
+    });
+
+    testWidgets('every level still turns on a full swipe', (tester) async {
+      for (final level in SwipeSensitivity.values) {
+        expect(
+          await dragBy(tester, level, 60),
+          [Direction.right],
+          reason: level.name,
+        );
+      }
     });
   });
 }

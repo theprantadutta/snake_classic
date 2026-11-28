@@ -14,6 +14,7 @@ import 'package:snake_classic/services/haptic_service.dart';
 import 'package:snake_classic/services/in_app_update_service.dart';
 import 'package:snake_classic/utils/constants.dart';
 import 'package:snake_classic/widgets/control_layout_preview.dart';
+import 'package:snake_classic/widgets/control_tuning.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 
 /// Pause (Living Board screen 06): PAUSED in snake cells over the dimmed
@@ -351,6 +352,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 dPadEnabled: dPad,
                                 layout: layout,
                                 dPadPosition: settings.dPadPosition,
+                                controlSize: settings.controlSize,
                                 theme: widget.theme,
                               ),
                             ),
@@ -360,7 +362,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    ControlTuning(settings: settings),
+                    const SizedBox(height: 8),
                     LBRow(
                       title: settings.snapMovementEnabled
                           ? l10n.poSnapOn

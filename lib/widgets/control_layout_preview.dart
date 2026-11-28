@@ -19,12 +19,14 @@ class ControlLayoutPreview extends StatefulWidget {
     required this.layout,
     required this.theme,
     this.dPadPosition = DPadPosition.bottomCenter,
+    this.controlSize = ControlSize.normal,
   });
 
   /// False is swipe; true draws [layout].
   final bool dPadEnabled;
   final ControlLayout layout;
   final DPadPosition dPadPosition;
+  final ControlSize controlSize;
   final GameTheme theme;
 
   /// The logical frame the miniature is laid out in before scaling: a
@@ -152,6 +154,7 @@ class _ControlLayoutPreviewState extends State<ControlLayoutPreview> {
               dPadEnabled: widget.dPadEnabled,
               dPadPosition: widget.dPadPosition,
               controlLayout: widget.layout,
+              controlSize: widget.controlSize,
               onDirection: (_) {},
               onRelativeTurn: (_) {},
               // Drawn live, not dimmed: this is how it looks mid-run.

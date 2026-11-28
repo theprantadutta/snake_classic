@@ -6946,4 +6946,45 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Aggiorna ora';
+
+  @override
+  String get ctrlButtonSize => 'Dimensione pulsanti';
+
+  @override
+  String get ctrlSizeSmall => 'Piccola';
+
+  @override
+  String get ctrlSizeNormal => 'Normale';
+
+  @override
+  String get ctrlSizeLarge => 'Grande';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Enorme';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Sensibilità dello swipe';
+
+  @override
+  String get ctrlSensitivityLow => 'Bassa';
+
+  @override
+  String get ctrlSensitivityNormal => 'Normale';
+
+  @override
+  String get ctrlSensitivityHigh => 'Alta';
+
+  @override
+  String get ctrlIntroTitle => 'Scegli i comandi';
+
+  @override
+  String get ctrlIntroBody =>
+      'Swipe, croce direzionale, pulsanti di svolta o levetta: gioca come ti trovi meglio. Puoi cambiare quando vuoi.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Ingrandisci i pulsanti, sposta la croce o cambia la sensibilità dello swipe in Impostazioni → Comandi, o dal menu di pausa.';
+
+  @override
+  String get ctrlIntroPlay => 'Gioca';
 }

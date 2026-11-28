@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:snake_classic/widgets/design_feedback_sheet.dart';
-import 'package:snake_classic/widgets/event_theme_promo.dart';
 import 'package:snake_classic/widgets/lb/lb.dart';
 import 'package:snake_classic/widgets/home/lb_home_snake.dart';
 import 'package:snake_classic/presentation/bloc/game/game_settings_cubit.dart';
@@ -206,11 +205,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // screen, and the remaining prompts self-gate and run on the next visit.
     if (tourRan) return;
 
-    // 2. Limited event theme announcement — once per install, only while
-    //    the theme is free. When it shows it is the visit's interruption;
-    //    the daily bonus badge stays on screen for later.
-    if (await maybeShowMiamiNightsPromo(context)) return;
-    if (!mounted) return;
+    // (2. was the Miami Nights theme announcement, removed in 8.3: the owner
+    //    judged a "switch your theme" pop-up at launch was hurting players.
+    //    The theme itself stays in the theme picker.)
 
     // 3. Daily bonus popup — resolves when the dialog is dismissed.
     await _checkDailyBonus();

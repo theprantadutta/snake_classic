@@ -6940,4 +6940,45 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Aktualizuj teraz';
+
+  @override
+  String get ctrlButtonSize => 'Rozmiar przycisków';
+
+  @override
+  String get ctrlSizeSmall => 'Mały';
+
+  @override
+  String get ctrlSizeNormal => 'Normalny';
+
+  @override
+  String get ctrlSizeLarge => 'Duży';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Ogromny';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Czułość przesunięcia';
+
+  @override
+  String get ctrlSensitivityLow => 'Niska';
+
+  @override
+  String get ctrlSensitivityNormal => 'Normalna';
+
+  @override
+  String get ctrlSensitivityHigh => 'Wysoka';
+
+  @override
+  String get ctrlIntroTitle => 'Wybierz sterowanie';
+
+  @override
+  String get ctrlIntroBody =>
+      'Przesuwanie, krzyżak, przyciski skrętu lub gałka: steruj tak, jak ci wygodnie. Możesz to zmienić w każdej chwili.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Powiększ przyciski, przesuń krzyżak lub zmień czułość przesunięcia w Ustawienia → Sterowanie albo w menu pauzy.';
+
+  @override
+  String get ctrlIntroPlay => 'Graj';
 }

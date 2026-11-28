@@ -676,6 +676,14 @@ class DevicePreferences extends Table {
   IntColumn get controlLayoutIndex =>
       integer().withDefault(const Constant(0))();
 
+  /// [ControlSize] index for the d-pad and turn buttons. Default 1 (normal).
+  IntColumn get controlSizeIndex =>
+      integer().withDefault(const Constant(1))();
+
+  /// [SwipeSensitivity] index. Default 1 (normal).
+  IntColumn get swipeSensitivityIndex =>
+      integer().withDefault(const Constant(1))();
+
   DateTimeColumn get updatedAt =>
       dateTime().withDefault(currentDateAndTime)();
 }
@@ -1058,7 +1066,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1358,6 +1366,12 @@ class AppDatabase extends _$AppDatabase {
           await _addColumnIfMissing(m, premiumStatus, premiumStatus.bronzeGrantsAbsorbed);
           await _addColumnIfMissing(m, premiumStatus, premiumStatus.silverGrantsAbsorbed);
           await _addColumnIfMissing(m, premiumStatus, premiumStatus.goldGrantsAbsorbed);
+        }
+        if (from < 25) {
+          // v25: control size and swipe sensitivity, device-local like the
+          // control layout. Defaults (1 = normal) keep every install as it was.
+          await _addColumnIfMissing(m, devicePreferences, devicePreferences.controlSizeIndex);
+          await _addColumnIfMissing(m, devicePreferences, devicePreferences.swipeSensitivityIndex);
         }
       });
     },

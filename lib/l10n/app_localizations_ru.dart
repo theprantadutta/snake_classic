@@ -6930,4 +6930,45 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'Обновить сейчас';
+
+  @override
+  String get ctrlButtonSize => 'Размер кнопок';
+
+  @override
+  String get ctrlSizeSmall => 'Маленький';
+
+  @override
+  String get ctrlSizeNormal => 'Обычный';
+
+  @override
+  String get ctrlSizeLarge => 'Большой';
+
+  @override
+  String get ctrlSizeExtraLarge => 'Огромный';
+
+  @override
+  String get ctrlSwipeSensitivity => 'Чувствительность свайпа';
+
+  @override
+  String get ctrlSensitivityLow => 'Низкая';
+
+  @override
+  String get ctrlSensitivityNormal => 'Обычная';
+
+  @override
+  String get ctrlSensitivityHigh => 'Высокая';
+
+  @override
+  String get ctrlIntroTitle => 'Выберите управление';
+
+  @override
+  String get ctrlIntroBody =>
+      'Свайпы, крестовина, кнопки поворота или стик: управляйте так, как вам удобно. Сменить можно в любой момент.';
+
+  @override
+  String get ctrlIntroTune =>
+      'Увеличьте кнопки, переместите крестовину или настройте чувствительность свайпа в Настройках → Управление или в меню паузы.';
+
+  @override
+  String get ctrlIntroPlay => 'Играть';
 }

@@ -6876,4 +6876,45 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'अभी अपडेट करें';
+
+  @override
+  String get ctrlButtonSize => 'बटन का आकार';
+
+  @override
+  String get ctrlSizeSmall => 'छोटा';
+
+  @override
+  String get ctrlSizeNormal => 'सामान्य';
+
+  @override
+  String get ctrlSizeLarge => 'बड़ा';
+
+  @override
+  String get ctrlSizeExtraLarge => 'बहुत बड़ा';
+
+  @override
+  String get ctrlSwipeSensitivity => 'स्वाइप संवेदनशीलता';
+
+  @override
+  String get ctrlSensitivityLow => 'कम';
+
+  @override
+  String get ctrlSensitivityNormal => 'सामान्य';
+
+  @override
+  String get ctrlSensitivityHigh => 'ज़्यादा';
+
+  @override
+  String get ctrlIntroTitle => 'अपना कंट्रोल चुनें';
+
+  @override
+  String get ctrlIntroBody =>
+      'स्वाइप, डी-पैड, मोड़ बटन या स्टिक: जैसे आपको आसान लगे, वैसे खेलें। आप कभी भी बदल सकते हैं।';
+
+  @override
+  String get ctrlIntroTune =>
+      'बटन बड़े करें, डी-पैड की जगह बदलें, या स्वाइप संवेदनशीलता बदलें: सेटिंग्स → कंट्रोल में या पॉज़ मेन्यू से।';
+
+  @override
+  String get ctrlIntroPlay => 'खेलें';
 }

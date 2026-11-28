@@ -210,6 +210,38 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// The control size index for this device. Default 1 (normal).
+  Future<int> getControlSizeIndex() async {
+    final prefs = await getDevicePreferences();
+    return prefs?.controlSizeIndex ?? 1;
+  }
+
+  Future<void> updateControlSizeIndex(int index) async {
+    await into(devicePreferences).insertOnConflictUpdate(
+      DevicePreferencesCompanion(
+        id: const Value(1),
+        controlSizeIndex: Value(index),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// The swipe sensitivity index for this device. Default 1 (normal).
+  Future<int> getSwipeSensitivityIndex() async {
+    final prefs = await getDevicePreferences();
+    return prefs?.swipeSensitivityIndex ?? 1;
+  }
+
+  Future<void> updateSwipeSensitivityIndex(int index) async {
+    await into(devicePreferences).insertOnConflictUpdate(
+      DevicePreferencesCompanion(
+        id: const Value(1),
+        swipeSensitivityIndex: Value(index),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   /// Reset settings to defaults. Outbox row queues a fresh sync so
   /// the backend picks up the reset.
   ///

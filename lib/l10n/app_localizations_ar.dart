@@ -6900,4 +6900,45 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get updateActionUpdateNow => 'حدّث الآن';
+
+  @override
+  String get ctrlButtonSize => 'حجم الأزرار';
+
+  @override
+  String get ctrlSizeSmall => 'صغير';
+
+  @override
+  String get ctrlSizeNormal => 'عادي';
+
+  @override
+  String get ctrlSizeLarge => 'كبير';
+
+  @override
+  String get ctrlSizeExtraLarge => 'ضخم';
+
+  @override
+  String get ctrlSwipeSensitivity => 'حساسية السحب';
+
+  @override
+  String get ctrlSensitivityLow => 'منخفضة';
+
+  @override
+  String get ctrlSensitivityNormal => 'عادية';
+
+  @override
+  String get ctrlSensitivityHigh => 'عالية';
+
+  @override
+  String get ctrlIntroTitle => 'اختر طريقة التحكم';
+
+  @override
+  String get ctrlIntroBody =>
+      'السحب، أو أزرار الاتجاهات، أو أزرار الانعطاف، أو العصا: وجّه الثعبان بالطريقة التي تريحك. يمكنك التغيير في أي وقت.';
+
+  @override
+  String get ctrlIntroTune =>
+      'كبّر الأزرار، أو انقل أزرار الاتجاهات، أو غيّر حساسية السحب من الإعدادات ← التحكم، أو من قائمة الإيقاف المؤقت.';
+
+  @override
+  String get ctrlIntroPlay => 'العب';
 }

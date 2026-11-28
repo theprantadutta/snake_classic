@@ -2010,5 +2010,18 @@
   "moreGamesGridwell": "ألغاز نونوغرام منطقية: اكشف صورة البكسل",
   "moreGamesJadewell": "ماهجونغ سوليتير: طابق البلاطات ونظّف اللوحة",
   "updatePlayOfferBody": "إصدار جديد من Snake Classic جاهز. يستغرق التحديث نحو دقيقة، وتُعاد اللعبة تلقائيًا عند انتهائه.",
-  "updateActionUpdateNow": "حدّث الآن"
+  "updateActionUpdateNow": "حدّث الآن",
+  "ctrlButtonSize": "حجم الأزرار",
+  "ctrlSizeSmall": "صغير",
+  "ctrlSizeNormal": "عادي",
+  "ctrlSizeLarge": "كبير",
+  "ctrlSizeExtraLarge": "ضخم",
+  "ctrlSwipeSensitivity": "حساسية السحب",
+  "ctrlSensitivityLow": "منخفضة",
+  "ctrlSensitivityNormal": "عادية",
+  "ctrlSensitivityHigh": "عالية",
+  "ctrlIntroTitle": "اختر طريقة التحكم",
+  "ctrlIntroBody": "السحب، أو أزرار الاتجاهات، أو أزرار الانعطاف، أو العصا: وجّه الثعبان بالطريقة التي تريحك. يمكنك التغيير في أي وقت.",
+  "ctrlIntroTune": "كبّر الأزرار، أو انقل أزرار الاتجاهات، أو غيّر حساسية السحب من الإعدادات ← التحكم، أو من قائمة الإيقاف المؤقت.",
+  "ctrlIntroPlay": "العب"
 }

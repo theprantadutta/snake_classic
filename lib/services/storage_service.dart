@@ -160,6 +160,24 @@ class StorageService {
     await _settingsDao?.updateControlLayoutIndex(layout.index);
   }
 
+  Future<ControlSize> getControlSize() async {
+    final index = await _settingsDao?.getControlSizeIndex() ?? 1;
+    return ControlSize.fromIndex(index);
+  }
+
+  Future<void> setControlSize(ControlSize size) async {
+    await _settingsDao?.updateControlSizeIndex(size.index);
+  }
+
+  Future<SwipeSensitivity> getSwipeSensitivity() async {
+    final index = await _settingsDao?.getSwipeSensitivityIndex() ?? 1;
+    return SwipeSensitivity.fromIndex(index);
+  }
+
+  Future<void> setSwipeSensitivity(SwipeSensitivity sensitivity) async {
+    await _settingsDao?.updateSwipeSensitivityIndex(sensitivity.index);
+  }
+
   // ==================== Notification Preferences ====================
 
   /// Per-category notification opt-ins, keyed by NotificationType.key

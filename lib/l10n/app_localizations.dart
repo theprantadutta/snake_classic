@@ -12135,6 +12135,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update now'**
   String get updateActionUpdateNow;
+
+  /// No description provided for @ctrlButtonSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Button size'**
+  String get ctrlButtonSize;
+
+  /// No description provided for @ctrlSizeSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get ctrlSizeSmall;
+
+  /// No description provided for @ctrlSizeNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get ctrlSizeNormal;
+
+  /// No description provided for @ctrlSizeLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get ctrlSizeLarge;
+
+  /// No description provided for @ctrlSizeExtraLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Huge'**
+  String get ctrlSizeExtraLarge;
+
+  /// No description provided for @ctrlSwipeSensitivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe sensitivity'**
+  String get ctrlSwipeSensitivity;
+
+  /// No description provided for @ctrlSensitivityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get ctrlSensitivityLow;
+
+  /// No description provided for @ctrlSensitivityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get ctrlSensitivityNormal;
+
+  /// No description provided for @ctrlSensitivityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get ctrlSensitivityHigh;
+
+  /// No description provided for @ctrlIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your controls'**
+  String get ctrlIntroTitle;
+
+  /// No description provided for @ctrlIntroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe, a d-pad, turn buttons or a stick: steer however feels best to you. You can switch any time.'**
+  String get ctrlIntroBody;
+
+  /// No description provided for @ctrlIntroTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the buttons bigger, move the d-pad, or change how far a swipe goes in Settings → Controls, or from the pause menu.'**
+  String get ctrlIntroTune;
+
+  /// No description provided for @ctrlIntroPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get ctrlIntroPlay;
 }
 
 class _AppLocalizationsDelegate
